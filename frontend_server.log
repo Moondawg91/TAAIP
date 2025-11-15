@@ -1,0 +1,20 @@
+Traceback (most recent call last):
+  File "/Library/Developer/Comma::ffff:127.0.0.1 - - [14/Nov/2025 21:04:36] "GET / HTTP/1.1" 200 -
+::ffff:127.0.0.1 - - [14/Nov/2025 21:05:11] "GET /app.js HTTP/1.1" 200 -
+::ffff:127.0.0.1 - - [14/Nov/2025 21:06:15] "GET / HTTP/1.1" 200 -
+::ffff:127.0.0.1 - - [14/Nov/2025 21:06:15] "GET /style.css HTTP/1.1" 200 -
+::ffff:127.0.0.1 - - [14/Nov/2025 21:06:15] "GET /app.js HTTP/1.1" 200 -
+::ffff:127.0.0.1 - - [14/Nov/2025 21:06:15] code 404, message File not found
+::ffff:127.0.0.1 - - [14/Nov/2025 21:06:15] "GET /favicon.ico HTTP/1.1" 404 -
+::ffff:127.0.0.1 - - [14/Nov/2025 23:24:35] "GET / HTTP/1.1" 200 -
+::ffff:127.0.0.1 - - [14/Nov/2025 23:24:35] "GET /app.js HTTP/1.1" 304 -
+::ffff:127.0.0.1 - - [14/Nov/2025 23:24:35] "GET /style.css HTTP/1.1" 304 -
+Tools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/socketserver.py", line 452, in __init__
+    self.server_bind()
+  File "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/http/server.py", line 1295, in server_bind
+    return super().server_bind()
+  File "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/http/server.py", line 138, in server_bind
+    socketserver.TCPServer.server_bind(self)
+  File "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/socketserver.py", line 466, in server_bind
+    self.socket.bind(self.server_address)
+OSError: [Errno 48] Address already in use

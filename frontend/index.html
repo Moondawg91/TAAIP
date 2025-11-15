@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>TAAIP Lead Scoring — Demo</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="container">
+    <h1>TAAIP Lead Scoring — Demo</h1>
+
+    <section class="card">
+      <h2>Score a Lead</h2>
+      <form id="leadForm">
+        <label>Lead ID
+          <input type="text" id="lead_id" required placeholder="lead-123" />
+        </label>
+
+        <label>Age
+          <input type="number" id="age" min="18" value="30" required />
+        </label>
+
+        <label>Education Level
+          <select id="education_level">
+            <option>High School</option>
+            <option>Some College</option>
+            <option selected>Bachelors</option>
+            <option>Masters</option>
+            <option>PhD</option>
+          </select>
+        </label>
+
+        <label>CBSA Code
+          <input type="text" id="cbsa_code" placeholder="12345" />
+        </label>
+
+        <label>Campaign Source
+          <input type="text" id="campaign_source" placeholder="CampaignName" />
+        </label>
+
+        <div class="buttons">
+          <button type="submit">Get Score</button>
+          <button type="button" id="checkHealth">Check Service Health</button>
+          <button type="button" id="getMetrics">Get Metrics</button>
+          <button type="button" id="startPilot">Start Pilot</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="card" id="output">
+      <h2>Result</h2>
+      <div id="resultArea">No request yet. Fill the form and click "Get Score".</div>
+    </section>
+
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>

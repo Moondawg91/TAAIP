@@ -1,0 +1,139 @@
+# Sample Kubernetes manifests for AKS
+# - business-api (Node.js)
+# - ml-scorer (Python FastAPI)
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: business-api
+  labels:
+    app: business-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: business-api
+  template:
+    metadata:
+      labels:
+        app: business-api
+    spec:
+      containers:
+        - name: business-api
+          image: <ACR_NAME>.azurecr.io/business-api:latest
+          ports:
+            - containerPort: 3000
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: pg-credentials
+                  key: DATABASE_URL
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "1000m"
+              memory: "1Gi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: business-api
+spec:
+  type: ClusterIP
+  selector:
+    app: business-api
+  ports:
+    - port: 80
+      targetPort: 3000
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: business-api-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: business-api
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 60
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ml-scorer
+  labels:
+    app: ml-scorer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ml-scorer
+  template:
+    metadata:
+      labels:
+        app: ml-scorer
+    spec:
+      containers:
+        - name: ml-scorer
+          image: <ACR_NAME>.azurecr.io/ml-scorer:latest
+          ports:
+            - containerPort: 8000
+          env:
+            - name: MODEL_VERSION
+              value: "v1.0.0"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "512Mi"
+            limits:
+              cpu: "2000m"
+              memory: "2Gi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ml-scorer
+spec:
+  type: ClusterIP
+  selector:
+    app: ml-scorer
+  ports:
+    - port: 80
+      targetPort: 8000

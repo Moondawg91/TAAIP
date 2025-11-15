@@ -1,0 +1,11 @@
+{
+  "started_at": "2025-11-15T02:00:18.348352",
+  "config": {
+    "name": "2-CBSA Trial",
+    "cbsa_list": [
+      "41884",
+      "37980"
+    ]
+  },
+  "status": "running"
+}

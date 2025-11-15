@@ -1,0 +1,23 @@
+INFO:root:Loading Lead Scoring Model from storage...
+INFO:root:ML Model loaded successfully. Status: ready
+INFO:     Started server process [37489]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+INFO:     127.0.0.1:50850 - "GET /api/v1/metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50861 - "POST /api/v1/ingestLead HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50861 - "GET /api/v1/metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50861 - "POST /api/v1/startPilot HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50861 - "GET /api/v1/pilotStatus HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50935 - "POST /api/v1/ingestLead HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50940 - "GET /api/v1/metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51768 - "GET /api/v2/funnel/stages HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:51781 - "GET /api/v2/funnel/stages HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:51785 - "GET /api/v2/funnel/stages HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:51788 - "GET /api/v2/dashboard HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:51794 - "GET / HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:51799 - "GET /api/v2/funnel/stages HTTP/1.1" 404 Not Found
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [37489]

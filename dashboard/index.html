@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>TAAIP - Marketing Dashboard (Prototype)</title>
+    <style>
+      body{font-family:Inter,system-ui,Arial;margin:20px}
+      table{border-collapse:collapse;width:100%;margin-top:10px}
+      th,td{border:1px solid #ddd;padding:8px}
+      th{background:#f6f6f6}
+    </style>
+  </head>
+  <body>
+    <h1>TAAIP Marketing + Funnel Dashboard (Prototype)</h1>
+    <div>
+      <strong>Funnel Stages</strong>
+      <div id="funnel"></div>
+    </div>
+
+    <div style="margin-top:20px">
+      <strong>Event Analytics</strong>
+      <div>
+        Event ID: <input id="eventId" value="evt_test_001" />
+        <button id="loadAnalytics">Load</button>
+      </div>
+      <div id="analytics"></div>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>

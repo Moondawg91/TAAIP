@@ -1,0 +1,19 @@
+INFO:root:Loading Lead Scoring Model from storage...
+INFO:root:ML Model initialized. Status: simulated
+INFO:root:Loading Lead Scoring Model from storage...
+INFO:root:ML Model initialized. Status: simulated
+INFO:     Started server process [46976]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     127.0.0.1:51842 - "GET /api/v2/funnel/stages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51847 - "GET /api/v2/funnel/stages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51851 - "POST /api/v2/marketing/activities HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51855 - "GET /api/v2/marketing/analytics?event_id=evt_test_001 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51860 - "GET /api/v2/marketing/sources HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51864 - "POST /api/v2/marketing/sync HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51868 - "POST /api/v1/ingestLead HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:51883 - "POST /api/v1/ingestLead HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51887 - "POST /api/v2/funnel/transition HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51891 - "POST /api/v2/funnel/transition HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51894 - "GET /api/v2/marketing/funnel-attribution?lead_id=lead_test_001 HTTP/1.1" 200 OK

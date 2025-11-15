@@ -1,0 +1,61 @@
+@startuml
+!title TAAIP Architecture (high level)
+skinparam componentStyle rectangle
+
+package "Frontend" {
+  [React Web] as Web
+  [React Native / Expo] as Mobile
+  Web -down- Mobile : shared components
+}
+
+package "Gateway & Auth" {
+  [API Gateway / APIM] as APIGW
+  [OAuth2 / Azure AD] as Auth
+  APIGW --> Auth
+}
+
+package "Backend (AKS)" {
+  [Node.js Business API] as NodeAPI
+  [Python ML: FastAPI Scorer] as MLAPI
+  NodeAPI --> MLAPI : scoring requests
+}
+
+package "Data" {
+  [Azure PostgreSQL] as Postgres
+  [Azure Data Lake] as DataLake
+  [Synapse] as Synapse
+  [Redis Cache] as Redis
+  [Elasticsearch] as ES
+}
+
+package "AI / MLOps" {
+  [Azure ML Workspace] as AML
+  [Model Registry & Pipelines] as MRegistry
+  AML --> MRegistry
+  MRegistry --> MLAPI : deploy model
+}
+
+package "Visualization / LMS" {
+  [Power BI / Vantage] as BI
+  [MoodleGov / MS Learn] as LMS
+}
+
+package "Integrations" {
+  [Army Systems] as Army
+  [Ad Platforms] as Ads
+  [Microsoft Graph] as Graph
+}
+
+APIGW --> NodeAPI
+NodeAPI --> Postgres
+NodeAPI --> Redis
+NodeAPI --> ES
+NodeAPI --> BI
+MLAPI --> AML
+MLAPI --> Synapse
+DataLake --> Synapse
+Army --> NodeAPI
+Ads --> NodeAPI
+Graph --> NodeAPI
+
+@enduml
