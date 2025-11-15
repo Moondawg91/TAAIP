@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+*.sqlite3
+.pytest_cache/
+venv/
+.venv/
+.env
+
+# Node
+node_modules/
+npm-debug.log*
+package-lock.json
+
+# Editor/OS
+.DS_Store
+.vscode/
+.idea/
+
+# Data/exports
+data/
+exports/
+server.log
+server.pid
