@@ -2041,5 +2041,210 @@ def get_funnel_attribution(data_source: Optional[str] = None):
     return {"status": "ok", "attribution": attribution}
 
 
+# === AI PIPELINE ENDPOINTS ===
+
+@app.post("/api/v2/ai/train")
+async def train_ai_model(request: Request):
+    """Train lead propensity model on historical leads from database."""
+    try:
+        from taaip_ai_pipeline import train_lead_propensity_model
+        result = train_lead_propensity_model(DB_FILE)
+        return {
+            "status": "ok",
+            "model": "lead_propensity",
+            "accuracy": result.get("accuracy", 0),
+            "training_samples": result.get("samples", 0),
+            "message": "Model trained successfully"
+        }
+    except ImportError:
+        return {
+            "status": "error",
+            "message": "scikit-learn not installed. Install with: pip install scikit-learn"
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": str(e)
+        }
+
+
+@app.post("/api/v2/ai/predict")
+async def predict_leads(request: Request):
+    """Batch predict lead propensity scores."""
+    try:
+        from taaip_ai_pipeline import predict_lead_propensity
+        body = await request.json()
+        leads = body.get("leads", [])
+        
+        if not leads:
+            return {"status": "error", "message": "No leads provided"}
+        
+        predictions = predict_lead_propensity(leads)
+        return {
+            "status": "ok",
+            "predictions": predictions,
+            "count": len(predictions)
+        }
+    except ImportError:
+        return {
+            "status": "error",
+            "message": "scikit-learn not installed. Using mock predictions."
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": str(e)
+        }
+
+
+@app.get("/api/v2/ai/model-status")
+async def get_model_status():
+    """Get current AI model status and metadata."""
+    try:
+        from taaip_ai_pipeline import get_model_status
+        status = get_model_status()
+        return {
+            "status": "ok",
+            "model": status
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": str(e),
+            "model": {
+                "accuracy": 0,
+                "training_samples": 0,
+                "model_path": "models/lead_propensity_model.pkl",
+                "last_updated": None
+            }
+        }
+
+
+# === LMS ENDPOINTS ===
+
+@app.post("/api/v2/lms/enroll")
+async def enroll_user_lms(request: Request):
+    """Enroll a user in an LMS course."""
+    try:
+        from taaip_lms import get_lms_manager
+        body = await request.json()
+        user_id = body.get("user_id")
+        course_id = body.get("course_id")
+        
+        if not user_id or not course_id:
+            return {"status": "error", "message": "user_id and course_id required"}
+        
+        lms = get_lms_manager(DB_FILE)
+        enrollment_id = lms.enroll_user(user_id, course_id)
+        
+        return {
+            "status": "ok",
+            "enrollment_id": enrollment_id,
+            "user_id": user_id,
+            "course_id": course_id,
+            "message": "User enrolled successfully"
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": str(e)
+        }
+
+
+@app.put("/api/v2/lms/progress")
+async def update_lms_progress(request: Request):
+    """Update user progress in a course."""
+    try:
+        from taaip_lms import get_lms_manager
+        body = await request.json()
+        enrollment_id = body.get("enrollment_id")
+        progress_percent = body.get("progress_percent", 0)
+        
+        if not enrollment_id:
+            return {"status": "error", "message": "enrollment_id required"}
+        
+        if not (0 <= progress_percent <= 100):
+            return {"status": "error", "message": "progress_percent must be 0-100"}
+        
+        lms = get_lms_manager(DB_FILE)
+        lms.update_progress(enrollment_id, progress_percent)
+        
+        return {
+            "status": "ok",
+            "enrollment_id": enrollment_id,
+            "progress_percent": progress_percent,
+            "message": "Progress updated successfully"
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": str(e)
+        }
+
+
+@app.get("/api/v2/lms/enrollments/{user_id}")
+async def get_user_enrollments(user_id: str):
+    """Get all courses enrolled by a user."""
+    try:
+        from taaip_lms import get_lms_manager
+        lms = get_lms_manager(DB_FILE)
+        enrollments = lms.get_user_enrollments(user_id)
+        
+        return {
+            "status": "ok",
+            "user_id": user_id,
+            "enrollments": enrollments,
+            "count": len(enrollments)
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": str(e)
+        }
+
+
+@app.get("/api/v2/lms/stats")
+async def get_lms_stats():
+    """Get overall LMS statistics."""
+    try:
+        from taaip_lms import get_lms_manager
+        lms = get_lms_manager(DB_FILE)
+        stats = lms.get_course_stats()
+        
+        return {
+            "status": "ok",
+            "stats": stats
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": str(e)
+        }
+
+
+@app.get("/api/v2/lms/courses")
+async def get_all_courses():
+    """Get all available courses."""
+    try:
+        from taaip_lms import get_lms_manager
+        lms = get_lms_manager(DB_FILE)
+        conn = sqlite3.connect(DB_FILE)
+        cur = conn.cursor()
+        cur.execute("SELECT course_id, title, description FROM courses ORDER BY created_at DESC")
+        courses = [{"course_id": row[0], "title": row[1], "description": row[2]} for row in cur.fetchall()]
+        conn.close()
+        
+        return {
+            "status": "ok",
+            "courses": courses,
+            "count": len(courses)
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": str(e)
+        }
+
+
 if __name__ == "__main__":
     uvicorn.run("taaip_service:app", host="0.0.0.0", port=8000, reload=False)

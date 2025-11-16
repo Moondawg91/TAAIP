@@ -33,7 +33,7 @@ jobs:
       - name: Run tests with coverage and junit
         run: |
           source .venv/bin/activate
-          pytest -q --junitxml=report.xml --cov=taaip_service --cov-report=xml
+          pytest -q --junitxml=report.xml --cov=taaip_service,taaip_ai_pipeline,taaip_lms --cov-report=xml
         env:
           EXPORT_API_TOKEN: ${{ secrets.EXPORT_API_TOKEN }}
       - name: Upload test artifacts
