@@ -1,0 +1,582 @@
+2025-11-17T14:20:23: INFO:     127.0.0.1:49199 - "GET /api/v2/twg/boards HTTP/1.1" 200 OK
+2025-11-17T14:21:05: INFO:     127.0.0.1:49202 - "GET /api/v2/leads/status HTTP/1.1" 500 Internal Server Error
+2025-11-17T14:23:22: INFO:     127.0.0.1:49221 - "GET /api/v2/leads/status HTTP/1.1" 500 Internal Server Error
+2025-11-17T14:25:47: INFO:     127.0.0.1:49247 - "GET /api/v2/leads/status HTTP/1.1" 500 Internal Server Error
+2025-11-17T14:28:03: INFO:     127.0.0.1:49263 - "GET /api/v2/leads/status?days=30 HTTP/1.1" 500 Internal Server Error
+2025-11-17T14:28:18: INFO:     127.0.0.1:49269 - "GET /api/v2/leads/status?days=90 HTTP/1.1" 500 Internal Server Error
+2025-11-17T14:28:33: INFO:     127.0.0.1:49274 - "GET /api/v2/leads/status?days=90 HTTP/1.1" 200 OK
+2025-11-17T15:04:54: INFO:     127.0.0.1:49896 - "GET /api/v2/events/performance HTTP/1.1" 200 OK
+2025-11-17T15:05:28: INFO:     127.0.0.1:49901 - "GET /api/v2/g2-zones/summary HTTP/1.1" 200 OK
+2025-11-17T15:05:52: INFO:     127.0.0.1:49906 - "GET /api/v2/nominations HTTP/1.1" 200 OK
+2025-11-17T15:14:37: INFO:     127.0.0.1:49967 - "GET /api/v2/recruiting-funnel/metrics?fiscal_year=2025 HTTP/1.1" 200 OK
+2025-11-17T15:14:37: INFO:     127.0.0.1:49968 - "GET /api/v2/recruiting-funnel/metrics?fiscal_year=2025 HTTP/1.1" 200 OK
+2025-11-17T15:14:49: INFO:     127.0.0.1:49972 - "GET /api/v2/analytics/cbsa?limit=10 HTTP/1.1" 500 Internal Server Error
+2025-11-17T15:14:49: INFO:     127.0.0.1:49973 - "GET /api/v2/analytics/schools?limit=15 HTTP/1.1" 200 OK
+2025-11-17T15:14:49: INFO:     127.0.0.1:49974 - "GET /api/v2/analytics/segments HTTP/1.1" 200 OK
+2025-11-17T15:14:49: INFO:     127.0.0.1:49975 - "GET /api/v2/analytics/contracts HTTP/1.1" 200 OK
+2025-11-17T15:14:49: INFO:     127.0.0.1:49977 - "GET /api/v2/analytics/schools?limit=15 HTTP/1.1" 200 OK
+2025-11-17T15:14:49: INFO:     127.0.0.1:49976 - "GET /api/v2/analytics/cbsa?limit=10 HTTP/1.1" 500 Internal Server Error
+2025-11-17T15:14:49: INFO:     127.0.0.1:49973 - "GET /api/v2/analytics/segments HTTP/1.1" 200 OK
+2025-11-17T15:14:49: INFO:     127.0.0.1:49978 - "GET /api/v2/analytics/contracts HTTP/1.1" 200 OK
+2025-11-17T15:14:52: INFO:     127.0.0.1:49974 - "GET /api/v2/projects/dashboard/summary HTTP/1.1" 200 OK
+2025-11-17T15:14:52: INFO:     127.0.0.1:49975 - "GET /api/v2/projects HTTP/1.1" 200 OK
+2025-11-17T15:14:52: INFO:     127.0.0.1:49973 - "GET /api/v2/projects HTTP/1.1" 200 OK
+2025-11-17T15:14:52: INFO:     127.0.0.1:49977 - "GET /api/v2/projects/dashboard/summary HTTP/1.1" 200 OK
+2025-11-17T15:15:05: INFO:     127.0.0.1:49989 - "GET /api/v2/g2-zones HTTP/1.1" 200 OK
+2025-11-17T15:15:05: INFO:     127.0.0.1:49990 - "GET /api/v2/g2-zones/summary HTTP/1.1" 200 OK
+2025-11-17T15:15:05: INFO:     127.0.0.1:49991 - "GET /api/v2/g2-zones HTTP/1.1" 200 OK
+2025-11-17T15:15:05: INFO:     127.0.0.1:49992 - "GET /api/v2/g2-zones/summary HTTP/1.1" 200 OK
+2025-11-17T15:15:44: INFO:     127.0.0.1:49999 - "GET /api/v2/g2-zones?trend=down HTTP/1.1" 200 OK
+2025-11-17T15:15:44: INFO:     127.0.0.1:50000 - "GET /api/v2/g2-zones/summary HTTP/1.1" 200 OK
+2025-11-17T15:15:47: INFO:     127.0.0.1:49999 - "GET /api/v2/g2-zones?trend=stable HTTP/1.1" 200 OK
+2025-11-17T15:15:47: INFO:     127.0.0.1:50000 - "GET /api/v2/g2-zones/summary HTTP/1.1" 200 OK
+2025-11-17T15:15:52: INFO:     127.0.0.1:50002 - "GET /api/v2/events/performance HTTP/1.1" 200 OK
+2025-11-17T15:15:52: INFO:     127.0.0.1:50003 - "GET /api/v2/events/performance HTTP/1.1" 200 OK
+2025-11-17T15:15:54: INFO:     127.0.0.1:50002 - "GET /api/v2/leads/status?days=30 HTTP/1.1" 200 OK
+2025-11-17T15:15:54: INFO:     127.0.0.1:50003 - "GET /api/v2/leads/metrics?days=30 HTTP/1.1" 500 Internal Server Error
+2025-11-17T15:15:54: INFO:     127.0.0.1:50006 - "GET /api/v2/leads/status?days=30 HTTP/1.1" 200 OK
+2025-11-17T15:15:54: INFO:     127.0.0.1:50007 - "GET /api/v2/leads/metrics?days=30 HTTP/1.1" 500 Internal Server Error
+2025-11-17T15:15:58: INFO:     127.0.0.1:50002 - "GET /api/v2/twg/boards HTTP/1.1" 200 OK
+2025-11-17T15:15:58: INFO:     127.0.0.1:50003 - "GET /api/v2/twg/boards HTTP/1.1" 200 OK
+2025-11-17T15:16:03: INFO:     127.0.0.1:50011 - "GET /api/v2/dod-comparison?geographic_level=cbsa&geographic_id=41860&fiscal_year=2025&quarter=Q4 HTTP/1.1" 200 OK
+2025-11-17T15:16:03: INFO:     127.0.0.1:50012 - "GET /api/v2/dod-comparison?geographic_level=cbsa&geographic_id=41860&fiscal_year=2025&quarter=Q4 HTTP/1.1" 200 OK
+2025-11-17T15:16:09: INFO:     127.0.0.1:50014 - "GET /api/v2/dod-comparison?geographic_level=zipcode&geographic_id=41860&fiscal_year=2025&quarter=Q4 HTTP/1.1" 200 OK
+2025-11-17T15:16:12: INFO:     127.0.0.1:50014 - "GET /api/v2/dod-comparison?geographic_level=state&geographic_id=41860&fiscal_year=2025&quarter=Q4 HTTP/1.1" 200 OK
+2025-11-17T15:16:13: INFO:     127.0.0.1:50014 - "GET /api/v2/dod-comparison?geographic_level=national&geographic_id=41860&fiscal_year=2025&quarter=Q4 HTTP/1.1" 200 OK
+2025-11-17T15:16:15: INFO:     127.0.0.1:50014 - "GET /api/v2/dod-comparison?geographic_level=zipcode&geographic_id=41860&fiscal_year=2025&quarter=Q4 HTTP/1.1" 200 OK
+2025-11-17T15:16:18: INFO:     127.0.0.1:50014 - "GET /api/v2/dod-comparison?geographic_level=cbsa&geographic_id=41860&fiscal_year=2025&quarter=Q4 HTTP/1.1" 200 OK
+2025-11-17T15:16:27: INFO:     127.0.0.1:50019 - "GET /api/v2/mission-analysis?analysis_level=brigade&fiscal_year=2025&quarter=Q4 HTTP/1.1" 200 OK
+2025-11-17T15:16:27: INFO:     127.0.0.1:50020 - "GET /api/v2/mission-analysis?analysis_level=brigade&fiscal_year=2025&quarter=Q4 HTTP/1.1" 200 OK
+2025-11-17T15:16:43: INFO:     127.0.0.1:50022 - "GET /api/v2/market-potential?geographic_level=cbsa&geographic_id=41860&fiscal_year=2025&quarter=Q4 HTTP/1.1" 200 OK
+2025-11-17T15:16:43: INFO:     127.0.0.1:50023 - "GET /api/v2/market-potential?geographic_level=cbsa&geographic_id=41860&fiscal_year=2025&quarter=Q4 HTTP/1.1" 200 OK
+2025-11-17T15:16:50: INFO:     127.0.0.1:50026 - "GET /api/v2/projects/dashboard/summary HTTP/1.1" 200 OK
+2025-11-17T15:16:50: INFO:     127.0.0.1:50027 - "GET /api/v2/projects HTTP/1.1" 200 OK
+2025-11-17T15:16:50: INFO:     127.0.0.1:50029 - "GET /api/v2/projects HTTP/1.1" 200 OK
+2025-11-17T15:16:50: INFO:     127.0.0.1:50028 - "GET /api/v2/projects/dashboard/summary HTTP/1.1" 200 OK
+2025-11-17T15:17:40: INFO:     127.0.0.1:50050 - "GET /api/v2/calendar/events HTTP/1.1" 404 Not Found
+2025-11-17T15:19:53: INFO:     127.0.0.1:50073 - "GET /api/v2/recruiting-funnel/metrics?fiscal_year=2025 HTTP/1.1" 200 OK
+2025-11-17T15:19:53: INFO:     127.0.0.1:50074 - "GET /api/v2/recruiting-funnel/metrics?fiscal_year=2025 HTTP/1.1" 200 OK
+2025-11-17T15:20:17: INFO:     127.0.0.1:50096 - "GET /api/v2/recruiting-funnel/metrics?fiscal_year=2024 HTTP/1.1" 200 OK
+2025-11-17T15:20:23: INFO:     127.0.0.1:50098 - "GET /api/v2/recruiting-funnel/metrics?fiscal_year=2026 HTTP/1.1" 200 OK
+2025-11-17T15:20:33: INFO:     127.0.0.1:50101 - "GET /api/v2/analytics/schools?limit=15 HTTP/1.1" 200 OK
+2025-11-17T15:20:33: INFO:     127.0.0.1:50102 - "GET /api/v2/analytics/segments HTTP/1.1" 200 OK
+2025-11-17T15:20:33: INFO:     127.0.0.1:50103 - "GET /api/v2/analytics/contracts HTTP/1.1" 200 OK
+2025-11-17T15:20:33: INFO:     127.0.0.1:50100 - "GET /api/v2/analytics/cbsa?limit=10 HTTP/1.1" 500 Internal Server Error
+2025-11-17T15:20:33: INFO:     127.0.0.1:50105 - "GET /api/v2/analytics/schools?limit=15 HTTP/1.1" 200 OK
+2025-11-17T15:20:33: INFO:     127.0.0.1:50104 - "GET /api/v2/analytics/cbsa?limit=10 HTTP/1.1" 500 Internal Server Error
+2025-11-17T15:20:33: INFO:     127.0.0.1:50101 - "GET /api/v2/analytics/segments HTTP/1.1" 200 OK
+2025-11-17T15:20:33: INFO:     127.0.0.1:50102 - "GET /api/v2/analytics/contracts HTTP/1.1" 200 OK
+2025-11-17T15:21:05: INFO:     127.0.0.1:50110 - "GET /api/v2/calendar/events HTTP/1.1" 500 Internal Server Error
+2025-11-17T15:22:41: INFO:     127.0.0.1:50127 - "GET /api/v2/calendar/events HTTP/1.1" 200 OK
+2025-11-17T15:22:51: INFO:     127.0.0.1:50130 - "GET /api/v2/calendar/reports?limit=5 HTTP/1.1" 200 OK
+2025-11-17T15:22:53: INFO:     127.0.0.1:50132 - "GET /api/v2/calendar/upcoming?days=7 HTTP/1.1" 200 OK
+2025-11-17T15:26:32: INFO:     127.0.0.1:50168 - "GET /api/v2/calendar/events HTTP/1.1" 200 OK
+2025-11-17T15:35:09: INFO:     127.0.0.1:50214 - "GET /api/v2/calendar/reports HTTP/1.1" 200 OK
+2025-11-17T15:46:48: INFO:     127.0.0.1:50323 - "GET /api/v2/recruiting-funnel/metrics?fiscal_year=2025 HTTP/1.1" 200 OK
+2025-11-17T15:46:48: INFO:     127.0.0.1:50324 - "GET /api/v2/recruiting-funnel/metrics?fiscal_year=2025 HTTP/1.1" 200 OK
+2025-11-17T15:46:51: INFO:     127.0.0.1:50324 - "GET /api/v2/analytics/schools?limit=15 HTTP/1.1" 200 OK
+2025-11-17T15:46:51: INFO:     127.0.0.1:50323 - "GET /api/v2/analytics/cbsa?limit=10 HTTP/1.1" 500 Internal Server Error
+2025-11-17T15:46:51: INFO:     127.0.0.1:50325 - "GET /api/v2/analytics/segments HTTP/1.1" 200 OK
+2025-11-17T15:46:51: INFO:     127.0.0.1:50326 - "GET /api/v2/analytics/contracts HTTP/1.1" 200 OK
+2025-11-17T15:46:51: INFO:     127.0.0.1:50328 - "GET /api/v2/analytics/schools?limit=15 HTTP/1.1" 200 OK
+2025-11-17T15:46:51: INFO:     127.0.0.1:50327 - "GET /api/v2/analytics/cbsa?limit=10 HTTP/1.1" 500 Internal Server Error
+2025-11-17T15:46:51: INFO:     127.0.0.1:50324 - "GET /api/v2/analytics/segments HTTP/1.1" 200 OK
+2025-11-17T15:46:51: INFO:     127.0.0.1:50329 - "GET /api/v2/analytics/contracts HTTP/1.1" 200 OK
+2025-11-17T15:46:52: INFO:     127.0.0.1:50326 - "GET /api/v2/projects HTTP/1.1" 200 OK
+2025-11-17T15:46:52: INFO:     127.0.0.1:50324 - "GET /api/v2/projects HTTP/1.1" 200 OK
+2025-11-17T15:46:52: INFO:     127.0.0.1:50325 - "GET /api/v2/projects/dashboard/summary HTTP/1.1" 200 OK
+2025-11-17T15:46:52: INFO:     127.0.0.1:50328 - "GET /api/v2/projects/dashboard/summary HTTP/1.1" 200 OK
+2025-11-17T15:47:26: INFO:     127.0.0.1:50339 - "GET /api/v2/g2-zones HTTP/1.1" 200 OK
+2025-11-17T15:47:26: INFO:     127.0.0.1:50340 - "GET /api/v2/g2-zones/summary HTTP/1.1" 200 OK
+2025-11-17T15:47:26: INFO:     127.0.0.1:50341 - "GET /api/v2/g2-zones HTTP/1.1" 200 OK
+2025-11-17T15:47:26: INFO:     127.0.0.1:50342 - "GET /api/v2/g2-zones/summary HTTP/1.1" 200 OK
+2025-11-17T15:47:28: INFO:     127.0.0.1:50339 - "GET /api/v2/events/performance HTTP/1.1" 200 OK
+2025-11-17T15:47:28: INFO:     127.0.0.1:50340 - "GET /api/v2/events/performance HTTP/1.1" 200 OK
+2025-11-17T15:47:29: INFO:     127.0.0.1:50341 - "GET /api/v2/leads/status?days=30 HTTP/1.1" 200 OK
+2025-11-17T15:47:29: INFO:     127.0.0.1:50342 - "GET /api/v2/leads/metrics?days=30 HTTP/1.1" 500 Internal Server Error
+2025-11-17T15:47:29: INFO:     127.0.0.1:50339 - "GET /api/v2/leads/status?days=30 HTTP/1.1" 200 OK
+2025-11-17T15:47:29: INFO:     127.0.0.1:50340 - "GET /api/v2/leads/metrics?days=30 HTTP/1.1" 500 Internal Server Error
+2025-11-17T15:47:31: INFO:     127.0.0.1:50341 - "GET /api/v2/twg/boards HTTP/1.1" 200 OK
+2025-11-17T15:47:31: INFO:     127.0.0.1:50342 - "GET /api/v2/twg/boards HTTP/1.1" 200 OK
+2025-11-17T15:47:32: INFO:     127.0.0.1:50339 - "GET /api/v2/leads/status?days=30 HTTP/1.1" 200 OK
+2025-11-17T15:47:32: INFO:     127.0.0.1:50340 - "GET /api/v2/leads/metrics?days=30 HTTP/1.1" 500 Internal Server Error
+2025-11-17T15:47:32: INFO:     127.0.0.1:50341 - "GET /api/v2/leads/status?days=30 HTTP/1.1" 200 OK
+2025-11-17T15:47:32: INFO:     127.0.0.1:50342 - "GET /api/v2/leads/metrics?days=30 HTTP/1.1" 500 Internal Server Error
+2025-11-17T15:47:34: INFO:     127.0.0.1:50339 - "GET /api/v2/dod-comparison?geographic_level=cbsa&geographic_id=41860&fiscal_year=2025&quarter=Q4 HTTP/1.1" 200 OK
+2025-11-17T15:47:34: INFO:     127.0.0.1:50340 - "GET /api/v2/dod-comparison?geographic_level=cbsa&geographic_id=41860&fiscal_year=2025&quarter=Q4 HTTP/1.1" 200 OK
+2025-11-17T15:47:38: INFO:     127.0.0.1:50340 - "GET /api/v2/projects HTTP/1.1" 200 OK
+2025-11-17T15:47:38: INFO:     127.0.0.1:50344 - "GET /api/v2/projects HTTP/1.1" 200 OK
+2025-11-17T15:47:38: INFO:     127.0.0.1:50339 - "GET /api/v2/projects/dashboard/summary HTTP/1.1" 200 OK
+2025-11-17T15:47:38: INFO:     127.0.0.1:50343 - "GET /api/v2/projects/dashboard/summary HTTP/1.1" 200 OK
+2025-11-17T15:57:48: INFO:     127.0.0.1:50434 - "GET /api/v2/recruiting-funnel/metrics?fiscal_year=2025 HTTP/1.1" 200 OK
+2025-11-17T15:57:48: INFO:     127.0.0.1:50435 - "GET /api/v2/recruiting-funnel/metrics?fiscal_year=2025 HTTP/1.1" 200 OK
+2025-11-17T15:58:48: INFO:     127.0.0.1:50448 - "GET /api/v2/projects HTTP/1.1" 200 OK
+2025-11-17T15:58:48: INFO:     127.0.0.1:50450 - "GET /api/v2/projects HTTP/1.1" 200 OK
+2025-11-17T15:58:48: INFO:     127.0.0.1:50449 - "GET /api/v2/projects/dashboard/summary HTTP/1.1" 200 OK
+2025-11-17T15:58:48: INFO:     127.0.0.1:50447 - "GET /api/v2/projects/dashboard/summary HTTP/1.1" 200 OK
+2025-11-17T16:02:16: INFO:     127.0.0.1:50523 - "GET /api/v2/market-potential?geographic_level=cbsa&geographic_id=41860&fiscal_year=2025&quarter=Q4 HTTP/1.1" 200 OK
+2025-11-17T16:02:16: INFO:     127.0.0.1:50524 - "GET /api/v2/market-potential?geographic_level=cbsa&geographic_id=41860&fiscal_year=2025&quarter=Q4 HTTP/1.1" 200 OK
+2025-11-17T19:41:53: INFO:     127.0.0.1:51480 - "GET /api/v2/market-potential?geographic_level=cbsa&geographic_id=41860&fiscal_year=2025&quarter=Q4 HTTP/1.1" 200 OK
+2025-11-17T19:56:43: INFO:     127.0.0.1:51635 - "GET /api/v2/market-potential?geographic_level=cbsa&geographic_id=41860&fiscal_year=2025&quarter=Q4 HTTP/1.1" 200 OK
+2025-11-17T19:56:43: INFO:     127.0.0.1:51636 - "GET /api/v2/market-potential?geographic_level=cbsa&geographic_id=41860&fiscal_year=2025&quarter=Q4 HTTP/1.1" 200 OK
+2025-11-17T19:56:53: INFO:     127.0.0.1:51641 - "GET /api/v2/recruiting-funnel/metrics?fiscal_year=2025 HTTP/1.1" 200 OK
+2025-11-17T19:56:53: INFO:     127.0.0.1:51642 - "GET /api/v2/recruiting-funnel/metrics?fiscal_year=2025 HTTP/1.1" 200 OK
+2025-11-17T19:57:03: INFO:     127.0.0.1:51676 - "GET /api/v2/recruiting-funnel/metrics?fiscal_year=2025&rsid=3 HTTP/1.1" 200 OK
+2025-11-17T19:57:03: INFO:     127.0.0.1:51676 - "GET /api/v2/recruiting-funnel/metrics?fiscal_year=2025&rsid=3j HTTP/1.1" 200 OK
+2025-11-17T19:57:03: INFO:     127.0.0.1:51676 - "GET /api/v2/recruiting-funnel/metrics?fiscal_year=2025&rsid=3j3 HTTP/1.1" 200 OK
+2025-11-17T19:57:03: INFO:     127.0.0.1:51676 - "GET /api/v2/recruiting-funnel/metrics?fiscal_year=2025&rsid=3j3h HTTP/1.1" 200 OK
+2025-11-17T19:57:33: INFO:     127.0.0.1:51685 - "GET /api/v2/recruiting-funnel/metrics?fiscal_year=2025 HTTP/1.1" 200 OK
+2025-11-17T19:57:42: INFO:     127.0.0.1:51688 - "GET /api/v2/analytics/cbsa?limit=10 HTTP/1.1" 500 Internal Server Error
+2025-11-17T19:57:42: INFO:     127.0.0.1:51689 - "GET /api/v2/analytics/schools?limit=15 HTTP/1.1" 200 OK
+2025-11-17T19:57:42: INFO:     127.0.0.1:51690 - "GET /api/v2/analytics/segments HTTP/1.1" 200 OK
+2025-11-17T19:57:42: INFO:     127.0.0.1:51691 - "GET /api/v2/analytics/contracts HTTP/1.1" 200 OK
+2025-11-17T19:57:42: INFO:     127.0.0.1:51693 - "GET /api/v2/analytics/schools?limit=15 HTTP/1.1" 200 OK
+2025-11-17T19:57:42: INFO:     127.0.0.1:51692 - "GET /api/v2/analytics/cbsa?limit=10 HTTP/1.1" 500 Internal Server Error
+2025-11-17T19:57:42: INFO:     127.0.0.1:51689 - "GET /api/v2/analytics/segments HTTP/1.1" 200 OK
+2025-11-17T19:57:42: INFO:     127.0.0.1:51694 - "GET /api/v2/analytics/contracts HTTP/1.1" 200 OK
+2025-11-17T19:57:51: INFO:     127.0.0.1:51697 - "GET /api/v2/projects/dashboard/summary HTTP/1.1" 200 OK
+2025-11-17T19:57:51: INFO:     127.0.0.1:51698 - "GET /api/v2/projects HTTP/1.1" 200 OK
+2025-11-17T19:57:51: INFO:     127.0.0.1:51700 - "GET /api/v2/projects HTTP/1.1" 200 OK
+2025-11-17T19:57:51: INFO:     127.0.0.1:51699 - "GET /api/v2/projects/dashboard/summary HTTP/1.1" 200 OK
+2025-11-17T19:58:01: INFO:     127.0.0.1:51710 - "GET /api/v2/dod-comparison?geographic_level=cbsa&geographic_id=41860&fiscal_year=2025&quarter=Q4 HTTP/1.1" 200 OK
+2025-11-17T19:58:01: INFO:     127.0.0.1:51711 - "GET /api/v2/dod-comparison?geographic_level=cbsa&geographic_id=41860&fiscal_year=2025&quarter=Q4 HTTP/1.1" 200 OK
+2025-11-17T19:58:16: INFO:     127.0.0.1:51713 - "GET /api/v2/dod-comparison?geographic_level=zipcode&geographic_id=41860&fiscal_year=2025&quarter=Q4 HTTP/1.1" 200 OK
+2025-11-17T19:58:19: INFO:     127.0.0.1:51713 - "GET /api/v2/dod-comparison?geographic_level=national&geographic_id=41860&fiscal_year=2025&quarter=Q4 HTTP/1.1" 200 OK
+2025-11-17T19:58:21: INFO:     127.0.0.1:51713 - "GET /api/v2/dod-comparison?geographic_level=cbsa&geographic_id=41860&fiscal_year=2025&quarter=Q4 HTTP/1.1" 200 OK
+2025-11-17T19:58:32: INFO:     127.0.0.1:51717 - "GET /api/v2/market-potential?geographic_level=cbsa&geographic_id=41860&fiscal_year=2025&quarter=Q4 HTTP/1.1" 200 OK
+2025-11-17T19:58:32: INFO:     127.0.0.1:51718 - "GET /api/v2/market-potential?geographic_level=cbsa&geographic_id=41860&fiscal_year=2025&quarter=Q4 HTTP/1.1" 200 OK
+2025-11-17T19:59:05: INFO:     127.0.0.1:51724 - "GET /api/v2/market-potential?geographic_level=cbsa&geographic_id=41860&fiscal_year=2025&quarter=Q4&rsid=1 HTTP/1.1" 200 OK
+2025-11-17T20:11:10: INFO:     127.0.0.1:51804 - "GET /api/v2/projects/dashboard/summary HTTP/1.1" 200 OK
+2025-11-17T20:26:18: INFO:     127.0.0.1:51934 - "GET /api/v2/projects HTTP/1.1" 200 OK
+2025-11-17T20:26:18: INFO:     127.0.0.1:51932 - "GET /api/v2/projects HTTP/1.1" 200 OK
+2025-11-17T20:26:18: INFO:     127.0.0.1:51931 - "GET /api/v2/projects/dashboard/summary HTTP/1.1" 200 OK
+2025-11-17T20:26:18: INFO:     127.0.0.1:51933 - "GET /api/v2/projects/dashboard/summary HTTP/1.1" 200 OK
+2025-11-17T21:00:48: INFO:     127.0.0.1:52187 - "GET /api/v2/projects/dashboard/summary HTTP/1.1" 200 OK
+2025-11-17T21:24:54: INFO:     127.0.0.1:52290 - "GET /api/v2/projects HTTP/1.1" 200 OK
+2025-11-17T21:24:54: INFO:     127.0.0.1:52292 - "GET /api/v2/projects HTTP/1.1" 200 OK
+2025-11-17T21:24:54: INFO:     127.0.0.1:52289 - "GET /api/v2/projects/dashboard/summary HTTP/1.1" 200 OK
+2025-11-17T21:24:54: INFO:     127.0.0.1:52291 - "GET /api/v2/projects/dashboard/summary HTTP/1.1" 200 OK
+2025-11-17T21:32:25: INFO:     127.0.0.1:52490 - "GET /api/v2/projects HTTP/1.1" 200 OK
+2025-11-17T21:32:25: INFO:     127.0.0.1:52492 - "GET /api/v2/projects HTTP/1.1" 200 OK
+2025-11-17T21:32:25: INFO:     127.0.0.1:52491 - "GET /api/v2/projects/dashboard/summary HTTP/1.1" 200 OK
+2025-11-17T21:32:25: INFO:     127.0.0.1:52489 - "GET /api/v2/projects/dashboard/summary HTTP/1.1" 200 OK
+2025-11-17T21:32:39: INFO:     127.0.0.1:52501 - "GET /api/v2/projects/dashboard/summary HTTP/1.1" 200 OK
+2025-11-17T21:32:39: INFO:     127.0.0.1:52502 - "GET /api/v2/projects HTTP/1.1" 200 OK
+2025-11-17T21:32:39: INFO:     127.0.0.1:52504 - "GET /api/v2/projects HTTP/1.1" 200 OK
+2025-11-17T21:32:39: INFO:     127.0.0.1:52503 - "GET /api/v2/projects/dashboard/summary HTTP/1.1" 200 OK
+2025-11-17T21:37:43: INFO:     127.0.0.1:52623 - "GET /api/v2/projects HTTP/1.1" 200 OK
+2025-11-17T21:37:43: INFO:     127.0.0.1:52625 - "GET /api/v2/projects HTTP/1.1" 200 OK
+2025-11-17T21:37:43: INFO:     127.0.0.1:52624 - "GET /api/v2/projects/dashboard/summary HTTP/1.1" 200 OK
+2025-11-17T21:37:43: INFO:     127.0.0.1:52622 - "GET /api/v2/projects/dashboard/summary HTTP/1.1" 200 OK
+2025-11-17T21:37:50: INFO:     127.0.0.1:52634 - "GET /api/v2/recruiting-funnel/metrics?fiscal_year=2025 HTTP/1.1" 200 OK
+2025-11-17T21:37:50: INFO:     127.0.0.1:52635 - "GET /api/v2/recruiting-funnel/metrics?fiscal_year=2025 HTTP/1.1" 200 OK
+2025-11-17T21:38:20: INFO:     127.0.0.1:52640 - "OPTIONS /api/v2/projects HTTP/1.1" 200 OK
+2025-11-17T21:38:20: INFO:     127.0.0.1:52640 - "POST /api/v2/projects HTTP/1.1" 200 OK
+2025-11-17T21:38:27: INFO:     127.0.0.1:52642 - "GET /api/v2/projects/dashboard/summary HTTP/1.1" 200 OK
+2025-11-17T21:38:27: INFO:     127.0.0.1:52645 - "GET /api/v2/projects HTTP/1.1" 200 OK
+2025-11-17T21:38:27: INFO:     127.0.0.1:52643 - "GET /api/v2/projects HTTP/1.1" 200 OK
+2025-11-17T21:38:27: INFO:     127.0.0.1:52644 - "GET /api/v2/projects/dashboard/summary HTTP/1.1" 200 OK
+2025-11-17T21:38:36: INFO:     127.0.0.1:52648 - "GET /api/v2/projects/dashboard/summary HTTP/1.1" 200 OK
+2025-11-17T21:38:36: INFO:     127.0.0.1:52649 - "GET /api/v2/projects HTTP/1.1" 200 OK
+2025-11-17T21:38:41: INFO:     127.0.0.1:52652 - "GET /api/v2/projects/prj_8c60986f07db HTTP/1.1" 200 OK
+2025-11-17T21:38:48: INFO:     127.0.0.1:52654 - "GET /api/v2/projects/prj_8c60986f07db HTTP/1.1" 200 OK
+2025-11-17T21:38:48: INFO:     127.0.0.1:52655 - "GET /api/v2/projects/prj_8c60986f07db HTTP/1.1" 200 OK
+2025-11-17T21:38:57: INFO:     127.0.0.1:52657 - "OPTIONS /api/v2/projects/prj_8c60986f07db HTTP/1.1" 200 OK
+2025-11-17T21:38:57: INFO:     127.0.0.1:52657 - "PUT /api/v2/projects/prj_8c60986f07db HTTP/1.1" 200 OK
+2025-11-17T21:38:57: INFO:     127.0.0.1:52657 - "GET /api/v2/projects/prj_8c60986f07db HTTP/1.1" 200 OK
+2025-11-17T21:39:02: INFO:     127.0.0.1:52657 - "GET /api/v2/projects/dashboard/summary HTTP/1.1" 200 OK
+2025-11-17T21:39:02: INFO:     127.0.0.1:52658 - "GET /api/v2/projects HTTP/1.1" 200 OK
+2025-11-17T21:39:02: INFO:     127.0.0.1:52659 - "GET /api/v2/projects/prj_8c60986f07db HTTP/1.1" 200 OK
+2025-11-17T21:39:06: INFO:     127.0.0.1:52657 - "GET /api/v2/projects/prj_8c60986f07db HTTP/1.1" 200 OK
+2025-11-17T21:39:06: INFO:     127.0.0.1:52658 - "GET /api/v2/projects/prj_8c60986f07db HTTP/1.1" 200 OK
+2025-11-17T21:39:16: INFO:     127.0.0.1:52662 - "GET /api/v2/projects/dashboard/summary HTTP/1.1" 200 OK
+2025-11-17T21:39:16: INFO:     127.0.0.1:52663 - "GET /api/v2/projects HTTP/1.1" 200 OK
+2025-11-17T21:39:16: INFO:     127.0.0.1:52664 - "GET /api/v2/projects/prj_8c60986f07db HTTP/1.1" 200 OK
+2025-11-17T21:41:32: INFO:     127.0.0.1:52675 - "GET /api/v2/export/projects?rsid= HTTP/1.1" 200 OK
+2025-11-17T21:42:37: INFO:     127.0.0.1:52691 - "GET /api/v2/projects/dashboard/summary HTTP/1.1" 200 OK
+2025-11-17T21:42:37: INFO:     127.0.0.1:52692 - "GET /api/v2/projects HTTP/1.1" 200 OK
+2025-11-17T21:42:38: INFO:     127.0.0.1:52691 - "GET /api/v2/projects/dashboard/summary HTTP/1.1" 200 OK
+2025-11-17T21:42:38: INFO:     127.0.0.1:52692 - "GET /api/v2/projects HTTP/1.1" 200 OK
+2025-11-17T21:45:39: INFO:     127.0.0.1:52760 - "GET /api/v2/calendar/events HTTP/1.1" 200 OK
+2025-11-17T21:48:18: INFO:     127.0.0.1:52795 - "GET /api/v2/calendar/events HTTP/1.1" 200 OK
+2025-11-17T21:48:18: INFO:     127.0.0.1:52796 - "GET /api/v2/calendar/reports HTTP/1.1" 200 OK
+2025-11-17T21:48:18: INFO:     127.0.0.1:52797 - "GET /api/v2/calendar/events HTTP/1.1" 200 OK
+2025-11-17T21:48:18: INFO:     127.0.0.1:52798 - "GET /api/v2/calendar/reports HTTP/1.1" 200 OK
+2025-11-17T21:49:14: INFO:     127.0.0.1:52803 - "GET /api/v2/events/performance HTTP/1.1" 200 OK
+2025-11-17T21:49:14: INFO:     127.0.0.1:52804 - "GET /api/v2/events/performance HTTP/1.1" 200 OK
+2025-11-17T21:55:38: INFO:     127.0.0.1:52886 - "GET /api/v2/recruiting-funnel/metrics?fiscal_year=2025 HTTP/1.1" 200 OK
+2025-11-17T21:55:38: INFO:     127.0.0.1:52887 - "GET /api/v2/recruiting-funnel/metrics?fiscal_year=2025 HTTP/1.1" 200 OK
+2025-11-17T21:58:26: INFO:     127.0.0.1:52931 - "GET /api/v2/analytics/schools?limit=15 HTTP/1.1" 200 OK
+2025-11-17T21:58:26: INFO:     127.0.0.1:52932 - "GET /api/v2/analytics/segments HTTP/1.1" 200 OK
+2025-11-17T21:58:26: INFO:     127.0.0.1:52933 - "GET /api/v2/analytics/contracts HTTP/1.1" 200 OK
+2025-11-17T21:58:26: INFO:     127.0.0.1:52930 - "GET /api/v2/analytics/cbsa?limit=10 HTTP/1.1" 500 Internal Server Error
+2025-11-17T21:58:26: INFO:     127.0.0.1:52935 - "GET /api/v2/analytics/schools?limit=15 HTTP/1.1" 200 OK
+2025-11-17T21:58:26: INFO:     127.0.0.1:52934 - "GET /api/v2/analytics/cbsa?limit=10 HTTP/1.1" 500 Internal Server Error
+2025-11-17T21:58:26: INFO:     127.0.0.1:52931 - "GET /api/v2/analytics/segments HTTP/1.1" 200 OK
+2025-11-17T21:58:26: INFO:     127.0.0.1:52932 - "GET /api/v2/analytics/contracts HTTP/1.1" 200 OK
+2025-11-17T21:58:39: INFO:     127.0.0.1:52938 - "GET /api/v2/analytics/cbsa?limit=10 HTTP/1.1" 500 Internal Server Error
+2025-11-17T21:58:39: INFO:     127.0.0.1:52939 - "GET /api/v2/analytics/schools?limit=15 HTTP/1.1" 200 OK
+2025-11-17T21:58:39: INFO:     127.0.0.1:52940 - "GET /api/v2/analytics/segments HTTP/1.1" 200 OK
+2025-11-17T21:58:39: INFO:     127.0.0.1:52941 - "GET /api/v2/analytics/contracts HTTP/1.1" 200 OK
+2025-11-17T21:58:39: INFO:     127.0.0.1:52943 - "GET /api/v2/analytics/schools?limit=15 HTTP/1.1" 200 OK
+2025-11-17T21:58:39: INFO:     127.0.0.1:52942 - "GET /api/v2/analytics/cbsa?limit=10 HTTP/1.1" 500 Internal Server Error
+2025-11-17T21:58:39: INFO:     127.0.0.1:52939 - "GET /api/v2/analytics/segments HTTP/1.1" 200 OK
+2025-11-17T21:58:39: INFO:     127.0.0.1:52944 - "GET /api/v2/analytics/contracts HTTP/1.1" 200 OK
+2025-11-17T21:58:45: INFO:     127.0.0.1:52955 - "GET /api/v2/market-potential?geographic_level=cbsa&geographic_id=41860&fiscal_year=2025&quarter=Q4 HTTP/1.1" 200 OK
+2025-11-17T21:58:45: INFO:     127.0.0.1:52956 - "GET /api/v2/market-potential?geographic_level=cbsa&geographic_id=41860&fiscal_year=2025&quarter=Q4 HTTP/1.1" 200 OK
+2025-11-17T21:58:54: INFO:     127.0.0.1:52959 - "GET /api/v2/mission-analysis?analysis_level=brigade&fiscal_year=2025&quarter=Q4 HTTP/1.1" 200 OK
+2025-11-17T21:58:54: INFO:     127.0.0.1:52960 - "GET /api/v2/mission-analysis?analysis_level=brigade&fiscal_year=2025&quarter=Q4 HTTP/1.1" 200 OK
+2025-11-17T21:59:05: INFO:     127.0.0.1:52962 - "GET /api/v2/dod-comparison?geographic_level=cbsa&geographic_id=41860&fiscal_year=2025&quarter=Q4 HTTP/1.1" 200 OK
+2025-11-17T21:59:05: INFO:     127.0.0.1:52963 - "GET /api/v2/dod-comparison?geographic_level=cbsa&geographic_id=41860&fiscal_year=2025&quarter=Q4 HTTP/1.1" 200 OK
+2025-11-17T21:59:15: INFO:     127.0.0.1:52966 - "GET /api/v2/twg/boards HTTP/1.1" 200 OK
+2025-11-17T21:59:15: INFO:     127.0.0.1:52967 - "GET /api/v2/twg/boards HTTP/1.1" 200 OK
+2025-11-17T21:59:23: INFO:     127.0.0.1:52969 - "GET /api/v2/projects/dashboard/summary HTTP/1.1" 200 OK
+2025-11-17T21:59:23: INFO:     127.0.0.1:52970 - "GET /api/v2/projects HTTP/1.1" 200 OK
+2025-11-17T21:59:23: INFO:     127.0.0.1:52972 - "GET /api/v2/projects HTTP/1.1" 200 OK
+2025-11-17T21:59:23: INFO:     127.0.0.1:52971 - "GET /api/v2/projects/dashboard/summary HTTP/1.1" 200 OK
+2025-11-17T21:59:55: INFO:     127.0.0.1:52978 - "GET /api/v2/calendar/events HTTP/1.1" 200 OK
+2025-11-17T21:59:55: INFO:     127.0.0.1:52979 - "GET /api/v2/calendar/reports HTTP/1.1" 200 OK
+2025-11-17T21:59:55: INFO:     127.0.0.1:52980 - "GET /api/v2/calendar/events HTTP/1.1" 200 OK
+2025-11-17T21:59:55: INFO:     127.0.0.1:52981 - "GET /api/v2/calendar/reports HTTP/1.1" 200 OK
+2025-11-17T22:00:08: INFO:     127.0.0.1:52983 - "GET /api/v2/mission-analysis?analysis_level=brigade&fiscal_year=2025&quarter=Q4 HTTP/1.1" 200 OK
+2025-11-17T22:00:08: INFO:     127.0.0.1:52984 - "GET /api/v2/mission-analysis?analysis_level=brigade&fiscal_year=2025&quarter=Q4 HTTP/1.1" 200 OK
+2025-11-17T22:00:25: INFO:     127.0.0.1:52986 - "GET /api/v2/g2-zones HTTP/1.1" 200 OK
+2025-11-17T22:00:25: INFO:     127.0.0.1:52987 - "GET /api/v2/g2-zones/summary HTTP/1.1" 200 OK
+2025-11-17T22:00:25: INFO:     127.0.0.1:52988 - "GET /api/v2/g2-zones HTTP/1.1" 200 OK
+2025-11-17T22:00:25: INFO:     127.0.0.1:52989 - "GET /api/v2/g2-zones/summary HTTP/1.1" 200 OK
+2025-11-17T22:01:06: INFO:     127.0.0.1:52998 - "GET /api/v2/g2-zones?trend=up HTTP/1.1" 200 OK
+2025-11-17T22:01:06: INFO:     127.0.0.1:52999 - "GET /api/v2/g2-zones/summary HTTP/1.1" 200 OK
+2025-11-17T22:01:09: INFO:     127.0.0.1:52998 - "GET /api/v2/g2-zones?trend=down HTTP/1.1" 200 OK
+2025-11-17T22:01:09: INFO:     127.0.0.1:52999 - "GET /api/v2/g2-zones/summary HTTP/1.1" 200 OK
+2025-11-17T22:09:29: INFO:     127.0.0.1:53087 - "GET /api/v2/calendar/events HTTP/1.1" 200 OK
+2025-11-17T22:09:29: INFO:     127.0.0.1:53088 - "GET /api/v2/calendar/reports HTTP/1.1" 200 OK
+2025-11-17T22:09:29: INFO:     127.0.0.1:53089 - "GET /api/v2/calendar/events HTTP/1.1" 200 OK
+2025-11-17T22:09:29: INFO:     127.0.0.1:53090 - "GET /api/v2/calendar/reports HTTP/1.1" 200 OK
+2025-11-17T22:09:37: INFO:     127.0.0.1:53093 - "GET /api/v2/recruiting-funnel/metrics?fiscal_year=2025 HTTP/1.1" 200 OK
+2025-11-17T22:09:37: INFO:     127.0.0.1:53094 - "GET /api/v2/recruiting-funnel/metrics?fiscal_year=2025 HTTP/1.1" 200 OK
+2025-11-17T22:14:48: INFO:     127.0.0.1:53222 - "GET /api/v2/projects HTTP/1.1" 200 OK
+2025-11-17T22:14:48: INFO:     127.0.0.1:53220 - "GET /api/v2/projects HTTP/1.1" 200 OK
+2025-11-17T22:14:48: INFO:     127.0.0.1:53219 - "GET /api/v2/projects/dashboard/summary HTTP/1.1" 200 OK
+2025-11-17T22:14:48: INFO:     127.0.0.1:53221 - "GET /api/v2/projects/dashboard/summary HTTP/1.1" 200 OK
+2025-11-17T22:14:52: INFO:     127.0.0.1:53220 - "GET /api/v2/analytics/schools?limit=15 HTTP/1.1" 200 OK
+2025-11-17T22:14:52: INFO:     127.0.0.1:53219 - "GET /api/v2/analytics/segments HTTP/1.1" 200 OK
+2025-11-17T22:14:52: INFO:     127.0.0.1:53221 - "GET /api/v2/analytics/contracts HTTP/1.1" 200 OK
+2025-11-17T22:14:52: INFO:     127.0.0.1:53222 - "GET /api/v2/analytics/cbsa?limit=10 HTTP/1.1" 500 Internal Server Error
+2025-11-17T22:14:52: INFO:     127.0.0.1:53225 - "GET /api/v2/analytics/schools?limit=15 HTTP/1.1" 200 OK
+2025-11-17T22:14:52: INFO:     127.0.0.1:53220 - "GET /api/v2/analytics/segments HTTP/1.1" 200 OK
+2025-11-17T22:14:52: INFO:     127.0.0.1:53224 - "GET /api/v2/analytics/cbsa?limit=10 HTTP/1.1" 500 Internal Server Error
+2025-11-17T22:14:52: INFO:     127.0.0.1:53219 - "GET /api/v2/analytics/contracts HTTP/1.1" 200 OK
+2025-11-17T22:19:35: INFO:     127.0.0.1:53296 - "GET /api/v2/recruiting-funnel/metrics?fiscal_year=2025 HTTP/1.1" 200 OK
+2025-11-17T22:19:35: INFO:     127.0.0.1:53297 - "GET /api/v2/recruiting-funnel/metrics?fiscal_year=2025 HTTP/1.1" 200 OK
+2025-11-17T22:19:56: INFO:     127.0.0.1:53302 - "GET /api/v2/twg/boards HTTP/1.1" 200 OK
+2025-11-17T22:19:56: INFO:     127.0.0.1:53303 - "GET /api/v2/twg/boards HTTP/1.1" 200 OK
+2025-11-17T22:21:34: INFO:     127.0.0.1:53320 - "GET /api/v2/projects HTTP/1.1" 200 OK
+2025-11-17T22:21:34: INFO:     127.0.0.1:53322 - "GET /api/v2/projects HTTP/1.1" 200 OK
+2025-11-17T22:21:34: INFO:     127.0.0.1:53319 - "GET /api/v2/projects/dashboard/summary HTTP/1.1" 200 OK
+2025-11-17T22:21:34: INFO:     127.0.0.1:53321 - "GET /api/v2/projects/dashboard/summary HTTP/1.1" 200 OK
+2025-11-17T22:21:41: INFO:     127.0.0.1:53324 - "GET /api/v2/calendar/events HTTP/1.1" 200 OK
+2025-11-17T22:21:41: INFO:     127.0.0.1:53325 - "GET /api/v2/calendar/reports HTTP/1.1" 200 OK
+2025-11-17T22:21:41: INFO:     127.0.0.1:53326 - "GET /api/v2/calendar/events HTTP/1.1" 200 OK
+2025-11-17T22:21:41: INFO:     127.0.0.1:53327 - "GET /api/v2/calendar/reports HTTP/1.1" 200 OK
+2025-11-17T22:39:09: INFO:     127.0.0.1:53700 - "GET /api/v2/calendar/events HTTP/1.1" 200 OK
+2025-11-17T22:39:09: INFO:     127.0.0.1:53701 - "GET /api/v2/calendar/reports HTTP/1.1" 200 OK
+2025-11-17T22:39:09: INFO:     127.0.0.1:53702 - "GET /api/v2/calendar/events HTTP/1.1" 200 OK
+2025-11-17T22:39:09: INFO:     127.0.0.1:53703 - "GET /api/v2/calendar/reports HTTP/1.1" 200 OK
+2025-11-17T22:39:15: INFO:     127.0.0.1:53709 - "GET /api/v2/calendar/events HTTP/1.1" 200 OK
+2025-11-17T22:39:15: INFO:     127.0.0.1:53710 - "GET /api/v2/calendar/reports HTTP/1.1" 200 OK
+2025-11-17T22:41:25: INFO:     127.0.0.1:53730 - "GET /api/v2/calendar/events HTTP/1.1" 200 OK
+2025-11-17T22:41:25: INFO:     127.0.0.1:53731 - "GET /api/v2/calendar/reports HTTP/1.1" 200 OK
+2025-11-17T22:41:39: INFO:     127.0.0.1:53742 - "GET /api/v2/calendar/events HTTP/1.1" 200 OK
+2025-11-17T22:41:39: INFO:     127.0.0.1:53743 - "GET /api/v2/calendar/reports HTTP/1.1" 200 OK
+2025-11-17T22:41:48: INFO:     127.0.0.1:53752 - "GET /api/v2/calendar/events HTTP/1.1" 200 OK
+2025-11-17T22:41:48: INFO:     127.0.0.1:53753 - "GET /api/v2/calendar/reports HTTP/1.1" 200 OK
+2025-11-17T22:43:05: INFO:     127.0.0.1:53768 - "GET /api/v2/calendar/events HTTP/1.1" 200 OK
+2025-11-17T22:43:05: INFO:     127.0.0.1:53769 - "GET /api/v2/calendar/reports HTTP/1.1" 200 OK
+2025-11-17T22:43:18: INFO:     127.0.0.1:53807 - "GET /api/v2/recruiting-funnel/metrics?fiscal_year=2025 HTTP/1.1" 200 OK
+2025-11-17T22:43:18: INFO:     127.0.0.1:53808 - "GET /api/v2/recruiting-funnel/metrics?fiscal_year=2025 HTTP/1.1" 200 OK
+2025-11-17T22:43:31: INFO:     127.0.0.1:53814 - "GET /api/v2/mission-analysis?analysis_level=brigade&fiscal_year=2025&quarter=Q4 HTTP/1.1" 200 OK
+2025-11-17T22:43:31: INFO:     127.0.0.1:53815 - "GET /api/v2/mission-analysis?analysis_level=brigade&fiscal_year=2025&quarter=Q4 HTTP/1.1" 200 OK
+2025-11-17T22:43:51: INFO:     127.0.0.1:53819 - "GET /api/v2/projects/dashboard/summary HTTP/1.1" 200 OK
+2025-11-17T22:43:51: INFO:     127.0.0.1:53820 - "GET /api/v2/projects HTTP/1.1" 200 OK
+2025-11-17T22:43:51: INFO:     127.0.0.1:53822 - "GET /api/v2/projects HTTP/1.1" 200 OK
+2025-11-17T22:43:51: INFO:     127.0.0.1:53821 - "GET /api/v2/projects/dashboard/summary HTTP/1.1" 200 OK
+2025-11-17T22:43:59: INFO:     127.0.0.1:53825 - "GET /api/v2/projects/dashboard/summary HTTP/1.1" 200 OK
+2025-11-17T22:43:59: INFO:     127.0.0.1:53826 - "GET /api/v2/projects HTTP/1.1" 200 OK
+2025-11-17T22:44:18: INFO:     127.0.0.1:53828 - "GET /api/v2/projects/dashboard/summary HTTP/1.1" 200 OK
+2025-11-17T22:44:18: INFO:     127.0.0.1:53829 - "GET /api/v2/projects HTTP/1.1" 200 OK
+2025-11-17T22:44:23: INFO:     127.0.0.1:53829 - "GET /api/v2/projects HTTP/1.1" 200 OK
+2025-11-17T22:44:23: INFO:     127.0.0.1:53828 - "GET /api/v2/projects/dashboard/summary HTTP/1.1" 200 OK
+2025-11-17T22:44:32: INFO:     127.0.0.1:53832 - "GET /api/v2/leads/status?days=30 HTTP/1.1" 200 OK
+2025-11-17T22:44:32: INFO:     127.0.0.1:53833 - "GET /api/v2/leads/metrics?days=30 HTTP/1.1" 500 Internal Server Error
+2025-11-17T22:44:32: INFO:     127.0.0.1:53834 - "GET /api/v2/leads/status?days=30 HTTP/1.1" 200 OK
+2025-11-17T22:44:32: INFO:     127.0.0.1:53835 - "GET /api/v2/leads/metrics?days=30 HTTP/1.1" 500 Internal Server Error
+2025-11-17T22:45:07: INFO:     127.0.0.1:53842 - "GET /api/v2/leads/status?days=30&stage=appointment HTTP/1.1" 200 OK
+2025-11-17T22:45:07: INFO:     127.0.0.1:53843 - "GET /api/v2/leads/metrics?days=30&stage=appointment HTTP/1.1" 500 Internal Server Error
+2025-11-17T22:45:44: INFO:     127.0.0.1:53849 - "GET /api/v2/g2-zones HTTP/1.1" 200 OK
+2025-11-17T22:45:44: INFO:     127.0.0.1:53850 - "GET /api/v2/g2-zones/summary HTTP/1.1" 200 OK
+2025-11-17T22:45:44: INFO:     127.0.0.1:53851 - "GET /api/v2/g2-zones HTTP/1.1" 200 OK
+2025-11-17T22:45:44: INFO:     127.0.0.1:53852 - "GET /api/v2/g2-zones/summary HTTP/1.1" 200 OK
+2025-11-17T22:46:16: INFO:     127.0.0.1:53856 - "GET /api/v2/g2-zones?trend=up HTTP/1.1" 200 OK
+2025-11-17T22:46:16: INFO:     127.0.0.1:53857 - "GET /api/v2/g2-zones/summary HTTP/1.1" 200 OK
+2025-11-17T22:54:23: INFO:     127.0.0.1:53943 - "POST /api/v2/420t/seed-420t-data HTTP/1.1" 404 Not Found
+2025-11-17T22:57:46: INFO:     127.0.0.1:53980 - "POST /api/v2/420t/seed-420t-data HTTP/1.1" 200 OK
+2025-11-17T22:58:15: INFO:     127.0.0.1:54012 - "GET /api/v2/420t/kpi-metrics HTTP/1.1" 500 Internal Server Error
+2025-11-17T23:01:15: INFO:     127.0.0.1:54051 - "GET /docs HTTP/1.1" 200 OK
+2025-11-17T23:01:19: INFO:     127.0.0.1:54054 - "POST /api/v2/420t/seed-420t-data HTTP/1.1" 200 OK
+2025-11-17T23:01:28: INFO:     127.0.0.1:54057 - "GET /api/v2/420t/kpi-metrics HTTP/1.1" 500 Internal Server Error
+2025-11-17T23:01:37: INFO:     127.0.0.1:54059 - "GET /api/v2/420t/kpi-metrics HTTP/1.1" 500 Internal Server Error
+2025-11-17T23:02:41: INFO:     127.0.0.1:54072 - "POST /api/v2/420t/seed-420t-data HTTP/1.1" 200 OK
+2025-11-17T23:02:51: INFO:     127.0.0.1:54076 - "GET /api/v2/420t/kpi-metrics HTTP/1.1" 500 Internal Server Error
+2025-11-17T23:03:03: INFO:     127.0.0.1:54079 - "GET /api/v2/420t/kpi-metrics HTTP/1.1" 500 Internal Server Error
+2025-11-17T23:04:56: INFO:     127.0.0.1:54110 - "POST /api/v2/420t/seed-420t-data HTTP/1.1" 200 OK
+2025-11-17T23:05:11: INFO:     127.0.0.1:54115 - "GET /api/v2/420t/kpi-metrics HTTP/1.1" 500 Internal Server Error
+2025-11-17T23:05:20: INFO:     127.0.0.1:54118 - "GET /api/v2/420t/kpi-metrics HTTP/1.1" 500 Internal Server Error
+2025-11-17T23:06:34: INFO:     127.0.0.1:54129 - "GET /api/v2/420t/kpi-metrics HTTP/1.1" 200 OK
+2025-11-17T23:07:12: INFO:     127.0.0.1:54145 - "GET /api/v2/recruiting-funnel/metrics?fiscal_year=2025 HTTP/1.1" 200 OK
+2025-11-17T23:07:12: INFO:     127.0.0.1:54146 - "GET /api/v2/recruiting-funnel/metrics?fiscal_year=2025 HTTP/1.1" 200 OK
+2025-11-17T23:07:22: INFO:     127.0.0.1:54152 - "GET /api/v2/analytics/cbsa?limit=10 HTTP/1.1" 500 Internal Server Error
+2025-11-17T23:07:22: INFO:     127.0.0.1:54153 - "GET /api/v2/analytics/schools?limit=15 HTTP/1.1" 200 OK
+2025-11-17T23:07:22: INFO:     127.0.0.1:54154 - "GET /api/v2/analytics/segments HTTP/1.1" 200 OK
+2025-11-17T23:07:22: INFO:     127.0.0.1:54155 - "GET /api/v2/analytics/contracts HTTP/1.1" 200 OK
+2025-11-17T23:07:22: INFO:     127.0.0.1:54157 - "GET /api/v2/analytics/schools?limit=15 HTTP/1.1" 200 OK
+2025-11-17T23:07:22: INFO:     127.0.0.1:54156 - "GET /api/v2/analytics/cbsa?limit=10 HTTP/1.1" 500 Internal Server Error
+2025-11-17T23:07:22: INFO:     127.0.0.1:54153 - "GET /api/v2/analytics/segments HTTP/1.1" 200 OK
+2025-11-17T23:07:22: INFO:     127.0.0.1:54158 - "GET /api/v2/analytics/contracts HTTP/1.1" 200 OK
+2025-11-17T23:07:39: INFO:     127.0.0.1:54160 - "GET /api/v2/market-potential?geographic_level=cbsa&geographic_id=41860&fiscal_year=2025&quarter=Q4 HTTP/1.1" 200 OK
+2025-11-17T23:07:39: INFO:     127.0.0.1:54161 - "GET /api/v2/market-potential?geographic_level=cbsa&geographic_id=41860&fiscal_year=2025&quarter=Q4 HTTP/1.1" 200 OK
+2025-11-17T23:07:52: INFO:     127.0.0.1:54163 - "GET /api/v2/market-potential?geographic_level=zipcode&geographic_id=41860&fiscal_year=2025&quarter=Q4 HTTP/1.1" 200 OK
+2025-11-17T23:07:54: INFO:     127.0.0.1:54163 - "GET /api/v2/market-potential?geographic_level=rsid&geographic_id=41860&fiscal_year=2025&quarter=Q4 HTTP/1.1" 200 OK
+2025-11-17T23:07:59: INFO:     127.0.0.1:54163 - "GET /api/v2/market-potential?geographic_level=cbsa&geographic_id=41860&fiscal_year=2025&quarter=Q4 HTTP/1.1" 200 OK
+2025-11-17T23:08:21: INFO:     127.0.0.1:54169 - "GET /api/v2/market-potential?geographic_level=cbsa&geographic_id=41860&fiscal_year=2025&quarter=Q1 HTTP/1.1" 200 OK
+2025-11-17T23:08:27: INFO:     127.0.0.1:54171 - "GET /api/v2/projects/dashboard/summary HTTP/1.1" 200 OK
+2025-11-17T23:08:27: INFO:     127.0.0.1:54174 - "GET /api/v2/projects HTTP/1.1" 200 OK
+2025-11-17T23:08:27: INFO:     127.0.0.1:54172 - "GET /api/v2/projects HTTP/1.1" 200 OK
+2025-11-17T23:08:27: INFO:     127.0.0.1:54173 - "GET /api/v2/projects/dashboard/summary HTTP/1.1" 200 OK
+2025-11-17T23:08:36: INFO:     127.0.0.1:54176 - "GET /api/v2/leads/status?days=30 HTTP/1.1" 200 OK
+2025-11-17T23:08:36: INFO:     127.0.0.1:54177 - "GET /api/v2/leads/metrics?days=30 HTTP/1.1" 500 Internal Server Error
+2025-11-17T23:08:36: INFO:     127.0.0.1:54178 - "GET /api/v2/leads/status?days=30 HTTP/1.1" 200 OK
+2025-11-17T23:08:36: INFO:     127.0.0.1:54179 - "GET /api/v2/leads/metrics?days=30 HTTP/1.1" 500 Internal Server Error
+2025-11-17T23:08:46: INFO:     127.0.0.1:54181 - "GET /api/v2/420t/kpi-metrics HTTP/1.1" 200 OK
+2025-11-17T23:08:46: INFO:     127.0.0.1:54182 - "GET /api/v2/420t/kpi-metrics HTTP/1.1" 200 OK
+2025-11-17T23:08:46: INFO:     127.0.0.1:54181 - "GET /api/v2/420t/school-targets HTTP/1.1" 200 OK
+2025-11-17T23:08:46: INFO:     127.0.0.1:54182 - "GET /api/v2/420t/school-targets HTTP/1.1" 200 OK
+2025-11-17T23:08:46: INFO:     127.0.0.1:54181 - "GET /api/v2/420t/recruiting-ops-plans HTTP/1.1" 200 OK
+2025-11-17T23:08:46: INFO:     127.0.0.1:54182 - "GET /api/v2/420t/recruiting-ops-plans HTTP/1.1" 200 OK
+2025-11-17T23:09:22: INFO:     127.0.0.1:54187 - "GET /api/v2/dod-comparison?geographic_level=cbsa&geographic_id=41860&fiscal_year=2025&quarter=Q4 HTTP/1.1" 200 OK
+2025-11-17T23:09:22: INFO:     127.0.0.1:54188 - "GET /api/v2/dod-comparison?geographic_level=cbsa&geographic_id=41860&fiscal_year=2025&quarter=Q4 HTTP/1.1" 200 OK
+2025-11-18T06:03:52: INFO:     127.0.0.1:54760 - "GET /api/v2/420t/kpi-metrics HTTP/1.1" 200 OK
+2025-11-18T06:03:52: INFO:     127.0.0.1:54761 - "GET /api/v2/420t/kpi-metrics HTTP/1.1" 200 OK
+2025-11-18T06:03:52: INFO:     127.0.0.1:54760 - "GET /api/v2/420t/school-targets HTTP/1.1" 200 OK
+2025-11-18T06:03:52: INFO:     127.0.0.1:54761 - "GET /api/v2/420t/school-targets HTTP/1.1" 200 OK
+2025-11-18T06:03:52: INFO:     127.0.0.1:54760 - "GET /api/v2/420t/recruiting-ops-plans HTTP/1.1" 200 OK
+2025-11-18T06:03:52: INFO:     127.0.0.1:54761 - "GET /api/v2/420t/recruiting-ops-plans HTTP/1.1" 200 OK
+2025-11-18T06:04:04: INFO:     127.0.0.1:54766 - "GET /api/v2/420t/future-soldiers HTTP/1.1" 200 OK
+2025-11-18T06:04:24: INFO:     127.0.0.1:54768 - "GET /api/v2/420t/school-targets HTTP/1.1" 200 OK
+2025-11-18T06:05:10: INFO:     127.0.0.1:54774 - "GET /api/v2/420t/kpi-metrics HTTP/1.1" 200 OK
+2025-11-18T06:05:10: INFO:     127.0.0.1:54774 - "GET /api/v2/420t/school-targets HTTP/1.1" 200 OK
+2025-11-18T06:05:10: INFO:     127.0.0.1:54774 - "GET /api/v2/420t/recruiting-ops-plans HTTP/1.1" 200 OK
+2025-11-18T06:05:18: INFO:     127.0.0.1:54777 - "GET /api/v2/recruiting-funnel/metrics?fiscal_year=2025 HTTP/1.1" 200 OK
+2025-11-18T06:05:18: INFO:     127.0.0.1:54778 - "GET /api/v2/recruiting-funnel/metrics?fiscal_year=2025 HTTP/1.1" 200 OK
+2025-11-18T06:05:36: INFO:     127.0.0.1:54781 - "GET /api/v2/analytics/cbsa?limit=10 HTTP/1.1" 500 Internal Server Error
+2025-11-18T06:05:36: INFO:     127.0.0.1:54782 - "GET /api/v2/analytics/schools?limit=15 HTTP/1.1" 200 OK
+2025-11-18T06:05:36: INFO:     127.0.0.1:54783 - "GET /api/v2/analytics/segments HTTP/1.1" 200 OK
+2025-11-18T06:05:36: INFO:     127.0.0.1:54784 - "GET /api/v2/analytics/contracts HTTP/1.1" 200 OK
+2025-11-18T06:05:36: INFO:     127.0.0.1:54786 - "GET /api/v2/analytics/schools?limit=15 HTTP/1.1" 200 OK
+2025-11-18T06:05:36: INFO:     127.0.0.1:54785 - "GET /api/v2/analytics/cbsa?limit=10 HTTP/1.1" 500 Internal Server Error
+2025-11-18T06:05:36: INFO:     127.0.0.1:54782 - "GET /api/v2/analytics/segments HTTP/1.1" 200 OK
+2025-11-18T06:05:36: INFO:     127.0.0.1:54787 - "GET /api/v2/analytics/contracts HTTP/1.1" 200 OK
+2025-11-18T06:05:53: INFO:     127.0.0.1:54789 - "GET /api/v2/mission-analysis?analysis_level=brigade&fiscal_year=2025&quarter=Q4 HTTP/1.1" 200 OK
+2025-11-18T06:05:53: INFO:     127.0.0.1:54790 - "GET /api/v2/mission-analysis?analysis_level=brigade&fiscal_year=2025&quarter=Q4 HTTP/1.1" 200 OK
+2025-11-18T06:06:10: INFO:     127.0.0.1:54793 - "GET /api/v2/twg/boards HTTP/1.1" 200 OK
+2025-11-18T06:06:10: INFO:     127.0.0.1:54794 - "GET /api/v2/twg/boards HTTP/1.1" 200 OK
+2025-11-18T06:06:19: INFO:     127.0.0.1:54796 - "GET /api/v2/twg/analysis?board_id=twg_2e6d6b97 HTTP/1.1" 200 OK
+2025-11-18T06:06:19: INFO:     127.0.0.1:54797 - "GET /api/v2/twg/decisions?board_id=twg_2e6d6b97 HTTP/1.1" 200 OK
+2025-11-18T06:06:19: INFO:     127.0.0.1:54798 - "GET /api/v2/twg/actions?board_id=twg_2e6d6b97 HTTP/1.1" 200 OK
+2025-11-18T06:06:34: INFO:     127.0.0.1:54800 - "GET /api/v2/projects/dashboard/summary HTTP/1.1" 200 OK
+2025-11-18T06:06:34: INFO:     127.0.0.1:54801 - "GET /api/v2/projects HTTP/1.1" 200 OK
+2025-11-18T06:06:34: INFO:     127.0.0.1:54803 - "GET /api/v2/projects HTTP/1.1" 200 OK
+2025-11-18T06:06:34: INFO:     127.0.0.1:54802 - "GET /api/v2/projects/dashboard/summary HTTP/1.1" 200 OK
+2025-11-18T06:07:06: INFO:     127.0.0.1:54805 - "GET /api/v2/calendar/events HTTP/1.1" 200 OK
+2025-11-18T06:07:06: INFO:     127.0.0.1:54806 - "GET /api/v2/calendar/reports HTTP/1.1" 200 OK
+2025-11-18T06:07:06: INFO:     127.0.0.1:54807 - "GET /api/v2/calendar/events HTTP/1.1" 200 OK
+2025-11-18T06:07:06: INFO:     127.0.0.1:54808 - "GET /api/v2/calendar/reports HTTP/1.1" 200 OK
+2025-11-18T06:10:45: INFO:     127.0.0.1:54867 - "GET /api/v2/g2-zones HTTP/1.1" 200 OK
+2025-11-18T06:10:45: INFO:     127.0.0.1:54868 - "GET /api/v2/g2-zones/summary HTTP/1.1" 200 OK
+2025-11-18T06:10:45: INFO:     127.0.0.1:54869 - "GET /api/v2/g2-zones HTTP/1.1" 200 OK
+2025-11-18T06:10:45: INFO:     127.0.0.1:54870 - "GET /api/v2/g2-zones/summary HTTP/1.1" 200 OK
+2025-11-18T06:12:03: INFO:     127.0.0.1:54874 - "GET /api/v2/projects/dashboard/summary HTTP/1.1" 200 OK
+2025-11-18T06:12:03: INFO:     127.0.0.1:54875 - "GET /api/v2/projects HTTP/1.1" 200 OK
+2025-11-18T06:12:03: INFO:     127.0.0.1:54877 - "GET /api/v2/projects HTTP/1.1" 200 OK
+2025-11-18T06:12:03: INFO:     127.0.0.1:54876 - "GET /api/v2/projects/dashboard/summary HTTP/1.1" 200 OK
+2025-11-18T06:12:19: INFO:     127.0.0.1:54879 - "GET /api/v2/projects/prj_8c60986f07db HTTP/1.1" 200 OK
+2025-11-18T06:14:06: INFO:     127.0.0.1:54892 - "GET /api/v2/mission-analysis?analysis_level=brigade&fiscal_year=2025&quarter=Q4 HTTP/1.1" 200 OK
+2025-11-18T06:14:06: INFO:     127.0.0.1:54893 - "GET /api/v2/mission-analysis?analysis_level=brigade&fiscal_year=2025&quarter=Q4 HTTP/1.1" 200 OK
+2025-11-18T06:14:20: INFO:     127.0.0.1:54895 - "GET /api/v2/analytics/cbsa?limit=10 HTTP/1.1" 500 Internal Server Error
+2025-11-18T06:14:20: INFO:     127.0.0.1:54896 - "GET /api/v2/analytics/schools?limit=15 HTTP/1.1" 200 OK
+2025-11-18T06:14:20: INFO:     127.0.0.1:54897 - "GET /api/v2/analytics/segments HTTP/1.1" 200 OK
+2025-11-18T06:14:20: INFO:     127.0.0.1:54898 - "GET /api/v2/analytics/contracts HTTP/1.1" 200 OK
+2025-11-18T06:14:20: INFO:     127.0.0.1:54899 - "GET /api/v2/analytics/cbsa?limit=10 HTTP/1.1" 500 Internal Server Error
+2025-11-18T06:14:20: INFO:     127.0.0.1:54900 - "GET /api/v2/analytics/schools?limit=15 HTTP/1.1" 200 OK
+2025-11-18T06:14:20: INFO:     127.0.0.1:54896 - "GET /api/v2/analytics/segments HTTP/1.1" 200 OK
+2025-11-18T06:14:20: INFO:     127.0.0.1:54901 - "GET /api/v2/analytics/contracts HTTP/1.1" 200 OK
+2025-11-18T06:14:22: INFO:     127.0.0.1:54897 - "GET /api/v2/recruiting-funnel/metrics?fiscal_year=2025 HTTP/1.1" 200 OK
+2025-11-18T06:14:22: INFO:     127.0.0.1:54898 - "GET /api/v2/recruiting-funnel/metrics?fiscal_year=2025 HTTP/1.1" 200 OK
+2025-11-18T06:14:27: INFO:     127.0.0.1:54897 - "GET /api/v2/420t/kpi-metrics HTTP/1.1" 200 OK
+2025-11-18T06:14:27: INFO:     127.0.0.1:54898 - "GET /api/v2/420t/kpi-metrics HTTP/1.1" 200 OK
+2025-11-18T06:14:27: INFO:     127.0.0.1:54897 - "GET /api/v2/420t/school-targets HTTP/1.1" 200 OK
+2025-11-18T06:14:27: INFO:     127.0.0.1:54898 - "GET /api/v2/420t/school-targets HTTP/1.1" 200 OK
+2025-11-18T06:14:27: INFO:     127.0.0.1:54897 - "GET /api/v2/420t/recruiting-ops-plans HTTP/1.1" 200 OK
+2025-11-18T06:14:27: INFO:     127.0.0.1:54898 - "GET /api/v2/420t/recruiting-ops-plans HTTP/1.1" 200 OK
+2025-11-18T06:14:52: INFO:     127.0.0.1:54905 - "GET /api/v2/420t/recruiter-performance HTTP/1.1" 200 OK
+2025-11-18T06:15:06: INFO:     127.0.0.1:54908 - "GET /api/v2/420t/future-soldiers HTTP/1.1" 200 OK
+2025-11-18T06:16:39: INFO:     127.0.0.1:54915 - "GET /api/v2/analytics/schools?limit=15 HTTP/1.1" 200 OK
+2025-11-18T06:16:39: INFO:     127.0.0.1:54914 - "GET /api/v2/analytics/cbsa?limit=10 HTTP/1.1" 500 Internal Server Error
+2025-11-18T06:16:39: INFO:     127.0.0.1:54916 - "GET /api/v2/analytics/segments HTTP/1.1" 200 OK
+2025-11-18T06:16:39: INFO:     127.0.0.1:54917 - "GET /api/v2/analytics/contracts HTTP/1.1" 200 OK
+2025-11-18T06:16:39: INFO:     127.0.0.1:54919 - "GET /api/v2/analytics/schools?limit=15 HTTP/1.1" 200 OK
+2025-11-18T06:16:39: INFO:     127.0.0.1:54918 - "GET /api/v2/analytics/cbsa?limit=10 HTTP/1.1" 500 Internal Server Error
+2025-11-18T06:16:39: INFO:     127.0.0.1:54915 - "GET /api/v2/analytics/segments HTTP/1.1" 200 OK
+2025-11-18T06:16:39: INFO:     127.0.0.1:54920 - "GET /api/v2/analytics/contracts HTTP/1.1" 200 OK
+2025-11-18T06:16:56: INFO:     127.0.0.1:54923 - "GET /api/v2/twg/boards HTTP/1.1" 200 OK
+2025-11-18T06:16:56: INFO:     127.0.0.1:54924 - "GET /api/v2/twg/boards HTTP/1.1" 200 OK
+2025-11-18T06:18:21: INFO:     127.0.0.1:54930 - "GET /api/v2/mission-analysis?analysis_level=brigade&fiscal_year=2025&quarter=Q4 HTTP/1.1" 200 OK
+2025-11-18T06:18:21: INFO:     127.0.0.1:54931 - "GET /api/v2/mission-analysis?analysis_level=brigade&fiscal_year=2025&quarter=Q4 HTTP/1.1" 200 OK
+2025-11-18T06:18:31: INFO:     127.0.0.1:54934 - "GET /api/v2/analytics/schools?limit=15 HTTP/1.1" 200 OK
+2025-11-18T06:18:31: INFO:     127.0.0.1:54935 - "GET /api/v2/analytics/segments HTTP/1.1" 200 OK
+2025-11-18T06:18:31: INFO:     127.0.0.1:54936 - "GET /api/v2/analytics/contracts HTTP/1.1" 200 OK
+2025-11-18T06:18:31: INFO:     127.0.0.1:54938 - "GET /api/v2/analytics/schools?limit=15 HTTP/1.1" 200 OK
+2025-11-18T06:18:31: INFO:     127.0.0.1:54933 - "GET /api/v2/analytics/cbsa?limit=10 HTTP/1.1" 500 Internal Server Error
+2025-11-18T06:18:31: INFO:     127.0.0.1:54937 - "GET /api/v2/analytics/cbsa?limit=10 HTTP/1.1" 500 Internal Server Error
+2025-11-18T06:18:31: INFO:     127.0.0.1:54934 - "GET /api/v2/analytics/segments HTTP/1.1" 200 OK
+2025-11-18T06:18:31: INFO:     127.0.0.1:54935 - "GET /api/v2/analytics/contracts HTTP/1.1" 200 OK
+2025-11-18T06:22:44: INFO:     127.0.0.1:55085 - "GET /api/v2/analytics/schools?limit=15 HTTP/1.1" 200 OK
+2025-11-18T06:22:44: INFO:     127.0.0.1:55086 - "GET /api/v2/analytics/segments HTTP/1.1" 200 OK
+2025-11-18T06:22:44: INFO:     127.0.0.1:55087 - "GET /api/v2/analytics/contracts HTTP/1.1" 200 OK
+2025-11-18T06:22:44: INFO:     127.0.0.1:55084 - "GET /api/v2/analytics/cbsa?limit=10 HTTP/1.1" 500 Internal Server Error
+2025-11-18T06:23:20: INFO:     127.0.0.1:55108 - "GET /api/v2/analytics/schools?limit=15 HTTP/1.1" 200 OK
+2025-11-18T06:23:20: INFO:     127.0.0.1:55107 - "GET /api/v2/analytics/cbsa?limit=10 HTTP/1.1" 500 Internal Server Error
+2025-11-18T06:23:20: INFO:     127.0.0.1:55109 - "GET /api/v2/analytics/segments HTTP/1.1" 200 OK
+2025-11-18T06:23:20: INFO:     127.0.0.1:55110 - "GET /api/v2/analytics/contracts HTTP/1.1" 200 OK
+2025-11-18T06:39:50: INFO:     127.0.0.1:55330 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T06:39:50: INFO:     127.0.0.1:55330 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T06:39:50: INFO:     127.0.0.1:55334 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T06:39:50: INFO:     127.0.0.1:55335 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T06:40:20: INFO:     127.0.0.1:55332 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T06:40:20: INFO:     127.0.0.1:55343 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T06:40:50: INFO:     127.0.0.1:55353 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T06:40:50: INFO:     127.0.0.1:55355 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T06:41:20: INFO:     127.0.0.1:55359 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T06:41:20: INFO:     127.0.0.1:55362 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T06:41:38: INFO:     127.0.0.1:55372 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T06:41:38: INFO:     127.0.0.1:55373 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T06:41:50: INFO:     127.0.0.1:55375 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T06:42:08: INFO:     127.0.0.1:55379 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T06:42:20: INFO:     127.0.0.1:55383 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T06:42:38: INFO:     127.0.0.1:55385 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T06:42:50: INFO:     127.0.0.1:55387 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T06:43:08: INFO:     127.0.0.1:55389 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T06:43:20: INFO:     127.0.0.1:55393 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T06:43:38: INFO:     127.0.0.1:55397 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T06:43:50: INFO:     127.0.0.1:55399 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T06:44:08: INFO:     127.0.0.1:55402 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T06:44:20: INFO:     127.0.0.1:55406 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T06:44:39: INFO:     127.0.0.1:55409 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T06:44:50: INFO:     127.0.0.1:55411 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T06:45:20: INFO:     127.0.0.1:55419 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T06:45:21: INFO:     127.0.0.1:55423 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T06:45:50: INFO:     127.0.0.1:55425 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T06:45:53: INFO:     127.0.0.1:55425 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T06:45:53: INFO:     127.0.0.1:55425 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T06:45:53: INFO:     127.0.0.1:55433 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T06:45:53: INFO:     127.0.0.1:55434 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T06:46:23: INFO:     127.0.0.1:55431 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T06:46:23: INFO:     127.0.0.1:55440 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T06:46:53: INFO:     127.0.0.1:55449 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T06:46:54: INFO:     127.0.0.1:55451 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T06:47:23: INFO:     127.0.0.1:55462 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T06:47:24: INFO:     127.0.0.1:55464 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T06:47:53: INFO:     127.0.0.1:55467 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T06:47:54: INFO:     127.0.0.1:55469 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T06:48:23: INFO:     127.0.0.1:55472 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T06:48:24: INFO:     127.0.0.1:55474 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T06:48:53: INFO:     127.0.0.1:55479 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T06:49:22: INFO:     127.0.0.1:55485 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T06:49:23: INFO:     127.0.0.1:55487 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T06:50:02: INFO:     127.0.0.1:55505 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T06:50:42: INFO:     127.0.0.1:55521 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T06:51:22: INFO:     127.0.0.1:55527 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T06:51:32: INFO:     127.0.0.1:55533 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T06:51:32: INFO:     127.0.0.1:55534 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T06:52:02: INFO:     127.0.0.1:55539 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T06:52:32: INFO:     127.0.0.1:55546 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T06:53:02: INFO:     127.0.0.1:55550 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T06:53:32: INFO:     127.0.0.1:55588 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T06:54:02: INFO:     127.0.0.1:55603 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T06:54:35: INFO:     127.0.0.1:55605 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T06:55:05: INFO:     127.0.0.1:55610 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T06:55:35: INFO:     127.0.0.1:55614 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T06:56:05: INFO:     127.0.0.1:55619 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T06:56:35: INFO:     127.0.0.1:55624 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T06:57:06: INFO:     127.0.0.1:55635 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T06:57:36: INFO:     127.0.0.1:55645 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T06:58:13: INFO:     127.0.0.1:55656 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T06:58:57: INFO:     127.0.0.1:55671 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T06:59:00: INFO:     127.0.0.1:55671 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T06:59:00: INFO:     127.0.0.1:55680 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T06:59:02: INFO:     127.0.0.1:55671 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T06:59:02: INFO:     127.0.0.1:55680 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T06:59:32: INFO:     127.0.0.1:55689 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T07:00:02: INFO:     127.0.0.1:55694 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T07:00:04: INFO:     127.0.0.1:55694 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T07:00:04: INFO:     127.0.0.1:55698 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T07:00:34: INFO:     127.0.0.1:55707 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T07:01:04: INFO:     127.0.0.1:55710 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T07:01:34: INFO:     127.0.0.1:55714 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T07:02:04: INFO:     127.0.0.1:55718 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T07:02:34: INFO:     127.0.0.1:55723 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T07:03:04: INFO:     127.0.0.1:55726 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T07:03:45: INFO:     127.0.0.1:55740 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T07:04:31: INFO:     127.0.0.1:55746 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T07:05:22: INFO:     127.0.0.1:55751 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T07:05:58: INFO:     127.0.0.1:55762 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T07:05:58: INFO:     127.0.0.1:55764 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T07:06:02: INFO:     127.0.0.1:55766 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T07:14:13: INFO:     127.0.0.1:55815 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T07:14:17: INFO:     127.0.0.1:55818 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T07:14:43: INFO:     127.0.0.1:55822 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T07:14:47: INFO:     127.0.0.1:55824 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T07:15:13: INFO:     127.0.0.1:55839 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T07:15:32: INFO:     127.0.0.1:55842 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T07:15:43: INFO:     127.0.0.1:55844 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T07:16:08: INFO:     127.0.0.1:55853 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T07:16:08: INFO:     127.0.0.1:55855 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T07:19:57: INFO:     127.0.0.1:55864 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T07:20:09: INFO:     127.0.0.1:55869 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T07:20:37: INFO:     127.0.0.1:55874 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T07:20:39: INFO:     127.0.0.1:55876 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T07:21:09: INFO:     127.0.0.1:55885 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T07:21:15: INFO:     127.0.0.1:55888 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T07:21:39: INFO:     127.0.0.1:55894 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T07:21:45: INFO:     127.0.0.1:55896 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T07:22:09: INFO:     127.0.0.1:55899 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T07:22:15: INFO:     127.0.0.1:55904 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T07:22:39: INFO:     127.0.0.1:55965 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T07:22:52: INFO:     127.0.0.1:55967 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T07:23:09: INFO:     127.0.0.1:55970 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T07:23:22: INFO:     127.0.0.1:55972 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T07:23:23: INFO:     127.0.0.1:55972 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T07:23:23: INFO:     127.0.0.1:55980 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T07:23:39: INFO:     127.0.0.1:55984 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T07:23:53: INFO:     127.0.0.1:55986 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T07:24:09: INFO:     127.0.0.1:55997 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T07:24:23: INFO:     127.0.0.1:55999 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T07:24:39: INFO:     127.0.0.1:56001 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T07:24:53: INFO:     127.0.0.1:56005 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T07:25:09: INFO:     127.0.0.1:56008 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T07:25:23: INFO:     127.0.0.1:56011 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T07:25:35: INFO:     127.0.0.1:56020 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T07:25:35: INFO:     127.0.0.1:56022 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T07:25:53: INFO:     127.0.0.1:56025 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T07:28:21: INFO:     127.0.0.1:56030 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T07:28:31: INFO:     127.0.0.1:56060 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
+2025-11-18T07:28:31: INFO:     127.0.0.1:56061 - "GET /api/v2/standings/companies HTTP/1.1" 404 Not Found
