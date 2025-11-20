@@ -5,6 +5,8 @@ import {
   Database, ChevronRight, Shield, BookOpen, AlertCircle, HelpCircle
 } from 'lucide-react';
 import { CompanyStandingsLeaderboard } from './CompanyStandingsLeaderboard';
+import { QuickReference } from './QuickReference';
+import { LiveUpdatesBanner } from './LiveUpdatesBanner';
 
 interface HomeScreenProps {
   onNavigate: (tab: string) => void;
@@ -149,27 +151,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate }) => {
 
   return (
     <div className="min-h-screen bg-gray-100">
-      {/* Hero Section - Vantage Style */}
-      <div className="bg-gradient-to-b from-black to-gray-900 text-white py-6 px-8 border-b-2 border-yellow-500 shadow-lg">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Shield className="w-10 h-10 text-yellow-500" />
-              <div>
-                <h1 className="text-3xl font-bold tracking-wide text-yellow-500">TAAIP</h1>
-                <p className="text-base text-gray-300 mt-1 font-semibold">Talent Acquisition Analytics & Intelligence Platform</p>
-                <p className="text-xs text-gray-400 mt-1">Strategic Decision Support System</p>
-              </div>
-            </div>
-            <div className="text-right">
-              <p className="text-xs text-yellow-500 font-semibold">CLASSIFICATION: UNCLASSIFIED</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* Main Content Area */}
       <div className="max-w-[1600px] mx-auto py-8 px-8">
+        {/* Quick Reference */}
+        <QuickReference onNavigate={onNavigate} />
         {/* Main Grid - Sidebar + Leaderboard */}
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
           {/* Left Sidebar - Quick Access Panels */}
@@ -290,23 +275,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate }) => {
           </div>
         </div>
 
-        {/* Dashboard Grid Cards (Below Leaderboard) */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {menuItems.flatMap(cat => cat.items).slice(0, 8).map((item) => (
-            <button
-              key={item.id}
-              onClick={() => onNavigate(item.id)}
-              className={`bg-gradient-to-br ${item.color} text-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-all border-2 border-transparent hover:border-yellow-400 text-left`}
-            >
-              <div className="flex items-center justify-between mb-3">
-                {item.icon}
-                <ChevronRight className="w-5 h-5" />
-              </div>
-              <h3 className="font-bold text-lg mb-1">{item.title}</h3>
-              <p className="text-xs text-gray-200">{item.description}</p>
-            </button>
-          ))}
-        </div>
+        {/* Live Updates Banner */}
+        <LiveUpdatesBanner />
       </div>
 
       {/* Footer */}

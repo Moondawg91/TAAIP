@@ -35,7 +35,7 @@ const App: React.FC = () => {
     {
       name: 'Home',
       items: [
-        { id: 'home', label: 'Home Dashboard', icon: <Home className="w-5 h-5" />, category: 'Home' },
+        { id: 'home', label: 'Home', icon: <Home className="w-5 h-5" />, category: 'Home' },
       ]
     },
     {
