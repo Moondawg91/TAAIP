@@ -574,3 +574,9 @@ INFO:     127.0.0.1:60232 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
 INFO:     127.0.0.1:60242 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
 INFO:     127.0.0.1:60248 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
 INFO:     127.0.0.1:60253 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60263 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60271 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60279 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60283 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60289 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60336 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK

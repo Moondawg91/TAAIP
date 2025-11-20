@@ -319,3 +319,4 @@ Port 5173 is in use, trying another one...
 8:26:52 AM [vite] hmr update /src/components/CompanyStandingsLeaderboard.tsx, /src/index.css
 8:26:52 AM [vite] hmr update /src/components/CompanyStandingsLeaderboard.tsx, /src/index.css
 8:26:54 AM [vite] hmr update /src/components/CompanyStandingsLeaderboard.tsx, /src/index.css
+8:31:23 AM [vite] hmr update /src/components/DynamicDashboard.tsx, /src/index.css

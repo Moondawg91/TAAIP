@@ -301,13 +301,13 @@ export const DynamicDashboard: React.FC<DynamicDashboardProps> = ({ dataType, ta
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
               {Object.entries(statusCounts).map(([status, count], idx) => (
                 <div key={status} className="p-4 rounded-lg border-2" style={{borderColor: COLORS[idx % COLORS.length]}}>
-                  <div className="text-2xl font-bold" style={{color: COLORS[idx % COLORS.length]}}>{count}</div>
+                  <div className="text-2xl font-bold" style={{color: COLORS[idx % COLORS.length]}}>{count as number}</div>
                   <div className="text-sm text-gray-600 mt-1">{status.toUpperCase()}</div>
                   <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
                     <div 
                       className="h-2 rounded-full" 
                       style={{
-                        width: `${(count / data.length) * 100}%`,
+                        width: `${((count as number) / data.length) * 100}%`,
                         backgroundColor: COLORS[idx % COLORS.length]
                       }}
                     />
@@ -330,8 +330,8 @@ export const DynamicDashboard: React.FC<DynamicDashboardProps> = ({ dataType, ta
             acc[loc] = (acc[loc] || 0) + 1;
             return acc;
           }, {} as Record<string, number>)
-        ).map(([name, count]) => ({ name, count }))
-         .sort((a, b) => b.count - a.count)
+        ).map(([name, count]) => ({ name, count: count as number }))
+         .sort((a, b) => (b.count as number) - (a.count as number))
          .slice(0, 10);
         
         visuals.push(
@@ -350,13 +350,13 @@ export const DynamicDashboard: React.FC<DynamicDashboardProps> = ({ dataType, ta
                   <div className="flex-1 ml-3">
                     <div className="flex justify-between items-center mb-1">
                       <span className="font-medium text-gray-700">{item.name}</span>
-                      <span className="text-sm text-gray-500">{item.count} items</span>
+                      <span className="text-sm text-gray-500">{item.count as number} items</span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2">
                       <div 
                         className="h-2 rounded-full"
                         style={{
-                          width: `${(item.count / locationData[0].count) * 100}%`,
+                          width: `${((item.count as number) / (locationData[0].count as number)) * 100}%`,
                           backgroundColor: COLORS[idx % COLORS.length]
                         }}
                       />
