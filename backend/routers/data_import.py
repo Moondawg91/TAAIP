@@ -1,6 +1,7 @@
 """
 Data Import API Router
 Handles bulk CSV/Excel file uploads for events, projects, leads, and other data
+Also provides data retrieval endpoints for dynamic dashboard visualization
 """
 
 from fastapi import APIRouter, UploadFile, File, HTTPException
@@ -306,3 +307,69 @@ async def get_templates() -> Dict[str, Any]:
             ]
         }
     }
+
+
+# Dynamic Data Retrieval Endpoints for Visualization
+
+@router.get("/events")
+async def get_all_events() -> Dict[str, Any]:
+    """Get all events data for dynamic dashboard visualization"""
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
+        
+        cursor.execute("SELECT * FROM events")
+        rows = cursor.fetchall()
+        
+        events = []
+        for row in rows:
+            events.append(dict(row))
+        
+        conn.close()
+        
+        return {"data": events, "count": len(events)}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch events: {str(e)}")
+
+
+@router.get("/projects")
+async def get_all_projects() -> Dict[str, Any]:
+    """Get all projects data for dynamic dashboard visualization"""
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
+        
+        cursor.execute("SELECT * FROM projects")
+        rows = cursor.fetchall()
+        
+        projects = []
+        for row in rows:
+            projects.append(dict(row))
+        
+        conn.close()
+        
+        return {"data": projects, "count": len(projects)}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch projects: {str(e)}")
+
+
+@router.get("/leads")
+async def get_all_leads() -> Dict[str, Any]:
+    """Get all leads data for dynamic dashboard visualization"""
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
+        
+        cursor.execute("SELECT * FROM leads")
+        rows = cursor.fetchall()
+        
+        leads = []
+        for row in rows:
+            leads.append(dict(row))
+        
+        conn.close()
+        
+        return {"data": leads, "count": len(leads)}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch leads: {str(e)}")
+
