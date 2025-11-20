@@ -118,7 +118,7 @@ launchctl unload ~/Library/LaunchAgents/com.taaip.startup.plist
 ### DigitalOcean (After Deployment)
 - **Frontend**: http://YOUR_DROPLET_IP or https://yourdomain.com
 - **Backend API**: http://YOUR_DROPLET_IP:8000
-- **Cost**: $24/month
+- **Cost**: $8-16/month
 
 ### Azure Government (After Deployment)
 - **Frontend**: https://taaip-usarec.azurewebsites.us
@@ -212,7 +212,7 @@ open http://localhost:5174
 - **Use Case**: Development and local testing
 
 ### DigitalOcean Pilot
-- **Cost**: $24-36/month
+- **Cost**: $8-16/month
 - **Limitations**: Not Army-compliant
 - **Use Case**: Remote testing with battalion
 

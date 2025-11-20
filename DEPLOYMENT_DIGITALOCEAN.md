@@ -16,7 +16,7 @@ This guide will get TAAIP running on DigitalOcean in ~15 minutes for testing and
 1. **Sign up** at https://digitalocean.com
 2. **Create Droplet** → Choose:
    - **Image**: Docker on Ubuntu 22.04
-   - **Plan**: Basic - $12/month (2GB RAM, 1 vCPU)
+   - **Plan**: Basic - $8/month (1GB RAM) or $16/month (2GB RAM - Recommended)
    - **Region**: Choose closest to your users (e.g., New York 3)
    - **Authentication**: SSH Key (generate if needed)
    - **Hostname**: `taaip-production`
@@ -231,10 +231,11 @@ docker restart taaip-backend
 
 | Resource | Cost/Month |
 |----------|------------|
-| Basic Droplet (2GB RAM) | $12 |
+| Basic Droplet (1GB RAM) | $8 |
+| Recommended (2GB RAM) | $16 |
 | Domain Name (optional) | $12/year |
 | Backups (optional) | $2.40 |
-| **Total** | **~$15/month** |
+| **Total** | **~$10-18/month** |
 
 ---
 

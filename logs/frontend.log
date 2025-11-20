@@ -8,3 +8,9 @@ Port 5173 is in use, trying another one...
 
   ➜  Local:   http://localhost:5174/
   ➜  Network: use --host to expose
+6:55:16 AM [vite] changed tsconfig file detected: /Users/ambermooney/Desktop/TAAIP/taaip-dashboard/tsconfig.json - Clearing cache and forcing full-reload to ensure TypeScript is compiled with updated config values.
+7:00:49 AM [vite] changed tsconfig file detected: /Users/ambermooney/Desktop/TAAIP/taaip-dashboard/tsconfig.json - Clearing cache and forcing full-reload to ensure TypeScript is compiled with updated config values.
+7:17:11 AM [vite] hmr update /src/App.tsx, /src/index.css
+7:17:18 AM [vite] hmr update /src/App.tsx, /src/index.css
+7:17:28 AM [vite] hmr update /src/App.tsx, /src/index.css
+7:17:40 AM [vite] hmr update /src/App.tsx, /src/index.css

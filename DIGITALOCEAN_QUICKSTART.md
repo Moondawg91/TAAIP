@@ -17,7 +17,7 @@ Get TAAIP running 24/7 in the cloud in just 5 minutes!
 1. Click **"Create"** → **"Droplets"**
 2. Choose:
    - **Image**: Docker on Ubuntu 22.04
-   - **Plan**: Basic - $12/month (2GB RAM, 1 vCPU)
+   - **Plan**: Basic - $8/month (1GB RAM, 1 vCPU) or $16/month (2GB RAM, 2 vCPU - Recommended)
    - **Region**: New York 3 (or closest to you)
    - **Authentication**: Password (create strong password)
    - **Hostname**: `taaip-production`
@@ -177,13 +177,14 @@ docker-compose up -d --build
 
 | Item | Cost |
 |------|------|
-| Basic Droplet (2GB RAM) | $12/month |
+| Basic Droplet (1GB RAM) | $8/month |
+| Recommended Droplet (2GB RAM) | $16/month |
 | Domain name (optional) | $12/year |
-| **Total** | **$12-13/month** |
+| **Total** | **$8-17/month** |
 
 ### Upgrade Options
 - **4GB RAM** ($24/month) - Recommended for 100+ users
-- **8GB RAM** ($48/month) - For brigade-level deployment
+- **8GB RAM** ($32/month) - For brigade-level deployment
 - **Managed PostgreSQL** (+$15/month) - For production database
 
 ---

@@ -3973,6 +3973,10 @@ app.include_router(integrations_router, prefix="/api/v2/integrations", tags=["Ar
 from backend.routers.budget import router as budget_router
 app.include_router(budget_router, prefix="/api/v2", tags=["Budget Management"])
 
+# --- Data Import (Bulk CSV/Excel Upload) ---
+from backend.routers.data_import import router as data_import_router
+app.include_router(data_import_router, prefix="/api/v2", tags=["Data Import"])
+
 
 if __name__ == "__main__":
     uvicorn.run("taaip_service:app", host="0.0.0.0", port=8000, reload=False)
