@@ -85,8 +85,22 @@ const App: React.FC = () => {
 
   const handleMenuItemClick = (tabId: string) => {
     setActiveTab(tabId as any);
-    setDropdownOpen(false);
+    setDropdownOpen(false); // Always close dropdown when switching tabs
   };
+
+  // Close dropdown when clicking outside or switching tabs
+  React.useEffect(() => {
+    if (dropdownOpen) {
+      const handleClickOutside = (e: MouseEvent) => {
+        const target = e.target as HTMLElement;
+        if (!target.closest('.dropdown-menu') && !target.closest('.dropdown-button')) {
+          setDropdownOpen(false);
+        }
+      };
+      document.addEventListener('click', handleClickOutside);
+      return () => document.removeEventListener('click', handleClickOutside);
+    }
+  }, [dropdownOpen]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex flex-col">
@@ -106,7 +120,7 @@ const App: React.FC = () => {
             <div className="relative">
               <button
                 onClick={() => setDropdownOpen(!dropdownOpen)}
-                className="flex items-center gap-2 px-4 py-2 bg-gray-800 text-yellow-500 rounded hover:bg-gray-700"
+                className="dropdown-button flex items-center gap-2 px-4 py-2 bg-gray-800 text-yellow-500 rounded hover:bg-gray-700"
               >
                 <Menu className="w-5 h-5" />
                 <span className="uppercase tracking-wide">{currentMenuItem.label}</span>
@@ -114,7 +128,7 @@ const App: React.FC = () => {
               </button>
 
               {dropdownOpen && (
-                <div className="absolute right-0 mt-2 w-72 bg-gray-900 border-2 border-yellow-500 rounded-lg shadow-2xl z-50 max-h-96 overflow-y-auto">
+                <div className="dropdown-menu absolute right-0 mt-2 w-72 bg-gray-900 border-2 border-yellow-500 rounded-lg shadow-2xl z-50 max-h-96 overflow-y-auto">
                   {menuCategories.map((category) => (
                     <div key={category.name} className="border-b border-gray-700 last:border-b-0">
                       <div className="px-4 py-2 bg-gray-800 text-yellow-500 font-bold text-xs uppercase tracking-wider">

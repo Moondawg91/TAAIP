@@ -24,7 +24,15 @@ interface CompanyStanding {
   trend: 'up' | 'down' | 'stable';
 }
 
-export const CompanyStandingsLeaderboard: React.FC = () => {
+interface CompanyStandingsLeaderboardProps {
+  showExpanded?: boolean;
+  setShowExpanded?: React.Dispatch<React.SetStateAction<boolean>>;
+}
+
+export const CompanyStandingsLeaderboard: React.FC<CompanyStandingsLeaderboardProps> = ({ 
+  showExpanded = false,
+  setShowExpanded
+}) => {
   const [standings, setStandings] = useState<CompanyStanding[]>([]);
   const [loading, setLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
@@ -256,7 +264,7 @@ export const CompanyStandingsLeaderboard: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {filteredStandings.map((company, index) => {
+              {(showExpanded ? filteredStandings : filteredStandings.slice(0, 10)).map((company, index) => {
                 const mission = viewMode === 'ytd' ? company.ytd_mission : company.monthly_mission;
                 const actual = viewMode === 'ytd' ? company.ytd_actual : company.monthly_actual;
                 const attainment = viewMode === 'ytd' ? company.ytd_attainment : company.monthly_attainment;
@@ -341,6 +349,18 @@ export const CompanyStandingsLeaderboard: React.FC = () => {
             </tbody>
           </table>
         </div>
+        
+        {/* Show More/Less Button */}
+        {filteredStandings.length > 10 && setShowExpanded && (
+          <div className="flex justify-center py-4">
+            <button
+              onClick={() => setShowExpanded(!showExpanded)}
+              className="px-6 py-2 bg-gray-800 text-yellow-500 rounded-lg font-semibold hover:bg-gray-700 transition-colors"
+            >
+              {showExpanded ? `Show Top 10` : `Show All (${filteredStandings.length})`}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Footer Stats */}

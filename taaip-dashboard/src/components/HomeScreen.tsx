@@ -14,6 +14,24 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate }) => {
   const [showMissionMenu, setShowMissionMenu] = React.useState(false);
   const [showResources, setShowResources] = React.useState(false);
   const [showHelpDesk, setShowHelpDesk] = React.useState(false);
+  const [showExpanded, setShowExpanded] = React.useState(false);
+
+  // Close all dropdowns when switching between them
+  const handleToggleDropdown = (dropdown: 'mission' | 'resources' | 'helpdesk') => {
+    if (dropdown === 'mission') {
+      setShowMissionMenu(!showMissionMenu);
+      setShowResources(false);
+      setShowHelpDesk(false);
+    } else if (dropdown === 'resources') {
+      setShowResources(!showResources);
+      setShowMissionMenu(false);
+      setShowHelpDesk(false);
+    } else if (dropdown === 'helpdesk') {
+      setShowHelpDesk(!showHelpDesk);
+      setShowMissionMenu(false);
+      setShowResources(false);
+    }
+  };
 
   const menuItems = [
     {
@@ -152,159 +170,142 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate }) => {
 
       {/* Main Content Area */}
       <div className="max-w-[1600px] mx-auto py-8 px-8">
-        {/* Top Controls Row */}
-        <div className="mb-6 flex gap-3">
-          {/* Mission Dashboards Dropdown */}
-          <button
-            onClick={() => setShowMissionMenu(!showMissionMenu)}
-            className="flex items-center gap-2 px-4 py-2 bg-gray-800 text-yellow-500 rounded-lg hover:bg-gray-700 transition-colors border border-yellow-500"
-          >
-            <Clipboard className="w-4 h-4" />
-            <span className="font-semibold uppercase text-sm">Mission Dashboards</span>
-            <ChevronRight className={`w-4 h-4 transition-transform ${showMissionMenu ? 'rotate-90' : ''}`} />
-          </button>
+        {/* Main Grid - Sidebar + Leaderboard */}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
+          {/* Left Sidebar - Quick Access Panels */}
+          <div className="lg:col-span-1 space-y-4">
+            {/* Resources Panel */}
+            <div className="bg-white rounded-lg shadow-md border-2 border-gray-200">
+              <button
+                onClick={() => handleToggleDropdown('resources')}
+                className="w-full px-4 py-3 bg-gray-800 text-yellow-500 rounded-t-lg font-bold text-sm uppercase tracking-wider hover:bg-gray-700 transition-colors flex items-center justify-between"
+              >
+                <div className="flex items-center gap-2">
+                  <BookOpen className="w-5 h-5" />
+                  Resources
+                </div>
+                <ChevronRight className={`w-4 h-4 transition-transform ${showResources ? 'rotate-90' : ''}`} />
+              </button>
+              {showResources && (
+                <div className="p-3 space-y-2 max-h-96 overflow-y-auto">
+                  <a href="/docs/420t-quick-start.pdf" className="flex items-center gap-2 p-2 bg-gray-50 rounded hover:bg-yellow-50 hover:border-yellow-500 border border-gray-200 transition-colors text-sm">
+                    <FileCheck className="w-4 h-4 text-gray-700 flex-shrink-0" />
+                    <span className="font-medium text-gray-800">420T Quick Start</span>
+                  </a>
+                  <a href="/docs/recruiting-ops-manual.pdf" className="flex items-center gap-2 p-2 bg-gray-50 rounded hover:bg-yellow-50 hover:border-yellow-500 border border-gray-200 transition-colors text-sm">
+                    <FileCheck className="w-4 h-4 text-gray-700 flex-shrink-0" />
+                    <span className="font-medium text-gray-800">Ops Manual</span>
+                  </a>
+                  <a href="https://training.taaip.army.mil/videos" className="flex items-center gap-2 p-2 bg-gray-50 rounded hover:bg-yellow-50 hover:border-yellow-500 border border-gray-200 transition-colors text-sm">
+                    <Activity className="w-4 h-4 text-gray-700 flex-shrink-0" />
+                    <span className="font-medium text-gray-800">Training Videos</span>
+                  </a>
+                  <a href="/docs/mission-analysis-guide.pdf" className="flex items-center gap-2 p-2 bg-gray-50 rounded hover:bg-yellow-50 hover:border-yellow-500 border border-gray-200 transition-colors text-sm">
+                    <Target className="w-4 h-4 text-gray-700 flex-shrink-0" />
+                    <span className="font-medium text-gray-800">Mission Analysis</span>
+                  </a>
+                  <a href="/templates/data-entry-templates.zip" className="flex items-center gap-2 p-2 bg-gray-50 rounded hover:bg-yellow-50 hover:border-yellow-500 border border-gray-200 transition-colors text-sm">
+                    <Database className="w-4 h-4 text-gray-700 flex-shrink-0" />
+                    <span className="font-medium text-gray-800">Data Templates</span>
+                  </a>
+                </div>
+              )}
+            </div>
 
-          {/* Resources Dropdown */}
-          <button
-            onClick={() => setShowResources(!showResources)}
-            className="flex items-center gap-2 px-4 py-2 bg-gray-800 text-yellow-500 rounded-lg hover:bg-gray-700 transition-colors border border-yellow-500"
-          >
-            <BookOpen className="w-4 h-4" />
-            <span className="font-semibold uppercase text-sm">Resources</span>
-            <ChevronRight className={`w-4 h-4 transition-transform ${showResources ? 'rotate-90' : ''}`} />
-          </button>
+            {/* Mission Dashboards Panel */}
+            <div className="bg-white rounded-lg shadow-md border-2 border-gray-200">
+              <button
+                onClick={() => handleToggleDropdown('mission')}
+                className="w-full px-4 py-3 bg-gray-800 text-yellow-500 rounded-t-lg font-bold text-sm uppercase tracking-wider hover:bg-gray-700 transition-colors flex items-center justify-between"
+              >
+                <div className="flex items-center gap-2">
+                  <Target className="w-5 h-5" />
+                  Dashboards
+                </div>
+                <ChevronRight className={`w-4 h-4 transition-transform ${showMissionMenu ? 'rotate-90' : ''}`} />
+              </button>
+              {showMissionMenu && (
+                <div className="p-3 space-y-2 max-h-96 overflow-y-auto">
+                  {[
+                    { id: 'funnel', icon: <TrendingUp className="w-4 h-4" />, title: 'Funnel' },
+                    { id: 'analytics', icon: <BarChart3 className="w-4 h-4" />, title: 'Analytics' },
+                    { id: 'market', icon: <Map className="w-4 h-4" />, title: 'Market' },
+                    { id: 'mission', icon: <Target className="w-4 h-4" />, title: 'Mission' },
+                    { id: 'twg', icon: <Users className="w-4 h-4" />, title: 'TWG' },
+                    { id: 'projects', icon: <Briefcase className="w-4 h-4" />, title: 'Projects' },
+                    { id: 'leads', icon: <Activity className="w-4 h-4" />, title: 'Leads' },
+                    { id: 'events', icon: <Award className="w-4 h-4" />, title: 'Events' },
+                  ].map((item) => (
+                    <button
+                      key={item.id}
+                      onClick={() => { onNavigate(item.id); handleToggleDropdown('mission'); }}
+                      className="w-full flex items-center gap-2 p-2 bg-gray-50 rounded hover:bg-yellow-50 hover:border-yellow-500 border border-gray-200 transition-colors text-left text-sm"
+                    >
+                      <div className="text-gray-700">{item.icon}</div>
+                      <span className="font-medium text-gray-800">{item.title}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
 
-          {/* Help Desk Dropdown */}
-          <button
-            onClick={() => setShowHelpDesk(!showHelpDesk)}
-            className="flex items-center gap-2 px-4 py-2 bg-gray-800 text-yellow-500 rounded-lg hover:bg-gray-700 transition-colors border border-yellow-500"
-          >
-            <Shield className="w-4 h-4" />
-            <span className="font-semibold uppercase text-sm">Help Desk</span>
-            <ChevronRight className={`w-4 h-4 transition-transform ${showHelpDesk ? 'rotate-90' : ''}`} />
-          </button>
+            {/* Help Desk Panel */}
+            <div className="bg-white rounded-lg shadow-md border-2 border-gray-200">
+              <button
+                onClick={() => handleToggleDropdown('helpdesk')}
+                className="w-full px-4 py-3 bg-gray-800 text-yellow-500 rounded-t-lg font-bold text-sm uppercase tracking-wider hover:bg-gray-700 transition-colors flex items-center justify-between"
+              >
+                <div className="flex items-center gap-2">
+                  <HelpCircle className="w-5 h-5" />
+                  Help Desk
+                </div>
+                <ChevronRight className={`w-4 h-4 transition-transform ${showHelpDesk ? 'rotate-90' : ''}`} />
+              </button>
+              {showHelpDesk && (
+                <div className="p-3 space-y-2 max-h-96 overflow-y-auto">
+                  {[
+                    { icon: <Shield className="w-4 h-4" />, title: 'Access Request' },
+                    { icon: <TrendingUp className="w-4 h-4" />, title: 'Feature Request' },
+                    { icon: <AlertCircle className="w-4 h-4" />, title: 'Bug Report' },
+                    { icon: <Users className="w-4 h-4" />, title: 'Training' },
+                    { icon: <HelpCircle className="w-4 h-4" />, title: 'Support' },
+                  ].map((item) => (
+                    <button
+                      key={item.title}
+                      onClick={() => { onNavigate('helpdesk'); handleToggleDropdown('helpdesk'); }}
+                      className="w-full flex items-center gap-2 p-2 bg-gray-50 rounded hover:bg-yellow-50 hover:border-yellow-500 border border-gray-200 transition-colors text-left text-sm"
+                    >
+                      <div className="text-gray-700">{item.icon}</div>
+                      <span className="font-medium text-gray-800">{item.title}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Right Side - Leaderboard */}
+          <div className="lg:col-span-3">
+            <CompanyStandingsLeaderboard showExpanded={showExpanded} setShowExpanded={setShowExpanded} />
+          </div>
         </div>
-          
-        {/* Mission Dashboards Dropdown Content */}
-        {showMissionMenu && (
-          <div className="mb-6 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 bg-gray-50 p-4 rounded-lg border border-gray-300">
-            {menuItems.flatMap(cat => cat.items).map((item) => (
-              <button
-                key={item.id}
-                onClick={() => {
-                  onNavigate(item.id);
-                  setShowMissionMenu(false);
-                }}
-                className="flex items-center gap-2 p-2 bg-white border border-gray-300 rounded hover:border-yellow-500 hover:bg-yellow-50 transition-all text-left text-sm"
-                title={item.description}
-              >
-                <div className="text-gray-700">{item.icon}</div>
-                <span className="font-medium text-gray-800">{item.title}</span>
-              </button>
-            ))}
-          </div>
-        )}
 
-        {/* Resources Dropdown Content */}
-        {showResources && (
-          <div className="mb-6 bg-white p-4 rounded-lg border-2 border-gray-300 shadow">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
-              <a href="/docs/420t-quick-start.pdf" className="flex items-center gap-3 p-3 bg-gray-50 rounded hover:bg-yellow-50 hover:border-yellow-500 border border-gray-200 transition-colors" title="Complete guide for Talent Acquisition Technicians">
-                <FileCheck className="w-4 h-4 text-gray-700 flex-shrink-0" />
-                <span className="text-sm font-medium text-gray-800">420T Quick Start</span>
-              </a>
-              <a href="/docs/recruiting-ops-manual.pdf" className="flex items-center gap-3 p-3 bg-gray-50 rounded hover:bg-yellow-50 hover:border-yellow-500 border border-gray-200 transition-colors" title="SOPs and best practices">
-                <FileCheck className="w-4 h-4 text-gray-700 flex-shrink-0" />
-                <span className="text-sm font-medium text-gray-800">Recruiting Ops Manual</span>
-              </a>
-              <a href="https://training.taaip.army.mil/videos" className="flex items-center gap-3 p-3 bg-gray-50 rounded hover:bg-yellow-50 hover:border-yellow-500 border border-gray-200 transition-colors" title="Video tutorials on using TAAIP">
-                <Activity className="w-4 h-4 text-gray-700 flex-shrink-0" />
-                <span className="text-sm font-medium text-gray-800">Platform Training</span>
-              </a>
-              <a href="/docs/mission-analysis-guide.pdf" className="flex items-center gap-3 p-3 bg-gray-50 rounded hover:bg-yellow-50 hover:border-yellow-500 border border-gray-200 transition-colors" title="M-IPOE framework and targeting">
-                <Target className="w-4 h-4 text-gray-700 flex-shrink-0" />
-                <span className="text-sm font-medium text-gray-800">Mission Analysis</span>
-              </a>
-              <a href="/docs/access-control-policy.pdf" className="flex items-center gap-3 p-3 bg-gray-50 rounded hover:bg-yellow-50 hover:border-yellow-500 border border-gray-200 transition-colors" title="User roles and permissions">
-                <Shield className="w-4 h-4 text-gray-700 flex-shrink-0" />
-                <span className="text-sm font-medium text-gray-800">Access Policy</span>
-              </a>
-              <a href="/templates/data-entry-templates.zip" className="flex items-center gap-3 p-3 bg-gray-50 rounded hover:bg-yellow-50 hover:border-yellow-500 border border-gray-200 transition-colors" title="Excel and CSV templates">
-                <Database className="w-4 h-4 text-gray-700 flex-shrink-0" />
-                <span className="text-sm font-medium text-gray-800">Data Templates</span>
-              </a>
-              <a href="/docs/leadership-guide.pdf" className="flex items-center gap-3 p-3 bg-gray-50 rounded hover:bg-yellow-50 hover:border-yellow-500 border border-gray-200 transition-colors" title="Analytics for leadership">
-                <Users className="w-4 h-4 text-gray-700 flex-shrink-0" />
-                <span className="text-sm font-medium text-gray-800">Leadership Guide</span>
-              </a>
-              <a href="https://recruiting.army.mil" className="flex items-center gap-3 p-3 bg-gray-50 rounded hover:bg-yellow-50 hover:border-yellow-500 border border-gray-200 transition-colors" title="External Army resources" target="_blank" rel="noopener noreferrer">
-                <Globe className="w-4 h-4 text-gray-700 flex-shrink-0" />
-                <span className="text-sm font-medium text-gray-800">Army Portal</span>
-              </a>
-            </div>
-          </div>
-        )}
-
-        {/* Help Desk Dropdown Content */}
-        {showHelpDesk && (
-          <div className="mb-6 bg-white p-4 rounded-lg border-2 border-gray-300 shadow">
-            <p className="text-xs text-gray-600 mb-3">Submit requests for support, access, or features</p>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
-              <button
-                onClick={() => onNavigate('helpdesk')}
-                className="flex items-center gap-2 p-3 bg-gray-50 border border-gray-300 rounded hover:bg-yellow-50 hover:border-yellow-500 transition-colors text-left"
-                title="Request access level upgrade"
-              >
-                <Shield className="w-4 h-4 text-gray-700 flex-shrink-0" />
-                <span className="text-sm font-medium text-gray-900">Access Request</span>
-              </button>
-              <button
-                onClick={() => onNavigate('helpdesk')}
-                className="flex items-center gap-2 p-3 bg-gray-50 border border-gray-300 rounded hover:bg-yellow-50 hover:border-yellow-500 transition-colors text-left"
-                title="Suggest new features"
-              >
-                <TrendingUp className="w-4 h-4 text-gray-700 flex-shrink-0" />
-                <span className="text-sm font-medium text-gray-900">Feature Request</span>
-              </button>
-              <button
-                onClick={() => onNavigate('helpdesk')}
-                className="flex items-center gap-2 p-3 bg-gray-50 border border-gray-300 rounded hover:bg-yellow-50 hover:border-yellow-500 transition-colors text-left"
-                title="Request system upgrades"
-              >
-                <Activity className="w-4 h-4 text-gray-700 flex-shrink-0" />
-                <span className="text-sm font-medium text-gray-900">Upgrade Request</span>
-              </button>
-              <button
-                onClick={() => onNavigate('helpdesk')}
-                className="flex items-center gap-2 p-3 bg-gray-50 border border-gray-300 rounded hover:bg-yellow-50 hover:border-yellow-500 transition-colors text-left"
-                title="Report technical issues"
-              >
-                <AlertCircle className="w-4 h-4 text-gray-700 flex-shrink-0" />
-                <span className="text-sm font-medium text-gray-900">Bug Report</span>
-              </button>
-              <button
-                onClick={() => onNavigate('helpdesk')}
-                className="flex items-center gap-2 p-3 bg-gray-50 border border-gray-300 rounded hover:bg-yellow-50 hover:border-yellow-500 transition-colors text-left"
-                title="Request training"
-              >
-                <Users className="w-4 h-4 text-gray-700 flex-shrink-0" />
-                <span className="text-sm font-medium text-gray-900">Training Request</span>
-              </button>
-              <button
-                onClick={() => onNavigate('helpdesk')}
-                className="flex items-center gap-2 p-3 bg-gray-50 border border-gray-300 rounded hover:bg-yellow-50 hover:border-yellow-500 transition-colors text-left"
-                title="Other support"
-              >
-                <HelpCircle className="w-4 h-4 text-gray-700 flex-shrink-0" />
-                <span className="text-sm font-medium text-gray-900">Other Support</span>
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Centered Company Standings Leaderboard */}
-        <div className="max-w-5xl mx-auto">
-          <CompanyStandingsLeaderboard />
+        {/* Dashboard Grid Cards (Below Leaderboard) */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {menuItems.flatMap(cat => cat.items).slice(0, 8).map((item) => (
+            <button
+              key={item.id}
+              onClick={() => onNavigate(item.id)}
+              className={`bg-gradient-to-br ${item.color} text-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-all border-2 border-transparent hover:border-yellow-400 text-left`}
+            >
+              <div className="flex items-center justify-between mb-3">
+                {item.icon}
+                <ChevronRight className="w-5 h-5" />
+              </div>
+              <h3 className="font-bold text-lg mb-1">{item.title}</h3>
+              <p className="text-xs text-gray-200">{item.description}</p>
+            </button>
+          ))}
         </div>
       </div>
 

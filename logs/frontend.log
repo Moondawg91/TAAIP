@@ -24,3 +24,298 @@ Port 5173 is in use, trying another one...
 8:07:30 AM [vite] hmr update /src/App.tsx, /src/index.css
 8:10:01 AM [vite] hmr update /src/App.tsx, /src/index.css
 8:10:01 AM [vite] hmr update /src/components/UploadData.tsx, /src/index.css
+8:17:01 AM [vite] hmr update /src/components/HomeScreen.tsx, /src/index.css
+8:17:01 AM [vite] hmr update /src/App.tsx, /src/index.css
+8:17:01 AM [vite] hmr update /src/App.tsx, /src/index.css
+8:17:19 AM [vite] hmr update /src/components/HomeScreen.tsx, /src/index.css
+8:17:19 AM [vite] Internal server error: /Users/ambermooney/Desktop/TAAIP/taaip-dashboard/src/components/HomeScreen.tsx: Identifier 'showExpanded' has already been declared. (35:9)
+
+  33 |     }
+  34 |   };
+> 35 |   const [showExpanded, setShowExpanded] = React.useState(false);
+     |          ^
+  36 |
+  37 |   // Close all dropdowns when switching between them
+  38 |   const handleToggleDropdown = (dropdown: 'mission' | 'resources' | 'helpdesk') => {
+  Plugin: vite:react-babel
+  File: /Users/ambermooney/Desktop/TAAIP/taaip-dashboard/src/components/HomeScreen.tsx:35:9
+  33 |      }
+  34 |    };
+  35 |    const [showExpanded, setShowExpanded] = React.useState(false);
+     |           ^
+  36 |  
+  37 |    // Close all dropdowns when switching between them
+      at constructor (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:367:19)
+      at TypeScriptParserMixin.raise (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:6624:19)
+      at TypeScriptScopeHandler.checkRedeclarationInScope (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:1646:19)
+      at TypeScriptScopeHandler.declareName (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:1612:12)
+      at TypeScriptScopeHandler.declareName (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:4909:11)
+      at TypeScriptParserMixin.declareNameFromIdentifier (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:7594:16)
+      at TypeScriptParserMixin.checkIdentifier (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:7590:12)
+      at TypeScriptParserMixin.checkLVal (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:7527:12)
+      at TypeScriptParserMixin.checkLVal (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:7567:16)
+      at TypeScriptParserMixin.parseVarId (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:13488:10)
+      at TypeScriptParserMixin.parseVarId (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:9805:11)
+      at TypeScriptParserMixin.parseVar (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:13459:12)
+      at TypeScriptParserMixin.parseVarStatement (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:13306:10)
+      at TypeScriptParserMixin.parseVarStatement (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:9469:31)
+      at TypeScriptParserMixin.parseStatementContent (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:12927:23)
+      at TypeScriptParserMixin.parseStatementContent (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:9569:18)
+      at TypeScriptParserMixin.parseStatementLike (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:12843:17)
+      at TypeScriptParserMixin.parseStatementListItem (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:12823:17)
+      at TypeScriptParserMixin.parseBlockOrModuleBlockBody (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:13392:61)
+      at TypeScriptParserMixin.parseBlockBody (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:13385:10)
+      at TypeScriptParserMixin.parseBlock (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:13373:10)
+      at TypeScriptParserMixin.parseFunctionBody (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:12174:24)
+      at TypeScriptParserMixin.parseArrowExpression (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:12149:10)
+      at TypeScriptParserMixin.parseParenAndDistinguishExpression (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:11759:12)
+      at TypeScriptParserMixin.parseExprAtom (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:11395:23)
+      at TypeScriptParserMixin.parseExprAtom (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:4793:20)
+      at TypeScriptParserMixin.parseExprSubscripts (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:11145:23)
+      at TypeScriptParserMixin.parseUpdate (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:11130:21)
+      at TypeScriptParserMixin.parseMaybeUnary (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:11110:23)
+      at TypeScriptParserMixin.parseMaybeUnary (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:9890:18)
+      at TypeScriptParserMixin.parseMaybeUnaryOrPrivate (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:10963:61)
+      at TypeScriptParserMixin.parseExprOps (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:10968:23)
+      at TypeScriptParserMixin.parseMaybeConditional (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:10945:23)
+      at TypeScriptParserMixin.parseMaybeAssign (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:10895:21)
+      at TypeScriptParserMixin.parseMaybeAssign (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:9839:20)
+      at /Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:10864:39
+      at TypeScriptParserMixin.allowInAnd (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:12495:16)
+      at TypeScriptParserMixin.parseMaybeAssignAllowIn (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:10864:17)
+      at TypeScriptParserMixin.parseVar (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:13460:91)
+      at TypeScriptParserMixin.parseVarStatement (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:13306:10)
+      at TypeScriptParserMixin.parseVarStatement (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:9469:31)
+      at TypeScriptParserMixin.parseStatementContent (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:12927:23)
+      at TypeScriptParserMixin.parseStatementContent (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:9569:18)
+      at TypeScriptParserMixin.parseStatementLike (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:12843:17)
+      at TypeScriptParserMixin.parseStatementListItem (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:12823:17)
+      at TypeScriptParserMixin.parseExportDeclaration (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:14010:17)
+      at TypeScriptParserMixin.parseExportDeclaration (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:9690:85)
+      at TypeScriptParserMixin.maybeParseExportDeclaration (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:13969:31)
+      at TypeScriptParserMixin.parseExport (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:13888:29)
+      at TypeScriptParserMixin.parseExport (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:9446:20)
+8:17:51 AM [vite] hmr update /src/components/HomeScreen.tsx, /src/index.css
+8:17:51 AM [vite] Internal server error: /Users/ambermooney/Desktop/TAAIP/taaip-dashboard/src/components/HomeScreen.tsx: Identifier 'showExpanded' has already been declared. (35:9)
+
+  33 |     }
+  34 |   };
+> 35 |   const [showExpanded, setShowExpanded] = React.useState(false);
+     |          ^
+  36 |
+  37 |   // Close all dropdowns when switching between them
+  38 |   const handleToggleDropdown = (dropdown: 'mission' | 'resources' | 'helpdesk') => {
+  Plugin: vite:react-babel
+  File: /Users/ambermooney/Desktop/TAAIP/taaip-dashboard/src/components/HomeScreen.tsx:35:9
+  33 |      }
+  34 |    };
+  35 |    const [showExpanded, setShowExpanded] = React.useState(false);
+     |           ^
+  36 |  
+  37 |    // Close all dropdowns when switching between them
+      at constructor (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:367:19)
+      at TypeScriptParserMixin.raise (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:6624:19)
+      at TypeScriptScopeHandler.checkRedeclarationInScope (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:1646:19)
+      at TypeScriptScopeHandler.declareName (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:1612:12)
+      at TypeScriptScopeHandler.declareName (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:4909:11)
+      at TypeScriptParserMixin.declareNameFromIdentifier (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:7594:16)
+      at TypeScriptParserMixin.checkIdentifier (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:7590:12)
+      at TypeScriptParserMixin.checkLVal (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:7527:12)
+      at TypeScriptParserMixin.checkLVal (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:7567:16)
+      at TypeScriptParserMixin.parseVarId (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:13488:10)
+      at TypeScriptParserMixin.parseVarId (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:9805:11)
+      at TypeScriptParserMixin.parseVar (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:13459:12)
+      at TypeScriptParserMixin.parseVarStatement (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:13306:10)
+      at TypeScriptParserMixin.parseVarStatement (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:9469:31)
+      at TypeScriptParserMixin.parseStatementContent (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:12927:23)
+      at TypeScriptParserMixin.parseStatementContent (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:9569:18)
+      at TypeScriptParserMixin.parseStatementLike (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:12843:17)
+      at TypeScriptParserMixin.parseStatementListItem (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:12823:17)
+      at TypeScriptParserMixin.parseBlockOrModuleBlockBody (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:13392:61)
+      at TypeScriptParserMixin.parseBlockBody (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:13385:10)
+      at TypeScriptParserMixin.parseBlock (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:13373:10)
+      at TypeScriptParserMixin.parseFunctionBody (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:12174:24)
+      at TypeScriptParserMixin.parseArrowExpression (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:12149:10)
+      at TypeScriptParserMixin.parseParenAndDistinguishExpression (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:11759:12)
+      at TypeScriptParserMixin.parseExprAtom (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:11395:23)
+      at TypeScriptParserMixin.parseExprAtom (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:4793:20)
+      at TypeScriptParserMixin.parseExprSubscripts (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:11145:23)
+      at TypeScriptParserMixin.parseUpdate (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:11130:21)
+      at TypeScriptParserMixin.parseMaybeUnary (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:11110:23)
+      at TypeScriptParserMixin.parseMaybeUnary (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:9890:18)
+      at TypeScriptParserMixin.parseMaybeUnaryOrPrivate (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:10963:61)
+      at TypeScriptParserMixin.parseExprOps (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:10968:23)
+      at TypeScriptParserMixin.parseMaybeConditional (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:10945:23)
+      at TypeScriptParserMixin.parseMaybeAssign (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:10895:21)
+      at TypeScriptParserMixin.parseMaybeAssign (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:9839:20)
+      at /Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:10864:39
+      at TypeScriptParserMixin.allowInAnd (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:12495:16)
+      at TypeScriptParserMixin.parseMaybeAssignAllowIn (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:10864:17)
+      at TypeScriptParserMixin.parseVar (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:13460:91)
+      at TypeScriptParserMixin.parseVarStatement (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:13306:10)
+      at TypeScriptParserMixin.parseVarStatement (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:9469:31)
+      at TypeScriptParserMixin.parseStatementContent (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:12927:23)
+      at TypeScriptParserMixin.parseStatementContent (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:9569:18)
+      at TypeScriptParserMixin.parseStatementLike (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:12843:17)
+      at TypeScriptParserMixin.parseStatementListItem (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:12823:17)
+      at TypeScriptParserMixin.parseExportDeclaration (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:14010:17)
+      at TypeScriptParserMixin.parseExportDeclaration (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:9690:85)
+      at TypeScriptParserMixin.maybeParseExportDeclaration (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:13969:31)
+      at TypeScriptParserMixin.parseExport (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:13888:29)
+      at TypeScriptParserMixin.parseExport (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:9446:20)
+8:19:01 AM [vite] hmr update /src/App.tsx, /src/index.css
+8:19:01 AM [vite] hmr update /src/components/HomeScreen.tsx, /src/index.css
+8:19:01 AM [vite] Internal server error: /Users/ambermooney/Desktop/TAAIP/taaip-dashboard/src/components/HomeScreen.tsx: Identifier 'showExpanded' has already been declared. (35:9)
+
+  33 |     }
+  34 |   };
+> 35 |   const [showExpanded, setShowExpanded] = React.useState(false);
+     |          ^
+  36 |
+  37 |   // Close all dropdowns when switching between them
+  38 |   const handleToggleDropdown = (dropdown: 'mission' | 'resources' | 'helpdesk') => {
+  Plugin: vite:react-babel
+  File: /Users/ambermooney/Desktop/TAAIP/taaip-dashboard/src/components/HomeScreen.tsx:35:9
+  33 |      }
+  34 |    };
+  35 |    const [showExpanded, setShowExpanded] = React.useState(false);
+     |           ^
+  36 |  
+  37 |    // Close all dropdowns when switching between them
+      at constructor (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:367:19)
+      at TypeScriptParserMixin.raise (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:6624:19)
+      at TypeScriptScopeHandler.checkRedeclarationInScope (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:1646:19)
+      at TypeScriptScopeHandler.declareName (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:1612:12)
+      at TypeScriptScopeHandler.declareName (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:4909:11)
+      at TypeScriptParserMixin.declareNameFromIdentifier (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:7594:16)
+      at TypeScriptParserMixin.checkIdentifier (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:7590:12)
+      at TypeScriptParserMixin.checkLVal (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:7527:12)
+      at TypeScriptParserMixin.checkLVal (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:7567:16)
+      at TypeScriptParserMixin.parseVarId (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:13488:10)
+      at TypeScriptParserMixin.parseVarId (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:9805:11)
+      at TypeScriptParserMixin.parseVar (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:13459:12)
+      at TypeScriptParserMixin.parseVarStatement (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:13306:10)
+      at TypeScriptParserMixin.parseVarStatement (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:9469:31)
+      at TypeScriptParserMixin.parseStatementContent (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:12927:23)
+      at TypeScriptParserMixin.parseStatementContent (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:9569:18)
+      at TypeScriptParserMixin.parseStatementLike (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:12843:17)
+      at TypeScriptParserMixin.parseStatementListItem (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:12823:17)
+      at TypeScriptParserMixin.parseBlockOrModuleBlockBody (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:13392:61)
+      at TypeScriptParserMixin.parseBlockBody (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:13385:10)
+      at TypeScriptParserMixin.parseBlock (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:13373:10)
+      at TypeScriptParserMixin.parseFunctionBody (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:12174:24)
+      at TypeScriptParserMixin.parseArrowExpression (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:12149:10)
+      at TypeScriptParserMixin.parseParenAndDistinguishExpression (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:11759:12)
+      at TypeScriptParserMixin.parseExprAtom (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:11395:23)
+      at TypeScriptParserMixin.parseExprAtom (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:4793:20)
+      at TypeScriptParserMixin.parseExprSubscripts (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:11145:23)
+      at TypeScriptParserMixin.parseUpdate (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:11130:21)
+      at TypeScriptParserMixin.parseMaybeUnary (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:11110:23)
+      at TypeScriptParserMixin.parseMaybeUnary (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:9890:18)
+      at TypeScriptParserMixin.parseMaybeUnaryOrPrivate (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:10963:61)
+      at TypeScriptParserMixin.parseExprOps (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:10968:23)
+      at TypeScriptParserMixin.parseMaybeConditional (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:10945:23)
+      at TypeScriptParserMixin.parseMaybeAssign (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:10895:21)
+      at TypeScriptParserMixin.parseMaybeAssign (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:9839:20)
+      at /Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:10864:39
+      at TypeScriptParserMixin.allowInAnd (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:12495:16)
+      at TypeScriptParserMixin.parseMaybeAssignAllowIn (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:10864:17)
+      at TypeScriptParserMixin.parseVar (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:13460:91)
+      at TypeScriptParserMixin.parseVarStatement (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:13306:10)
+      at TypeScriptParserMixin.parseVarStatement (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:9469:31)
+      at TypeScriptParserMixin.parseStatementContent (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:12927:23)
+      at TypeScriptParserMixin.parseStatementContent (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:9569:18)
+      at TypeScriptParserMixin.parseStatementLike (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:12843:17)
+      at TypeScriptParserMixin.parseStatementListItem (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:12823:17)
+      at TypeScriptParserMixin.parseExportDeclaration (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:14010:17)
+      at TypeScriptParserMixin.parseExportDeclaration (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:9690:85)
+      at TypeScriptParserMixin.maybeParseExportDeclaration (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:13969:31)
+      at TypeScriptParserMixin.parseExport (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:13888:29)
+      at TypeScriptParserMixin.parseExport (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:9446:20)
+8:19:01 AM [vite] Pre-transform error: /Users/ambermooney/Desktop/TAAIP/taaip-dashboard/src/components/HomeScreen.tsx: Identifier 'showExpanded' has already been declared. (35:9)
+
+  33 |     }
+  34 |   };
+> 35 |   const [showExpanded, setShowExpanded] = React.useState(false);
+     |          ^
+  36 |
+  37 |   // Close all dropdowns when switching between them
+  38 |   const handleToggleDropdown = (dropdown: 'mission' | 'resources' | 'helpdesk') => {
+8:23:18 AM [vite] Internal server error: /Users/ambermooney/Desktop/TAAIP/taaip-dashboard/src/components/HomeScreen.tsx: Identifier 'showExpanded' has already been declared. (35:9)
+
+  33 |     }
+  34 |   };
+> 35 |   const [showExpanded, setShowExpanded] = React.useState(false);
+     |          ^
+  36 |
+  37 |   // Close all dropdowns when switching between them
+  38 |   const handleToggleDropdown = (dropdown: 'mission' | 'resources' | 'helpdesk') => {
+  Plugin: vite:react-babel
+  File: /Users/ambermooney/Desktop/TAAIP/taaip-dashboard/src/components/HomeScreen.tsx:35:9
+  33 |      }
+  34 |    };
+  35 |    const [showExpanded, setShowExpanded] = React.useState(false);
+     |           ^
+  36 |  
+  37 |    // Close all dropdowns when switching between them
+      at constructor (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:367:19)
+      at TypeScriptParserMixin.raise (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:6624:19)
+      at TypeScriptScopeHandler.checkRedeclarationInScope (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:1646:19)
+      at TypeScriptScopeHandler.declareName (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:1612:12)
+      at TypeScriptScopeHandler.declareName (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:4909:11)
+      at TypeScriptParserMixin.declareNameFromIdentifier (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:7594:16)
+      at TypeScriptParserMixin.checkIdentifier (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:7590:12)
+      at TypeScriptParserMixin.checkLVal (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:7527:12)
+      at TypeScriptParserMixin.checkLVal (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:7567:16)
+      at TypeScriptParserMixin.parseVarId (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:13488:10)
+      at TypeScriptParserMixin.parseVarId (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:9805:11)
+      at TypeScriptParserMixin.parseVar (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:13459:12)
+      at TypeScriptParserMixin.parseVarStatement (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:13306:10)
+      at TypeScriptParserMixin.parseVarStatement (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:9469:31)
+      at TypeScriptParserMixin.parseStatementContent (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:12927:23)
+      at TypeScriptParserMixin.parseStatementContent (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:9569:18)
+      at TypeScriptParserMixin.parseStatementLike (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:12843:17)
+      at TypeScriptParserMixin.parseStatementListItem (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:12823:17)
+      at TypeScriptParserMixin.parseBlockOrModuleBlockBody (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:13392:61)
+      at TypeScriptParserMixin.parseBlockBody (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:13385:10)
+      at TypeScriptParserMixin.parseBlock (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:13373:10)
+      at TypeScriptParserMixin.parseFunctionBody (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:12174:24)
+      at TypeScriptParserMixin.parseArrowExpression (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:12149:10)
+      at TypeScriptParserMixin.parseParenAndDistinguishExpression (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:11759:12)
+      at TypeScriptParserMixin.parseExprAtom (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:11395:23)
+      at TypeScriptParserMixin.parseExprAtom (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:4793:20)
+      at TypeScriptParserMixin.parseExprSubscripts (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:11145:23)
+      at TypeScriptParserMixin.parseUpdate (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:11130:21)
+      at TypeScriptParserMixin.parseMaybeUnary (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:11110:23)
+      at TypeScriptParserMixin.parseMaybeUnary (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:9890:18)
+      at TypeScriptParserMixin.parseMaybeUnaryOrPrivate (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:10963:61)
+      at TypeScriptParserMixin.parseExprOps (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:10968:23)
+      at TypeScriptParserMixin.parseMaybeConditional (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:10945:23)
+      at TypeScriptParserMixin.parseMaybeAssign (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:10895:21)
+      at TypeScriptParserMixin.parseMaybeAssign (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:9839:20)
+      at /Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:10864:39
+      at TypeScriptParserMixin.allowInAnd (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:12495:16)
+      at TypeScriptParserMixin.parseMaybeAssignAllowIn (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:10864:17)
+      at TypeScriptParserMixin.parseVar (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:13460:91)
+      at TypeScriptParserMixin.parseVarStatement (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:13306:10)
+      at TypeScriptParserMixin.parseVarStatement (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:9469:31)
+      at TypeScriptParserMixin.parseStatementContent (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:12927:23)
+      at TypeScriptParserMixin.parseStatementContent (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:9569:18)
+      at TypeScriptParserMixin.parseStatementLike (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:12843:17)
+      at TypeScriptParserMixin.parseStatementListItem (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:12823:17)
+      at TypeScriptParserMixin.parseExportDeclaration (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:14010:17)
+      at TypeScriptParserMixin.parseExportDeclaration (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:9690:85)
+      at TypeScriptParserMixin.maybeParseExportDeclaration (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:13969:31)
+      at TypeScriptParserMixin.parseExport (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:13888:29)
+      at TypeScriptParserMixin.parseExport (/Users/ambermooney/Desktop/TAAIP/taaip-dashboard/node_modules/@babel/parser/lib/index.js:9446:20)
+8:24:42 AM [vite] hmr update /src/components/HomeScreen.tsx, /src/index.css
+8:24:42 AM [vite] Pre-transform error: Failed to load url /src/components/HomeScreen.tsx (resolved id: /Users/ambermooney/Desktop/TAAIP/taaip-dashboard/src/components/HomeScreen.tsx) in /Users/ambermooney/Desktop/TAAIP/taaip-dashboard/src/App.tsx. Does the file exist?
+8:25:35 AM [vite] hmr update /src/components/HomeScreen.tsx
+8:25:56 AM [vite] hmr update /src/components/HomeScreen.tsx
+8:26:15 AM [vite] hmr update /src/components/CompanyStandingsLeaderboard.tsx, /src/index.css
+8:26:18 AM [vite] hmr update /src/components/CompanyStandingsLeaderboard.tsx, /src/index.css
+8:26:33 AM [vite] hmr update /src/components/CompanyStandingsLeaderboard.tsx, /src/index.css
+8:26:35 AM [vite] hmr update /src/components/CompanyStandingsLeaderboard.tsx, /src/index.css
+8:26:52 AM [vite] hmr update /src/components/CompanyStandingsLeaderboard.tsx, /src/index.css
+8:26:52 AM [vite] hmr update /src/components/CompanyStandingsLeaderboard.tsx, /src/index.css
+8:26:54 AM [vite] hmr update /src/components/CompanyStandingsLeaderboard.tsx, /src/index.css
