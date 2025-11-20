@@ -21,7 +21,7 @@ import { TargetingWorkingGroup } from './components/TargetingWorkingGroup';
 import FusionTeamDashboard from './components/FusionTeamDashboard';
 import MarketSegmentationDashboard from './components/MarketSegmentationDashboard';
 import TargetingMethodologyGuide from './components/TargetingMethodologyGuide';
-import { BulkDataUpload } from './components/BulkDataUpload';
+import { UploadData } from './components/UploadData';
 import { DynamicDashboard } from './components/DynamicDashboard';
 
 // TAAIP - Talent Acquisition AI Platform
@@ -73,7 +73,7 @@ const App: React.FC = () => {
         { id: 'market', label: 'Market Potential', icon: <Globe className="w-5 h-5" />, category: 'Operations' },
         { id: 'sharepoint', label: 'SharePoint Files', icon: <FolderOpen className="w-5 h-5" />, category: 'Operations' },
         { id: 'budget', label: 'Budget Tracker', icon: <DollarSign className="w-5 h-5" />, category: 'Operations' },
-        { id: 'upload', label: 'Bulk Data Upload', icon: <FileCheck className="w-5 h-5" />, category: 'Operations' },
+        { id: 'upload', label: 'Upload Data', icon: <FileCheck className="w-5 h-5" />, category: 'Operations' },
         { id: 'dynamic', label: 'Smart Visualizations', icon: <LineChart className="w-5 h-5" />, category: 'Operations' },
       ]
     }
@@ -163,7 +163,7 @@ const App: React.FC = () => {
          activeTab === 'fusion' ? <FusionTeamDashboard /> :
          activeTab === 'segmentation' ? <MarketSegmentationDashboard /> :
          activeTab === 'methodology' ? <TargetingMethodologyGuide /> :
-         activeTab === 'upload' ? <BulkDataUpload /> :
+         activeTab === 'upload' ? <UploadData /> :
          activeTab === 'dynamic' ? <DynamicDashboard dataType="events" /> :
          <HomeScreen onNavigate={(tab) => setActiveTab(tab as any)} />}
       </main>
