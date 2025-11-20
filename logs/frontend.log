@@ -332,3 +332,5 @@ Port 5173 is in use, trying another one...
 11:36:36 AM [vite] hmr update /src/components/QuickReference.tsx, /src/index.css
 11:36:37 AM [vite] hmr update /src/components/HomeScreen.tsx, /src/index.css
 11:36:39 AM [vite] hmr update /src/components/HomeScreen.tsx, /src/index.css
+11:39:42 AM [vite] hmr update /src/App.tsx, /src/index.css
+11:39:47 AM [vite] hmr update /src/App.tsx, /src/index.css

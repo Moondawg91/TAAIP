@@ -22,13 +22,12 @@ import FusionTeamDashboard from './components/FusionTeamDashboard';
 import MarketSegmentationDashboard from './components/MarketSegmentationDashboard';
 import TargetingMethodologyGuide from './components/TargetingMethodologyGuide';
 import { UploadData } from './components/UploadData';
-import { DynamicDashboard } from './components/DynamicDashboard';
 
 // TAAIP - Talent Acquisition AI Platform
 // Optimized for 420T Talent Acquisition Technicians
 
 const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'home' | '420t' | 'funnel' | 'analytics' | 'market' | 'mission' | 'targeting' | 'projects' | 'leads' | 'events' | 'g2zones' | 'calendar' | 'sharepoint' | 'budget' | 'twg' | 'fusion' | 'segmentation' | 'methodology' | 'upload' | 'dynamic'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | '420t' | 'funnel' | 'analytics' | 'market' | 'mission' | 'targeting' | 'projects' | 'leads' | 'events' | 'g2zones' | 'calendar' | 'sharepoint' | 'budget' | 'twg' | 'fusion' | 'segmentation' | 'methodology' | 'upload'>('home');
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const menuCategories = [
@@ -74,7 +73,6 @@ const App: React.FC = () => {
         { id: 'sharepoint', label: 'SharePoint Files', icon: <FolderOpen className="w-5 h-5" />, category: 'Operations' },
         { id: 'budget', label: 'Budget Tracker', icon: <DollarSign className="w-5 h-5" />, category: 'Operations' },
         { id: 'upload', label: 'Upload Data', icon: <FileCheck className="w-5 h-5" />, category: 'Operations' },
-        { id: 'dynamic', label: 'Smart Visualizations', icon: <LineChart className="w-5 h-5" />, category: 'Operations' },
       ]
     }
   ];
@@ -178,7 +176,6 @@ const App: React.FC = () => {
          activeTab === 'segmentation' ? <MarketSegmentationDashboard /> :
          activeTab === 'methodology' ? <TargetingMethodologyGuide /> :
          activeTab === 'upload' ? <UploadData /> :
-         activeTab === 'dynamic' ? <DynamicDashboard dataType="events" /> :
          <HomeScreen onNavigate={(tab) => setActiveTab(tab as any)} />}
       </main>
 
