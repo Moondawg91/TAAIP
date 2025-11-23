@@ -341,7 +341,9 @@ const PermissionDelegationModal: React.FC<{
                     )}
                     
                     {!canDel && (
-                      <Lock className="w-4 h-4 text-gray-400" title="Cannot delegate this permission" />
+                      <div title="Cannot delegate this permission">
+                        <Lock className="w-4 h-4 text-gray-400" />
+                      </div>
                     )}
                   </div>
                 </div>
