@@ -133,6 +133,38 @@ Next Steps:
   4. Restart: docker compose restart
   5. Update: cd ${INSTALL_DIR} && git pull && docker compose up -d --build
 
+Domain + HTTPS Setup (after DNS A record points yourdomain.com -> ${DROPLET_IP}):
+  1. Verify DNS propagation:
+    dig +short yourdomain.com
+    dig +trace yourdomain.com | grep -m1 ${DROPLET_IP} || echo "Still propagating"
+  2. Install Nginx + Certbot (if not already):
+    apt install -y nginx certbot python3-certbot-nginx
+  3. Create Nginx server block /etc/nginx/sites-available/taaip.conf:
+    server {
+      listen 80;
+      server_name yourdomain.com www.yourdomain.com;
+      location / { proxy_pass http://127.0.0.1:80; }
+      location /api/ { proxy_pass http://127.0.0.1:8000/; }
+    }
+    ln -s /etc/nginx/sites-available/taaip.conf /etc/nginx/sites-enabled/taaip.conf || true
+    nginx -t && systemctl reload nginx
+  4. Issue SSL certificate:
+    certbot --nginx -d yourdomain.com -d www.yourdomain.com --redirect --agree-tos -m admin@yourdomain.com
+  5. Confirm renewal cron:
+    systemctl list-timers | grep certbot || echo "Certbot timer missing"
+  6. Update .env:
+    CORS_ORIGINS=https://yourdomain.com
+    VITE_API_URL=https://yourdomain.com/api
+    (Rebuild frontend with new VITE_API_URL)
+  7. Rebuild containers:
+    docker compose down
+    docker compose build --no-cache
+    docker compose up -d
+  8. Test:
+    curl -I https://yourdomain.com
+    curl -I http://yourdomain.com  # should 301 to https
+    curl -fsSL https://yourdomain.com/api/health
+
 Security Hardening (later):
   - Replace sqlite with managed Postgres
   - Enable HTTPS via Nginx + Certbot

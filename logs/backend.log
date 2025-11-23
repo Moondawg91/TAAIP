@@ -983,3 +983,1055 @@ INFO:     127.0.0.1:62104 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
 INFO:     127.0.0.1:62108 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
 INFO:     127.0.0.1:62114 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
 INFO:     127.0.0.1:62134 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62144 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62149 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62153 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62157 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62161 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62171 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62173 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62183 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62188 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62191 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62227 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62232 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62252 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62254 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62263 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62268 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62295 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62298 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62301 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62304 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62312 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62317 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62324 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62329 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62335 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62338 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62341 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62343 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62353 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62357 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62361 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62364 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62377 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62379 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62420 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62467 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62518 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62522 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62533 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62535 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62539 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62541 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62587 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62649 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62701 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62785 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62790 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62794 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62797 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62800 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62811 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62897 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62962 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63012 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63074 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63119 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63149 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63209 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63214 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63226 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63233 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63246 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63248 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63253 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63701 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63707 - "GET /api/v2/420t/kpi-metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63707 - "GET /api/v2/420t/school-targets HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63707 - "GET /api/v2/420t/recruiting-ops-plans HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63709 - "GET /api/v2/recruiting-funnel/metrics?fiscal_year=2025 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63712 - "GET /api/v2/analytics/schools?limit=15 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63713 - "GET /api/v2/analytics/segments HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63711 - "GET /api/v2/analytics/cbsa?limit=10 HTTP/1.1" 500 Internal Server Error
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/uvicorn/protocols/http/h11_impl.py", line 403, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/uvicorn/middleware/proxy_headers.py", line 60, in __call__
+    return await self.app(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/fastapi/applications.py", line 1134, in __call__
+    await super().__call__(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/applications.py", line 113, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/middleware/base.py", line 196, in __call__
+    recv_stream.close()
+  File "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/contextlib.py", line 135, in __exit__
+    self.gen.throw(type, value, traceback)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/_utils.py", line 85, in collapse_excgroups
+    raise exc
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/middleware/base.py", line 193, in __call__
+    response = await self.dispatch_func(request, call_next)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/middleware/base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/middleware/base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/middleware/cors.py", line 93, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/middleware/cors.py", line 144, in simple_response
+    await self.app(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/fastapi/routing.py", line 125, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/fastapi/routing.py", line 111, in app
+    response = await f(request)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/fastapi/routing.py", line 391, in app
+    raw_response = await run_endpoint_function(
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/fastapi/routing.py", line 292, in run_endpoint_function
+    return await run_in_threadpool(dependant.call, **values)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/concurrency.py", line 38, in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/anyio/to_thread.py", line 56, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/anyio/_backends/_asyncio.py", line 2485, in run_sync_in_worker_thread
+    return await future
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/anyio/_backends/_asyncio.py", line 976, in run
+    result = context.run(func, *args)
+  File "/Users/ambermooney/Desktop/TAAIP/taaip_service.py", line 2259, in get_top_cbsas
+    cur.execute("""
+sqlite3.OperationalError: no such column: cbsa_code
+INFO:     127.0.0.1:63714 - "GET /api/v2/analytics/contracts HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63718 - "GET /api/v2/mission-analysis?analysis_level=brigade&fiscal_year=2025&quarter=Q4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63723 - "GET /api/v2/twg/boards HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63727 - "GET /api/v2/projects HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63726 - "GET /api/v2/projects/dashboard/summary HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63729 - "GET /api/v2/leads/status?days=30 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63730 - "GET /api/v2/leads/metrics?days=30 HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:63732 - "GET /api/v2/events/performance HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63734 - "GET /api/v2/g2-zones HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63735 - "GET /api/v2/g2-zones/summary HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63738 - "GET /api/v2/calendar/events HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63739 - "GET /api/v2/calendar/reports HTTP/1.1" 200 OK
+INFO:backend.integrations.manager:iKrome connector initialized
+INFO:backend.integrations.manager:EMM Portal connector initialized
+INFO:backend.integrations.manager:Vantage connector initialized
+INFO:backend.integrations.manager:BIZone connector initialized
+INFO:backend.integrations.manager:SharePoint connector initialized
+INFO:     127.0.0.1:63742 - "GET /api/v2/integrations/sharepoint/browse?path=%2F HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63745 - "GET /api/v2/budget/allocations?fiscal_year=2025 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63751 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63756 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63759 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63761 - "GET /api/v2/420t/kpi-metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63761 - "GET /api/v2/420t/school-targets HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63761 - "GET /api/v2/420t/recruiting-ops-plans HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63761 - "GET /api/v2/recruiting-funnel/metrics?fiscal_year=2025 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63762 - "GET /api/v2/analytics/schools?limit=15 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63763 - "GET /api/v2/analytics/segments HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63761 - "GET /api/v2/analytics/cbsa?limit=10 HTTP/1.1" 500 Internal Server Error
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/uvicorn/protocols/http/h11_impl.py", line 403, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/uvicorn/middleware/proxy_headers.py", line 60, in __call__
+    return await self.app(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/fastapi/applications.py", line 1134, in __call__
+    await super().__call__(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/applications.py", line 113, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/middleware/base.py", line 196, in __call__
+    recv_stream.close()
+  File "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/contextlib.py", line 135, in __exit__
+    self.gen.throw(type, value, traceback)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/_utils.py", line 85, in collapse_excgroups
+    raise exc
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/middleware/base.py", line 193, in __call__
+    response = await self.dispatch_func(request, call_next)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/middleware/base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/middleware/base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/middleware/cors.py", line 93, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/middleware/cors.py", line 144, in simple_response
+    await self.app(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/fastapi/routing.py", line 125, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/fastapi/routing.py", line 111, in app
+    response = await f(request)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/fastapi/routing.py", line 391, in app
+    raw_response = await run_endpoint_function(
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/fastapi/routing.py", line 292, in run_endpoint_function
+    return await run_in_threadpool(dependant.call, **values)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/concurrency.py", line 38, in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/anyio/to_thread.py", line 56, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/anyio/_backends/_asyncio.py", line 2485, in run_sync_in_worker_thread
+    return await future
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/anyio/_backends/_asyncio.py", line 976, in run
+    result = context.run(func, *args)
+  File "/Users/ambermooney/Desktop/TAAIP/taaip_service.py", line 2259, in get_top_cbsas
+    cur.execute("""
+sqlite3.OperationalError: no such column: cbsa_code
+INFO:     127.0.0.1:63764 - "GET /api/v2/analytics/contracts HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63767 - "GET /api/v2/mission-analysis?analysis_level=brigade&fiscal_year=2025&quarter=Q4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63775 - "GET /api/v2/mission-analysis?analysis_level=brigade&fiscal_year=2025&quarter=Q4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63781 - "GET /api/v2/twg/boards HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63784 - "GET /api/v2/projects HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63783 - "GET /api/v2/projects/dashboard/summary HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63786 - "GET /api/v2/leads/status?days=30 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63787 - "GET /api/v2/leads/metrics?days=30 HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:63786 - "GET /api/v2/events/performance HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63789 - "GET /api/v2/g2-zones HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63790 - "GET /api/v2/g2-zones/summary HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64055 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64066 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64143 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64235 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64235 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64237 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64239 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64247 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64252 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64256 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64265 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64272 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64288 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64299 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64325 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64332 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64353 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64361 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64369 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64373 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64378 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64441 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64497 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64587 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64663 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64863 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65048 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65084 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65175 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65225 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65306 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65342 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65359 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65362 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65365 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65370 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65383 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65386 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65393 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65408 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65411 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65413 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65425 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65445 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65459 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65478 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65504 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65510 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65515 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49156 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49173 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49217 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49226 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49620 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49626 - "GET /api/v2/budget/allocations?fiscal_year=2025 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49629 - "GET /api/v2/budget/allocations?fiscal_year=2025&unit_id=brigade_6 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49629 - "GET /api/v2/budget/allocations?fiscal_year=2026&unit_id=brigade_6 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49657 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49699 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49701 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49715 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49716 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49725 - "GET /api/v2/market-potential?geographic_level=cbsa&geographic_id=41860&fiscal_year=2025&quarter=Q4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49726 - "GET /api/v2/market-potential?geographic_level=cbsa&geographic_id=41860&fiscal_year=2025&quarter=Q4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49725 - "GET /api/v2/projects HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49726 - "GET /api/v2/projects HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49728 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49731 - "GET /api/v2/420t/kpi-metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49731 - "GET /api/v2/420t/school-targets HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49731 - "GET /api/v2/420t/recruiting-ops-plans HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49737 - "GET /api/v2/analytics/cbsa?limit=10 HTTP/1.1" 500 Internal Server Error
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/uvicorn/protocols/http/h11_impl.py", line 403, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/uvicorn/middleware/proxy_headers.py", line 60, in __call__
+    return await self.app(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/fastapi/applications.py", line 1134, in __call__
+    await super().__call__(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/applications.py", line 113, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/middleware/base.py", line 196, in __call__
+    recv_stream.close()
+  File "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/contextlib.py", line 135, in __exit__
+    self.gen.throw(type, value, traceback)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/_utils.py", line 85, in collapse_excgroups
+    raise exc
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/middleware/base.py", line 193, in __call__
+    response = await self.dispatch_func(request, call_next)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/middleware/base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/middleware/base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/middleware/cors.py", line 93, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/middleware/cors.py", line 144, in simple_response
+    await self.app(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/fastapi/routing.py", line 125, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/fastapi/routing.py", line 111, in app
+    response = await f(request)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/fastapi/routing.py", line 391, in app
+    raw_response = await run_endpoint_function(
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/fastapi/routing.py", line 292, in run_endpoint_function
+    return await run_in_threadpool(dependant.call, **values)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/concurrency.py", line 38, in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/anyio/to_thread.py", line 56, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/anyio/_backends/_asyncio.py", line 2485, in run_sync_in_worker_thread
+    return await future
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/anyio/_backends/_asyncio.py", line 976, in run
+    result = context.run(func, *args)
+  File "/Users/ambermooney/Desktop/TAAIP/taaip_service.py", line 2259, in get_top_cbsas
+    cur.execute("""
+sqlite3.OperationalError: no such column: cbsa_code
+INFO:     127.0.0.1:49738 - "GET /api/v2/analytics/schools?limit=15 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49739 - "GET /api/v2/analytics/segments HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49740 - "GET /api/v2/analytics/contracts HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49752 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49767 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49778 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49790 - "GET /api/v2/recruiting-funnel/metrics?fiscal_year=2025 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49790 - "GET /api/v2/recruiting-funnel/metrics?fiscal_year=2025 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49790 - "GET /api/v2/leads HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:49792 - "GET /api/v2/leads HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:49973 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50144 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50161 - "GET /api/v2/market-potential?geographic_level=cbsa&geographic_id=41860&fiscal_year=2025&quarter=Q4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56310 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56377 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56440 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56509 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56581 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56654 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56722 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56784 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56784 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56784 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57255 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57257 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57265 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57267 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57274 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57288 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57289 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57291 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57294 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57296 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57294 - "GET /api/v2/420t/kpi-metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57298 - "GET /api/v2/420t/kpi-metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57294 - "GET /api/v2/420t/school-targets HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57298 - "GET /api/v2/420t/school-targets HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57294 - "GET /api/v2/420t/recruiting-ops-plans HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57298 - "GET /api/v2/420t/recruiting-ops-plans HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57301 - "GET /api/v2/recruiting-funnel/metrics?fiscal_year=2025 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57302 - "GET /api/v2/recruiting-funnel/metrics?fiscal_year=2025 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57301 - "GET /api/v2/leads HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:57302 - "GET /api/v2/leads HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:57307 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57308 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57308 - "GET /api/v2/analytics/schools?limit=15 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57307 - "GET /api/v2/analytics/cbsa?limit=10 HTTP/1.1" 500 Internal Server Error
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/uvicorn/protocols/http/h11_impl.py", line 403, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/uvicorn/middleware/proxy_headers.py", line 60, in __call__
+    return await self.app(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/fastapi/applications.py", line 1134, in __call__
+    await super().__call__(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/applications.py", line 113, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/middleware/base.py", line 196, in __call__
+    recv_stream.close()
+  File "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/contextlib.py", line 135, in __exit__
+    self.gen.throw(type, value, traceback)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/_utils.py", line 85, in collapse_excgroups
+    raise exc
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/middleware/base.py", line 193, in __call__
+    response = await self.dispatch_func(request, call_next)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/middleware/base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/middleware/base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/middleware/cors.py", line 93, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/middleware/cors.py", line 144, in simple_response
+    await self.app(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/fastapi/routing.py", line 125, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/fastapi/routing.py", line 111, in app
+    response = await f(request)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/fastapi/routing.py", line 391, in app
+    raw_response = await run_endpoint_function(
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/fastapi/routing.py", line 292, in run_endpoint_function
+    return await run_in_threadpool(dependant.call, **values)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/concurrency.py", line 38, in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/anyio/to_thread.py", line 56, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/anyio/_backends/_asyncio.py", line 2485, in run_sync_in_worker_thread
+    return await future
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/anyio/_backends/_asyncio.py", line 976, in run
+    result = context.run(func, *args)
+  File "/Users/ambermooney/Desktop/TAAIP/taaip_service.py", line 2259, in get_top_cbsas
+    cur.execute("""
+sqlite3.OperationalError: no such column: cbsa_code
+INFO:     127.0.0.1:57309 - "GET /api/v2/analytics/segments HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57310 - "GET /api/v2/analytics/contracts HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57312 - "GET /api/v2/analytics/schools?limit=15 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57311 - "GET /api/v2/analytics/cbsa?limit=10 HTTP/1.1" 500 Internal Server Error
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/uvicorn/protocols/http/h11_impl.py", line 403, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/uvicorn/middleware/proxy_headers.py", line 60, in __call__
+    return await self.app(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/fastapi/applications.py", line 1134, in __call__
+    await super().__call__(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/applications.py", line 113, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/middleware/base.py", line 196, in __call__
+    recv_stream.close()
+  File "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/contextlib.py", line 135, in __exit__
+    self.gen.throw(type, value, traceback)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/_utils.py", line 85, in collapse_excgroups
+    raise exc
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/middleware/base.py", line 193, in __call__
+    response = await self.dispatch_func(request, call_next)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/middleware/base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/middleware/base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/middleware/cors.py", line 93, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/middleware/cors.py", line 144, in simple_response
+    await self.app(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/fastapi/routing.py", line 125, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/fastapi/routing.py", line 111, in app
+    response = await f(request)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/fastapi/routing.py", line 391, in app
+    raw_response = await run_endpoint_function(
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/fastapi/routing.py", line 292, in run_endpoint_function
+    return await run_in_threadpool(dependant.call, **values)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/concurrency.py", line 38, in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/anyio/to_thread.py", line 56, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/anyio/_backends/_asyncio.py", line 2485, in run_sync_in_worker_thread
+    return await future
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/anyio/_backends/_asyncio.py", line 976, in run
+    result = context.run(func, *args)
+  File "/Users/ambermooney/Desktop/TAAIP/taaip_service.py", line 2259, in get_top_cbsas
+    cur.execute("""
+sqlite3.OperationalError: no such column: cbsa_code
+INFO:     127.0.0.1:57308 - "GET /api/v2/analytics/contracts HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57313 - "GET /api/v2/analytics/segments HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57315 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57319 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57323 - "GET /api/v2/mission-analysis?analysis_level=brigade&fiscal_year=2025&quarter=Q4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57324 - "GET /api/v2/mission-analysis?analysis_level=brigade&fiscal_year=2025&quarter=Q4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57323 - "GET /api/v2/projects HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57324 - "GET /api/v2/projects HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57323 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57324 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57331 - "GET /api/v2/market-potential?geographic_level=cbsa&geographic_id=41860&fiscal_year=2025&quarter=Q4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57332 - "GET /api/v2/market-potential?geographic_level=cbsa&geographic_id=41860&fiscal_year=2025&quarter=Q4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57331 - "GET /api/v2/projects HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57332 - "GET /api/v2/projects HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57334 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57337 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57339 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57343 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57351 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57371 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57390 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57422 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57496 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57562 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57635 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57700 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57763 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57830 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57893 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57957 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58024 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58089 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58153 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58216 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58280 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58342 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58405 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58465 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58528 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58596 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58662 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58728 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58792 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58855 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58918 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58990 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59016 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59018 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59033 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59034 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59041 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59045 - "GET /api/v2/recruiting-funnel/metrics?fiscal_year=2025 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59046 - "GET /api/v2/recruiting-funnel/metrics?fiscal_year=2025 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59045 - "GET /api/v2/leads HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:59046 - "GET /api/v2/leads HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:59048 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59052 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59061 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59162 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59170 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59176 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59177 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59180 - "GET /api/v2/analytics/schools?limit=15 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59181 - "GET /api/v2/analytics/segments HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59179 - "GET /api/v2/analytics/cbsa?limit=10 HTTP/1.1" 500 Internal Server Error
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/uvicorn/protocols/http/h11_impl.py", line 403, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/uvicorn/middleware/proxy_headers.py", line 60, in __call__
+    return await self.app(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/fastapi/applications.py", line 1134, in __call__
+    await super().__call__(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/applications.py", line 113, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/middleware/base.py", line 196, in __call__
+    recv_stream.close()
+  File "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/contextlib.py", line 135, in __exit__
+    self.gen.throw(type, value, traceback)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/_utils.py", line 85, in collapse_excgroups
+    raise exc
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/middleware/base.py", line 193, in __call__
+    response = await self.dispatch_func(request, call_next)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/middleware/base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/middleware/base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/middleware/cors.py", line 93, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/middleware/cors.py", line 144, in simple_response
+    await self.app(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/fastapi/routing.py", line 125, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/fastapi/routing.py", line 111, in app
+    response = await f(request)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/fastapi/routing.py", line 391, in app
+    raw_response = await run_endpoint_function(
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/fastapi/routing.py", line 292, in run_endpoint_function
+    return await run_in_threadpool(dependant.call, **values)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/concurrency.py", line 38, in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/anyio/to_thread.py", line 56, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/anyio/_backends/_asyncio.py", line 2485, in run_sync_in_worker_thread
+    return await future
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/anyio/_backends/_asyncio.py", line 976, in run
+    result = context.run(func, *args)
+  File "/Users/ambermooney/Desktop/TAAIP/taaip_service.py", line 2259, in get_top_cbsas
+    cur.execute("""
+sqlite3.OperationalError: no such column: cbsa_code
+INFO:     127.0.0.1:59182 - "GET /api/v2/analytics/contracts HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59184 - "GET /api/v2/analytics/schools?limit=15 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59183 - "GET /api/v2/analytics/cbsa?limit=10 HTTP/1.1" 500 Internal Server Error
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/uvicorn/protocols/http/h11_impl.py", line 403, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/uvicorn/middleware/proxy_headers.py", line 60, in __call__
+    return await self.app(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/fastapi/applications.py", line 1134, in __call__
+    await super().__call__(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/applications.py", line 113, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/middleware/base.py", line 196, in __call__
+    recv_stream.close()
+  File "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/contextlib.py", line 135, in __exit__
+    self.gen.throw(type, value, traceback)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/_utils.py", line 85, in collapse_excgroups
+    raise exc
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/middleware/base.py", line 193, in __call__
+    response = await self.dispatch_func(request, call_next)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/middleware/base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/middleware/base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/middleware/cors.py", line 93, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/middleware/cors.py", line 144, in simple_response
+    await self.app(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/fastapi/routing.py", line 125, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/fastapi/routing.py", line 111, in app
+    response = await f(request)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/fastapi/routing.py", line 391, in app
+    raw_response = await run_endpoint_function(
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/fastapi/routing.py", line 292, in run_endpoint_function
+    return await run_in_threadpool(dependant.call, **values)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/concurrency.py", line 38, in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/anyio/to_thread.py", line 56, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/anyio/_backends/_asyncio.py", line 2485, in run_sync_in_worker_thread
+    return await future
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/anyio/_backends/_asyncio.py", line 976, in run
+    result = context.run(func, *args)
+  File "/Users/ambermooney/Desktop/TAAIP/taaip_service.py", line 2259, in get_top_cbsas
+    cur.execute("""
+sqlite3.OperationalError: no such column: cbsa_code
+INFO:     127.0.0.1:59180 - "GET /api/v2/analytics/segments HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59181 - "GET /api/v2/analytics/contracts HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59186 - "GET /api/v2/mission-analysis?analysis_level=brigade&fiscal_year=2025&quarter=Q4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59187 - "GET /api/v2/mission-analysis?analysis_level=brigade&fiscal_year=2025&quarter=Q4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59186 - "GET /api/v2/projects HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59188 - "GET /api/v2/projects HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59192 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59199 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59200 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59217 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59219 - "GET /api/v2/420t/kpi-metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59220 - "GET /api/v2/420t/kpi-metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59219 - "GET /api/v2/420t/school-targets HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59220 - "GET /api/v2/420t/school-targets HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59219 - "GET /api/v2/420t/recruiting-ops-plans HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59220 - "GET /api/v2/420t/recruiting-ops-plans HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59223 - "GET /api/v2/twg/boards HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59224 - "GET /api/v2/twg/boards HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59227 - "GET /api/v2/projects/dashboard/summary HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59228 - "GET /api/v2/projects HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59230 - "GET /api/v2/projects HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59229 - "GET /api/v2/projects/dashboard/summary HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59233 - "GET /api/v2/leads/status?days=30 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59234 - "GET /api/v2/leads/metrics?days=30 HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:59235 - "GET /api/v2/leads/status?days=30 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59236 - "GET /api/v2/leads/metrics?days=30 HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:59238 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59233 - "GET /api/v2/events/performance HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59234 - "GET /api/v2/events/performance HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59235 - "GET /api/v2/events HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:59236 - "GET /api/v2/events HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:59245 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59246 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59248 - "GET /api/v2/g2-zones HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59249 - "GET /api/v2/g2-zones/summary HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59250 - "GET /api/v2/g2-zones HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59251 - "GET /api/v2/g2-zones/summary HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59253 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59256 - "GET /api/v2/mission-analysis?analysis_level=brigade&fiscal_year=2025&quarter=Q4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59257 - "GET /api/v2/mission-analysis?analysis_level=brigade&fiscal_year=2025&quarter=Q4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59256 - "GET /api/v2/projects HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59258 - "GET /api/v2/projects HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59257 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59256 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59263 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59269 - "GET /api/v2/calendar/events HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59270 - "GET /api/v2/calendar/reports HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59271 - "GET /api/v2/calendar/events HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59272 - "GET /api/v2/calendar/reports HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59269 - "GET /api/v2/market-potential?geographic_level=cbsa&geographic_id=41860&fiscal_year=2025&quarter=Q4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59270 - "GET /api/v2/market-potential?geographic_level=cbsa&geographic_id=41860&fiscal_year=2025&quarter=Q4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59271 - "GET /api/v2/projects HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59272 - "GET /api/v2/projects HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59269 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59270 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59271 - "GET /api/v2/integrations/sharepoint/browse?path=%2F HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59272 - "GET /api/v2/integrations/sharepoint/browse?path=%2F HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59277 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59280 - "GET /api/v2/budget/allocations?fiscal_year=2025 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59281 - "GET /api/v2/budget/allocations?fiscal_year=2025 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59285 - "GET /api/v2/market-potential?geographic_level=cbsa&geographic_id=41860&fiscal_year=2025&quarter=Q4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59286 - "GET /api/v2/market-potential?geographic_level=cbsa&geographic_id=41860&fiscal_year=2025&quarter=Q4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59285 - "GET /api/v2/projects HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59286 - "GET /api/v2/projects HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59285 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59286 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59290 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59293 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59296 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59301 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59305 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59318 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59321 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59351 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59365 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59427 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59442 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59494 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59506 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59562 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59572 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59631 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59639 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59705 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59712 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59775 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59779 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59842 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59844 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59918 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59986 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60051 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60114 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60177 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60248 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60262 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60264 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60273 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60282 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60283 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60287 - "GET /api/v2/recruiting-funnel/metrics?fiscal_year=2025 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60288 - "GET /api/v2/recruiting-funnel/metrics?fiscal_year=2025 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60287 - "GET /api/v2/leads HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:60288 - "GET /api/v2/leads HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:60291 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60294 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60297 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60300 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60303 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60312 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60341 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60412 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60436 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60438 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60447 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60457 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60458 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60457 - "GET /api/v2/recruiting-funnel/metrics?fiscal_year=2025 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60458 - "GET /api/v2/recruiting-funnel/metrics?fiscal_year=2025 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60457 - "GET /api/v2/leads HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:60458 - "GET /api/v2/leads HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:60457 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60458 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60463 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60467 - "GET /api/v2/market-potential?geographic_level=cbsa&geographic_id=41860&fiscal_year=2025&quarter=Q4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60468 - "GET /api/v2/market-potential?geographic_level=cbsa&geographic_id=41860&fiscal_year=2025&quarter=Q4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60467 - "GET /api/v2/projects HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60468 - "GET /api/v2/projects HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60476 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60530 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60595 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60658 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60723 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60822 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60824 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60857 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60915 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60987 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60989 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60999 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61003 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61007 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61011 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61013 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61016 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61024 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61027 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61029 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61036 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61038 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61088 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61154 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61157 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61166 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61170 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61173 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61175 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61230 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61276 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61292 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61376 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61436 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61482 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61538 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61543 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61548 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61550 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61596 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61599 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61603 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61609 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61611 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61650 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61656 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61660 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61704 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61706 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61759 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61764 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61774 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61776 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61835 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61891 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61897 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61904 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61906 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61955 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62001 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62008 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62011 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62014 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62018 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62024 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62026 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62045 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62047 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62103 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62196 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62205 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62208 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62210 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62213 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62215 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62227 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62374 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62421 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62476 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62517 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62538 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62539 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62585 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62596 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62637 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62664 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62707 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62731 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62771 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62795 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62836 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62860 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62902 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62932 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62975 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63046 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63076 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63111 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63161 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63175 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63239 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63251 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63305 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63335 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63372 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63421 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63435 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63497 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63507 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63562 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63592 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63626 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63688 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63752 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63815 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63881 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63944 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64005 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64068 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64130 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64193 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64294 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64401 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64525 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64649 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64779 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64843 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64904 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64971 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65034 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65096 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65192 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65287 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65390 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65482 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49184 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49279 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49430 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49674 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49773 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49833 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49896 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49966 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50009 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50031 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50105 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50126 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50188 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50202 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [45297]
