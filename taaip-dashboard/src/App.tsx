@@ -27,13 +27,14 @@ const UploadData = lazy(() => import('./components/UploadData').then(m => ({ def
 const QuarterAssessment = lazy(() => import('./components/QuarterAssessment'));
 const AssetRecommendationEngine = lazy(() => import('./components/AssetRecommendationEngine'));
 const HistoricalDataArchive = lazy(() => import('./components/HistoricalDataArchive'));
+const PowerBIBundle = lazy(() => import('./components/PowerBIEmbed').then(m => ({ default: m.PowerBIBundle })));
 const UserManagement = lazy(() => import('./components/UserManagement'));
 
 // TAAIP - Talent Acquisition AI Platform
 // Optimized for 420T Talent Acquisition Technicians
 
 const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'home' | '420t' | 'funnel' | 'analytics' | 'market' | 'mission' | 'targeting' | 'projects' | 'leads' | 'events' | 'g2zones' | 'calendar' | 'sharepoint' | 'budget' | 'twg' | 'fusion' | 'segmentation' | 'methodology' | 'upload' | 'quarter-assessment' | 'asset-recommend' | 'historical' | 'user-management'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | '420t' | 'funnel' | 'analytics' | 'market' | 'mission' | 'targeting' | 'projects' | 'leads' | 'events' | 'g2zones' | 'calendar' | 'sharepoint' | 'budget' | 'twg' | 'fusion' | 'segmentation' | 'methodology' | 'upload' | 'quarter-assessment' | 'asset-recommend' | 'historical' | 'user-management' | 'powerbi'>('home');
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const menuCategories = [
@@ -82,6 +83,7 @@ const App: React.FC = () => {
         { id: 'sharepoint', label: 'SharePoint Files', icon: <FolderOpen className="w-5 h-5" />, category: 'Operations' },
         { id: 'budget', label: 'Budget Tracker', icon: <DollarSign className="w-5 h-5" />, category: 'Operations' },
         { id: 'upload', label: 'Upload Data', icon: <FileCheck className="w-5 h-5" />, category: 'Operations' },
+        { id: 'powerbi', label: 'Power BI (GCC)', icon: <LineChart className="w-5 h-5" />, category: 'Operations' },
       ]
     },
     {
@@ -202,6 +204,15 @@ const App: React.FC = () => {
            activeTab === 'segmentation' ? <MarketSegmentationDashboard /> :
            activeTab === 'methodology' ? <TargetingMethodologyGuide /> :
            activeTab === 'upload' ? <UploadData /> :
+           activeTab === 'powerbi' ? (
+             <PowerBIBundle reportIds={[
+               '898af0e0-6d0c-47a6-b4ff-7690661eacda',
+               '2b602aa2-5e21-47eb-b432-3709109af45e',
+               'a37d11af-4b1a-42ad-923e-925a9e255fc8',
+               '2d52ba6b-91f0-4a09-8e78-234b9e22a508',
+               'a9cd9722-3f83-4c53-a9c6-8534a4b79b0f'
+             ]} />
+           ) :
            activeTab === 'user-management' ? <UserManagement currentUser={{
              user_id: 'current-user',
              username: 'admin',

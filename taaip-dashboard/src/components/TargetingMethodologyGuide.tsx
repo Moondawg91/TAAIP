@@ -133,6 +133,37 @@ export const TargetingMethodologyGuide: React.FC = () => {
         </div>
       </div>
       {renderPhaseCards(USAREC_PHASES)}
+      {/* D3A Mapping per user-provided definitions */}
+      <div className="mt-6 bg-white rounded-lg shadow-md p-6">
+        <h3 className="text-2xl font-bold text-gray-800 mb-4">D3A (Quarter-Ahead) Mapping</h3>
+        <p className="text-gray-700 mb-4">Aligned to Q+3 planning with explicit outputs for each phase.</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="border-2 border-purple-200 rounded-lg p-4">
+            <h4 className="font-bold text-purple-900 mb-2">Decide</h4>
+            <p className="text-sm text-gray-700">
+              Identify future strategic targets. <em>(Q+3 target segments and specific target audience)</em>
+            </p>
+          </div>
+          <div className="border-2 border-blue-200 rounded-lg p-4">
+            <h4 className="font-bold text-blue-900 mb-2">Detect</h4>
+            <p className="text-sm text-gray-700">
+              Identify the operational landscape and opportunities. <em>(Q+3 events, schools, COIs (Centers of Influence), and other key elements)</em>
+            </p>
+          </div>
+          <div className="border-2 border-green-200 rounded-lg p-4">
+            <h4 className="font-bold text-green-900 mb-2">Deliver</h4>
+            <p className="text-sm text-gray-700">
+              Outline required resources for execution. <em>(Q+3 resource needs including personnel, assets, PPI/RPI, and funding)</em>
+            </p>
+          </div>
+          <div className="border-2 border-orange-200 rounded-lg p-4">
+            <h4 className="font-bold text-orange-900 mb-2">Assess</h4>
+            <p className="text-sm text-gray-700">
+              Provide the initial plan for measuring effectiveness. <em>(Initial assessment plans for Q+3 operations)</em>
+            </p>
+          </div>
+        </div>
+      </div>
       <div className="mt-6 bg-white rounded-lg shadow-md p-6">
         <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
           <Users className="w-6 h-6 mr-2 text-yellow-600" /> Integration with TAAIP
