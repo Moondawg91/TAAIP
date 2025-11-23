@@ -217,7 +217,7 @@ export const DataInputForms: React.FC = () => {
             onChange={(e) => setEventData({ ...eventData, targeting_principles: e.target.value })}
             rows={3}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
-            placeholder="D3AE, F3A, or other targeting guidance..."
+            placeholder="USAREC cycle phases or targeting rationale..."
           />
         </div>
 

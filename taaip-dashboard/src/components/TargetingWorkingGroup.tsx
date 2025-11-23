@@ -84,7 +84,7 @@ export const TargetingWorkingGroup: React.FC = () => {
   const [targetingPhases, setTargetingPhases] = useState<TargetingPhase[]>([]);
   const [marketingBudget, setMarketingBudget] = useState<MarketingBudget | null>(null);
   const [selectedQuarter, setSelectedQuarter] = useState<string>('Q+0');
-  const [viewMode, setViewMode] = useState<'dashboard' | 'agenda' | 'sync-matrix' | 'intel'>('dashboard');
+  const [viewMode, setViewMode] = useState<'dashboard' | 'agenda' | 'sync-matrix' | 'intel' | 'recommendations'>('dashboard');
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -330,6 +330,14 @@ export const TargetingWorkingGroup: React.FC = () => {
             >
               Intel Brief
             </button>
+            <button
+              onClick={() => setViewMode('recommendations')}
+              className={`px-4 py-2 rounded-lg font-semibold ${
+                viewMode === 'recommendations' ? 'bg-yellow-500 text-black' : 'bg-gray-700 text-white hover:bg-gray-600'
+              }`}
+            >
+              Recommendations
+            </button>
           </div>
         </div>
       </div>
@@ -527,7 +535,15 @@ export const TargetingWorkingGroup: React.FC = () => {
                       <p className="text-sm text-gray-700 mt-2 italic">High payoff zip codes and high payoff segments analysis</p>
                     )}
                     {item.section.includes('Company Slides') && (
-                      <p className="text-sm text-gray-700 mt-2 italic">CO presentations: Target Audiences (Detect) → Event/School (Detect) → Deliver → Assess</p>
+                      <p className="text-sm text-gray-700 mt-2 italic">
+                        <strong>Company Slides utilize D3A methodology</strong> to clearly present specific intelligence, ensuring information accurately reflects ground observations. This deliberate presentation helps BN leadership grasp the real-time operational picture.<br/><br/>
+                        <strong>Q+3 D3A Framework (Approve Phase):</strong><br/>
+                        • <strong>Decide:</strong> Identify future strategic targets. <em>(Q+3 target segments and specific target audience)</em><br/>
+                        • <strong>Detect:</strong> Identify the operational landscape and opportunities. <em>(Q+3 events, schools, COIs (Centers of Influence), and other key elements)</em><br/>
+                        • <strong>Deliver:</strong> Outline required resources for execution. <em>(Q+3 resource needs including personnel, assets, PPI/RPI, and funding)</em><br/>
+                        • <strong>Assess:</strong> Provide the initial plan for measuring effectiveness. <em>(Initial assessment plans for Q+3 operations)</em><br/><br/>
+                        Includes crucial tasks of <strong>recommending necessary changes and updating the synchronization matrix</strong> to reflect latest decisions.
+                      </p>
                     )}
                     {item.section.includes('Guidance (Q+4)') && (
                       <p className="text-sm text-gray-700 mt-2 italic">Assess market intelligence, events, and marketing strategy proposals</p>
@@ -709,37 +725,405 @@ export const TargetingWorkingGroup: React.FC = () => {
 
       {/* Intel Brief View */}
       {viewMode === 'intel' && (
-        <div className="bg-white rounded-xl shadow-md p-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-            <TrendingUp className="w-6 h-6" />
-            Intelligence Update
-          </h2>
-          <div className="space-y-4">
-            <div className="bg-yellow-50 border-l-4 border-yellow-600 p-4 rounded">
-              <h3 className="font-bold text-yellow-900 mb-2">S2/MMA Brief: High Payoff Areas</h3>
-              <ul className="text-sm text-yellow-800 space-y-1">
-                <li>• High payoff zip codes: 28301, 28303, 28304, 28311</li>
-                <li>• High payoff segments: College students (18-22), Trade school graduates</li>
-                <li>• Top performing schools: State University, Technical College, Lincoln HS</li>
-              </ul>
+        <div className="space-y-6">
+          {/* Houston BN Focus Events */}
+          <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl shadow-lg p-6 text-white">
+            <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
+              <Target className="w-7 h-7 text-yellow-400" />
+              Houston Recruiting BN - Priority Events
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-white/10 backdrop-blur rounded-lg p-4 border border-white/20">
+                <h3 className="font-bold text-yellow-400 mb-2">Youth Career Expo</h3>
+                <p className="text-sm text-blue-100">High-impact youth engagement opportunity</p>
+              </div>
+              <div className="bg-white/10 backdrop-blur rounded-lg p-4 border border-white/20">
+                <h3 className="font-bold text-yellow-400 mb-2">Westbrook HS Career Fair</h3>
+                <p className="text-sm text-blue-100">Targeted high school recruitment event</p>
+              </div>
+              <div className="bg-white/10 backdrop-blur rounded-lg p-4 border border-white/20">
+                <h3 className="font-bold text-yellow-400 mb-2">Walker County Fair & Rodeo</h3>
+                <p className="text-sm text-blue-100">Community engagement - Exhibit space</p>
+              </div>
             </div>
-            <div className="bg-blue-50 border-l-4 border-blue-600 p-4 rounded">
-              <h3 className="font-bold text-blue-900 mb-2">ESS Update: Education Intelligence</h3>
-              <p className="text-sm text-blue-800">
-                School calendar analysis, graduation schedules, and academic program alignments for optimal engagement timing.
-              </p>
+          </div>
+
+          {/* Phase Breakdown */}
+          <div className="bg-white rounded-xl shadow-md p-6">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+              <Calendar className="w-7 h-7 text-blue-600" />
+              Phase Breakdown (Q-1 to Q+4)
+            </h2>
+            <p className="text-gray-600 mb-6">Process structured across calendar quarters, each with corresponding primary action</p>
+            
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr className="bg-gray-100">
+                    <th className="px-4 py-3 text-left font-bold text-gray-800 border">Phase</th>
+                    <th className="px-4 py-3 text-left font-bold text-gray-800 border">Months</th>
+                    <th className="px-4 py-3 text-left font-bold text-gray-800 border">Primary Action</th>
+                    <th className="px-4 py-3 text-left font-bold text-gray-800 border">Key Tasks</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr className="bg-gray-50">
+                    <td className="px-4 py-3 font-bold border">Q-1</td>
+                    <td className="px-4 py-3 border"><span className="text-gray-500">JAN FEB MAR</span></td>
+                    <td className="px-4 py-3 font-bold text-blue-700 border">Assess</td>
+                    <td className="px-4 py-3 text-sm border">
+                      • Previous QTR Event Assessment<br/>
+                      • Key takeaways<br/>
+                      • Review AAR<br/>
+                      • Qual/Quantitative Analysis
+                    </td>
+                  </tr>
+                  <tr className="bg-gray-900 text-white">
+                    <td className="px-4 py-3 font-bold border border-gray-700">Q+0</td>
+                    <td className="px-4 py-3 border border-gray-700">APR MAY JUN</td>
+                    <td className="px-4 py-3 font-bold text-yellow-400 border border-gray-700">Execute</td>
+                    <td className="px-4 py-3 text-sm border border-gray-700">
+                      • Approve/Deny Dynamic Target Request
+                    </td>
+                  </tr>
+                  <tr className="bg-green-50">
+                    <td className="px-4 py-3 font-bold border">Q+1</td>
+                    <td className="px-4 py-3 border"><span className="text-green-700">JUL AUG SEP</span></td>
+                    <td className="px-4 py-3 font-bold text-green-700 border">Review</td>
+                    <td className="px-4 py-3 text-sm border">
+                      • Review Q+1 events<br/>
+                      • Identify issues<br/>
+                      • Propose changes as required
+                    </td>
+                  </tr>
+                  <tr className="bg-yellow-50">
+                    <td className="px-4 py-3 font-bold border">Q+2</td>
+                    <td className="px-4 py-3 border"><span className="text-yellow-700">OCT NOV DEC</span></td>
+                    <td className="px-4 py-3 font-bold text-yellow-700 border">Validate</td>
+                    <td className="px-4 py-3 text-sm border">
+                      • Validate Q+2 events, RFIs<br/>
+                      • Validate resources<br/>
+                      • Refine coordinating instructions
+                    </td>
+                  </tr>
+                  <tr className="bg-red-50">
+                    <td className="px-4 py-3 font-bold border">Q+3</td>
+                    <td className="px-4 py-3 border"><span className="text-red-700">JAN FEB MAR</span></td>
+                    <td className="px-4 py-3 font-bold text-red-700 border">Approve</td>
+                    <td className="px-4 py-3 text-sm border">
+                      • Approve/Deny target nomination<br/>
+                      • Recommend changes<br/>
+                      • Update Synch Matrix
+                    </td>
+                  </tr>
+                  <tr className="bg-blue-50">
+                    <td className="px-4 py-3 font-bold border">Q+4</td>
+                    <td className="px-4 py-3 border"><span className="text-blue-700">APR MAY JUN</span></td>
+                    <td className="px-4 py-3 font-bold text-blue-700 border">Guidance</td>
+                    <td className="px-4 py-3 text-sm border">
+                      • Q+4 Intel update<br/>
+                      • Propose Q+4 events and targeting guidance for CDR Approval
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
-            <div className="bg-green-50 border-l-4 border-green-600 p-4 rounded">
-              <h3 className="font-bold text-green-900 mb-2">A&PA Update: Marketing Intelligence</h3>
-              <p className="text-sm text-green-800">
-                Campaign performance metrics, social media engagement trends, and public affairs coordination status.
-              </p>
+          </div>
+
+          {/* Targeting Process Workflow */}
+          <div className="bg-white rounded-xl shadow-md p-6">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+              <TrendingUp className="w-7 h-7 text-purple-600" />
+              Targeting Process Workflow
+            </h2>
+            <p className="text-gray-600 mb-6">Central cycle: <strong className="text-purple-700">DECIDE → DETECT → DELIVER → ASSESS</strong></p>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* TWG */}
+              <div className="bg-gradient-to-br from-purple-50 to-white border-2 border-purple-300 rounded-lg p-5">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="bg-purple-600 text-white rounded-full w-10 h-10 flex items-center justify-center font-bold">1</div>
+                  <div>
+                    <h3 className="font-bold text-lg text-purple-900">TARGETING WORKING GROUP (TWG)</h3>
+                    <p className="text-sm text-purple-700">Feeds into: <strong>Decide Phase</strong></p>
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <div>
+                    <p className="font-semibold text-sm text-gray-800 mb-1">Input:</p>
+                    <ul className="text-sm text-gray-700 space-y-1">
+                      <li>• Commander's guidance</li>
+                      <li>• Market analysis (HP segments and Zips)</li>
+                      <li>• School analysis & access data</li>
+                      <li>• Sync matrix</li>
+                      <li>• COI/CP identification</li>
+                      <li>• Resource & funding analysis</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-sm text-gray-800 mb-1">Output:</p>
+                    <ul className="text-sm text-gray-700 space-y-1">
+                      <li>• Companies draft nominations (events, COIs, assets, TAIR)</li>
+                      <li>• Messaging themes</li>
+                      <li>• Draft CONOPs</li>
+                      <li>• Refined list of potential HP segments, Zips, schools</li>
+                    </ul>
+                  </div>
+                  <div className="bg-purple-100 rounded p-2 mt-3">
+                    <p className="text-xs font-bold text-purple-900">Definition: Where we build & nominate</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* TDB */}
+              <div className="bg-gradient-to-br from-blue-50 to-white border-2 border-blue-300 rounded-lg p-5">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="bg-blue-600 text-white rounded-full w-10 h-10 flex items-center justify-center font-bold">2</div>
+                  <div>
+                    <h3 className="font-bold text-lg text-blue-900">TARGETING DECISION BOARD (TDB)</h3>
+                    <p className="text-sm text-blue-700">Feeds into: <strong>Detect Phase</strong></p>
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <div>
+                    <p className="font-semibold text-sm text-gray-800 mb-1">Input:</p>
+                    <ul className="text-sm text-gray-700 space-y-1">
+                      <li>• Nominations from TWG</li>
+                      <li>• Initial CONOPs</li>
+                      <li>• Updated IPOE / Market Analysis</li>
+                      <li>• Resource and Funding Requirements</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-sm text-gray-800 mb-1">Output:</p>
+                    <ul className="text-sm text-gray-700 space-y-1">
+                      <li>• Approved nominations</li>
+                      <li>• Approved resources</li>
+                      <li>• Tasking for companies and staff sections</li>
+                      <li>• Sync Matrix</li>
+                    </ul>
+                  </div>
+                  <div className="bg-blue-100 rounded p-2 mt-3">
+                    <p className="text-xs font-bold text-blue-900">Definition: Where we approve</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* TARGETING SYNC */}
+              <div className="bg-gradient-to-br from-green-50 to-white border-2 border-green-300 rounded-lg p-5">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="bg-green-600 text-white rounded-full w-10 h-10 flex items-center justify-center font-bold">3</div>
+                  <div>
+                    <h3 className="font-bold text-lg text-green-900">TARGETING SYNC</h3>
+                    <p className="text-sm text-green-700">Feeds into: <strong>Deliver Phase</strong></p>
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <div>
+                    <p className="font-semibold text-sm text-gray-800 mb-1">Input:</p>
+                    <ul className="text-sm text-gray-700 space-y-1">
+                      <li>• Approved events and CONOPs</li>
+                      <li>• Market analysis updates</li>
+                      <li>• Fusion cell validation and coordination</li>
+                      <li>• Xchecks with NCOICs and SCs</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-sm text-gray-800 mb-1">Output:</p>
+                    <ul className="text-sm text-gray-700 space-y-1">
+                      <li>• Refined CONOPs (Rehearsals, responsibilities)</li>
+                      <li>• BN sync matrix update</li>
+                      <li>• Updated BN calendar with approved events</li>
+                      <li>• MACs assigned to event (verified)</li>
+                    </ul>
+                  </div>
+                  <div className="bg-green-100 rounded p-2 mt-3">
+                    <p className="text-xs font-bold text-green-900">Definition: Where we refine & finalize execution</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* ASSESSMENT WG */}
+              <div className="bg-gradient-to-br from-orange-50 to-white border-2 border-orange-300 rounded-lg p-5">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="bg-orange-600 text-white rounded-full w-10 h-10 flex items-center justify-center font-bold">4</div>
+                  <div>
+                    <h3 className="font-bold text-lg text-orange-900">TARGETING ASSESSMENT WG</h3>
+                    <p className="text-sm text-orange-700">Feeds into: <strong>Assess Phase</strong></p>
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <div>
+                    <p className="font-semibold text-sm text-gray-800 mb-1">Input:</p>
+                    <ul className="text-sm text-gray-700 space-y-1">
+                      <li>• Company After Action Reviews</li>
+                      <li>• ROI metrics (Impressions, engagement, leads)</li>
+                      <li>• RZ data</li>
+                      <li>• EMM data</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-sm text-gray-800 mb-1">Output:</p>
+                    <ul className="text-sm text-gray-700 space-y-1">
+                      <li>• ROI rollups</li>
+                      <li>• Lessons learned & best practices</li>
+                      <li>• Identified shortfalls and recommendations</li>
+                      <li>• Adjusted targeting guidance for next TWG cycle</li>
+                    </ul>
+                  </div>
+                  <div className="bg-orange-100 rounded p-2 mt-3">
+                    <p className="text-xs font-bold text-orange-900">Definition: Where we measure performance</p>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div className="bg-purple-50 border-l-4 border-purple-600 p-4 rounded">
-              <h3 className="font-bold text-purple-900 mb-2">CO Commanders: Company-Level Intel</h3>
-              <p className="text-sm text-purple-800">
-                Local market conditions, competitor activity, community feedback, and station-level performance indicators.
-              </p>
+          </div>
+        </div>
+      )}
+
+      {/* Recommendations View */}
+      {viewMode === 'recommendations' && (
+        <div className="space-y-6">
+          <div className="bg-white rounded-xl shadow-md p-6">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+              <TrendingUp className="w-7 h-7 text-purple-600" />
+              TWG Recommendations & Action Items
+            </h2>
+            <p className="text-gray-600 mb-6">Data-driven recommendations for the Targeting Working Group based on current performance and market intelligence</p>
+            
+            {/* Strategic Recommendations */}
+            <div className="space-y-4 mb-6">
+              <div className="bg-gradient-to-r from-red-50 to-white border-l-4 border-red-600 p-5 rounded-lg shadow-sm">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="w-6 h-6 text-red-600 flex-shrink-0 mt-1" />
+                  <div className="flex-1">
+                    <h3 className="font-bold text-red-900 text-lg mb-2">Critical: AAR Compliance</h3>
+                    <p className="text-red-800 mb-3">3 events have overdue AARs. Immediate action required to maintain 72-hour submission standard.</p>
+                    <div className="bg-white rounded p-3 border border-red-200">
+                      <p className="font-semibold text-sm text-gray-800 mb-2">Recommended Actions:</p>
+                      <ul className="text-sm text-gray-700 space-y-1">
+                        <li>• Send automated reminder to responsible personnel</li>
+                        <li>• Escalate to company leadership if not submitted within 24hrs</li>
+                        <li>• Implement pre-event AAR template distribution</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-gradient-to-r from-orange-50 to-white border-l-4 border-orange-600 p-5 rounded-lg shadow-sm">
+                <div className="flex items-start gap-3">
+                  <DollarSign className="w-6 h-6 text-orange-600 flex-shrink-0 mt-1" />
+                  <div className="flex-1">
+                    <h3 className="font-bold text-orange-900 text-lg mb-2">High Priority: Budget Reallocation</h3>
+                    <p className="text-orange-800 mb-3">Q3 budget execution below target (62%). Recommend reallocating $125K to high-performing event types.</p>
+                    <div className="bg-white rounded p-3 border border-orange-200">
+                      <p className="font-semibold text-sm text-gray-800 mb-2">Recommended Actions:</p>
+                      <ul className="text-sm text-gray-700 space-y-1">
+                        <li>• Shift funds from low-ROI static displays to virtual events (6.0x ROI)</li>
+                        <li>• Increase Tier 1 asset allocation for Must-Win targets</li>
+                        <li>• Accelerate Q4 event approvals to prevent end-of-year rush</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-gradient-to-r from-blue-50 to-white border-l-4 border-blue-600 p-5 rounded-lg shadow-sm">
+                <div className="flex items-start gap-3">
+                  <Target className="w-6 h-6 text-blue-600 flex-shrink-0 mt-1" />
+                  <div className="flex-1">
+                    <h3 className="font-bold text-blue-900 text-lg mb-2">Asset Optimization: Replicate Success</h3>
+                    <p className="text-blue-800 mb-3">Historical data shows VR Simulator + Experience Center combo generates 38% more leads than either alone.</p>
+                    <div className="bg-white rounded p-3 border border-blue-200">
+                      <p className="font-semibold text-sm text-gray-800 mb-2">Recommended Actions:</p>
+                      <ul className="text-sm text-gray-700 space-y-1">
+                        <li>• Schedule VR + Experience Center for all Must-Win college events in Q+2</li>
+                        <li>• Request additional VR units from Brigade for high-attendance events</li>
+                        <li>• Train recruiters on optimal VR demo techniques</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-gradient-to-r from-green-50 to-white border-l-4 border-green-600 p-5 rounded-lg shadow-sm">
+                <div className="flex items-start gap-3">
+                  <MapPin className="w-6 h-6 text-green-600 flex-shrink-0 mt-1" />
+                  <div className="flex-1">
+                    <h3 className="font-bold text-green-900 text-lg mb-2">Geographic Focus: Expand Winning Territories</h3>
+                    <p className="text-green-800 mb-3">San Antonio zip codes (78201-78210) show 9.1 effectiveness score. Houston underperforming at 7.2.</p>
+                    <div className="bg-white rounded p-3 border border-green-200">
+                      <p className="font-semibold text-sm text-gray-800 mb-2">Recommended Actions:</p>
+                      <ul className="text-sm text-gray-700 space-y-1">
+                        <li>• Increase San Antonio event frequency from 3 to 5 per quarter</li>
+                        <li>• Analyze Houston event mix - shift from gaming to career fairs</li>
+                        <li>• Replicate San Antonio playbook (parachute demo + band) in other metros</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-gradient-to-r from-purple-50 to-white border-l-4 border-purple-600 p-5 rounded-lg shadow-sm">
+                <div className="flex items-start gap-3">
+                  <Users className="w-6 h-6 text-purple-600 flex-shrink-0 mt-1" />
+                  <div className="flex-1">
+                    <h3 className="font-bold text-purple-900 text-lg mb-2">Audience Targeting: College Virtual Events</h3>
+                    <p className="text-purple-800 mb-3">Virtual events show highest ROI (6.0x) and 14.4% conversion for college demographic.</p>
+                    <div className="bg-white rounded p-3 border border-purple-200">
+                      <p className="font-semibold text-sm text-gray-800 mb-2">Recommended Actions:</p>
+                      <ul className="text-sm text-gray-700 space-y-1">
+                        <li>• Launch monthly virtual sessions with top 10 universities</li>
+                        <li>• Partner with college career centers for integrated campaigns</li>
+                        <li>• Develop cyber/signal MOS-focused virtual content for STEM majors</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Next Meeting Prep */}
+            <div className="bg-yellow-50 border-2 border-yellow-500 rounded-lg p-5">
+              <h3 className="font-bold text-yellow-900 text-lg mb-3 flex items-center gap-2">
+                <CheckSquare className="w-6 h-6" />
+                Action Items for Next TWG Meeting
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-white rounded p-3 border border-yellow-300">
+                  <p className="font-semibold text-sm text-gray-800 mb-2">XO / TAWO:</p>
+                  <ul className="text-sm text-gray-700 space-y-1">
+                    <li>✓ Review budget reallocation proposal ($125K shift)</li>
+                    <li>✓ Approve San Antonio event expansion plan</li>
+                    <li>✓ Authorize additional VR unit request to Brigade</li>
+                  </ul>
+                </div>
+                <div className="bg-white rounded p-3 border border-yellow-300">
+                  <p className="font-semibold text-sm text-gray-800 mb-2">S3 / S4:</p>
+                  <ul className="text-sm text-gray-700 space-y-1">
+                    <li>✓ Coordinate VR + Experience Center schedules for Q+2</li>
+                    <li>✓ Validate asset availability for Must-Win events</li>
+                    <li>✓ Prepare budget execution brief for XO</li>
+                  </ul>
+                </div>
+                <div className="bg-white rounded p-3 border border-yellow-300">
+                  <p className="font-semibold text-sm text-gray-800 mb-2">S2 / MMA:</p>
+                  <ul className="text-sm text-gray-700 space-y-1">
+                    <li>✓ Deep-dive Houston underperformance analysis</li>
+                    <li>✓ Update high-payoff zip code list with San Antonio data</li>
+                    <li>✓ Recommend college virtual event target schools</li>
+                  </ul>
+                </div>
+                <div className="bg-white rounded p-3 border border-yellow-300">
+                  <p className="font-semibold text-sm text-gray-800 mb-2">CO Leadership:</p>
+                  <ul className="text-sm text-gray-700 space-y-1">
+                    <li>✓ Submit overdue AARs within 24 hours</li>
+                    <li>✓ Implement AAR pre-distribution SOP</li>
+                    <li>✓ Provide feedback on virtual event pilot results</li>
+                  </ul>
+                </div>
+              </div>
             </div>
           </div>
         </div>

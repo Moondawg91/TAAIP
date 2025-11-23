@@ -1,33 +1,38 @@
-import React, { useState } from 'react';
+import React, { useState, lazy, Suspense } from 'react';
 import { 
   Home, Shield, Activity, LineChart, Globe, Target, Clipboard, 
   Briefcase, FileCheck, Map, Menu, ChevronDown, FolderOpen, DollarSign, Users
 } from 'lucide-react';
 import { HomeScreen } from './components/HomeScreen';
-import { TalentAcquisitionTechnicianDashboard } from './components/TalentAcquisitionTechnicianDashboard';
-import { RecruitingFunnelDashboard } from './components/RecruitingFunnelDashboard';
-import { AnalyticsDashboard } from './components/AnalyticsDashboard';
-import MarketPotentialDashboard from './components/MarketPotentialDashboard';
-import MissionAnalysisDashboard from './components/MissionAnalysisDashboard';
-import { TargetingDecisionBoard } from './components/TargetingDecisionBoard';
-import { ProjectManagement } from './components/ProjectManagement';
-import { LeadStatusReport } from './components/LeadStatusReport';
-import { EventPerformanceDashboard } from './components/EventPerformanceDashboard';
-import { G2ZonePerformanceDashboard } from './components/G2ZonePerformanceDashboard';
-import { CalendarSchedulerDashboard } from './components/CalendarSchedulerDashboard';
-import { SharePointIntegration } from './components/SharePointIntegration';
-import { BudgetTracker } from './components/BudgetTracker';
-import { TargetingWorkingGroup } from './components/TargetingWorkingGroup';
-import FusionTeamDashboard from './components/FusionTeamDashboard';
-import MarketSegmentationDashboard from './components/MarketSegmentationDashboard';
-import TargetingMethodologyGuide from './components/TargetingMethodologyGuide';
-import { UploadData } from './components/UploadData';
+
+// Lazy load dashboard components for code splitting
+const TalentAcquisitionTechnicianDashboard = lazy(() => import('./components/TalentAcquisitionTechnicianDashboard').then(m => ({ default: m.TalentAcquisitionTechnicianDashboard })));
+const RecruitingFunnelDashboard = lazy(() => import('./components/RecruitingFunnelDashboard').then(m => ({ default: m.RecruitingFunnelDashboard })));
+const AnalyticsDashboard = lazy(() => import('./components/AnalyticsDashboard').then(m => ({ default: m.AnalyticsDashboard })));
+const MarketPotentialDashboard = lazy(() => import('./components/MarketPotentialDashboard'));
+const MissionAnalysisDashboard = lazy(() => import('./components/MissionAnalysisDashboard'));
+const TargetingDecisionBoard = lazy(() => import('./components/TargetingDecisionBoard').then(m => ({ default: m.TargetingDecisionBoard })));
+const ProjectManagement = lazy(() => import('./components/ProjectManagement').then(m => ({ default: m.ProjectManagement })));
+const LeadStatusReport = lazy(() => import('./components/LeadStatusReport').then(m => ({ default: m.LeadStatusReport })));
+const EventPerformanceDashboard = lazy(() => import('./components/EventPerformanceDashboard').then(m => ({ default: m.EventPerformanceDashboard })));
+const G2ZonePerformanceDashboard = lazy(() => import('./components/G2ZonePerformanceDashboard').then(m => ({ default: m.G2ZonePerformanceDashboard })));
+const CalendarSchedulerDashboard = lazy(() => import('./components/CalendarSchedulerDashboard').then(m => ({ default: m.CalendarSchedulerDashboard })));
+const SharePointIntegration = lazy(() => import('./components/SharePointIntegration').then(m => ({ default: m.SharePointIntegration })));
+const BudgetTracker = lazy(() => import('./components/BudgetTracker').then(m => ({ default: m.BudgetTracker })));
+const TargetingWorkingGroup = lazy(() => import('./components/TargetingWorkingGroup').then(m => ({ default: m.TargetingWorkingGroup })));
+const FusionTeamDashboard = lazy(() => import('./components/FusionTeamDashboard'));
+const MarketSegmentationDashboard = lazy(() => import('./components/MarketSegmentationDashboard'));
+const TargetingMethodologyGuide = lazy(() => import('./components/TargetingMethodologyGuide'));
+const UploadData = lazy(() => import('./components/UploadData').then(m => ({ default: m.UploadData })));
+const QuarterAssessment = lazy(() => import('./components/QuarterAssessment'));
+const AssetRecommendationEngine = lazy(() => import('./components/AssetRecommendationEngine'));
+const HistoricalDataArchive = lazy(() => import('./components/HistoricalDataArchive'));
 
 // TAAIP - Talent Acquisition AI Platform
 // Optimized for 420T Talent Acquisition Technicians
 
 const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'home' | '420t' | 'funnel' | 'analytics' | 'market' | 'mission' | 'targeting' | 'projects' | 'leads' | 'events' | 'g2zones' | 'calendar' | 'sharepoint' | 'budget' | 'twg' | 'fusion' | 'segmentation' | 'methodology' | 'upload'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | '420t' | 'funnel' | 'analytics' | 'market' | 'mission' | 'targeting' | 'projects' | 'leads' | 'events' | 'g2zones' | 'calendar' | 'sharepoint' | 'budget' | 'twg' | 'fusion' | 'segmentation' | 'methodology' | 'upload' | 'quarter-assessment' | 'asset-recommend' | 'historical'>('home');
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const menuCategories = [
@@ -51,7 +56,8 @@ const App: React.FC = () => {
       items: [
         { id: 'fusion', label: 'Fusion Team Operations', icon: <Users className="w-5 h-5" />, category: 'Mission Planning' },
         { id: 'mission', label: 'Mission Analysis (M-IPOE)', icon: <Target className="w-5 h-5" />, category: 'Mission Planning' },
-        { id: 'methodology', label: 'Targeting Methodology (D3AE/F3A)', icon: <Clipboard className="w-5 h-5" />, category: 'Mission Planning' },
+        { id: 'methodology', label: 'USAREC Targeting Methodology', icon: <Clipboard className="w-5 h-5" />, category: 'Mission Planning' },
+        { id: 'asset-recommend', label: 'Asset Recommendations', icon: <Target className="w-5 h-5" />, category: 'Mission Planning' },
         { id: 'targeting', label: 'Targeting Board', icon: <Clipboard className="w-5 h-5" />, category: 'Mission Planning' },
         { id: 'twg', label: 'Targeting Working Group', icon: <Users className="w-5 h-5" />, category: 'Mission Planning' },
         { id: 'projects', label: 'Project Management', icon: <Briefcase className="w-5 h-5" />, category: 'Mission Planning' },
@@ -60,9 +66,11 @@ const App: React.FC = () => {
     {
       name: 'Performance Tracking',
       items: [
+        { id: 'quarter-assessment', label: 'Quarter Assessment', icon: <FileCheck className="w-5 h-5" />, category: 'Performance' },
         { id: 'leads', label: 'Lead Status', icon: <FileCheck className="w-5 h-5" />, category: 'Performance' },
         { id: 'events', label: 'Event Performance', icon: <Activity className="w-5 h-5" />, category: 'Performance' },
         { id: 'g2zones', label: 'G2 Zone Analysis', icon: <Map className="w-5 h-5" />, category: 'Performance' },
+        { id: 'historical', label: 'Historical Archive', icon: <FileCheck className="w-5 h-5" />, category: 'Performance' },
       ]
     },
     {
@@ -157,26 +165,38 @@ const App: React.FC = () => {
 
       {/* Main Content */}
       <main className="flex-1 w-full max-w-7xl mx-auto px-4 py-6">
-        {activeTab === 'home' ? <HomeScreen onNavigate={(tab) => setActiveTab(tab as any)} /> :
-         activeTab === '420t' ? <TalentAcquisitionTechnicianDashboard /> :
-         activeTab === 'funnel' ? <RecruitingFunnelDashboard /> :
-         activeTab === 'analytics' ? <AnalyticsDashboard /> :
-         activeTab === 'market' ? <MarketPotentialDashboard /> :
-         activeTab === 'mission' ? <MissionAnalysisDashboard /> :
-         activeTab === 'targeting' ? <TargetingDecisionBoard /> :
-         activeTab === 'projects' ? <ProjectManagement /> :
-         activeTab === 'leads' ? <LeadStatusReport /> :
-         activeTab === 'events' ? <EventPerformanceDashboard /> :
-         activeTab === 'g2zones' ? <G2ZonePerformanceDashboard /> :
-         activeTab === 'calendar' ? <CalendarSchedulerDashboard /> :
-         activeTab === 'sharepoint' ? <SharePointIntegration /> :
-         activeTab === 'budget' ? <BudgetTracker /> :
-         activeTab === 'twg' ? <TargetingWorkingGroup /> :
-         activeTab === 'fusion' ? <FusionTeamDashboard /> :
-         activeTab === 'segmentation' ? <MarketSegmentationDashboard /> :
-         activeTab === 'methodology' ? <TargetingMethodologyGuide /> :
-         activeTab === 'upload' ? <UploadData /> :
-         <HomeScreen onNavigate={(tab) => setActiveTab(tab as any)} />}
+        <Suspense fallback={
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-500"></div>
+              <p className="mt-4 text-gray-600">Loading dashboard...</p>
+            </div>
+          </div>
+        }>
+          {activeTab === 'home' ? <HomeScreen onNavigate={(tab) => setActiveTab(tab as any)} /> :
+           activeTab === '420t' ? <TalentAcquisitionTechnicianDashboard /> :
+           activeTab === 'funnel' ? <RecruitingFunnelDashboard /> :
+           activeTab === 'analytics' ? <AnalyticsDashboard /> :
+           activeTab === 'market' ? <MarketPotentialDashboard /> :
+           activeTab === 'mission' ? <MissionAnalysisDashboard /> :
+           activeTab === 'targeting' ? <TargetingDecisionBoard /> :
+           activeTab === 'projects' ? <ProjectManagement /> :
+           activeTab === 'quarter-assessment' ? <QuarterAssessment /> :
+           activeTab === 'asset-recommend' ? <AssetRecommendationEngine /> :
+           activeTab === 'historical' ? <HistoricalDataArchive /> :
+           activeTab === 'leads' ? <LeadStatusReport /> :
+           activeTab === 'events' ? <EventPerformanceDashboard /> :
+           activeTab === 'g2zones' ? <G2ZonePerformanceDashboard /> :
+           activeTab === 'calendar' ? <CalendarSchedulerDashboard /> :
+           activeTab === 'sharepoint' ? <SharePointIntegration /> :
+           activeTab === 'budget' ? <BudgetTracker /> :
+           activeTab === 'twg' ? <TargetingWorkingGroup /> :
+           activeTab === 'fusion' ? <FusionTeamDashboard /> :
+           activeTab === 'segmentation' ? <MarketSegmentationDashboard /> :
+           activeTab === 'methodology' ? <TargetingMethodologyGuide /> :
+           activeTab === 'upload' ? <UploadData /> :
+           <HomeScreen onNavigate={(tab) => setActiveTab(tab as any)} />}
+        </Suspense>
       </main>
 
       {/* Footer */}

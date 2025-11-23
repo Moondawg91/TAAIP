@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { Eye } from 'lucide-react';
+import { DynamicDashboard } from './DynamicDashboard';
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { UniversalFilter, FilterState } from './UniversalFilter';
 import { ExportButton } from './ExportButton';
@@ -390,6 +392,17 @@ const MarketPotentialDashboard: React.FC = () => {
       <div className="bg-white p-6 border-2 border-gray-300">
         <h2 className="text-xl font-bold text-gray-800 mb-4">DOD Branch Comparison</h2>
         {renderVisualization()}
+      </div>
+
+      {/* Smart Visuals - Auto Generated */}
+      <div className="bg-white border-2 border-gray-300 rounded-lg mt-6">
+        <div className="flex items-center justify-between px-6 py-4 border-b-2 border-gray-300 bg-gray-100">
+          <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wide flex items-center gap-2">
+            <Eye className="w-4 h-4 text-blue-600" /> Smart Visuals (Market Potential Data)
+          </h3>
+          <span className="text-xs text-gray-500">Source /api/v2/market-potential</span>
+        </div>
+        <DynamicDashboard dataType="projects" />
       </div>
 
       {/* Army Performance Highlight */}

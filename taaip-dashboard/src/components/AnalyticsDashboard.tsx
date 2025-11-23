@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { BarChart, Bar, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Area, AreaChart } from 'recharts';
+import { BarChart, Bar, Line, LineChart, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Area, AreaChart } from 'recharts';
 import { TrendingUp, MapPin, School, Users, Target, CheckCircle, AlertCircle, RefreshCw } from 'lucide-react';
 import { UniversalFilter, FilterState } from './UniversalFilter';
 import { ExportButton } from './ExportButton';
+import { VisualizationController, DataVisualizer, VisualizationType } from './VisualizationController';
 
 // Color palette for charts
 const COLORS = {
@@ -80,6 +81,7 @@ export const AnalyticsDashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [activeSection, setActiveSection] = useState<'cbsa' | 'schools' | 'segments' | 'contracts'>('cbsa');
   const [filters, setFilters] = useState<FilterState>({ rsid: '', zipcode: '', cbsa: '' });
+  const [visualizationType, setVisualizationType] = useState<VisualizationType>('chart');
   
   // Data state
   const [cbsaData, setCbsaData] = useState<CBSAData[]>([]);
@@ -192,17 +194,26 @@ export const AnalyticsDashboard: React.FC = () => {
         <NavButton section="contracts" icon={<Target className="w-5 h-5" />} label="Contract Progress" />
       </div>
 
+      {/* Visualization Controller */}
+      <div className="bg-white border-2 border-yellow-500 rounded-lg p-4">
+        <VisualizationController
+          currentView={visualizationType}
+          onViewChange={setVisualizationType}
+          availableViews={['chart', 'line', 'table', 'cards', 'pie', 'area']}
+        />
+      </div>
+
       {/* Content Sections */}
-      {activeSection === 'cbsa' && <CBSASection data={cbsaData} />}
-      {activeSection === 'schools' && <SchoolsSection data={schoolData} />}
-      {activeSection === 'segments' && <SegmentsSection data={segmentData} />}
-      {activeSection === 'contracts' && contractData && <ContractsSection data={contractData} />}
+      {activeSection === 'cbsa' && <CBSASection data={cbsaData} visualizationType={visualizationType} />}
+      {activeSection === 'schools' && <SchoolsSection data={schoolData} visualizationType={visualizationType} />}
+      {activeSection === 'segments' && <SegmentsSection data={segmentData} visualizationType={visualizationType} />}
+      {activeSection === 'contracts' && contractData && <ContractsSection data={contractData} visualizationType={visualizationType} />}
     </div>
   );
 };
 
 // CBSA Section
-const CBSASection: React.FC<{ data: CBSAData[] }> = ({ data }) => {
+const CBSASection: React.FC<{ data: CBSAData[]; visualizationType: VisualizationType }> = ({ data, visualizationType }) => {
   // Prepare chart data
   const barChartData = data.map(cbsa => ({
     name: cbsa.cbsa_name.split(',')[0], // Short name
@@ -213,6 +224,18 @@ const CBSASection: React.FC<{ data: CBSAData[] }> = ({ data }) => {
   const pieChartData = data.slice(0, 5).map(cbsa => ({
     name: cbsa.cbsa_name.split(',')[0],
     value: cbsa.lead_count,
+  }));
+
+  const lineChartData = data.map(cbsa => ({
+    name: cbsa.cbsa_name.split(',')[0],
+    leads: cbsa.lead_count,
+    score: cbsa.avg_score,
+  }));
+
+  const areaChartData = data.map(cbsa => ({
+    name: cbsa.cbsa_name.split(',')[0],
+    potential: cbsa.conversion_potential,
+    share: cbsa.market_share,
   }));
 
   return (
@@ -254,55 +277,120 @@ const CBSASection: React.FC<{ data: CBSAData[] }> = ({ data }) => {
         </div>
       </div>
 
-      {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Bar Chart: Lead Volume by CBSA */}
-        <div className="bg-white border-2 border-gray-300 p-6">
-          <div className="bg-gray-100 -m-6 mb-4 p-4 border-b-2 border-gray-300">
-            <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wide">Lead Volume by CBSA</h3>
+      {/* Dynamic Visualizations */}
+      <DataVisualizer
+        data={data}
+        visualizationType={visualizationType}
+        renderChart={() => (
+          <div className="bg-white border-2 border-gray-300 p-6">
+            <div className="bg-gray-100 -m-6 mb-4 p-4 border-b-2 border-gray-300">
+              <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wide">Lead Volume by CBSA (Bar Chart)</h3>
+            </div>
+            <ResponsiveContainer width="100%" height={400}>
+              <BarChart data={barChartData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} fontSize={12} />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="leads" fill={COLORS.primary} name="Total Leads" />
+                <Bar dataKey="quality" fill={COLORS.success} name="High Quality" />
+              </BarChart>
+            </ResponsiveContainer>
           </div>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={barChartData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} fontSize={12} />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Bar dataKey="leads" fill={COLORS.primary} name="Total Leads" />
-              <Bar dataKey="quality" fill={COLORS.success} name="High Quality" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* Pie Chart: Market Share */}
-        <div className="bg-white border-2 border-gray-300 p-6">
-          <div className="bg-gray-100 -m-6 mb-4 p-4 border-b-2 border-gray-300">
-            <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wide">Top 5 CBSAs - Market Share</h3>
+        )}
+        renderLine={() => (
+          <div className="bg-white border-2 border-gray-300 p-6">
+            <div className="bg-gray-100 -m-6 mb-4 p-4 border-b-2 border-gray-300">
+              <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wide">CBSA Performance Trends (Line Graph)</h3>
+            </div>
+            <ResponsiveContainer width="100%" height={400}>
+              <LineChart data={lineChartData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} fontSize={12} />
+                <YAxis yAxisId="left" />
+                <YAxis yAxisId="right" orientation="right" />
+                <Tooltip />
+                <Legend />
+                <Line yAxisId="left" type="monotone" dataKey="leads" stroke={COLORS.primary} strokeWidth={2} name="Leads" />
+                <Line yAxisId="right" type="monotone" dataKey="score" stroke={COLORS.success} strokeWidth={2} name="Avg Score" />
+              </LineChart>
+            </ResponsiveContainer>
           </div>
-          <ResponsiveContainer width="100%" height={300}>
-            <PieChart>
-              <Pie
-                data={pieChartData}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                outerRadius={80}
-                fill="#8884d8"
-                dataKey="value"
-              >
-                {pieChartData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      {/* Data Table */}
-      <div className="bg-white border-2 border-gray-300">
+        )}
+        renderPie={() => (
+          <div className="bg-white border-2 border-gray-300 p-6">
+            <div className="bg-gray-100 -m-6 mb-4 p-4 border-b-2 border-gray-300">
+              <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wide">Top 5 CBSAs - Market Share (Pie Chart)</h3>
+            </div>
+            <ResponsiveContainer width="100%" height={400}>
+              <PieChart>
+                <Pie
+                  data={pieChartData}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                  outerRadius={120}
+                  fill="#8884d8"
+                  dataKey="value"
+                >
+                  {pieChartData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+        renderArea={() => (
+          <div className="bg-white border-2 border-gray-300 p-6">
+            <div className="bg-gray-100 -m-6 mb-4 p-4 border-b-2 border-gray-300">
+              <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wide">CBSA Potential Analysis (Area Chart)</h3>
+            </div>
+            <ResponsiveContainer width="100%" height={400}>
+              <AreaChart data={areaChartData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} fontSize={12} />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Area type="monotone" dataKey="potential" stackId="1" stroke={COLORS.purple} fill={COLORS.purple} fillOpacity={0.6} name="Conversion Potential %" />
+                <Area type="monotone" dataKey="share" stackId="2" stroke={COLORS.teal} fill={COLORS.teal} fillOpacity={0.6} name="Market Share %" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+        renderCards={() => (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {data.map((cbsa, idx) => (
+              <div key={idx} className="bg-white border-2 border-gray-300 rounded-lg p-4 hover:shadow-lg transition-shadow">
+                <h4 className="font-bold text-gray-900 mb-2">{cbsa.cbsa_name}</h4>
+                <div className="space-y-1 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Leads:</span>
+                    <span className="font-semibold text-blue-600">{cbsa.lead_count.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Avg Score:</span>
+                    <span className="font-semibold text-green-600">{cbsa.avg_score.toFixed(1)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">High Quality:</span>
+                    <span className="font-semibold text-purple-600">{cbsa.high_quality_count}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Market Share:</span>
+                    <span className="font-semibold text-yellow-600">{cbsa.market_share.toFixed(1)}%</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        renderTable={() => (
+          <div className="bg-white border-2 border-gray-300">
         <div className="bg-gray-100 px-6 py-4 border-b-2 border-gray-300">
           <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wide">CBSA Performance Details</h3>
         </div>
@@ -333,12 +421,14 @@ const CBSASection: React.FC<{ data: CBSAData[] }> = ({ data }) => {
           </table>
         </div>
       </div>
+        )}
+      />
     </div>
   );
 };
 
 // Schools Section
-const SchoolsSection: React.FC<{ data: SchoolData[] }> = ({ data }) => {
+const SchoolsSection: React.FC<{ data: SchoolData[]; visualizationType: VisualizationType }> = ({ data, visualizationType }) => {
   const chartData = data.slice(0, 10).map(school => ({
     name: school.name.substring(0, 20) + '...',
     leads: school.leads,
@@ -477,7 +567,7 @@ const SchoolsSection: React.FC<{ data: SchoolData[] }> = ({ data }) => {
 };
 
 // Segments Section
-const SegmentsSection: React.FC<{ data: SegmentData[] }> = ({ data }) => {
+const SegmentsSection: React.FC<{ data: SegmentData[]; visualizationType: VisualizationType }> = ({ data, visualizationType }) => {
   // Chart data for penetration vs potential
   const scatterData = data.map(seg => ({
     name: seg.segment_name.substring(0, 25),
@@ -622,7 +712,7 @@ const SegmentsSection: React.FC<{ data: SegmentData[] }> = ({ data }) => {
 };
 
 // Contracts Section
-const ContractsSection: React.FC<{ data: ContractMetrics }> = ({ data }) => {
+const ContractsSection: React.FC<{ data: ContractMetrics; visualizationType: VisualizationType }> = ({ data, visualizationType }) => {
   // Progress percentage
   const progressPercent = data.percent_complete;
   const isOnTrack = data.on_track;

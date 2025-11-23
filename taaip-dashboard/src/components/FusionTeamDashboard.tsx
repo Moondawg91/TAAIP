@@ -43,7 +43,7 @@ const FUSION_ROLES = {
     ]
   },
   '420T': {
-    title: '420T Talent Acquisition Technician',
+    title: '420T Warrant Officer Talent Acquisition Technician',
     icon: <Target className="w-6 h-6" />,
     color: 'from-yellow-600 to-yellow-800',
     responsibilities: [
@@ -104,7 +104,7 @@ const FUSION_ROLES = {
 };
 
 export const FusionTeamDashboard: React.FC = () => {
-  const [activeView, setActiveView] = useState<'overview' | 'cycle' | 'paperwork' | 'calendar'>('overview');
+  const [activeView, setActiveView] = useState<'overview' | 'cycle' | 'paperwork' | 'calendar' | 'roles'>('overview');
   const [teamMembers, setTeamMembers] = useState<FusionTeamMember[]>([]);
   const [cyclePhases, setCyclePhases] = useState<FusionCyclePhase[]>([]);
   const [paperwork, setPaperwork] = useState<PaperworkTracker[]>([]);
@@ -270,9 +270,11 @@ export const FusionTeamDashboard: React.FC = () => {
           {teamMembers.map((member) => {
             const roleConfig = FUSION_ROLES[member.role as keyof typeof FUSION_ROLES];
             return (
-              <div
+              <button
                 key={member.role}
-                className="bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-lg p-4 hover:shadow-lg transition-shadow"
+                onClick={() => setActiveView('roles')}
+                className="bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-lg p-4 hover:shadow-lg hover:border-yellow-500 transition-all text-left cursor-pointer"
+                title="Click to view detailed role assignments"
               >
                 <div className={`bg-gradient-to-r ${roleConfig.color} text-white rounded-lg p-3 mb-3`}>
                   <div className="flex items-center justify-between">
@@ -305,7 +307,7 @@ export const FusionTeamDashboard: React.FC = () => {
                     ))}
                   </ul>
                 </div>
-              </div>
+              </button>
             );
           })}
         </div>
@@ -469,6 +471,97 @@ export const FusionTeamDashboard: React.FC = () => {
     </div>
   );
 
+  const renderTeamRoles = () => (
+    <div className="space-y-6">
+      <div className="bg-gradient-to-r from-yellow-600 to-yellow-700 text-white rounded-lg shadow-lg p-6">
+        <h2 className="text-2xl font-bold mb-2 flex items-center">
+          <Users className="w-8 h-8 mr-3" />
+          Team Role Assignments & Responsibilities
+        </h2>
+        <p className="text-yellow-100">Detailed breakdown of each Fusion Team role with full responsibilities and coordination requirements</p>
+      </div>
+
+      {/* Detailed Role Cards */}
+      <div className="space-y-6">
+        {Object.entries(FUSION_ROLES).map(([roleKey, roleConfig]) => {
+          const member = teamMembers.find(m => m.role === roleKey);
+          return (
+            <div key={roleKey} className="bg-white rounded-lg shadow-md border-2 border-gray-200 overflow-hidden">
+              <div className={`bg-gradient-to-r ${roleConfig.color} text-white p-6`}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="bg-white/20 rounded-full p-3">
+                      {roleConfig.icon}
+                    </div>
+                    <div>
+                      <h3 className="text-2xl font-bold">{roleConfig.title}</h3>
+                      <p className="text-sm opacity-90">Role: {roleKey}</p>
+                    </div>
+                  </div>
+                  {member && (
+                    <div className="text-right">
+                      <p className="text-sm opacity-75">Currently Assigned:</p>
+                      <p className="text-xl font-bold">{member.name}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="p-6">
+                <div className="mb-6">
+                  <h4 className="text-lg font-bold text-gray-800 mb-3 flex items-center">
+                    <CheckSquare className="w-5 h-5 mr-2 text-green-600" />
+                    Complete Responsibilities
+                  </h4>
+                  <ul className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {roleConfig.responsibilities.map((resp, idx) => (
+                      <li key={idx} className="flex items-start bg-gray-50 p-3 rounded border border-gray-200">
+                        <span className="bg-yellow-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold mr-3 flex-shrink-0 mt-0.5">
+                          {idx + 1}
+                        </span>
+                        <span className="text-sm text-gray-700">{resp}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {member && (
+                  <div className="grid grid-cols-3 gap-4 pt-6 border-t border-gray-200">
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
+                      <p className="text-2xl font-bold text-blue-600">{member.currentTasks}</p>
+                      <p className="text-sm text-gray-600">Current Tasks</p>
+                    </div>
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
+                      <p className="text-2xl font-bold text-green-600">{member.completedTasks}</p>
+                      <p className="text-sm text-gray-600">Completed Tasks</p>
+                    </div>
+                    <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 text-center">
+                      <p className="text-2xl font-bold text-purple-600">
+                        {member.completedTasks > 0 ? Math.round((member.completedTasks / (member.completedTasks + member.currentTasks)) * 100) : 0}%
+                      </p>
+                      <p className="text-sm text-gray-600">Completion Rate</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="bg-yellow-50 border-l-4 border-yellow-600 p-6 rounded">
+        <h4 className="font-bold text-yellow-900 mb-2 flex items-center">
+          <AlertCircle className="w-5 h-5 mr-2" />
+          Team Coordination Note
+        </h4>
+        <p className="text-sm text-yellow-800">
+          All Fusion Team members work in close coordination. The XO leads the process and ensures all deadlines are met.
+          Regular touchpoints should be scheduled to maintain synchronization across all functional areas.
+        </p>
+      </div>
+    </div>
+  );
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
@@ -536,6 +629,16 @@ export const FusionTeamDashboard: React.FC = () => {
           >
             Event Calendar
           </button>
+          <button
+            onClick={() => setActiveView('roles')}
+            className={`px-6 py-3 font-semibold transition-colors ${
+              activeView === 'roles'
+                ? 'border-b-2 border-yellow-600 text-yellow-600'
+                : 'text-gray-600 hover:text-gray-800'
+            }`}
+          >
+            Team Role Assignments
+          </button>
         </div>
       </div>
 
@@ -544,6 +647,7 @@ export const FusionTeamDashboard: React.FC = () => {
       {activeView === 'cycle' && renderCycle()}
       {activeView === 'paperwork' && renderPaperwork()}
       {activeView === 'calendar' && renderCalendar()}
+      {activeView === 'roles' && renderTeamRoles()}
     </div>
   );
 };

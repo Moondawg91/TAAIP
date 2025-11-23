@@ -390,8 +390,7 @@ export const UploadData: React.FC = () => {
       {/* Info Note */}
       <div className="mt-6 p-4 bg-gray-100 rounded-lg">
         <p className="text-sm text-gray-600">
-          <strong>Note:</strong> After uploading data, visit the Smart Visualizations dashboard to see 
-          auto-generated charts and insights from your newly imported records.
+          <strong>Note:</strong> Auto-generated Smart Visuals now appear embedded at the bottom of key dashboards (Analytics, Funnel, Market, Mission, Events) after successful uploads.
         </p>
       </div>
     </div>

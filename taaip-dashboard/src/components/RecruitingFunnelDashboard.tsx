@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { 
   TrendingDown, TrendingUp, Users, UserCheck, FileText, ClipboardCheck, 
-  Ship, XCircle, AlertTriangle, Clock, Target, BarChart3, Activity, CheckCircle2
+  Ship, XCircle, AlertTriangle, Clock, Target, BarChart3, Activity, CheckCircle2, Eye
 } from 'lucide-react';
 import { 
   BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, FunnelChart, Funnel,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer 
 } from 'recharts';
 import { UniversalFilter, FilterState } from './UniversalFilter';
+import { DynamicDashboard } from './DynamicDashboard';
 import { ExportButton } from './ExportButton';
 
 const API_BASE = 'http://localhost:8000';
@@ -409,6 +410,17 @@ export const RecruitingFunnelDashboard: React.FC = () => {
           </div>
         </div>
         </div>
+      </div>
+
+      {/* Smart Visuals - Auto Generated */}
+      <div className="bg-white border-2 border-gray-300 rounded-lg">
+        <div className="flex items-center justify-between px-6 py-4 border-b-2 border-gray-300 bg-gray-100">
+          <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wide flex items-center gap-2">
+            <Eye className="w-4 h-4 text-blue-600" /> Smart Visuals (Funnel Data)
+          </h3>
+          <span className="text-xs text-gray-500">Source /api/v2/recruiting-funnel/metrics</span>
+        </div>
+        <DynamicDashboard dataType="leads" />
       </div>
     </div>
   );

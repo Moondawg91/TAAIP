@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { Eye } from 'lucide-react';
+import { DynamicDashboard } from './DynamicDashboard';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 interface MissionAnalysisData {
@@ -438,6 +440,17 @@ const MissionAnalysisDashboard: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Smart Visuals - Auto Generated */}
+      <div className="bg-white border-2 border-gray-300 rounded-lg mt-6">
+        <div className="flex items-center justify-between px-6 py-4 border-b-2 border-gray-300 bg-gray-100">
+          <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wide flex items-center gap-2">
+            <Eye className="w-4 h-4 text-blue-600" /> Smart Visuals (Mission Analysis Data)
+          </h3>
+          <span className="text-xs text-gray-500">Source /api/v2/mission-analysis</span>
+        </div>
+        <DynamicDashboard dataType="projects" />
+      </div>
     </div>
   );
 };

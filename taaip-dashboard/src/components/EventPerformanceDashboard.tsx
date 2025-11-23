@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { Eye } from 'lucide-react';
+import { DynamicDashboard } from './DynamicDashboard';
 import {
   TrendingUp, TrendingDown, Target, DollarSign, Users, Award,
   Calendar, MapPin, Sparkles, BarChart3, PieChart as PieChartIcon,
@@ -521,6 +523,17 @@ export const EventPerformanceDashboard: React.FC = () => {
       </div>
 
       {viewMode === 'summary' ? renderSummary() : renderDetail()}
+
+      {/* Smart Visuals - Auto Generated */}
+      <div className="bg-white border-2 border-gray-300 rounded-lg">
+        <div className="flex items-center justify-between px-6 py-4 border-b-2 border-gray-300 bg-gray-100">
+          <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wide flex items-center gap-2">
+            <Eye className="w-4 h-4 text-blue-600" /> Smart Visuals (Event Performance Data)
+          </h3>
+          <span className="text-xs text-gray-500">Source /api/v2/events/performance</span>
+        </div>
+        <DynamicDashboard dataType="events" />
+      </div>
     </div>
   );
 };

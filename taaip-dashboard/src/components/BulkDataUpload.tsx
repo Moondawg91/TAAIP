@@ -102,8 +102,8 @@ export const BulkDataUpload: React.FC = () => {
     
     if (type === 'events') {
       csvContent = 'name,type,location,start_date,end_date,budget,team_size,targeting_principles,status\n';
-      csvContent += 'Spring Job Fair 2025,recruitment_event,San Antonio TX,2025-03-15,2025-03-15,5000,10,D3AE F3A,planned\n';
-      csvContent += 'College Visit - UTSA,college_visit,San Antonio TX,2025-04-10,2025-04-10,1000,5,F3A,planned\n';
+      csvContent += 'Spring Job Fair 2025,recruitment_event,San Antonio TX,2025-03-15,2025-03-15,5000,10,USAREC Cycle,planned\n';
+      csvContent += 'College Visit - UTSA,college_visit,San Antonio TX,2025-04-10,2025-04-10,1000,5,USAREC Cycle,planned\n';
     } else if (type === 'projects') {
       csvContent = 'name,owner_id,start_date,target_date,objectives,event_id,funding_amount,status\n';
       csvContent += 'Q1 Digital Campaign,SSG Smith,2025-01-01,2025-03-31,Increase leads by 20%,EVT-12345,25000,in_progress\n';

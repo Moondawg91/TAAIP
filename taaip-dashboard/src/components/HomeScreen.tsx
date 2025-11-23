@@ -5,7 +5,7 @@ import {
   Database, ChevronRight, Shield, BookOpen, AlertCircle, HelpCircle
 } from 'lucide-react';
 import { CompanyStandingsLeaderboard } from './CompanyStandingsLeaderboard';
-import { QuickReference } from './QuickReference';
+// QuickReference removed per request; single link added in Resources
 import { LiveUpdatesBanner } from './LiveUpdatesBanner';
 
 interface HomeScreenProps {
@@ -157,8 +157,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate }) => {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
           {/* Left Sidebar - Quick Access Panels */}
           <div className="lg:col-span-1 space-y-4">
-            {/* Quick Reference */}
-            <QuickReference onNavigate={onNavigate} />
             
             {/* Resources Panel */}
             <div className="bg-white rounded-lg shadow-md border-2 border-gray-200">
