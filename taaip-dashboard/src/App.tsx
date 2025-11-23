@@ -27,12 +27,13 @@ const UploadData = lazy(() => import('./components/UploadData').then(m => ({ def
 const QuarterAssessment = lazy(() => import('./components/QuarterAssessment'));
 const AssetRecommendationEngine = lazy(() => import('./components/AssetRecommendationEngine'));
 const HistoricalDataArchive = lazy(() => import('./components/HistoricalDataArchive'));
+const UserManagement = lazy(() => import('./components/UserManagement'));
 
 // TAAIP - Talent Acquisition AI Platform
 // Optimized for 420T Talent Acquisition Technicians
 
 const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'home' | '420t' | 'funnel' | 'analytics' | 'market' | 'mission' | 'targeting' | 'projects' | 'leads' | 'events' | 'g2zones' | 'calendar' | 'sharepoint' | 'budget' | 'twg' | 'fusion' | 'segmentation' | 'methodology' | 'upload' | 'quarter-assessment' | 'asset-recommend' | 'historical'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | '420t' | 'funnel' | 'analytics' | 'market' | 'mission' | 'targeting' | 'projects' | 'leads' | 'events' | 'g2zones' | 'calendar' | 'sharepoint' | 'budget' | 'twg' | 'fusion' | 'segmentation' | 'methodology' | 'upload' | 'quarter-assessment' | 'asset-recommend' | 'historical' | 'user-management'>('home');
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const menuCategories = [
@@ -81,6 +82,12 @@ const App: React.FC = () => {
         { id: 'sharepoint', label: 'SharePoint Files', icon: <FolderOpen className="w-5 h-5" />, category: 'Operations' },
         { id: 'budget', label: 'Budget Tracker', icon: <DollarSign className="w-5 h-5" />, category: 'Operations' },
         { id: 'upload', label: 'Upload Data', icon: <FileCheck className="w-5 h-5" />, category: 'Operations' },
+      ]
+    },
+    {
+      name: 'Administration',
+      items: [
+        { id: 'user-management', label: 'User Management', icon: <Users className="w-5 h-5" />, category: 'Administration' },
       ]
     }
   ];
@@ -195,6 +202,22 @@ const App: React.FC = () => {
            activeTab === 'segmentation' ? <MarketSegmentationDashboard /> :
            activeTab === 'methodology' ? <TargetingMethodologyGuide /> :
            activeTab === 'upload' ? <UploadData /> :
+           activeTab === 'user-management' ? <UserManagement currentUser={{
+             user_id: 'current-user',
+             username: 'admin',
+             email: 'admin@army.mil',
+             position: '420T',
+             unit_id: 'bn-houston',
+             role: {
+               role_id: 'tier-3-admin',
+               role_name: '420T System Administrator',
+               tier: 'tier-3-admin',
+               permissions: ['manage_users', 'assign_roles', 'delegate_permissions', 'view_all_dashboards', 'edit_data', 'approve_events'],
+               description: '420T Admin'
+             },
+             created_at: '2025-01-01',
+             is_active: true
+           }} /> :
            <HomeScreen onNavigate={(tab) => setActiveTab(tab as any)} />}
         </Suspense>
       </main>
