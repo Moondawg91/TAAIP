@@ -13,7 +13,7 @@ This migration:
 import sqlite3
 from datetime import datetime
 
-DB_FILE = "/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3"
+DB_FILE = "recruiting.db"
 
 def migrate_funnel_stages():
     print("🔄 Updating recruiting funnel stages to match Army process...")

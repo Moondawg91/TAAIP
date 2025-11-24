@@ -7,7 +7,7 @@ and G2 Zone lead performance tracking capabilities.
 import sqlite3
 from datetime import datetime
 
-DB_FILE = '/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3'
+DB_FILE = 'recruiting.db'
 
 def run_migration():
     conn = sqlite3.connect(DB_FILE)
