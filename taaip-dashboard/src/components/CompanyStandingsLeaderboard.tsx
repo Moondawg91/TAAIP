@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Trophy, TrendingUp, TrendingDown, Minus, Award } from 'lucide-react';
 import { ExportButton } from './ExportButton';
+import { API_BASE } from '../config/api';
 
 interface CompanyStanding {
   rank: number;
@@ -42,7 +43,7 @@ export const CompanyStandingsLeaderboard: React.FC<CompanyStandingsLeaderboardPr
 
   const fetchStandings = async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/v2/standings/companies');
+      const response = await fetch(`${API_BASE}/api/v2/standings/companies`);
       const data = await response.json();
       if (data.status === 'ok') {
         setStandings(data.standings);

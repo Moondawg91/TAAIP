@@ -10,8 +10,7 @@ import {
   Grid, List, Map as MapIcon, Activity, AlertCircle, CheckCircle,
   Clock, Hash, Percent, Eye
 } from 'lucide-react';
-
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+import { API_BASE } from '../config/api';
 
 interface DataField {
   name: string;

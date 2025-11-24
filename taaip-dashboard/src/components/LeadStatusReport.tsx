@@ -7,8 +7,7 @@ import {
   BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Area, AreaChart
 } from 'recharts';
-
-const API_BASE = 'http://localhost:8000';
+import { API_BASE } from '../config/api';
 
 interface Lead {
   lead_id: string;

@@ -10,8 +10,7 @@ import {
 import { UniversalFilter, FilterState } from './UniversalFilter';
 import { DynamicDashboard } from './DynamicDashboard';
 import { ExportButton } from './ExportButton';
-
-const API_BASE = 'http://localhost:8000';
+import { API_BASE } from '../config/api';
 
 // Army Recruiting Funnel stage colors
 const STAGE_COLORS = {

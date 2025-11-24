@@ -10,8 +10,7 @@ import {
   BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, ScatterChart, Scatter,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
-
-const API_BASE = 'http://localhost:8000';
+import { API_BASE } from '../config/api';
 
 // Event type colors and icons
 const EVENT_TYPE_CONFIG = {

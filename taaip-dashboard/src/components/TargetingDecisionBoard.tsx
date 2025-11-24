@@ -7,8 +7,7 @@ import {
   BarChart, Bar, PieChart, Pie, Cell, LineChart, Line,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
-
-const API_BASE = 'http://localhost:8000';
+import { API_BASE } from '../config/api';
 
 interface ReviewBoard {
   board_id: string;

@@ -5,8 +5,7 @@ import {
   ChevronLeft, ChevronRight, Filter, Download, RefreshCw
 } from 'lucide-react';
 import { UniversalFilter, FilterState } from './UniversalFilter';
-
-const API_BASE = 'http://localhost:8000';
+import { API_BASE } from '../config/api';
 
 // Event type colors
 const EVENT_TYPE_COLORS: { [key: string]: string } = {

@@ -7,8 +7,7 @@ import {
   BarChart, Bar, LineChart, Line, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell
 } from 'recharts';
-
-const API_BASE = 'http://localhost:8000';
+import { API_BASE } from '../config/api';
 
 interface G2Zone {
   zone_id: string;

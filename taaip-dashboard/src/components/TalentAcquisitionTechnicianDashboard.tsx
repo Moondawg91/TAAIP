@@ -5,8 +5,7 @@ import {
   Filter, Download, RefreshCw, Shield, Award, BookOpen, X, ExternalLink, FileDown
 } from 'lucide-react';
 import { UniversalFilter, FilterState } from './UniversalFilter';
-
-const API_BASE = 'http://localhost:8000';
+import { API_BASE } from '../config/api';
 
 // 420T Dashboard - Comprehensive Talent Acquisition Technician View with Drill-Down & Export
 

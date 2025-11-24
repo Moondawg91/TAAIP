@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Save, Plus, X, Edit, Trash2, CheckCircle, Calendar, DollarSign, AlertCircle, Users, Target } from 'lucide-react';
+import { API_BASE } from '../config/api';
 
 interface Project {
   project_id: string;
@@ -32,8 +33,6 @@ interface Milestone {
   target_date: string;
   actual_date?: string;
 }
-
-const API_BASE = 'http://localhost:8000';
 
 export const ProjectEditor: React.FC<{ projectId: string; onClose: () => void }> = ({ projectId, onClose }) => {
   const [project, setProject] = useState<Project | null>(null);

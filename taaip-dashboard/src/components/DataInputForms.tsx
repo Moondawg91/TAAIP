@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { PlusCircle, Save, Calendar, DollarSign, Users, MapPin, AlertCircle } from 'lucide-react';
+import { API_BASE } from '../config/api';
 
 interface EventFormData {
   event_id: string;
@@ -25,8 +26,6 @@ interface ProjectFormData {
   objectives: string;
   funding_amount: number;
 }
-
-const API_BASE = 'http://localhost:8000';
 
 export const DataInputForms: React.FC = () => {
   const [activeForm, setActiveForm] = useState<'event' | 'project'>('event');
