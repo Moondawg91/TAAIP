@@ -14,6 +14,7 @@ import sqlite3
 import secrets
 from datetime import datetime
 from typing import Optional, Dict, Any
+import threading
 
 
 # --- Configuration & Initialization ---
@@ -853,6 +854,43 @@ def create_event(event: EventCreate):
     conn.commit()
     conn.close()
     return {"status": "ok", "event_id": event_id}
+
+
+@app.get("/api/v2/events")
+def list_events(event_type: Optional[str] = None, rsid: Optional[str] = None, limit: int = 100):
+    """List events with predicted fields for dashboards."""
+    try:
+        conn = sqlite3.connect(DB_FILE)
+        conn.row_factory = sqlite3.Row
+        cur = conn.cursor()
+        query = (
+            "SELECT event_id, name, COALESCE(event_type_category, type) AS event_type_category, "
+            "location, start_date, end_date, budget, team_size, status, "
+            "predicted_leads, predicted_conversions, predicted_roi, predicted_cost_per_lead, prediction_confidence "
+            "FROM events WHERE 1=1"
+        )
+        params = []
+        if event_type:
+            query += " AND (event_type_category = ? OR type = ?)"
+            params.extend([event_type, event_type])
+        if rsid:
+            # Include if schema has rsid column; ignore if not
+            try:
+                cur.execute("PRAGMA table_info(events)")
+                cols = [r[1] for r in cur.fetchall()]
+                if "rsid" in cols:
+                    query += " AND rsid = ?"
+                    params.append(rsid)
+            except Exception:
+                pass
+        query += " ORDER BY start_date DESC LIMIT ?"
+        params.append(max(1, min(limit, 500)))
+        cur.execute(query, params)
+        rows = [dict(r) for r in cur.fetchall()]
+        conn.close()
+        return {"status": "ok", "data": rows, "count": len(rows)}
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"status": "error", "message": str(e)})
 
 
 @app.get("/api/v2/events/{event_id}/metrics")
