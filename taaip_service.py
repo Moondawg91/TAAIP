@@ -581,23 +581,39 @@ def get_market_potential():
     conn = get_db_conn()
     cur = conn.cursor()
     
+    # Inspect leads columns
+    cur.execute("PRAGMA table_info(leads)")
+    lead_cols = {row[1] for row in cur.fetchall()}
+    # Choose a source-like column if available
+    source_col = None
+    for cand in ("source", "campaign_source", "lead_source", "channel"):
+        if cand in lead_cols:
+            source_col = cand
+            break
+    stage_col = 'current_stage' if 'current_stage' in lead_cols else ('stage' if 'stage' in lead_cols else None)
+    
     # Get lead source statistics
-    cur.execute("""
-        SELECT source, COUNT(*) as count
-        FROM leads
-        WHERE source IS NOT NULL
-        GROUP BY source
-        ORDER BY count DESC
-    """)
-    sources = [{"source": row[0], "count": row[1]} for row in cur.fetchall()]
+    sources = []
+    if source_col:
+        cur.execute(f"""
+            SELECT {source_col}, COUNT(*) as count
+            FROM leads
+            WHERE {source_col} IS NOT NULL
+            GROUP BY {source_col}
+            ORDER BY count DESC
+        """)
+        sources = [{"source": row[0], "count": row[1]} for row in cur.fetchall()]
     
     # Get demographics if available
-    cur.execute("""
-        SELECT 
-            COUNT(*) as total,
-            SUM(CASE WHEN current_stage IN ('enlistment', 'ship') THEN 1 ELSE 0 END) as converted
-        FROM leads
-    """)
+    if stage_col:
+        cur.execute(f"""
+            SELECT 
+                COUNT(*) as total,
+                SUM(CASE WHEN {stage_col} IN ('enlistment', 'ship') THEN 1 ELSE 0 END) as converted
+            FROM leads
+        """)
+    else:
+        cur.execute("SELECT COUNT(*) as total, 0 as converted FROM leads")
     market_row = cur.fetchone()
     total = market_row[0] or 0
     converted = market_row[1] or 0
@@ -622,46 +638,90 @@ def get_targeting_recommendations():
     conn = get_db_conn()
     cur = conn.cursor()
     
+    # Inspect leads columns to adjust query
+    cur.execute("PRAGMA table_info(leads)")
+    lead_cols = {row[1] for row in cur.fetchall()}
+    stage_col = 'current_stage' if 'current_stage' in lead_cols else ('stage' if 'stage' in lead_cols else None)
+    score_col = 'propensity_score' if 'propensity_score' in lead_cols else ('score' if 'score' in lead_cols else None)
+    name_first = 'first_name' if 'first_name' in lead_cols else None
+    name_last = 'last_name' if 'last_name' in lead_cols else None
+    source_col = None
+    for cand in ("source", "campaign_source", "lead_source", "channel"):
+        if cand in lead_cols:
+            source_col = cand
+            break
+    days_col = 'days_in_stage' if 'days_in_stage' in lead_cols else None
+    
     # Get high-potential leads (high propensity score, early stage)
-    cur.execute("""
-        SELECT lead_id, first_name, last_name, propensity_score, current_stage, source
-        FROM leads
-        WHERE current_stage IN ('lead', 'prospect', 'appointment_made')
-        AND propensity_score >= 70
-        ORDER BY propensity_score DESC
-        LIMIT 10
-    """)
-    high_potential = [
-        {
-            "lead_id": row[0],
-            "name": f"{row[1]} {row[2]}",
-            "score": row[3],
-            "stage": row[4],
-            "source": row[5],
-            "recommendation": "High priority - strong conversion potential"
-        }
-        for row in cur.fetchall()
-    ]
+    high_potential = []
+    if stage_col and score_col:
+        select_name = (
+            f", {name_first}, {name_last}" if name_first and name_last else ""
+        )
+        select_source = f", {source_col}" if source_col else ""
+        cur.execute(f"""
+            SELECT lead_id{select_name}, {score_col}, {stage_col}{select_source}
+            FROM leads
+            WHERE {stage_col} IN ('lead', 'prospect', 'appointment_made')
+            AND {score_col} >= 70
+            ORDER BY {score_col} DESC
+            LIMIT 10
+        """)
+        rows = cur.fetchall()
+        for r in rows:
+            idx = 0
+            lead_id = r[idx]; idx += 1
+            if name_first and name_last:
+                first = r[idx]; idx += 1
+                last = r[idx]; idx += 1
+                name = f"{first or ''} {last or ''}".strip()
+            else:
+                name = None
+            score = r[idx]; idx += 1
+            stage = r[idx]; idx += 1
+            src = r[idx] if source_col else None
+            high_potential.append({
+                "lead_id": lead_id,
+                "name": name or lead_id,
+                "score": score,
+                "stage": stage,
+                "source": src,
+                "recommendation": "High priority - strong conversion potential"
+            })
     
     # Get stagnant leads (long time in stage, needs attention)
-    cur.execute("""
-        SELECT lead_id, first_name, last_name, current_stage, days_in_stage
-        FROM leads
-        WHERE current_stage IN ('prospect', 'appointment_made')
-        AND days_in_stage > 30
-        ORDER BY days_in_stage DESC
-        LIMIT 10
-    """)
-    stagnant = [
-        {
-            "lead_id": row[0],
-            "name": f"{row[1]} {row[2]}",
-            "stage": row[3],
-            "days_in_stage": row[4],
-            "recommendation": f"Follow up needed - {row[4]} days in stage"
-        }
-        for row in cur.fetchall()
-    ]
+    stagnant = []
+    if stage_col and days_col:
+        select_name = (
+            f", {name_first}, {name_last}" if name_first and name_last else ""
+        )
+        cur.execute(f"""
+            SELECT lead_id{select_name}, {stage_col}, {days_col}
+            FROM leads
+            WHERE {stage_col} IN ('prospect', 'appointment_made')
+            AND {days_col} > 30
+            ORDER BY {days_col} DESC
+            LIMIT 10
+        """)
+        rows = cur.fetchall()
+        for r in rows:
+            idx = 0
+            lead_id = r[idx]; idx += 1
+            if name_first and name_last:
+                first = r[idx]; idx += 1
+                last = r[idx]; idx += 1
+                name = f"{first or ''} {last or ''}".strip()
+            else:
+                name = None
+            stage = r[idx]; idx += 1
+            days = r[idx]
+            stagnant.append({
+                "lead_id": lead_id,
+                "name": name or lead_id,
+                "stage": stage,
+                "days_in_stage": days,
+                "recommendation": f"Follow up needed - {days} days in stage"
+            })
     
     conn.close()
     
@@ -2619,11 +2679,19 @@ def get_analytics_overview():
     conn = get_db_conn()
     cur = conn.cursor()
     
+    # Inspect columns to choose score field dynamically
+    cur.execute("PRAGMA table_info(leads)")
+    lead_cols = {row[1] for row in cur.fetchall()}
+    score_col = 'propensity_score' if 'propensity_score' in lead_cols else ('score' if 'score' in lead_cols else None)
+    
     # Get lead statistics
-    cur.execute("SELECT COUNT(*), AVG(propensity_score) FROM leads")
+    if score_col:
+        cur.execute(f"SELECT COUNT(*), AVG({score_col}) FROM leads")
+    else:
+        cur.execute("SELECT COUNT(*), NULL FROM leads")
     lead_row = cur.fetchone()
     total_leads = lead_row[0] or 0
-    avg_lead_score = lead_row[1] or 0
+    avg_lead_score = (lead_row[1] or 0)
     
     # Get event statistics
     cur.execute("SELECT COUNT(*) FROM events")
@@ -3093,9 +3161,18 @@ async def get_recruiting_funnel_metrics(fiscal_year: Optional[int] = None):
             return col in lead_cols
         
         # Choose stage column dynamically
-        stage_col = 'current_stage' if has('current_stage') else ('stage' if has('stage') else None)
+        # Choose stage column dynamically (include 'status' as last resort)
+        stage_col = 'current_stage' if has('current_stage') else ('stage' if has('stage') else ('status' if has('status') else None))
         if not stage_col:
-            return JSONResponse(status_code=500, content={"status": "error", "message": "Leads table missing stage column"})
+            # Return empty metrics rather than error to avoid blank UI
+            empty = {
+                "funnel_counts": {"leads":0,"prospects":0,"appointments_made":0,"appointments_conducted":0,"tests":0,"test_passes":0,"enlistments":0,"ships":0,"losses":0,"total_active":0,"total_leads":0},
+                "conversion_rates": {"lead_to_prospect":0,"prospect_to_appointment":0,"appointment_made_to_conducted":0,"appointment_to_test":0,"test_to_pass":0,"test_pass_to_enlistment":0,"enlistment_to_ship":0,"overall_conversion":0},
+                "flash_to_bang": {"avg_lead_to_prospect_days":0,"avg_prospect_to_appointment_days":0,"avg_appointment_to_test_days":0,"avg_test_to_enlistment_days":0,"avg_lead_to_enlistment_days":0,"avg_enlistment_to_ship_days":0,"avg_dep_length_days":0},
+                "appointment_metrics": {"no_show_rate":0},
+                "loss_analysis": {"total_losses":0,"loss_rate":0,"top_loss_reason":"None"}
+            }
+            return JSONResponse(content={"status":"ok","metrics":empty})
         
         # Build WHERE clause for fiscal year filtering
         where_clause = ""
