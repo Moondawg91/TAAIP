@@ -575,6 +575,106 @@ def compute_score_from_dict(d: Dict[str, Any]) -> Dict[str, Any]:
         "score": final_score,
         "recommendation": recommendation,
     }
+@app.get("/api/v2/market/potential")
+def get_market_potential():
+    """Get market segmentation and potential analysis."""
+    conn = get_db_conn()
+    cur = conn.cursor()
+    
+    # Get lead source statistics
+    cur.execute("""
+        SELECT source, COUNT(*) as count
+        FROM leads
+        WHERE source IS NOT NULL
+        GROUP BY source
+        ORDER BY count DESC
+    """)
+    sources = [{"source": row[0], "count": row[1]} for row in cur.fetchall()]
+    
+    # Get demographics if available
+    cur.execute("""
+        SELECT 
+            COUNT(*) as total,
+            SUM(CASE WHEN current_stage IN ('enlistment', 'ship') THEN 1 ELSE 0 END) as converted
+        FROM leads
+    """)
+    market_row = cur.fetchone()
+    total = market_row[0] or 0
+    converted = market_row[1] or 0
+    conversion_rate = round((converted / total * 100), 2) if total > 0 else 0
+    
+    conn.close()
+    
+    return {
+        "status": "ok",
+        "market": {
+            "total_addressable_market": total,
+            "conversion_rate": conversion_rate,
+            "top_sources": sources[:5],
+            "last_updated": datetime.now().isoformat()
+        }
+    }
+
+
+@app.get("/api/v2/targeting/recommendations")
+def get_targeting_recommendations():
+    """Get AI-powered targeting recommendations for recruiting."""
+    conn = get_db_conn()
+    cur = conn.cursor()
+    
+    # Get high-potential leads (high propensity score, early stage)
+    cur.execute("""
+        SELECT lead_id, first_name, last_name, propensity_score, current_stage, source
+        FROM leads
+        WHERE current_stage IN ('lead', 'prospect', 'appointment_made')
+        AND propensity_score >= 70
+        ORDER BY propensity_score DESC
+        LIMIT 10
+    """)
+    high_potential = [
+        {
+            "lead_id": row[0],
+            "name": f"{row[1]} {row[2]}",
+            "score": row[3],
+            "stage": row[4],
+            "source": row[5],
+            "recommendation": "High priority - strong conversion potential"
+        }
+        for row in cur.fetchall()
+    ]
+    
+    # Get stagnant leads (long time in stage, needs attention)
+    cur.execute("""
+        SELECT lead_id, first_name, last_name, current_stage, days_in_stage
+        FROM leads
+        WHERE current_stage IN ('prospect', 'appointment_made')
+        AND days_in_stage > 30
+        ORDER BY days_in_stage DESC
+        LIMIT 10
+    """)
+    stagnant = [
+        {
+            "lead_id": row[0],
+            "name": f"{row[1]} {row[2]}",
+            "stage": row[3],
+            "days_in_stage": row[4],
+            "recommendation": f"Follow up needed - {row[4]} days in stage"
+        }
+        for row in cur.fetchall()
+    ]
+    
+    conn.close()
+    
+    return {
+        "status": "ok",
+        "recommendations": {
+            "high_potential_leads": high_potential,
+            "stagnant_leads": stagnant,
+            "last_updated": datetime.now().isoformat()
+        }
+    }
+
+
 
 
 class LeadData(BaseModel):
@@ -2520,7 +2620,7 @@ def get_analytics_overview():
     cur = conn.cursor()
     
     # Get lead statistics
-    cur.execute("SELECT COUNT(*), AVG(score) FROM leads")
+    cur.execute("SELECT COUNT(*), AVG(propensity_score) FROM leads")
     lead_row = cur.fetchone()
     total_leads = lead_row[0] or 0
     avg_lead_score = lead_row[1] or 0
@@ -3060,24 +3160,6 @@ async def get_recruiting_funnel_metrics(fiscal_year: Optional[int] = None):
         avg_enlistment_to_ship_days = round(flash_row['avg_enlistment_to_ship'], 1) if flash_row['avg_enlistment_to_ship'] else 0
         avg_dep_length_days = round(flash_row['avg_dep_length'], 1) if flash_row['avg_dep_length'] else 0
         
-        # Calculate appointment no-show rate
-        no_show_query = f"""
-            SELECT 
-                COUNT(*) as total_appointments,
-                SUM(CASE WHEN appointment_no_show = 1 THEN 1 ELSE 0 END) as no_shows
-            FROM leads
-            {where_clause}
-            {"AND" if where_clause else "WHERE"} appointment_made_date IS NOT NULL
-        """
-        cursor.execute(no_show_query, params)
-        no_show_row = cursor.fetchone()
-        appointment_no_show_rate = safe_rate(no_show_row['no_shows'] if no_show_row else 0, 
-                                            no_show_row['total_appointments'] if no_show_row else 0)
-        
-        # Calculate loss metrics
-        loss_rate = safe_rate(losses_count, total_leads)
-        
-        # Get top loss reason
         # Calculate appointment no-show rate
         no_show_query = f"""
             SELECT 
