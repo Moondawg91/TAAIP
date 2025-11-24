@@ -3147,7 +3147,7 @@ async def get_recruiting_funnel_metrics(fiscal_year: Optional[int] = None):
                 AVG(dep_length_days) as avg_dep_length
             FROM leads
             {where_clause}
-            AND enlistment_date IS NOT NULL
+            {"AND" if where_clause else "WHERE"} enlistment_date IS NOT NULL
         """
         cursor.execute(flash_to_bang_query, params)
         flash_row = cursor.fetchone()
