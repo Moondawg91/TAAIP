@@ -10,8 +10,10 @@ import uuid
 from datetime import datetime, timedelta
 from typing import Dict, List, Tuple
 import math
+import os
 
-DB_FILE = '/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3'
+# Use project-root SQLite DB used in deployment
+DB_FILE = os.path.join(os.path.dirname(__file__), 'recruiting.db')
 
 class TAIPPredictionEngine:
     """
