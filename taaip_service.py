@@ -3085,25 +3085,36 @@ async def get_recruiting_funnel_metrics(fiscal_year: Optional[int] = None):
         conn = sqlite3.connect(DB_FILE)
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
+
+        # Inspect leads table columns to adapt to schema differences
+        cursor.execute("PRAGMA table_info(leads)")
+        lead_cols = {row[1] for row in cursor.fetchall()}
+        def has(col: str) -> bool:
+            return col in lead_cols
+        
+        # Choose stage column dynamically
+        stage_col = 'current_stage' if has('current_stage') else ('stage' if has('stage') else None)
+        if not stage_col:
+            return JSONResponse(status_code=500, content={"status": "error", "message": "Leads table missing stage column"})
         
         # Build WHERE clause for fiscal year filtering
         where_clause = ""
-        params = []
-        if fiscal_year:
+        params: list = []
+        if fiscal_year and has('fiscal_year'):
             where_clause = " WHERE fiscal_year = ?"
             params.append(fiscal_year)
         
         # Get stage counts
         query = f"""
             SELECT 
-                current_stage,
+                {stage_col} as stage,
                 COUNT(*) as count
             FROM leads
             {where_clause}
-            GROUP BY current_stage
+            GROUP BY {stage_col}
         """
         cursor.execute(query, params)
-        stage_counts = {row['current_stage']: row['count'] for row in cursor.fetchall()}
+        stage_counts = {row['stage']: row['count'] for row in cursor.fetchall()}
         
         # Extract counts for each stage (default to 0 if stage doesn't exist)
         leads_count = stage_counts.get('lead', 0)
@@ -3136,62 +3147,77 @@ async def get_recruiting_funnel_metrics(fiscal_year: Optional[int] = None):
         overall_conversion_rate = safe_rate(enlistments_count, total_leads)
         
         # Calculate flash-to-bang metrics (average days between stages)
-        flash_to_bang_query = f"""
-            SELECT 
-                AVG(JULIANDAY(prospect_date) - JULIANDAY(lead_date)) as avg_lead_to_prospect,
-                AVG(JULIANDAY(appointment_made_date) - JULIANDAY(prospect_date)) as avg_prospect_to_appointment,
-                AVG(JULIANDAY(test_date) - JULIANDAY(appointment_conducted_date)) as avg_appointment_to_test,
-                AVG(JULIANDAY(enlistment_date) - JULIANDAY(test_pass_date)) as avg_test_to_enlistment,
-                AVG(JULIANDAY(enlistment_date) - JULIANDAY(lead_date)) as avg_lead_to_enlistment,
-                AVG(JULIANDAY(ship_date) - JULIANDAY(enlistment_date)) as avg_enlistment_to_ship,
-                AVG(dep_length_days) as avg_dep_length
-            FROM leads
-            {where_clause}
-            {"AND" if where_clause else "WHERE"} enlistment_date IS NOT NULL
-        """
-        cursor.execute(flash_to_bang_query, params)
-        flash_row = cursor.fetchone()
-        
-        avg_lead_to_prospect_days = round(flash_row['avg_lead_to_prospect'], 1) if flash_row['avg_lead_to_prospect'] else 0
-        avg_prospect_to_appointment_days = round(flash_row['avg_prospect_to_appointment'], 1) if flash_row['avg_prospect_to_appointment'] else 0
-        avg_appointment_to_test_days = round(flash_row['avg_appointment_to_test'], 1) if flash_row['avg_appointment_to_test'] else 0
-        avg_test_to_enlistment_days = round(flash_row['avg_test_to_enlistment'], 1) if flash_row['avg_test_to_enlistment'] else 0
-        avg_lead_to_enlistment_days = round(flash_row['avg_lead_to_enlistment'], 1) if flash_row['avg_lead_to_enlistment'] else 0
-        avg_enlistment_to_ship_days = round(flash_row['avg_enlistment_to_ship'], 1) if flash_row['avg_enlistment_to_ship'] else 0
-        avg_dep_length_days = round(flash_row['avg_dep_length'], 1) if flash_row['avg_dep_length'] else 0
+        # Flash-to-bang supports only if required columns exist
+        flash_supported = all(has(c) for c in [
+            'prospect_date','lead_date','appointment_made_date','appointment_conducted_date',
+            'test_date','test_pass_date','enlistment_date','ship_date','dep_length_days'
+        ])
+        avg_lead_to_prospect_days = avg_prospect_to_appointment_days = 0
+        avg_appointment_to_test_days = avg_test_to_enlistment_days = 0
+        avg_lead_to_enlistment_days = avg_enlistment_to_ship_days = 0
+        avg_dep_length_days = 0
+        if flash_supported:
+            flash_to_bang_query = f"""
+                SELECT 
+                    AVG(JULIANDAY(prospect_date) - JULIANDAY(lead_date)) as avg_lead_to_prospect,
+                    AVG(JULIANDAY(appointment_made_date) - JULIANDAY(prospect_date)) as avg_prospect_to_appointment,
+                    AVG(JULIANDAY(test_date) - JULIANDAY(appointment_conducted_date)) as avg_appointment_to_test,
+                    AVG(JULIANDAY(enlistment_date) - JULIANDAY(test_pass_date)) as avg_test_to_enlistment,
+                    AVG(JULIANDAY(enlistment_date) - JULIANDAY(lead_date)) as avg_lead_to_enlistment,
+                    AVG(JULIANDAY(ship_date) - JULIANDAY(enlistment_date)) as avg_enlistment_to_ship,
+                    AVG(dep_length_days) as avg_dep_length
+                FROM leads
+                {where_clause}
+                {"AND" if where_clause else "WHERE"} enlistment_date IS NOT NULL
+            """
+            cursor.execute(flash_to_bang_query, params)
+            flash_row = cursor.fetchone()
+            if flash_row:
+                avg_lead_to_prospect_days = round(flash_row['avg_lead_to_prospect'], 1) if flash_row['avg_lead_to_prospect'] else 0
+                avg_prospect_to_appointment_days = round(flash_row['avg_prospect_to_appointment'], 1) if flash_row['avg_prospect_to_appointment'] else 0
+                avg_appointment_to_test_days = round(flash_row['avg_appointment_to_test'], 1) if flash_row['avg_appointment_to_test'] else 0
+                avg_test_to_enlistment_days = round(flash_row['avg_test_to_enlistment'], 1) if flash_row['avg_test_to_enlistment'] else 0
+                avg_lead_to_enlistment_days = round(flash_row['avg_lead_to_enlistment'], 1) if flash_row['avg_lead_to_enlistment'] else 0
+                avg_enlistment_to_ship_days = round(flash_row['avg_enlistment_to_ship'], 1) if flash_row['avg_enlistment_to_ship'] else 0
+                avg_dep_length_days = round(flash_row['avg_dep_length'], 1) if flash_row['avg_dep_length'] else 0
         
         # Calculate appointment no-show rate
-        no_show_query = f"""
-            SELECT 
-                COUNT(*) as total_appointments,
-                SUM(CASE WHEN appointment_no_show = 1 THEN 1 ELSE 0 END) as no_shows
-            FROM leads
-            {where_clause}
-            {"AND" if where_clause else "WHERE"} appointment_made_date IS NOT NULL
-        """
-        cursor.execute(no_show_query, params)
-        no_show_row = cursor.fetchone()
-        appointment_no_show_rate = safe_rate(no_show_row['no_shows'] if no_show_row else 0, 
-                                            no_show_row['total_appointments'] if no_show_row else 0)
+        # Appointment no-show rate only if columns exist
+        appointment_no_show_rate = 0
+        if has('appointment_made_date') and has('appointment_no_show'):
+            no_show_query = f"""
+                SELECT 
+                    COUNT(*) as total_appointments,
+                    SUM(CASE WHEN appointment_no_show = 1 THEN 1 ELSE 0 END) as no_shows
+                FROM leads
+                {where_clause}
+                {"AND" if where_clause else "WHERE"} appointment_made_date IS NOT NULL
+            """
+            cursor.execute(no_show_query, params)
+            no_show_row = cursor.fetchone()
+            appointment_no_show_rate = safe_rate(no_show_row['no_shows'] if no_show_row else 0, 
+                                                no_show_row['total_appointments'] if no_show_row else 0)
         
         # Calculate loss metrics
         loss_rate = safe_rate(losses_count, total_leads)
         
         # Get top loss reason
-        loss_reason_query = f"""
-            SELECT 
-                loss_reason,
-                COUNT(*) as count
-            FROM leads
-            {where_clause}
-            {"AND" if where_clause else "WHERE"} loss_reason IS NOT NULL
-            GROUP BY loss_reason
-            ORDER BY count DESC
-            LIMIT 1
-        """
-        cursor.execute(loss_reason_query, params)
-        loss_reason_row = cursor.fetchone()
-        top_loss_reason = loss_reason_row['loss_reason'] if loss_reason_row else "None"
+        top_loss_reason = "None"
+        if has('loss_reason'):
+            loss_reason_query = f"""
+                SELECT 
+                    loss_reason,
+                    COUNT(*) as count
+                FROM leads
+                {where_clause}
+                {"AND" if where_clause else "WHERE"} loss_reason IS NOT NULL
+                GROUP BY loss_reason
+                ORDER BY count DESC
+                LIMIT 1
+            """
+            cursor.execute(loss_reason_query, params)
+            loss_reason_row = cursor.fetchone()
+            top_loss_reason = loss_reason_row['loss_reason'] if loss_reason_row else "None"
         
         conn.close()
         
