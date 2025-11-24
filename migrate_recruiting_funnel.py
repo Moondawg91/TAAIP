@@ -7,7 +7,7 @@ from pathlib import Path
 import sys
 
 SCRIPT_DIR = Path(__file__).parent.resolve()
-DB_PATH = SCRIPT_DIR / "data" / "taaip.sqlite3"
+DB_PATH = SCRIPT_DIR / "recruiting.db"
 
 
 def migrate_leads_to_recruiting_funnel():

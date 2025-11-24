@@ -5,7 +5,8 @@ Run this to upgrade your database schema
 import sqlite3
 import os
 
-DB_FILE = os.path.join(os.path.dirname(__file__), "data", "taaip.sqlite3")
+# Use the project-root SQLite database file used in production
+DB_FILE = os.path.join(os.path.dirname(__file__), "recruiting.db")
 
 def migrate_projects_table():
     """Add missing columns to projects table"""

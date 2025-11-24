@@ -7,7 +7,7 @@ import sqlite3
 from datetime import datetime
 
 def migrate_database():
-    conn = sqlite3.connect("data/recruiting.db")
+    conn = sqlite3.connect("recruiting.db")
     cursor = conn.cursor()
     
     print("Starting database migration...")

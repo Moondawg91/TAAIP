@@ -9,12 +9,11 @@ import os
 
 # Get absolute path to database
 SCRIPT_DIR = Path(__file__).parent.resolve()
-DB_PATH = SCRIPT_DIR / "data" / "taaip.sqlite3"
+DB_PATH = SCRIPT_DIR / "recruiting.db"
 
 print(f"Database path: {DB_PATH}")
 if not DB_PATH.exists():
-    print(f"❌ Database not found at {DB_PATH}")
-    sys.exit(1)
+    print(f"⚠️ Database not found at {DB_PATH}. If this is the first run, it will be created automatically.")
 
 
 def migrate_add_rsid_columns():

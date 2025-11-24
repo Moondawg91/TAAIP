@@ -15,6 +15,27 @@ def run_migration():
     
     print("🔄 Starting event enhancements migration...")
     
+    # Ensure base events table exists (aligns with taaip_service.py schema)
+    cursor.execute(
+        """
+        CREATE TABLE IF NOT EXISTS events (
+            event_id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            type TEXT,
+            location TEXT,
+            start_date TEXT,
+            end_date TEXT,
+            budget REAL,
+            team_size INTEGER,
+            targeting_principles TEXT,
+            status TEXT DEFAULT 'planned',
+            created_at TEXT,
+            updated_at TEXT
+        )
+        """
+    )
+    conn.commit()
+    
     try:
         # Add event_type_category column to events table
         print("  ➤ Adding event type classification...")

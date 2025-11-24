@@ -6,7 +6,7 @@ import sqlite3
 from pathlib import Path
 
 SCRIPT_DIR = Path(__file__).parent.resolve()
-DB_PATH = SCRIPT_DIR / "data" / "taaip.sqlite3"
+DB_PATH = SCRIPT_DIR / "recruiting.db"
 
 
 def create_twg_tables():
