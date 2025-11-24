@@ -21,3 +21,11 @@ services:
       - FASTAPI_URL=http://backend:8000
     depends_on:
       - backend
+  frontend:
+    build:
+      context: ./taaip-dashboard
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+    depends_on:
+      - gateway
