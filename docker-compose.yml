@@ -10,6 +10,7 @@ services:
       - TAAIP_API_TOKEN=dev-token
     volumes:
       - ./data:/app/data
+      - ./recruiting.db:/app/recruiting.db
   gateway:
     build:
       context: .

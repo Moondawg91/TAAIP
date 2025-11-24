@@ -39,7 +39,9 @@ DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 os.makedirs(DATA_DIR, exist_ok=True)
 LEADS_FILE = os.path.join(DATA_DIR, "leads.json")
 PILOT_FILE = os.path.join(DATA_DIR, "pilot_state.json")
-DB_FILE = os.path.join(DATA_DIR, "taaip.sqlite3")
+
+# Use project-root DB aligned with all migration/populate scripts
+DB_FILE = os.path.join(os.path.dirname(__file__), "recruiting.db")
 
 
 # --- SQLite helpers ---
