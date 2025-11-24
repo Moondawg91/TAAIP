@@ -182,6 +182,32 @@ app.get('/api/targeting/pilotStatus', async (req, res) => {
   }
 });
 
+// Catch-all proxy for /api/v2/* endpoints (420T, TWG, Events, Calendar, etc.)
+app.all('/api/v2/*', async (req, res) => {
+  try {
+    const url = `${FASTAPI_URL}${req.originalUrl}`;
+    const config = {
+      method: req.method,
+      url: url,
+      headers: { authorization: req.headers['authorization'] },
+      params: req.query,
+    };
+    
+    if (req.method !== 'GET' && req.method !== 'HEAD') {
+      config.data = req.body;
+    }
+    
+    const response = await axios(config);
+    res.status(response.status).json(response.data);
+  } catch (error) {
+    console.error(`API v2 proxy error [${req.method} ${req.originalUrl}]:`, error.message);
+    if (error.response) {
+      return res.status(error.response.status).json(error.response.data);
+    }
+    return res.status(503).json({ message: 'Failed to reach FastAPI backend.' });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`API Gateway running on http://127.0.0.1:${PORT}`);
   console.log(`Proxying to FastAPI at ${FASTAPI_URL}`);
