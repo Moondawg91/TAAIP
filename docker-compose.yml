@@ -19,6 +19,5 @@ services:
       - "3000:3000"
     environment:
       - FASTAPI_URL=http://backend:8000
-      - TAAIP_API_TOKEN=dev-token
     depends_on:
       - backend
