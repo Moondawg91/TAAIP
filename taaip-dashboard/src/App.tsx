@@ -3,6 +3,7 @@ import {
   Home, Shield, Activity, LineChart, Globe, Target, Clipboard, 
   Briefcase, FileCheck, Map, Menu, ChevronDown, FolderOpen, DollarSign, Users
 } from 'lucide-react';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { HomeScreen } from './components/HomeScreen';
 
 // Lazy load dashboard components for code splitting
@@ -178,14 +179,15 @@ const App: React.FC = () => {
 
       {/* Main Content */}
       <main className="flex-1 w-full max-w-7xl mx-auto px-4 py-6">
-        <Suspense fallback={
-          <div className="flex items-center justify-center h-64">
-            <div className="text-center">
-              <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-500"></div>
-              <p className="mt-4 text-gray-600">Loading dashboard...</p>
+        <ErrorBoundary>
+          <Suspense fallback={
+            <div className="flex items-center justify-center h-64">
+              <div className="text-center">
+                <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-500"></div>
+                <p className="mt-4 text-gray-600">Loading dashboard...</p>
+              </div>
             </div>
-          </div>
-        }>
+          }>
           {activeTab === 'home' ? <HomeScreen onNavigate={(tab) => setActiveTab(tab as any)} /> :
            activeTab === '420t' ? <TalentAcquisitionTechnicianDashboard /> :
            activeTab === 'funnel' ? <RecruitingFunnelDashboard /> :
@@ -236,7 +238,8 @@ const App: React.FC = () => {
              is_active: true
            }} /> :
            <HomeScreen onNavigate={(tab) => setActiveTab(tab as any)} />}
-        </Suspense>
+          </Suspense>
+        </ErrorBoundary>
       </main>
 
       {/* Footer */}

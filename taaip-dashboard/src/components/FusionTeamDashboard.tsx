@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   Users, Target, TrendingUp, Calendar, FileText, CheckSquare,
-  AlertCircle, Clock, DollarSign, Award, Map, Briefcase, Shield
+  AlertCircle, Clock, DollarSign, Award, Map, Briefcase, Shield, Edit, Plus, X, Save
 } from 'lucide-react';
 
 interface FusionTeamMember {
@@ -10,6 +10,15 @@ interface FusionTeamMember {
   responsibilities: string[];
   currentTasks: number;
   completedTasks: number;
+}
+
+interface Task {
+  id: string;
+  role: string;
+  title: string;
+  status: 'not-started' | 'in-progress' | 'completed' | 'blocked';
+  dueDate: string;
+  priority: 'low' | 'medium' | 'high';
 }
 
 interface FusionCyclePhase {
@@ -108,7 +117,13 @@ export const FusionTeamDashboard: React.FC = () => {
   const [teamMembers, setTeamMembers] = useState<FusionTeamMember[]>([]);
   const [cyclePhases, setCyclePhases] = useState<FusionCyclePhase[]>([]);
   const [paperwork, setPaperwork] = useState<PaperworkTracker[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showTaskModal, setShowTaskModal] = useState(false);
+  const [selectedRole, setSelectedRole] = useState<string>('');
+  const [editMemberName, setEditMemberName] = useState('');
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
   useEffect(() => {
     fetchFusionData();
@@ -238,6 +253,40 @@ export const FusionTeamDashboard: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleAssignMember = (role: string) => {
+    const member = teamMembers.find(m => m.role === role);
+    setSelectedRole(role);
+    setEditMemberName(member?.name || '');
+    setShowEditModal(true);
+  };
+
+  const handleSaveMember = () => {
+    setTeamMembers(prev => prev.map(m => 
+      m.role === selectedRole ? { ...m, name: editMemberName } : m
+    ));
+    setShowEditModal(false);
+    setSelectedRole('');
+    setEditMemberName('');
+  };
+
+  const handleUpdateTaskStatus = (taskId: string, newStatus: Task['status']) => {
+    setTasks(prev => prev.map(t => 
+      t.id === taskId ? { ...t, status: newStatus } : t
+    ));
+  };
+
+  const handleAddTask = () => {
+    const newTask: Task = {
+      id: `TASK${Date.now()}`,
+      role: selectedRole,
+      title: 'New Task',
+      status: 'not-started',
+      dueDate: new Date().toISOString().split('T')[0],
+      priority: 'medium'
+    };
+    setTasks(prev => [...prev, newTask]);
   };
 
   const getStatusColor = (status: string) => {
@@ -498,12 +547,25 @@ export const FusionTeamDashboard: React.FC = () => {
                       <p className="text-sm opacity-90">Role: {roleKey}</p>
                     </div>
                   </div>
-                  {member && (
-                    <div className="text-right">
-                      <p className="text-sm opacity-75">Currently Assigned:</p>
-                      <p className="text-xl font-bold">{member.name}</p>
-                    </div>
-                  )}
+                  <div className="flex flex-col items-end gap-2">
+                    {member && (
+                      <div className="text-right">
+                        <p className="text-sm opacity-75">Currently Assigned:</p>
+                        <p className="text-xl font-bold">{member.name}</p>
+                      </div>
+                    )}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleAssignMember(roleKey);
+                      }}
+                      className="bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
+                      title="Edit assignment"
+                    >
+                      <Edit className="w-4 h-4" />
+                      <span className="text-sm font-semibold">Edit</span>
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -526,21 +588,34 @@ export const FusionTeamDashboard: React.FC = () => {
                 </div>
 
                 {member && (
-                  <div className="grid grid-cols-3 gap-4 pt-6 border-t border-gray-200">
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
-                      <p className="text-2xl font-bold text-blue-600">{member.currentTasks}</p>
-                      <p className="text-sm text-gray-600">Current Tasks</p>
+                  <div className="pt-6 border-t border-gray-200 space-y-4">
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
+                        <p className="text-2xl font-bold text-blue-600">{member.currentTasks}</p>
+                        <p className="text-sm text-gray-600">Current Tasks</p>
+                      </div>
+                      <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
+                        <p className="text-2xl font-bold text-green-600">{member.completedTasks}</p>
+                        <p className="text-sm text-gray-600">Completed Tasks</p>
+                      </div>
+                      <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 text-center">
+                        <p className="text-2xl font-bold text-purple-600">
+                          {member.completedTasks > 0 ? Math.round((member.completedTasks / (member.completedTasks + member.currentTasks)) * 100) : 0}%
+                        </p>
+                        <p className="text-sm text-gray-600">Completion Rate</p>
+                      </div>
                     </div>
-                    <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
-                      <p className="text-2xl font-bold text-green-600">{member.completedTasks}</p>
-                      <p className="text-sm text-gray-600">Completed Tasks</p>
-                    </div>
-                    <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 text-center">
-                      <p className="text-2xl font-bold text-purple-600">
-                        {member.completedTasks > 0 ? Math.round((member.completedTasks / (member.completedTasks + member.currentTasks)) * 100) : 0}%
-                      </p>
-                      <p className="text-sm text-gray-600">Completion Rate</p>
-                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedRole(roleKey);
+                        setShowTaskModal(true);
+                      }}
+                      className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white py-3 px-4 rounded-lg font-semibold hover:from-blue-700 hover:to-blue-800 flex items-center justify-center gap-2"
+                    >
+                      <CheckSquare className="w-5 h-5" />
+                      Manage Tasks & Status Updates
+                    </button>
                   </div>
                 )}
               </div>
@@ -648,6 +723,144 @@ export const FusionTeamDashboard: React.FC = () => {
       {activeView === 'paperwork' && renderPaperwork()}
       {activeView === 'calendar' && renderCalendar()}
       {activeView === 'roles' && renderTeamRoles()}
+
+      {/* Edit Member Modal */}
+      {showEditModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-gray-900">Assign Team Member</h3>
+              <button
+                onClick={() => setShowEditModal(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Role: {selectedRole}
+                </label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Member Name
+                </label>
+                <input
+                  type="text"
+                  value={editMemberName}
+                  onChange={(e) => setEditMemberName(e.target.value)}
+                  placeholder="e.g., MAJ Smith"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
+                />
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={handleSaveMember}
+                  className="flex-1 bg-yellow-600 text-white py-2 px-4 rounded-lg font-semibold hover:bg-yellow-700 flex items-center justify-center gap-2"
+                >
+                  <Save className="w-4 h-4" />
+                  Save Assignment
+                </button>
+                <button
+                  onClick={() => setShowEditModal(false)}
+                  className="flex-1 bg-gray-200 text-gray-700 py-2 px-4 rounded-lg font-semibold hover:bg-gray-300"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Task Management Modal */}
+      {showTaskModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full p-6 max-h-[80vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-gray-900">Task Management - {selectedRole}</h3>
+              <button
+                onClick={() => setShowTaskModal(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            
+            <button
+              onClick={handleAddTask}
+              className="w-full mb-4 bg-blue-600 text-white py-2 px-4 rounded-lg font-semibold hover:bg-blue-700 flex items-center justify-center gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              Add New Task
+            </button>
+
+            <div className="space-y-3">
+              {tasks.filter(t => t.role === selectedRole).length === 0 ? (
+                <p className="text-center text-gray-500 py-8">No tasks yet. Click "Add New Task" to get started.</p>
+              ) : (
+                tasks.filter(t => t.role === selectedRole).map(task => (
+                  <div key={task.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                    <div className="flex items-start justify-between mb-2">
+                      <h4 className="font-semibold text-gray-900">{task.title}</h4>
+                      <span className={`px-2 py-1 rounded text-xs font-bold ${
+                        task.priority === 'high' ? 'bg-red-100 text-red-800' :
+                        task.priority === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                        'bg-green-100 text-green-800'
+                      }`}>
+                        {task.priority.toUpperCase()}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-600 mb-3">Due: {task.dueDate}</p>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleUpdateTaskStatus(task.id, 'not-started')}
+                        className={`flex-1 py-2 px-3 rounded text-sm font-semibold transition-colors ${
+                          task.status === 'not-started'
+                            ? 'bg-gray-600 text-white'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        Not Started
+                      </button>
+                      <button
+                        onClick={() => handleUpdateTaskStatus(task.id, 'in-progress')}
+                        className={`flex-1 py-2 px-3 rounded text-sm font-semibold transition-colors ${
+                          task.status === 'in-progress'
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                        }`}
+                      >
+                        In Progress
+                      </button>
+                      <button
+                        onClick={() => handleUpdateTaskStatus(task.id, 'completed')}
+                        className={`flex-1 py-2 px-3 rounded text-sm font-semibold transition-colors ${
+                          task.status === 'completed'
+                            ? 'bg-green-600 text-white'
+                            : 'bg-green-100 text-green-700 hover:bg-green-200'
+                        }`}
+                      >
+                        Completed
+                      </button>
+                      <button
+                        onClick={() => handleUpdateTaskStatus(task.id, 'blocked')}
+                        className={`flex-1 py-2 px-3 rounded text-sm font-semibold transition-colors ${
+                          task.status === 'blocked'
+                            ? 'bg-red-600 text-white'
+                            : 'bg-red-100 text-red-700 hover:bg-red-200'
+                        }`}
+                      >
+                        Blocked
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

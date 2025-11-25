@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Target, Calendar, Users, FileText, CheckSquare, TrendingUp, 
   MapPin, DollarSign, AlertCircle, Clock, ChevronRight, Filter,
-  Download, Upload, Eye, Edit, CheckCircle, XCircle
+  Download, Upload, Eye, Edit, CheckCircle, XCircle, Plus, Save, X
 } from 'lucide-react';
 
 interface TWGMeeting {
@@ -86,6 +86,19 @@ export const TargetingWorkingGroup: React.FC = () => {
   const [selectedQuarter, setSelectedQuarter] = useState<string>('Q+0');
   const [viewMode, setViewMode] = useState<'dashboard' | 'agenda' | 'sync-matrix' | 'intel' | 'recommendations'>('dashboard');
   const [loading, setLoading] = useState(false);
+  const [showAddEventModal, setShowAddEventModal] = useState(false);
+  const [showAddRecommendationModal, setShowAddRecommendationModal] = useState(false);
+  const [newEvent, setNewEvent] = useState<Partial<TargetEvent>>({
+    name: '',
+    date: '',
+    location: '',
+    type: 'event_targeting',
+    target_audience: '',
+    expected_leads: 0,
+    budget: 0,
+    status: 'planned',
+    priority: 'standard'
+  });
 
   useEffect(() => {
     loadTWGData();
@@ -247,6 +260,43 @@ export const TargetingWorkingGroup: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleAddEvent = () => {
+    const event: TargetEvent = {
+      event_id: `EVT${Date.now()}`,
+      name: newEvent.name || 'New Event',
+      date: newEvent.date || new Date().toISOString().split('T')[0],
+      location: newEvent.location || '',
+      type: newEvent.type || 'event_targeting',
+      target_audience: newEvent.target_audience || '',
+      expected_leads: newEvent.expected_leads || 0,
+      budget: newEvent.budget || 0,
+      status: newEvent.status || 'planned',
+      priority: newEvent.priority || 'standard'
+    };
+    
+    setTargetingPhases(prev => {
+      const phases = [...prev];
+      const currentPhase = phases.find(p => p.phase === 'Q+0');
+      if (currentPhase) {
+        currentPhase.events.push(event);
+      }
+      return phases;
+    });
+    
+    setShowAddEventModal(false);
+    setNewEvent({
+      name: '',
+      date: '',
+      location: '',
+      type: 'event_targeting',
+      target_audience: '',
+      expected_leads: 0,
+      budget: 0,
+      status: 'planned',
+      priority: 'standard'
+    });
   };
 
   const getStatusBadge = (status: string) => {
@@ -728,10 +778,19 @@ export const TargetingWorkingGroup: React.FC = () => {
         <div className="space-y-6">
           {/* Houston BN Focus Events */}
           <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl shadow-lg p-6 text-white">
-            <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-              <Target className="w-7 h-7 text-yellow-400" />
-              Houston Recruiting BN - Priority Events
-            </h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-2xl font-bold flex items-center gap-2">
+                <Target className="w-7 h-7 text-yellow-400" />
+                Houston Recruiting BN - Priority Events
+              </h2>
+              <button
+                onClick={() => setShowAddEventModal(true)}
+                className="bg-yellow-500 text-black px-4 py-2 rounded-lg font-semibold hover:bg-yellow-400 flex items-center gap-2"
+              >
+                <Plus className="w-5 h-5" />
+                Add Event
+              </button>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="bg-white/10 backdrop-blur rounded-lg p-4 border border-white/20">
                 <h3 className="font-bold text-yellow-400 mb-2">Youth Career Expo</h3>
@@ -985,11 +1044,22 @@ export const TargetingWorkingGroup: React.FC = () => {
       {viewMode === 'recommendations' && (
         <div className="space-y-6">
           <div className="bg-white rounded-xl shadow-md p-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-              <TrendingUp className="w-7 h-7 text-purple-600" />
-              TWG Recommendations & Action Items
-            </h2>
-            <p className="text-gray-600 mb-6">Data-driven recommendations for the Targeting Working Group based on current performance and market intelligence</p>
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                  <TrendingUp className="w-7 h-7 text-purple-600" />
+                  TWG Recommendations & Action Items
+                </h2>
+                <p className="text-gray-600 mt-2">Data-driven recommendations for the Targeting Working Group based on current performance and market intelligence</p>
+              </div>
+              <button
+                onClick={() => setShowAddRecommendationModal(true)}
+                className="bg-purple-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-purple-700 flex items-center gap-2"
+              >
+                <Plus className="w-5 h-5" />
+                Add Recommendation
+              </button>
+            </div>
             
             {/* Strategic Recommendations */}
             <div className="space-y-4 mb-6">
@@ -1134,6 +1204,187 @@ export const TargetingWorkingGroup: React.FC = () => {
           <div className="bg-white rounded-lg p-6">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-500 mx-auto"></div>
             <p className="text-gray-900 mt-4">Loading TWG data...</p>
+          </div>
+        </div>
+      )}
+
+      {/* Add Event Modal */}
+      {showAddEventModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full p-6 max-h-[80vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-2xl font-bold text-gray-900">Add New Event</h3>
+              <button onClick={() => setShowAddEventModal(false)} className="text-gray-500 hover:text-gray-700">
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Event Name</label>
+                <input
+                  type="text"
+                  value={newEvent.name}
+                  onChange={(e) => setNewEvent({...newEvent, name: e.target.value})}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  placeholder="e.g., College Career Fair"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Date</label>
+                  <input
+                    type="date"
+                    value={newEvent.date}
+                    onChange={(e) => setNewEvent({...newEvent, date: e.target.value})}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Location</label>
+                  <input
+                    type="text"
+                    value={newEvent.location}
+                    onChange={(e) => setNewEvent({...newEvent, location: e.target.value})}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    placeholder="City, State"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Type</label>
+                  <select
+                    value={newEvent.type}
+                    onChange={(e) => setNewEvent({...newEvent, type: e.target.value as any})}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="event_targeting">Event Targeting</option>
+                    <option value="geographic_targeting">Geographic Targeting</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Priority</label>
+                  <select
+                    value={newEvent.priority}
+                    onChange={(e) => setNewEvent({...newEvent, priority: e.target.value as any})}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="standard">Standard</option>
+                    <option value="must_win">Must Win</option>
+                    <option value="must_keep">Must Keep</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Target Audience</label>
+                <input
+                  type="text"
+                  value={newEvent.target_audience}
+                  onChange={(e) => setNewEvent({...newEvent, target_audience: e.target.value})}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  placeholder="e.g., College Students, High School Seniors"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Expected Leads</label>
+                  <input
+                    type="number"
+                    value={newEvent.expected_leads}
+                    onChange={(e) => setNewEvent({...newEvent, expected_leads: parseInt(e.target.value) || 0})}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Budget ($)</label>
+                  <input
+                    type="number"
+                    value={newEvent.budget}
+                    onChange={(e) => setNewEvent({...newEvent, budget: parseInt(e.target.value) || 0})}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+              <div className="flex gap-3 pt-4">
+                <button
+                  onClick={handleAddEvent}
+                  className="flex-1 bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 flex items-center justify-center gap-2"
+                >
+                  <Save className="w-5 h-5" />
+                  Save Event
+                </button>
+                <button
+                  onClick={() => setShowAddEventModal(false)}
+                  className="flex-1 bg-gray-200 text-gray-700 py-3 px-4 rounded-lg font-semibold hover:bg-gray-300"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Recommendation Modal */}
+      {showAddRecommendationModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-2xl font-bold text-gray-900">Add TWG Recommendation</h3>
+              <button onClick={() => setShowAddRecommendationModal(false)} className="text-gray-500 hover:text-gray-700">
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Priority Level</label>
+                <select className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                  <option>Critical</option>
+                  <option>High Priority</option>
+                  <option>Medium Priority</option>
+                  <option>Information Only</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Recommendation Title</label>
+                <input
+                  type="text"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                  placeholder="e.g., Increase Digital Advertising Budget"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Description</label>
+                <textarea
+                  rows={4}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                  placeholder="Detailed description of the recommendation and supporting data..."
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Recommended Actions</label>
+                <textarea
+                  rows={3}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                  placeholder="List specific action items (one per line)..."
+                />
+              </div>
+              <div className="flex gap-3 pt-4">
+                <button
+                  className="flex-1 bg-purple-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-purple-700 flex items-center justify-center gap-2"
+                  onClick={() => setShowAddRecommendationModal(false)}
+                >
+                  <Save className="w-5 h-5" />
+                  Save Recommendation
+                </button>
+                <button
+                  onClick={() => setShowAddRecommendationModal(false)}
+                  className="flex-1 bg-gray-200 text-gray-700 py-3 px-4 rounded-lg font-semibold hover:bg-gray-300"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

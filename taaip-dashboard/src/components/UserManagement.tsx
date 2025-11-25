@@ -40,13 +40,14 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) =
           username: u.username,
           email: u.email,
           rank: u.rank || '',
-          position: '',
-          unit_id: '',
+          position: u.position || '',
+          unit_id: u.unit_id || '',
           role: {
-            name: u.role,
-            tier: u.tier,
+            role_id: u.role || 'analyst',
+            role_name: u.role || 'Analyst',
+            tier: u.tier || 'tier-1-user',
             permissions: u.permissions || [],
-            can_delegate: u.permissions?.includes('delegate_permissions') || false
+            description: `${u.role} role`
           },
           created_at: u.created_at,
           is_active: u.is_active === 1 || u.is_active === true,
