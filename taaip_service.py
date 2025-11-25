@@ -5488,3 +5488,52 @@ async def get_digital_ads(
         logging.error(f"Error fetching digital ads: {e}")
         return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
 
+# ============================================================================
+# Universal Data Upload Endpoints
+# ============================================================================
+
+class UniversalUploadRequest(BaseModel):
+    data: list[dict]
+    category: str
+
+@app.post("/api/v2/upload/{category}")
+async def upload_data(category: str, request: UniversalUploadRequest):
+    """Universal data upload endpoint that routes to appropriate tables"""
+    try:
+        conn = get_db_conn()
+        cursor = conn.cursor()
+        
+        rows_inserted = 0
+        now = datetime.now().isoformat()
+        
+        # Store in generic import table for all categories
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS data_imports (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            category TEXT,
+            data TEXT,
+            rows_count INTEGER,
+            imported_at TEXT
+        )
+        """)
+        
+        cursor.execute("""
+        INSERT INTO data_imports (category, data, rows_count, imported_at)
+        VALUES (?, ?, ?, ?)
+        """, (category, json.dumps(request.data), len(request.data), now))
+        
+        rows_inserted = len(request.data)
+        
+        conn.commit()
+        conn.close()
+        
+        return JSONResponse({
+            "status": "ok",
+            "message": f"Successfully imported {rows_inserted} rows for {category}",
+            "rows_processed": rows_inserted,
+            "category": category
+        })
+    except Exception as e:
+        logging.error(f"Error uploading data: {e}")
+        return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
+

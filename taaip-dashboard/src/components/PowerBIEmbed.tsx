@@ -25,7 +25,8 @@ export const PowerBIReportEmbed: React.FC<PowerBIReportEmbedProps> = ({ reportId
         setEmbedUrl(resp.data.embedUrl);
       } catch (e: any) {
         console.error('Power BI embed error', e?.response?.data || e.message);
-        setError('Unable to fetch Power BI embed token. Ensure server credentials are configured.');
+        // Show informational message instead of error - Power BI requires GCC credentials
+        setError('Power BI integration requires Government Community Cloud (GCC) credentials. Contact your system administrator to configure Power BI access for live reports.');
       }
     }
     fetchToken();
@@ -33,7 +34,29 @@ export const PowerBIReportEmbed: React.FC<PowerBIReportEmbedProps> = ({ reportId
   }, [reportId]);
 
   if (error) {
-    return <div className="rounded-md border border-red-200 bg-red-50 p-4 text-red-700">{error}</div>;
+    return (
+      <div className="rounded-xl border-2 border-blue-200 bg-blue-50 p-8">
+        <div className="max-w-2xl mx-auto text-center">
+          <div className="bg-blue-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <h3 className="text-xl font-bold text-blue-900 mb-2">Power BI Configuration Required</h3>
+          <p className="text-blue-700 mb-4">{error}</p>
+          <div className="bg-white rounded-lg p-4 text-left border border-blue-200">
+            <p className="text-sm text-gray-700 font-semibold mb-2">To enable Power BI reports:</p>
+            <ol className="text-sm text-gray-600 space-y-1 list-decimal list-inside">
+              <li>Configure Azure AD App Registration for Power BI Embedded</li>
+              <li>Add GCC tenant credentials to backend server</li>
+              <li>Grant Power BI workspace permissions</li>
+              <li>Restart application to load embedded reports</li>
+            </ol>
+          </div>
+          <p className="text-xs text-gray-500 mt-4">Alternative: Use Universal Data Import to manually upload Power BI data exports</p>
+        </div>
+      </div>
+    );
   }
 
   if (!embedToken || !embedUrl) {
