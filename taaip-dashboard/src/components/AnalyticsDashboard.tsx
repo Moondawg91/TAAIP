@@ -4,6 +4,7 @@ import { TrendingUp, MapPin, School, Users, Target, CheckCircle, AlertCircle, Re
 import { UniversalFilter, FilterState } from './UniversalFilter';
 import { ExportButton } from './ExportButton';
 import { VisualizationController, DataVisualizer, VisualizationType } from './VisualizationController';
+import { API_BASE } from '../config/api';
 
 // Color palette for charts
 const COLORS = {
@@ -104,10 +105,10 @@ export const AnalyticsDashboard: React.FC = () => {
       
       const queryString = params.toString();
       const [cbsaRes, schoolRes, segmentRes, contractRes] = await Promise.all([
-        fetch(`http://localhost:8000/api/v2/analytics/cbsa?limit=10${queryString ? '&' + queryString : ''}`),
-        fetch(`http://localhost:8000/api/v2/analytics/schools?limit=15${queryString ? '&' + queryString : ''}`),
-        fetch(`http://localhost:8000/api/v2/analytics/segments${queryString ? '?' + queryString : ''}`),
-        fetch(`http://localhost:8000/api/v2/analytics/contracts${queryString ? '?' + queryString : ''}`),
+        fetch(`${API_BASE}/api/v2/analytics/cbsa?limit=10${queryString ? '&' + queryString : ''}`),
+        fetch(`${API_BASE}/api/v2/analytics/schools?limit=15${queryString ? '&' + queryString : ''}`),
+        fetch(`${API_BASE}/api/v2/analytics/segments${queryString ? '?' + queryString : ''}`),
+        fetch(`${API_BASE}/api/v2/analytics/contracts${queryString ? '?' + queryString : ''}`),
       ]);
 
       const cbsa = await cbsaRes.json();

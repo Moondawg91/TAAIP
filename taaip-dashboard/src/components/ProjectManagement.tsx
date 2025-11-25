@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { ProjectEditor } from './ProjectEditor';
 import { RSIDFilter } from './RSIDFilter';
+import { API_BASE } from '../config/api';
 
 const COLORS = {
   planning: '#6366f1',
@@ -121,7 +122,7 @@ export const ProjectManagement: React.FC = () => {
   const fetchDashboard = async () => {
     setLoading(true);
     try {
-      const res = await fetch('http://localhost:8000/api/v2/projects/dashboard/summary');
+      const res = await fetch(`${API_BASE}/api/v2/projects/dashboard/summary`);
       const data = await res.json();
       if (data.status === 'ok') {
         setDashboardData(data);
@@ -156,7 +157,7 @@ export const ProjectManagement: React.FC = () => {
 
   const fetchProjects = async () => {
     try {
-      const res = await fetch('http://localhost:8000/api/v2/projects');
+      const res = await fetch(`${API_BASE}/api/v2/projects`);
       const data = await res.json();
       if (data.status === 'ok') {
         setProjects(data.projects);
@@ -168,7 +169,7 @@ export const ProjectManagement: React.FC = () => {
 
   const fetchProjectDetail = async (projectId: string) => {
     try {
-      const res = await fetch(`http://localhost:8000/api/v2/projects/${projectId}`);
+      const res = await fetch(`${API_BASE}/api/v2/projects/${projectId}`);
       const data = await res.json();
       if (data.status === 'ok') {
         setProjectDetail(data);
@@ -287,7 +288,7 @@ export const ProjectManagement: React.FC = () => {
             Refresh
           </button>
           <button
-            onClick={() => window.open(`http://localhost:8000/api/v2/export/projects?rsid=${filterRSID || ''}`, '_blank')}
+            onClick={() => window.open(`${API_BASE}/api/v2/export/projects?rsid=${filterRSID || ''}`, '_blank')}
             className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
           >
             <Download className="w-4 h-4" />

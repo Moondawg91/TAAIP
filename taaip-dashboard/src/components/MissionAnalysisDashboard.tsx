@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Eye } from 'lucide-react';
 import { DynamicDashboard } from './DynamicDashboard';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { API_BASE } from '../config/api';
 
 interface MissionAnalysisData {
   level: string;
@@ -62,7 +63,7 @@ const MissionAnalysisDashboard: React.FC = () => {
       if (selectedBrigade) params.append('brigade', selectedBrigade);
       if (selectedBattalion) params.append('battalion', selectedBattalion);
 
-      const response = await fetch(`http://localhost:8000/api/v2/mission-analysis?${params}`);
+      const response = await fetch(`${API_BASE}/api/v2/mission-analysis?${params}`);
       const result = await response.json();
       
       if (result.status === 'ok') {

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { DollarSign, TrendingDown, TrendingUp, AlertCircle, CheckCircle, Calendar, Filter } from 'lucide-react';
+import { API_BASE } from '../config/api';
 
 interface BudgetAllocation {
   unit_id: string;
@@ -46,8 +47,8 @@ export const BudgetTracker: React.FC = () => {
     setLoading(true);
     try {
       const response = await fetch(
-        `http://localhost:8000/api/v2/budget/allocations?fiscal_year=${fiscalYear}${selectedUnit !== 'all' ? `&unit_id=${selectedUnit}` : ''}`
-      );
+          `${API_BASE}/api/v2/budget/allocations?fiscal_year=${fiscalYear}${selectedUnit !== 'all' ? `&unit_id=${selectedUnit}` : ''}`
+        );
       const data = await response.json();
       
       if (data.status === 'ok') {

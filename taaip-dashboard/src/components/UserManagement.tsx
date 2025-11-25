@@ -2,6 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { Shield, Users, Key, Plus, Edit, Trash2, Check, X, UserPlus, Lock, Unlock } from 'lucide-react';
 import { User, UserRole, Permission, ROLE_TEMPLATES, hasPermission, canDelegatePermission, hasTierAccess } from '../types/auth';
 
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+
+// Helper function to convert tier string to number
+const getTierNumber = (tier?: string): number => {
+  if (!tier) return 3;
+  if (tier.includes('4')) return 1;
+  if (tier.includes('3')) return 2;
+  if (tier.includes('2')) return 2;
+  if (tier.includes('1')) return 3;
+  return 3;
+};
+
 interface UserManagementProps {
   currentUser: User; // The logged-in user (should be Tier 3 or Tier 4)
 }
@@ -18,46 +30,80 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) =
   }, []);
 
   const loadUsers = async () => {
-    // TODO: Fetch from API
-    // Mock data for demonstration
-    const mockUsers: User[] = [
-      {
-        user_id: 'u001',
-        username: 'maj.smith',
-        email: 'smith.j@army.mil',
-        rank: 'MAJ',
-        position: 'Battalion XO',
-        unit_id: 'bn-houston',
-        role: ROLE_TEMPLATES.TIER_2_XO_MANAGER,
-        created_at: '2025-01-15',
-        is_active: true
-      },
-      {
-        user_id: 'u002',
-        username: 'sgt.jones',
-        email: 'jones.m@army.mil',
-        rank: 'SGT',
-        position: '420T',
-        unit_id: 'bn-houston',
-        role: ROLE_TEMPLATES.TIER_3_420T_ADMIN,
-        created_at: '2025-01-15',
-        is_active: true
+    try {
+      const response = await fetch(`${API_BASE}/api/v2/users`);
+      const data = await response.json();
+      if (data.status === 'ok') {
+        // Transform backend data to match frontend User type
+        const transformedUsers: User[] = data.users.map((u: any) => ({
+          user_id: u.id.toString(),
+          username: u.username,
+          email: u.email,
+          rank: u.rank || '',
+          position: '',
+          unit_id: '',
+          role: {
+            name: u.role,
+            tier: u.tier,
+            permissions: u.permissions || [],
+            can_delegate: u.permissions?.includes('delegate_permissions') || false
+          },
+          created_at: u.created_at,
+          is_active: u.is_active === 1 || u.is_active === true,
+          last_login: u.last_login
+        }));
+        setUsers(transformedUsers);
       }
-    ];
-    setUsers(mockUsers);
+    } catch (error) {
+      console.error('Error loading users:', error);
+    }
   };
 
   const createUser = async (userData: Partial<User>) => {
-    // TODO: API call to create user
-    console.log('Creating user:', userData);
-    loadUsers();
-    setShowCreateModal(false);
+    try {
+      const response = await fetch(`${API_BASE}/api/v2/users`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: userData.username,
+          email: userData.email,
+          password: 'changeme123', // Default password
+          rank: userData.rank,
+          role: userData.role?.role_name || 'analyst',
+          tier: getTierNumber(userData.role?.tier),
+          permissions: userData.role?.permissions || []
+        })
+      });
+      const data = await response.json();
+      if (data.status === 'ok') {
+        loadUsers();
+        setShowCreateModal(false);
+      }
+    } catch (error) {
+      console.error('Error creating user:', error);
+    }
   };
 
   const updateUser = async (userId: string, updates: Partial<User>) => {
-    // TODO: API call to update user
-    console.log('Updating user:', userId, updates);
-    loadUsers();
+    try {
+      const response = await fetch(`${API_BASE}/api/v2/users/${userId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: updates.email,
+          rank: updates.rank,
+          role: updates.role?.role_name,
+          tier: getTierNumber(updates.role?.tier),
+          is_active: updates.is_active
+        })
+      });
+      const data = await response.json();
+      if (data.status === 'ok') {
+        loadUsers();
+      }
+    } catch (error) {
+      console.error('Error updating user:', error);
+    }
     setShowEditModal(false);
   };
 
@@ -67,15 +113,41 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) =
       return;
     }
     
-    // TODO: API call to update user permissions
-    console.log(`${grant ? 'Granting' : 'Revoking'} permission ${permission} for user ${userId}`);
-    loadUsers();
+    try {
+      const response = await fetch(`${API_BASE}/api/v2/users/${userId}/permissions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          permissions: [permission],
+          action: grant ? 'grant' : 'revoke'
+        })
+      });
+      const data = await response.json();
+      if (data.status === 'ok') {
+        loadUsers();
+      }
+    } catch (error) {
+      console.error('Error managing permissions:', error);
+    }
   };
 
   const deactivateUser = async (userId: string) => {
-    // TODO: API call to deactivate user
-    console.log('Deactivating user:', userId);
-    loadUsers();
+    if (!hasPermission(currentUser, 'manage_users')) {
+      alert('You do not have permission to deactivate users');
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_BASE}/api/v2/users/${userId}/deactivate`, {
+        method: 'POST'
+      });
+      const data = await response.json();
+      if (data.status === 'ok') {
+        loadUsers();
+      }
+    } catch (error) {
+      console.error('Error deactivating user:', error);
+    }
   };
 
   // Check if current user can manage users

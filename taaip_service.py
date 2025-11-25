@@ -4830,3 +4830,321 @@ async def get_notifications(status: str = None, limit: int = 50):
     except Exception as e:
         return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
 
+
+# ============================================================================
+# User Management Endpoints
+# ============================================================================
+
+class CreateUserRequest(BaseModel):
+    username: str
+    email: str
+    password: str
+    rank: Optional[str] = None
+    role: str = "analyst"
+    tier: int = 3
+    permissions: list[str] = []
+
+class UpdateUserRequest(BaseModel):
+    email: Optional[str] = None
+    rank: Optional[str] = None
+    role: Optional[str] = None
+    tier: Optional[int] = None
+    is_active: Optional[bool] = None
+
+class PermissionRequest(BaseModel):
+    permissions: list[str]
+    action: str  # "grant" or "revoke"
+
+@app.get("/api/v2/users")
+async def get_users(is_active: Optional[bool] = None):
+    """Get all users with their permissions"""
+    try:
+        conn = get_db_conn()
+        cursor = conn.cursor()
+        
+        query = "SELECT id, username, email, rank, role, tier, is_active, created_at, updated_at, last_login FROM users"
+        params = []
+        
+        if is_active is not None:
+            query += " WHERE is_active = ?"
+            params.append(1 if is_active else 0)
+        
+        cursor.execute(query, params)
+        users = [dict(row) for row in cursor.fetchall()]
+        
+        # Get permissions for each user
+        for user in users:
+            cursor.execute("""
+                SELECT permission FROM user_permissions 
+                WHERE user_id = ?
+            """, (user['id'],))
+            user['permissions'] = [row['permission'] for row in cursor.fetchall()]
+        
+        conn.close()
+        
+        return JSONResponse({
+            "status": "ok",
+            "users": users
+        })
+    except Exception as e:
+        logging.error(f"Error fetching users: {e}")
+        return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
+
+@app.get("/api/v2/users/{user_id}")
+async def get_user(user_id: int):
+    """Get a single user by ID"""
+    try:
+        conn = get_db_conn()
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            SELECT id, username, email, rank, role, tier, is_active, created_at, updated_at, last_login
+            FROM users WHERE id = ?
+        """, (user_id,))
+        
+        user = cursor.fetchone()
+        if not user:
+            conn.close()
+            return JSONResponse({"status": "error", "message": "User not found"}, status_code=404)
+        
+        user = dict(user)
+        
+        # Get permissions
+        cursor.execute("""
+            SELECT permission, granted_by, granted_at 
+            FROM user_permissions 
+            WHERE user_id = ?
+        """, (user_id,))
+        user['permissions'] = [dict(row) for row in cursor.fetchall()]
+        
+        conn.close()
+        
+        return JSONResponse({
+            "status": "ok",
+            "user": user
+        })
+    except Exception as e:
+        logging.error(f"Error fetching user: {e}")
+        return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
+
+@app.post("/api/v2/users")
+async def create_user(request: CreateUserRequest):
+    """Create a new user"""
+    try:
+        import hashlib
+        import secrets
+        
+        conn = get_db_conn()
+        cursor = conn.cursor()
+        
+        # Check if username or email already exists
+        cursor.execute("SELECT id FROM users WHERE username = ? OR email = ?", 
+                      (request.username, request.email))
+        if cursor.fetchone():
+            conn.close()
+            return JSONResponse(
+                {"status": "error", "message": "Username or email already exists"}, 
+                status_code=400
+            )
+        
+        # Hash password
+        salt = secrets.token_hex(16)
+        password_hash = hashlib.sha256(f"{request.password}{salt}".encode()).hexdigest()
+        
+        now = datetime.now().isoformat()
+        
+        # Create user
+        cursor.execute("""
+            INSERT INTO users 
+            (username, email, password_hash, password_salt, rank, role, tier, is_active, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            request.username,
+            request.email,
+            password_hash,
+            salt,
+            request.rank,
+            request.role,
+            request.tier,
+            1,
+            now,
+            now
+        ))
+        
+        user_id = cursor.lastrowid
+        
+        # Grant permissions
+        for perm in request.permissions:
+            cursor.execute("""
+                INSERT INTO user_permissions (user_id, permission, granted_by, granted_at)
+                VALUES (?, ?, ?, ?)
+            """, (user_id, perm, 1, now))  # granted_by = 1 (admin)
+        
+        # Log action
+        cursor.execute("""
+            INSERT INTO user_audit_log (action, user_id, performed_by, details, timestamp)
+            VALUES (?, ?, ?, ?, ?)
+        """, ("create_user", user_id, 1, json.dumps({"username": request.username}), now))
+        
+        conn.commit()
+        conn.close()
+        
+        return JSONResponse({
+            "status": "ok",
+            "message": "User created successfully",
+            "user_id": user_id
+        })
+    except Exception as e:
+        logging.error(f"Error creating user: {e}")
+        return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
+
+@app.put("/api/v2/users/{user_id}")
+async def update_user(user_id: int, request: UpdateUserRequest):
+    """Update user details"""
+    try:
+        conn = get_db_conn()
+        cursor = conn.cursor()
+        
+        # Check if user exists
+        cursor.execute("SELECT id FROM users WHERE id = ?", (user_id,))
+        if not cursor.fetchone():
+            conn.close()
+            return JSONResponse({"status": "error", "message": "User not found"}, status_code=404)
+        
+        # Build update query
+        updates = []
+        params = []
+        
+        if request.email is not None:
+            updates.append("email = ?")
+            params.append(request.email)
+        if request.rank is not None:
+            updates.append("rank = ?")
+            params.append(request.rank)
+        if request.role is not None:
+            updates.append("role = ?")
+            params.append(request.role)
+        if request.tier is not None:
+            updates.append("tier = ?")
+            params.append(request.tier)
+        if request.is_active is not None:
+            updates.append("is_active = ?")
+            params.append(1 if request.is_active else 0)
+        
+        updates.append("updated_at = ?")
+        params.append(datetime.now().isoformat())
+        params.append(user_id)
+        
+        cursor.execute(f"""
+            UPDATE users SET {', '.join(updates)}
+            WHERE id = ?
+        """, params)
+        
+        # Log action
+        cursor.execute("""
+            INSERT INTO user_audit_log (action, user_id, performed_by, details, timestamp)
+            VALUES (?, ?, ?, ?, ?)
+        """, ("update_user", user_id, 1, json.dumps(request.dict(exclude_none=True)), datetime.now().isoformat()))
+        
+        conn.commit()
+        conn.close()
+        
+        return JSONResponse({
+            "status": "ok",
+            "message": "User updated successfully"
+        })
+    except Exception as e:
+        logging.error(f"Error updating user: {e}")
+        return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
+
+@app.post("/api/v2/users/{user_id}/permissions")
+async def manage_permissions(user_id: int, request: PermissionRequest):
+    """Grant or revoke permissions for a user"""
+    try:
+        conn = get_db_conn()
+        cursor = conn.cursor()
+        
+        # Check if user exists
+        cursor.execute("SELECT id FROM users WHERE id = ?", (user_id,))
+        if not cursor.fetchone():
+            conn.close()
+            return JSONResponse({"status": "error", "message": "User not found"}, status_code=404)
+        
+        now = datetime.now().isoformat()
+        
+        if request.action == "grant":
+            for perm in request.permissions:
+                cursor.execute("""
+                    INSERT OR REPLACE INTO user_permissions (user_id, permission, granted_by, granted_at)
+                    VALUES (?, ?, ?, ?)
+                """, (user_id, perm, 1, now))
+            
+            action_log = "grant_permissions"
+        elif request.action == "revoke":
+            for perm in request.permissions:
+                cursor.execute("""
+                    DELETE FROM user_permissions 
+                    WHERE user_id = ? AND permission = ?
+                """, (user_id, perm))
+            
+            action_log = "revoke_permissions"
+        else:
+            conn.close()
+            return JSONResponse({"status": "error", "message": "Invalid action"}, status_code=400)
+        
+        # Log action
+        cursor.execute("""
+            INSERT INTO user_audit_log (action, user_id, performed_by, details, timestamp)
+            VALUES (?, ?, ?, ?, ?)
+        """, (action_log, user_id, 1, json.dumps({"permissions": request.permissions}), now))
+        
+        conn.commit()
+        conn.close()
+        
+        return JSONResponse({
+            "status": "ok",
+            "message": f"Permissions {request.action}ed successfully"
+        })
+    except Exception as e:
+        logging.error(f"Error managing permissions: {e}")
+        return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
+
+@app.post("/api/v2/users/{user_id}/deactivate")
+async def deactivate_user(user_id: int):
+    """Deactivate a user account"""
+    try:
+        conn = get_db_conn()
+        cursor = conn.cursor()
+        
+        # Check if user exists
+        cursor.execute("SELECT id, is_active FROM users WHERE id = ?", (user_id,))
+        user = cursor.fetchone()
+        if not user:
+            conn.close()
+            return JSONResponse({"status": "error", "message": "User not found"}, status_code=404)
+        
+        # Toggle active status
+        new_status = 0 if user['is_active'] else 1
+        
+        cursor.execute("""
+            UPDATE users SET is_active = ?, updated_at = ?
+            WHERE id = ?
+        """, (new_status, datetime.now().isoformat(), user_id))
+        
+        # Log action
+        cursor.execute("""
+            INSERT INTO user_audit_log (action, user_id, performed_by, details, timestamp)
+            VALUES (?, ?, ?, ?, ?)
+        """, ("deactivate_user" if new_status == 0 else "activate_user", user_id, 1, json.dumps({}), datetime.now().isoformat()))
+        
+        conn.commit()
+        conn.close()
+        
+        return JSONResponse({
+            "status": "ok",
+            "message": f"User {'deactivated' if new_status == 0 else 'activated'} successfully"
+        })
+    except Exception as e:
+        logging.error(f"Error deactivating user: {e}")
+        return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
+

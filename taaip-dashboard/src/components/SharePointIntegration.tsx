@@ -4,6 +4,7 @@ import {
   FileText, Image, Video, Archive, RefreshCw, Trash2,
   ChevronRight, ChevronDown, Plus, X
 } from 'lucide-react';
+import { API_BASE } from '../config/api';
 
 interface SharePointFile {
   id: string;
@@ -43,7 +44,7 @@ export const SharePointIntegration: React.FC = () => {
   const loadSharePointContent = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`http://localhost:8000/api/v2/integrations/sharepoint/browse?path=${encodeURIComponent(currentPath)}`);
+      const response = await fetch(`${API_BASE}/api/v2/integrations/sharepoint/browse?path=${encodeURIComponent(currentPath)}`);
       const data = await response.json();
       
       if (data.status === 'ok') {
@@ -69,7 +70,7 @@ export const SharePointIntegration: React.FC = () => {
 
   const handleDownload = async (file: SharePointFile) => {
     try {
-      const response = await fetch(`http://localhost:8000/api/v2/integrations/sharepoint/download/${file.id}`);
+      const response = await fetch(`${API_BASE}/api/v2/integrations/sharepoint/download/${file.id}`);
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -91,7 +92,7 @@ export const SharePointIntegration: React.FC = () => {
     formData.append('path', currentPath);
 
     try {
-      const response = await fetch('http://localhost:8000/api/v2/integrations/sharepoint/upload', {
+      const response = await fetch(`${API_BASE}/api/v2/integrations/sharepoint/upload`, {
         method: 'POST',
         body: formData
       });
@@ -109,7 +110,7 @@ export const SharePointIntegration: React.FC = () => {
 
   const handleShare = async (file: SharePointFile, emails: string[]) => {
     try {
-      const response = await fetch('http://localhost:8000/api/v2/integrations/sharepoint/share', {
+      const response = await fetch(`${API_BASE}/api/v2/integrations/sharepoint/share`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

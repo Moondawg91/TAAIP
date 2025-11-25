@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BarChart, Bar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { API_BASE } from '../config/api';
 
 interface DODComparisonData {
   branch: string;
@@ -59,7 +60,7 @@ const DODBranchComparison: React.FC = () => {
         params.append('branch', selectedBranch);
       }
 
-      const response = await fetch(`http://localhost:8000/api/v2/dod-comparison?${params}`);
+      const response = await fetch(`${API_BASE}/api/v2/dod-comparison?${params}`);
       const result = await response.json();
       
       if (result.status === 'ok') {

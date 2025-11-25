@@ -8,7 +8,8 @@ import json
 import uuid
 
 SCRIPT_DIR = Path(__file__).parent.resolve()
-DB_PATH = SCRIPT_DIR / "data" / "taaip.sqlite3"
+# Align TWG sample data with primary recruiting database
+DB_PATH = SCRIPT_DIR / "recruiting.db"
 
 
 def generate_sample_twg_data():

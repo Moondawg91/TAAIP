@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { HelpCircle, Send, CheckCircle, AlertCircle, User, Shield, Eye, Edit, Database } from 'lucide-react';
+import { API_BASE } from '../config/api';
 
 export type AccessLevel = 'tier_1' | 'tier_2' | 'tier_3' | 'tier_4';
 
@@ -76,7 +77,7 @@ export const HelpDeskPortal: React.FC<{ currentUser?: UserAccess }> = ({ current
     e.preventDefault();
     
     try {
-      const response = await fetch('http://localhost:8000/api/v2/helpdesk/requests', {
+      const response = await fetch(`${API_BASE}/api/v2/helpdesk/requests`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

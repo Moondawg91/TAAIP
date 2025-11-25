@@ -4,6 +4,7 @@ import { DynamicDashboard } from './DynamicDashboard';
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { UniversalFilter, FilterState } from './UniversalFilter';
 import { ExportButton } from './ExportButton';
+import { API_BASE } from '../config/api';
 
 interface MarketPotentialData {
   geographic_level: string;
@@ -70,7 +71,7 @@ const MarketPotentialDashboard: React.FC = () => {
       if (filters.zipcode) params.append('zipcode', filters.zipcode);
       if (filters.cbsa) params.append('cbsa', filters.cbsa);
 
-      const response = await fetch(`http://localhost:8000/api/v2/market-potential?${params}`);
+      const response = await fetch(`${API_BASE}/api/v2/market/potential?${params}`);
       const result = await response.json();
       
       if (result.status === 'ok') {
