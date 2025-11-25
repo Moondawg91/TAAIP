@@ -6,8 +6,10 @@ Add sample recruiting funnel data to test the dashboard.
 import sqlite3
 from datetime import datetime, timedelta
 import random
+import os
 
-DB_FILE = "/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3"
+# Use unified recruiting.db so backend endpoints reflect sample data
+DB_FILE = os.path.join(os.path.dirname(__file__), "recruiting.db")
 
 # Sample data pools
 FIRST_NAMES = ["James", "John", "Michael", "David", "William", "Robert", "Joseph", "Thomas", "Charles", "Christopher"]
