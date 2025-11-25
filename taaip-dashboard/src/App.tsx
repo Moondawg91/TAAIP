@@ -29,12 +29,13 @@ const AssetRecommendationEngine = lazy(() => import('./components/AssetRecommend
 const HistoricalDataArchive = lazy(() => import('./components/HistoricalDataArchive'));
 const PowerBIBundle = lazy(() => import('./components/PowerBIEmbed').then(m => ({ default: m.PowerBIBundle })));
 const UserManagement = lazy(() => import('./components/UserManagement'));
+const MarketingEngagementDashboard = lazy(() => import('./components/MarketingEngagementDashboard'));
 
 // TAAIP - Talent Acquisition AI Platform
 // Optimized for 420T Talent Acquisition Technicians
 
 const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'home' | '420t' | 'funnel' | 'analytics' | 'market' | 'mission' | 'targeting' | 'projects' | 'leads' | 'events' | 'g2zones' | 'calendar' | 'sharepoint' | 'budget' | 'twg' | 'fusion' | 'segmentation' | 'methodology' | 'upload' | 'quarter-assessment' | 'asset-recommend' | 'historical' | 'user-management' | 'powerbi'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | '420t' | 'funnel' | 'analytics' | 'market' | 'mission' | 'targeting' | 'projects' | 'leads' | 'events' | 'g2zones' | 'calendar' | 'sharepoint' | 'budget' | 'twg' | 'fusion' | 'segmentation' | 'methodology' | 'upload' | 'quarter-assessment' | 'asset-recommend' | 'historical' | 'user-management' | 'powerbi' | 'marketing-engagement'>('home');
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const menuCategories = [
@@ -71,6 +72,7 @@ const App: React.FC = () => {
         { id: 'quarter-assessment', label: 'Quarter Assessment', icon: <FileCheck className="w-5 h-5" />, category: 'Performance' },
         { id: 'leads', label: 'Lead Status', icon: <FileCheck className="w-5 h-5" />, category: 'Performance' },
         { id: 'events', label: 'Event Performance', icon: <Activity className="w-5 h-5" />, category: 'Performance' },
+        { id: 'marketing-engagement', label: 'Marketing Engagement', icon: <Target className="w-5 h-5" />, category: 'Performance' },
         { id: 'g2zones', label: 'G2 Zone Analysis', icon: <Map className="w-5 h-5" />, category: 'Performance' },
         { id: 'historical', label: 'Historical Archive', icon: <FileCheck className="w-5 h-5" />, category: 'Performance' },
       ]
@@ -213,6 +215,7 @@ const App: React.FC = () => {
                'a9cd9722-3f83-4c53-a9c6-8534a4b79b0f'
              ]} />
            ) :
+           activeTab === 'marketing-engagement' ? <MarketingEngagementDashboard /> :
            activeTab === 'user-management' ? <UserManagement currentUser={{
              user_id: 'current-user',
              username: 'admin',

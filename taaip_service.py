@@ -5148,3 +5148,343 @@ async def deactivate_user(user_id: int):
         logging.error(f"Error deactivating user: {e}")
         return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
 
+
+# ============================================================================
+# Marketing Engagement Performance Endpoints
+# ============================================================================
+
+@app.get("/api/v2/marketing/campaigns")
+async def get_marketing_campaigns(
+    status: Optional[str] = None,
+    platform: Optional[str] = None,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None
+):
+    """Get marketing campaigns with optional filters"""
+    try:
+        conn = get_db_conn()
+        cursor = conn.cursor()
+        
+        query = "SELECT * FROM marketing_campaigns WHERE 1=1"
+        params = []
+        
+        if status:
+            query += " AND status = ?"
+            params.append(status)
+        if platform:
+            query += " AND platform = ?"
+            params.append(platform)
+        if start_date:
+            query += " AND start_date >= ?"
+            params.append(start_date)
+        if end_date:
+            query += " AND end_date <= ?"
+            params.append(end_date)
+        
+        query += " ORDER BY start_date DESC"
+        
+        cursor.execute(query, params)
+        campaigns = [dict(row) for row in cursor.fetchall()]
+        
+        conn.close()
+        
+        return JSONResponse({
+            "status": "ok",
+            "campaigns": campaigns,
+            "count": len(campaigns)
+        })
+    except Exception as e:
+        logging.error(f"Error fetching campaigns: {e}")
+        return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
+
+@app.get("/api/v2/marketing/engagement-metrics")
+async def get_engagement_metrics(
+    campaign_id: Optional[str] = None,
+    platform: Optional[str] = None,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    limit: int = 100
+):
+    """Get marketing engagement metrics"""
+    try:
+        conn = get_db_conn()
+        cursor = conn.cursor()
+        
+        query = "SELECT * FROM marketing_engagement_metrics WHERE 1=1"
+        params = []
+        
+        if campaign_id:
+            query += " AND campaign_id = ?"
+            params.append(campaign_id)
+        if platform:
+            query += " AND platform = ?"
+            params.append(platform)
+        if start_date:
+            query += " AND metric_date >= ?"
+            params.append(start_date)
+        if end_date:
+            query += " AND metric_date <= ?"
+            params.append(end_date)
+        
+        query += " ORDER BY metric_date DESC LIMIT ?"
+        params.append(limit)
+        
+        cursor.execute(query, params)
+        metrics = [dict(row) for row in cursor.fetchall()]
+        
+        conn.close()
+        
+        return JSONResponse({
+            "status": "ok",
+            "metrics": metrics,
+            "count": len(metrics)
+        })
+    except Exception as e:
+        logging.error(f"Error fetching engagement metrics: {e}")
+        return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
+
+@app.get("/api/v2/marketing/social-media-posts")
+async def get_social_media_posts(
+    platform: Optional[str] = None,
+    campaign_id: Optional[str] = None,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    limit: int = 50
+):
+    """Get social media posts with engagement data"""
+    try:
+        conn = get_db_conn()
+        cursor = conn.cursor()
+        
+        query = "SELECT * FROM social_media_posts WHERE 1=1"
+        params = []
+        
+        if platform:
+            query += " AND platform = ?"
+            params.append(platform)
+        if campaign_id:
+            query += " AND campaign_id = ?"
+            params.append(campaign_id)
+        if start_date:
+            query += " AND posted_date >= ?"
+            params.append(start_date)
+        if end_date:
+            query += " AND posted_date <= ?"
+            params.append(end_date)
+        
+        query += " ORDER BY posted_date DESC LIMIT ?"
+        params.append(limit)
+        
+        cursor.execute(query, params)
+        posts = [dict(row) for row in cursor.fetchall()]
+        
+        conn.close()
+        
+        return JSONResponse({
+            "status": "ok",
+            "posts": posts,
+            "count": len(posts)
+        })
+    except Exception as e:
+        logging.error(f"Error fetching social media posts: {e}")
+        return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
+
+@app.get("/api/v2/marketing/platforms")
+async def get_marketing_platforms():
+    """Get all marketing platform integrations"""
+    try:
+        conn = get_db_conn()
+        cursor = conn.cursor()
+        
+        cursor.execute("SELECT * FROM marketing_platform_integrations ORDER BY platform_name")
+        platforms = [dict(row) for row in cursor.fetchall()]
+        
+        conn.close()
+        
+        return JSONResponse({
+            "status": "ok",
+            "platforms": platforms
+        })
+    except Exception as e:
+        logging.error(f"Error fetching platforms: {e}")
+        return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
+
+@app.get("/api/v2/marketing/overview")
+async def get_marketing_overview(days: int = 30):
+    """Get marketing performance overview"""
+    try:
+        conn = get_db_conn()
+        cursor = conn.cursor()
+        
+        # Calculate date range
+        from datetime import timedelta
+        end_date = datetime.now()
+        start_date = end_date - timedelta(days=days)
+        start_str = start_date.strftime('%Y-%m-%d')
+        
+        # Total campaigns
+        cursor.execute("""
+            SELECT COUNT(*) as total, 
+                   SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) as active
+            FROM marketing_campaigns
+        """)
+        campaigns_data = dict(cursor.fetchone())
+        
+        # Aggregate metrics for the period
+        cursor.execute("""
+            SELECT 
+                SUM(impressions) as total_impressions,
+                SUM(views) as total_views,
+                SUM(engagements) as total_engagements,
+                SUM(clicks) as total_clicks,
+                SUM(conversions) as total_conversions,
+                AVG(engagement_rate) as avg_engagement_rate,
+                AVG(click_through_rate) as avg_ctr,
+                AVG(conversion_rate) as avg_conversion_rate
+            FROM marketing_engagement_metrics
+            WHERE metric_date >= ?
+        """, (start_str,))
+        metrics_data = dict(cursor.fetchone())
+        
+        # Top performing platforms
+        cursor.execute("""
+            SELECT platform, 
+                   SUM(engagements) as total_engagements,
+                   SUM(impressions) as total_impressions,
+                   AVG(engagement_rate) as avg_engagement_rate
+            FROM marketing_engagement_metrics
+            WHERE metric_date >= ?
+            GROUP BY platform
+            ORDER BY total_engagements DESC
+            LIMIT 5
+        """, (start_str,))
+        top_platforms = [dict(row) for row in cursor.fetchall()]
+        
+        # Recent social media performance
+        cursor.execute("""
+            SELECT platform,
+                   COUNT(*) as post_count,
+                   SUM(engagements) as total_engagements,
+                   SUM(impressions) as total_impressions
+            FROM social_media_posts
+            WHERE posted_date >= ?
+            GROUP BY platform
+        """, (start_str,))
+        social_performance = [dict(row) for row in cursor.fetchall()]
+        
+        conn.close()
+        
+        return JSONResponse({
+            "status": "ok",
+            "overview": {
+                "total_campaigns": campaigns_data.get('total', 0) or 0,
+                "active_campaigns": campaigns_data.get('active', 0) or 0,
+                "total_impressions": metrics_data.get('total_impressions', 0) or 0,
+                "total_views": metrics_data.get('total_views', 0) or 0,
+                "total_engagements": metrics_data.get('total_engagements', 0) or 0,
+                "total_clicks": metrics_data.get('total_clicks', 0) or 0,
+                "total_conversions": metrics_data.get('total_conversions', 0) or 0,
+                "avg_engagement_rate": round(metrics_data.get('avg_engagement_rate', 0) or 0, 2),
+                "avg_ctr": round(metrics_data.get('avg_ctr', 0) or 0, 2),
+                "avg_conversion_rate": round(metrics_data.get('avg_conversion_rate', 0) or 0, 2),
+                "top_platforms": top_platforms,
+                "social_performance": social_performance,
+                "period_days": days
+            }
+        })
+    except Exception as e:
+        logging.error(f"Error fetching marketing overview: {e}")
+        return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
+
+@app.get("/api/v2/marketing/email-metrics")
+async def get_email_metrics(
+    campaign_id: Optional[str] = None,
+    platform: Optional[str] = None,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    limit: int = 50
+):
+    """Get email marketing metrics"""
+    try:
+        conn = get_db_conn()
+        cursor = conn.cursor()
+        
+        query = "SELECT * FROM email_marketing_metrics WHERE 1=1"
+        params = []
+        
+        if campaign_id:
+            query += " AND campaign_id = ?"
+            params.append(campaign_id)
+        if platform:
+            query += " AND platform = ?"
+            params.append(platform)
+        if start_date:
+            query += " AND send_date >= ?"
+            params.append(start_date)
+        if end_date:
+            query += " AND send_date <= ?"
+            params.append(end_date)
+        
+        query += " ORDER BY send_date DESC LIMIT ?"
+        params.append(limit)
+        
+        cursor.execute(query, params)
+        emails = [dict(row) for row in cursor.fetchall()]
+        
+        conn.close()
+        
+        return JSONResponse({
+            "status": "ok",
+            "emails": emails,
+            "count": len(emails)
+        })
+    except Exception as e:
+        logging.error(f"Error fetching email metrics: {e}")
+        return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
+
+@app.get("/api/v2/marketing/digital-ads")
+async def get_digital_ads(
+    campaign_id: Optional[str] = None,
+    platform: Optional[str] = None,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    limit: int = 50
+):
+    """Get digital advertising performance"""
+    try:
+        conn = get_db_conn()
+        cursor = conn.cursor()
+        
+        query = "SELECT * FROM digital_advertising WHERE 1=1"
+        params = []
+        
+        if campaign_id:
+            query += " AND campaign_id = ?"
+            params.append(campaign_id)
+        if platform:
+            query += " AND platform = ?"
+            params.append(platform)
+        if start_date:
+            query += " AND start_date >= ?"
+            params.append(start_date)
+        if end_date:
+            query += " AND end_date <= ?"
+            params.append(end_date)
+        
+        query += " ORDER BY start_date DESC LIMIT ?"
+        params.append(limit)
+        
+        cursor.execute(query, params)
+        ads = [dict(row) for row in cursor.fetchall()]
+        
+        conn.close()
+        
+        return JSONResponse({
+            "status": "ok",
+            "ads": ads,
+            "count": len(ads)
+        })
+    except Exception as e:
+        logging.error(f"Error fetching digital ads: {e}")
+        return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
+
