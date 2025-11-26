@@ -5537,3 +5537,45 @@ async def upload_data(category: str, request: UniversalUploadRequest):
         logging.error(f"Error uploading data: {e}")
         return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
 
+
+@app.get("/api/v2/upload/history")
+async def get_upload_history():
+    """Retrieve upload history from data_imports table"""
+    try:
+        conn = get_db_conn()
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+        SELECT id, category, data, rows_count, imported_at 
+        FROM data_imports 
+        ORDER BY imported_at DESC 
+        LIMIT 100
+        """)
+        
+        rows = cursor.fetchall()
+        conn.close()
+        
+        history = []
+        for row in rows:
+            try:
+                data = json.loads(row[2]) if row[2] else []
+            except:
+                data = []
+            
+            history.append({
+                "id": row[0],
+                "category": row[1],
+                "data": data,
+                "rows_count": row[3],
+                "imported_at": row[4]
+            })
+        
+        return JSONResponse({
+            "status": "ok",
+            "history": history
+        })
+    except Exception as e:
+        logging.error(f"Error fetching upload history: {e}")
+        return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
+
+

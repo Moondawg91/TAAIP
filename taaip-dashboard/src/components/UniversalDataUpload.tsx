@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Upload, FileText, CheckCircle, AlertCircle, Database, Target, Users, TrendingUp, Map, Calendar, DollarSign, X } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Upload, FileText, CheckCircle, AlertCircle, Database, Target, Users, TrendingUp, Map, Calendar, DollarSign, X, Clock, Eye } from 'lucide-react';
 import Papa from 'papaparse';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
@@ -9,6 +9,14 @@ interface UploadResult {
   message: string;
   rowsProcessed?: number;
   destination?: string;
+}
+
+interface UploadHistory {
+  id: number;
+  category: string;
+  rows_count: number;
+  imported_at: string;
+  data: any[];
 }
 
 const UPLOAD_CATEGORIES = [
@@ -102,6 +110,25 @@ export const UniversalDataUpload: React.FC = () => {
   const [result, setResult] = useState<UploadResult | null>(null);
   const [previewData, setPreviewData] = useState<any[]>([]);
   const [showPreview, setShowPreview] = useState(false);
+  const [uploadHistory, setUploadHistory] = useState<UploadHistory[]>([]);
+  const [showHistory, setShowHistory] = useState(false);
+  const [selectedHistoryItem, setSelectedHistoryItem] = useState<UploadHistory | null>(null);
+
+  useEffect(() => {
+    fetchUploadHistory();
+  }, []);
+
+  const fetchUploadHistory = async () => {
+    try {
+      const response = await fetch(`${API_BASE}/api/v2/upload/history`);
+      const data = await response.json();
+      if (data.status === 'ok') {
+        setUploadHistory(data.history || []);
+      }
+    } catch (error) {
+      console.error('Error fetching upload history:', error);
+    }
+  };
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = event.target.files?.[0];
@@ -181,6 +208,11 @@ export const UniversalDataUpload: React.FC = () => {
               rowsProcessed: data.length,
               destination: category?.destination
             });
+            
+            // Refresh history after successful upload
+            if (result.status === 'ok') {
+              fetchUploadHistory();
+            }
           } catch (apiError) {
             // Fallback: Store locally if API not available
             console.warn('API not available, storing locally:', apiError);
@@ -406,9 +438,138 @@ export const UniversalDataUpload: React.FC = () => {
         </div>
       )}
 
+      {/* Upload History */}
+      {showHistory && (
+        <div className="bg-white rounded-xl border-2 border-gray-300 p-6 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-xl font-bold text-gray-900">Upload History</h3>
+            <button
+              onClick={() => setShowHistory(false)}
+              className="text-gray-600 hover:text-gray-900 font-semibold"
+            >
+              Back to Upload
+            </button>
+          </div>
+          
+          {uploadHistory.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              No upload history found
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Date</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Category</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Rows</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {uploadHistory.map((item) => (
+                    <tr key={item.id} className="hover:bg-gray-50">
+                      <td className="px-4 py-3 text-sm text-gray-700">
+                        {new Date(item.imported_at).toLocaleString()}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">
+                          {item.category}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-700">
+                        {item.rows_count}
+                      </td>
+                      <td className="px-4 py-3">
+                        <button
+                          onClick={() => setSelectedHistoryItem(item)}
+                          className="text-blue-600 hover:text-blue-800 font-semibold text-sm flex items-center gap-1"
+                        >
+                          <Eye className="w-4 h-4" />
+                          View Data
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Data Preview Modal */}
+      {selectedHistoryItem && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl max-w-6xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="flex items-center justify-between p-6 border-b">
+              <div>
+                <h3 className="text-xl font-bold text-gray-900">Uploaded Data Preview</h3>
+                <p className="text-sm text-gray-600 mt-1">
+                  Category: {selectedHistoryItem.category} • {selectedHistoryItem.rows_count} rows • 
+                  {new Date(selectedHistoryItem.imported_at).toLocaleString()}
+                </p>
+              </div>
+              <button
+                onClick={() => setSelectedHistoryItem(null)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="flex-1 overflow-auto p-6">
+              {selectedHistoryItem.data && selectedHistoryItem.data.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full border">
+                    <thead className="bg-gray-100">
+                      <tr>
+                        {Object.keys(selectedHistoryItem.data[0]).map((key) => (
+                          <th key={key} className="px-4 py-2 text-left font-semibold text-gray-700 border-b">
+                            {key}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {selectedHistoryItem.data.slice(0, 100).map((row, idx) => (
+                        <tr key={idx} className="border-b hover:bg-gray-50">
+                          {Object.values(row).map((val: any, vidx) => (
+                            <td key={vidx} className="px-4 py-2 text-gray-700">
+                              {String(val)}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  {selectedHistoryItem.data.length > 100 && (
+                    <p className="text-sm text-gray-500 mt-4 text-center">
+                      Showing first 100 of {selectedHistoryItem.data.length} rows
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  No data available
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Instructions */}
       <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
-        <h3 className="text-lg font-bold text-blue-900 mb-3">Upload Instructions</h3>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-lg font-bold text-blue-900">Upload Instructions</h3>
+          <button
+            onClick={() => setShowHistory(true)}
+            className="text-blue-600 hover:text-blue-800 font-semibold text-sm flex items-center gap-2"
+          >
+            <Clock className="w-4 h-4" />
+            View History
+          </button>
+        </div>
         <ul className="space-y-2 text-sm text-blue-800">
           <li className="flex items-start gap-2">
             <span className="bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">1</span>
