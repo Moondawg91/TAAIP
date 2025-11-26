@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Shield, Users, Key, Plus, Edit, Trash2, Check, X, UserPlus, Lock, Unlock } from 'lucide-react';
-import { User, UserRole, Permission, ROLE_TEMPLATES, hasPermission, canDelegatePermission, hasTierAccess } from '../types/auth';
+import { User, UserRole, Permission, AccessTier, ROLE_TEMPLATES, hasPermission, canDelegatePermission, hasTierAccess } from '../types/auth';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
 
