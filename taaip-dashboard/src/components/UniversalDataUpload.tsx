@@ -199,6 +199,11 @@ export const UniversalDataUpload: React.FC = () => {
               body: JSON.stringify({ data, category: targetCategory })
             });
 
+            if (!response.ok) {
+              const errText = await response.text();
+              throw new Error(`Upload failed (${response.status}): ${errText?.slice(0, 200)}`);
+            }
+
             const result = await response.json();
 
             setResult({
@@ -212,17 +217,24 @@ export const UniversalDataUpload: React.FC = () => {
             if (result.status === 'ok') {
               fetchUploadHistory();
             }
-          } catch (apiError) {
-            // Fallback: Store locally if API not available
-            console.warn('API not available, storing locally:', apiError);
-            localStorage.setItem(`upload_${targetCategory}_${Date.now()}`, JSON.stringify(data));
-            
-            setResult({
-              success: true,
-              message: `Data cached locally. ${data.length} rows will sync when connected.`,
-              rowsProcessed: data.length,
-              destination: category?.destination
-            });
+          } catch (apiError: any) {
+            const isOffline = typeof navigator !== 'undefined' && navigator.onLine === false;
+            if (isOffline) {
+              // Offline fallback: cache locally to sync later
+              console.warn('Offline, caching locally:', apiError);
+              localStorage.setItem(`upload_${targetCategory}_${Date.now()}`, JSON.stringify(data));
+              setResult({
+                success: true,
+                message: `Data cached locally. ${data.length} rows will sync when connected.`,
+                rowsProcessed: data.length,
+                destination: category?.destination
+              });
+            } else {
+              setResult({
+                success: false,
+                message: `Upload failed: ${apiError?.message || 'Unknown error'}`
+              });
+            }
           }
 
           setUploading(false);
