@@ -44,17 +44,22 @@ export const DynamicDashboard: React.FC<DynamicDashboardProps> = ({ dataType, ta
       const response = await fetch(`${API_BASE}${endpoint}`);
       const result = await response.json();
       
-      setData(result.data || result);
-      analyzeFields(result.data || result);
+      const dataArray = Array.isArray(result.data) ? result.data : Array.isArray(result) ? result : [];
+      setData(dataArray);
+      analyzeFields(dataArray);
     } catch (error) {
       console.error('Failed to fetch data:', error);
+      setData([]);
     } finally {
       setLoading(false);
     }
   };
 
   const analyzeFields = (data: any[]) => {
-    if (!data || data.length === 0) return;
+    if (!Array.isArray(data) || data.length === 0) {
+      setFields([]);
+      return;
+    }
     
     const fieldAnalysis: DataField[] = Object.keys(data[0]).map(key => {
       const values = data.map(item => item[key]).filter(v => v !== null && v !== undefined);
@@ -80,6 +85,11 @@ export const DynamicDashboard: React.FC<DynamicDashboardProps> = ({ dataType, ta
   // Auto-generate appropriate visualizations
   const generateVisualizations = () => {
     const visuals: JSX.Element[] = [];
+    
+    // Safety check - ensure data is an array
+    if (!Array.isArray(data) || data.length === 0) {
+      return visuals;
+    }
     
     // Find numeric fields for charts
     const numericFields = fields.filter(f => f.type === 'number');
@@ -383,7 +393,7 @@ export const DynamicDashboard: React.FC<DynamicDashboardProps> = ({ dataType, ta
     );
   }
 
-  if (data.length === 0) {
+  if (!Array.isArray(data) || data.length === 0) {
     return (
       <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-8 text-center">
         <AlertCircle className="w-12 h-12 mx-auto mb-4 text-yellow-600" />
@@ -448,7 +458,7 @@ export const DynamicDashboard: React.FC<DynamicDashboardProps> = ({ dataType, ta
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {data.slice(0, 50).map((row, idx) => (
+              {Array.isArray(data) && data.slice(0, 50).map((row, idx) => (
                 <tr key={idx} className="hover:bg-gray-50">
                   {fields.map(field => (
                     <td key={field.name} className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">
@@ -459,7 +469,7 @@ export const DynamicDashboard: React.FC<DynamicDashboardProps> = ({ dataType, ta
               ))}
             </tbody>
           </table>
-          {data.length > 50 && (
+          {Array.isArray(data) && data.length > 50 && (
             <div className="text-center py-3 text-sm text-gray-500 bg-gray-50">
               Showing first 50 of {data.length} records
             </div>
