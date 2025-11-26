@@ -320,6 +320,116 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) =
           }}
         />
       )}
+
+      {/* Create User Modal */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white px-6 py-4">
+              <h2 className="text-2xl font-bold flex items-center gap-2">
+                <UserPlus className="w-6 h-6" />
+                Create New User
+              </h2>
+            </div>
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              const formData = new FormData(e.currentTarget);
+              createUser({
+                username: formData.get('username') as string,
+                email: formData.get('email') as string,
+                rank: formData.get('rank') as string,
+                role: {
+                  role_id: formData.get('role') as string,
+                  role_name: formData.get('role') as string,
+                  tier: formData.get('tier') as AccessTier,
+                  permissions: [],
+                  description: ''
+                }
+              });
+            }} className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1">Username</label>
+                <input type="text" name="username" required className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1">Email</label>
+                <input type="email" name="email" required className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1">Rank</label>
+                <input type="text" name="rank" className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1">Role</label>
+                <select name="role" required className="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                  <option value="analyst">Analyst</option>
+                  <option value="recruiter">Recruiter</option>
+                  <option value="station_commander">Station Commander</option>
+                  <option value="company_commander">Company Commander</option>
+                  <option value="420t">420T Administrator</option>
+                  <option value="admin">Global Administrator</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1">Tier</label>
+                <select name="tier" required className="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                  <option value="tier-1-user">Tier 1 - User</option>
+                  <option value="tier-2-manager">Tier 2 - Manager</option>
+                  <option value="tier-3-admin">Tier 3 - Administrator</option>
+                  <option value="tier-4-global">Tier 4 - Global</option>
+                </select>
+              </div>
+              <div className="flex gap-3 justify-end pt-4 border-t">
+                <button type="button" onClick={() => setShowCreateModal(false)} className="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg font-bold hover:bg-gray-400">Cancel</button>
+                <button type="submit" className="px-6 py-2 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700">Create User</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit User Modal */}
+      {showEditModal && selectedUser && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl">
+            <div className="bg-gradient-to-r from-purple-600 to-indigo-700 text-white px-6 py-4">
+              <h2 className="text-2xl font-bold flex items-center gap-2">
+                <Edit className="w-6 h-6" />
+                Edit User: {selectedUser.username}
+              </h2>
+            </div>
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              const formData = new FormData(e.currentTarget);
+              updateUser(selectedUser.user_id, {
+                email: formData.get('email') as string,
+                rank: formData.get('rank') as string,
+                is_active: formData.get('is_active') === 'true'
+              });
+            }} className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1">Email</label>
+                <input type="email" name="email" defaultValue={selectedUser.email} required className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1">Rank</label>
+                <input type="text" name="rank" defaultValue={selectedUser.rank} className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1">Status</label>
+                <select name="is_active" defaultValue={selectedUser.is_active ? 'true' : 'false'} className="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                  <option value="true">Active</option>
+                  <option value="false">Inactive</option>
+                </select>
+              </div>
+              <div className="flex gap-3 justify-end pt-4 border-t">
+                <button type="button" onClick={() => { setShowEditModal(false); setSelectedUser(null); }} className="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg font-bold hover:bg-gray-400">Cancel</button>
+                <button type="submit" className="px-6 py-2 bg-purple-600 text-white rounded-lg font-bold hover:bg-purple-700">Save Changes</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -434,194 +544,6 @@ const PermissionDelegationModal: React.FC<{
           </button>
         </div>
       </div>
-    </div>
-  );
-};
-
-      {/* Create User Modal */}
-      {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white px-6 py-4">
-              <h2 className="text-2xl font-bold flex items-center gap-2">
-                <UserPlus className="w-6 h-6" />
-                Create New User
-              </h2>
-            </div>
-            <form onSubmit={(e) => {
-              e.preventDefault();
-              const formData = new FormData(e.currentTarget);
-              createUser({
-                username: formData.get('username') as string,
-                email: formData.get('email') as string,
-                rank: formData.get('rank') as string,
-                role: {
-                  role_id: formData.get('role') as string,
-                  role_name: formData.get('role') as string,
-                  tier: formData.get('tier') as AccessTier,
-                  permissions: [],
-                  description: ''
-                }
-              });
-            }} className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-1">Username</label>
-                <input
-                  type="text"
-                  name="username"
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-1">Email</label>
-                <input
-                  type="email"
-                  name="email"
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-1">Rank</label>
-                <input
-                  type="text"
-                  name="rank"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-1">Role</label>
-                <select
-                  name="role"
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                >
-                  <option value="analyst">Analyst</option>
-                  <option value="recruiter">Recruiter</option>
-                  <option value="station_commander">Station Commander</option>
-                  <option value="company_commander">Company Commander</option>
-                  <option value="420t">420T Administrator</option>
-                  <option value="admin">Global Administrator</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-1">Tier</label>
-                <select
-                  name="tier"
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                >
-                  <option value="tier-1-user">Tier 1 - User</option>
-                  <option value="tier-2-manager">Tier 2 - Manager</option>
-                  <option value="tier-3-admin">Tier 3 - Administrator</option>
-                  <option value="tier-4-global">Tier 4 - Global</option>
-                </select>
-              </div>
-              <div className="flex gap-3 justify-end pt-4 border-t">
-                <button
-                  type="button"
-                  onClick={() => setShowCreateModal(false)}
-                  className="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg font-bold hover:bg-gray-400"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-6 py-2 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700"
-                >
-                  Create User
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Edit User Modal */}
-      {showEditModal && selectedUser && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl">
-            <div className="bg-gradient-to-r from-purple-600 to-indigo-700 text-white px-6 py-4">
-              <h2 className="text-2xl font-bold flex items-center gap-2">
-                <Edit className="w-6 h-6" />
-                Edit User: {selectedUser.username}
-              </h2>
-            </div>
-            <form onSubmit={(e) => {
-              e.preventDefault();
-              const formData = new FormData(e.currentTarget);
-              updateUser(selectedUser.user_id, {
-                email: formData.get('email') as string,
-                rank: formData.get('rank') as string,
-                is_active: formData.get('is_active') === 'true'
-              });
-            }} className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-1">Email</label>
-                <input
-                  type="email"
-                  name="email"
-                  defaultValue={selectedUser.email}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-1">Rank</label>
-                <input
-                  type="text"
-                  name="rank"
-                  defaultValue={selectedUser.rank}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-1">Status</label>
-                <select
-                  name="is_active"
-                  defaultValue={selectedUser.is_active ? 'true' : 'false'}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                >
-                  <option value="true">Active</option>
-                  <option value="false">Inactive</option>
-                </select>
-              </div>
-              <div className="flex gap-3 justify-end pt-4 border-t">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowEditModal(false);
-                    setSelectedUser(null);
-                  }}
-                  className="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg font-bold hover:bg-gray-400"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-6 py-2 bg-purple-600 text-white rounded-lg font-bold hover:bg-purple-700"
-                >
-                  Save Changes
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Permissions Management Modal */}
-      {showPermissionsModal && selectedUser && (
-        <PermissionsModal
-          user={selectedUser}
-          currentUser={currentUser}
-          onDelegate={delegatePermission}
-          onClose={() => {
-            setShowPermissionsModal(false);
-            setSelectedUser(null);
-          }}
-        />
-      )}
     </div>
   );
 };
