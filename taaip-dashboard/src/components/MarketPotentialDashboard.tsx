@@ -74,11 +74,14 @@ const MarketPotentialDashboard: React.FC = () => {
       const response = await fetch(`${API_BASE}/api/v2/market/potential?${params}`);
       const result = await response.json();
       
-      if (result.status === 'ok') {
+      if (result.status === 'ok' && Array.isArray(result.data)) {
         setMarketData(result.data);
+      } else {
+        setMarketData([]);
       }
     } catch (error) {
       console.error('Error fetching market data:', error);
+      setMarketData([]);
     } finally {
       setLoading(false);
     }

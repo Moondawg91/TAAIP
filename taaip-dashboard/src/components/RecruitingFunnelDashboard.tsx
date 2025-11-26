@@ -129,27 +129,32 @@ export const RecruitingFunnelDashboard: React.FC = () => {
     return <div className="p-8 text-center">Loading recruiting funnel data...</div>;
   }
 
+  // Validate data structure
+  if (!metrics.funnel_counts || !metrics.conversion_rates) {
+    return <div className="p-8 text-center text-red-600">Invalid data structure. Please check API response.</div>;
+  }
+
   // Prepare funnel visualization data - Army recruiting process
   const funnelData = [
-    { stage: 'Leads', value: metrics.funnel_counts.leads, fill: STAGE_COLORS.lead },
-    { stage: 'Prospects', value: metrics.funnel_counts.prospects, fill: STAGE_COLORS.prospect },
-    { stage: 'Appt Made', value: metrics.funnel_counts.appointments_made, fill: STAGE_COLORS.appointment_made },
-    { stage: 'Appt Done', value: metrics.funnel_counts.appointments_conducted, fill: STAGE_COLORS.appointment_conducted },
-    { stage: 'Test', value: metrics.funnel_counts.tests, fill: STAGE_COLORS.test },
-    { stage: 'Test Pass', value: metrics.funnel_counts.test_passes, fill: STAGE_COLORS.test_pass },
-    { stage: 'Enlistment', value: metrics.funnel_counts.enlistments, fill: STAGE_COLORS.enlistment },
-    { stage: 'Ship', value: metrics.funnel_counts.ships, fill: STAGE_COLORS.ship },
+    { stage: 'Leads', value: metrics.funnel_counts.leads || 0, fill: STAGE_COLORS.lead },
+    { stage: 'Prospects', value: metrics.funnel_counts.prospects || 0, fill: STAGE_COLORS.prospect },
+    { stage: 'Appt Made', value: metrics.funnel_counts.appointments_made || 0, fill: STAGE_COLORS.appointment_made },
+    { stage: 'Appt Done', value: metrics.funnel_counts.appointments_conducted || 0, fill: STAGE_COLORS.appointment_conducted },
+    { stage: 'Test', value: metrics.funnel_counts.tests || 0, fill: STAGE_COLORS.test },
+    { stage: 'Test Pass', value: metrics.funnel_counts.test_passes || 0, fill: STAGE_COLORS.test_pass },
+    { stage: 'Enlistment', value: metrics.funnel_counts.enlistments || 0, fill: STAGE_COLORS.enlistment },
+    { stage: 'Ship', value: metrics.funnel_counts.ships || 0, fill: STAGE_COLORS.ship },
   ];
 
   // Conversion rates data - Army recruiting process stages
   const conversionData = [
-    { stage: 'Lead→Prospect', rate: metrics.conversion_rates.lead_to_prospect },
-    { stage: 'Prospect→Appt', rate: metrics.conversion_rates.prospect_to_appointment },
-    { stage: 'Appt Made→Done', rate: metrics.conversion_rates.appointment_made_to_conducted },
-    { stage: 'Appt→Test', rate: metrics.conversion_rates.appointment_to_test },
-    { stage: 'Test→Pass', rate: metrics.conversion_rates.test_to_pass },
-    { stage: 'Test Pass→Enlist', rate: metrics.conversion_rates.test_pass_to_enlistment },
-    { stage: 'Enlist→Ship', rate: metrics.conversion_rates.enlistment_to_ship },
+    { stage: 'Lead→Prospect', rate: metrics.conversion_rates.lead_to_prospect || 0 },
+    { stage: 'Prospect→Appt', rate: metrics.conversion_rates.prospect_to_appointment || 0 },
+    { stage: 'Appt Made→Done', rate: metrics.conversion_rates.appointment_made_to_conducted || 0 },
+    { stage: 'Appt→Test', rate: metrics.conversion_rates.appointment_to_test || 0 },
+    { stage: 'Test→Pass', rate: metrics.conversion_rates.test_to_pass || 0 },
+    { stage: 'Test Pass→Enlist', rate: metrics.conversion_rates.test_pass_to_enlistment || 0 },
+    { stage: 'Enlist→Ship', rate: metrics.conversion_rates.enlistment_to_ship || 0 },
   ];
 
   // Identify bottlenecks (conversion rates below 50%)

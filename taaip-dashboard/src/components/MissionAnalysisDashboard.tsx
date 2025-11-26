@@ -66,11 +66,14 @@ const MissionAnalysisDashboard: React.FC = () => {
       const response = await fetch(`${API_BASE}/api/v2/mission-analysis?${params}`);
       const result = await response.json();
       
-      if (result.status === 'ok') {
+      if (result.status === 'ok' && Array.isArray(result.data)) {
         setMissionData(result.data);
+      } else {
+        setMissionData([]);
       }
     } catch (error) {
       console.error('Error fetching mission data:', error);
+      setMissionData([]);
     } finally {
       setLoading(false);
     }

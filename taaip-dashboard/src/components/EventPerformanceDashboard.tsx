@@ -71,11 +71,14 @@ export const EventPerformanceDashboard: React.FC = () => {
       const res = await fetch(`${API_BASE}/api/v2/events/performance?${params}`);
       const data = await res.json();
       
-      if (data.status === 'ok') {
+      if (data.status === 'ok' && Array.isArray(data.data)) {
         setEvents(data.data);
+      } else {
+        setEvents([]);
       }
     } catch (error) {
       console.error('Error fetching event performance:', error);
+      setEvents([]);
     } finally {
       setLoading(false);
     }
