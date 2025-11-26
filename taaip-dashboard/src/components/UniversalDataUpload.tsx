@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Upload, FileText, CheckCircle, AlertCircle, Database, Target, Users, TrendingUp, Map, Calendar, DollarSign, X, Clock, Eye } from 'lucide-react';
 import Papa from 'papaparse';
-
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+import { API_BASE } from '../config/api';
 
 interface UploadResult {
   success: boolean;
