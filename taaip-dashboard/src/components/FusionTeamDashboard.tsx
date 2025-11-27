@@ -152,7 +152,6 @@ export const FusionTeamDashboard: React.FC = () => {
   const [editTaskLevel, setEditTaskLevel] = useState(1);
   const [newComment, setNewComment] = useState('');
   const [selectedRelatedTask, setSelectedRelatedTask] = useState('');
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
   useEffect(() => {
     fetchFusionData();
