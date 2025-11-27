@@ -88,6 +88,16 @@ export const TargetingWorkingGroup: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [showAddEventModal, setShowAddEventModal] = useState(false);
   const [showAddRecommendationModal, setShowAddRecommendationModal] = useState(false);
+  
+  // Detail modal states
+  const [showAARDetailModal, setShowAARDetailModal] = useState(false);
+  const [showBudgetDetailModal, setShowBudgetDetailModal] = useState(false);
+  const [showEventsDetailModal, setShowEventsDetailModal] = useState(false);
+  const [showTargetsDetailModal, setShowTargetsDetailModal] = useState(false);
+  const [showAgendaDetailModal, setShowAgendaDetailModal] = useState(false);
+  const [selectedAgendaItem, setSelectedAgendaItem] = useState<AgendaItem | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<TargetEvent | null>(null);
+  
   const [newEvent, setNewEvent] = useState<Partial<TargetEvent>>({
     name: '',
     date: '',
@@ -262,6 +272,34 @@ export const TargetingWorkingGroup: React.FC = () => {
     }
   };
 
+  // Detail modal handlers
+  const handleAARClick = () => {
+    setShowAARDetailModal(true);
+  };
+
+  const handleBudgetClick = () => {
+    setShowBudgetDetailModal(true);
+  };
+
+  const handleEventsClick = () => {
+    setShowEventsDetailModal(true);
+  };
+
+  const handleTargetsClick = () => {
+    setShowTargetsDetailModal(true);
+  };
+
+  const handleAgendaItemClick = (item: AgendaItem) => {
+    setSelectedAgendaItem(item);
+    setShowAgendaDetailModal(true);
+  };
+
+  const handleEventClick = (event: TargetEvent) => {
+    setSelectedEvent(event);
+    setShowAddEventModal(true);
+    setNewEvent(event);
+  };
+
   const handleAddEvent = () => {
     const event: TargetEvent = {
       event_id: `EVT${Date.now()}`,
@@ -286,6 +324,7 @@ export const TargetingWorkingGroup: React.FC = () => {
     });
     
     setShowAddEventModal(false);
+    setSelectedEvent(null);
     setNewEvent({
       name: '',
       date: '',
@@ -397,7 +436,10 @@ export const TargetingWorkingGroup: React.FC = () => {
         <div className="space-y-6">
           {/* Quick Stats */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <div className="bg-white rounded-xl shadow-md p-6">
+            <div 
+              onClick={handleAARClick}
+              className="bg-white rounded-xl shadow-md p-6 cursor-pointer hover:shadow-lg transition-shadow"
+            >
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-gray-500 text-sm uppercase font-semibold">AAR Overdue</p>
@@ -409,7 +451,10 @@ export const TargetingWorkingGroup: React.FC = () => {
               </div>
             </div>
 
-            <div className="bg-white rounded-xl shadow-md p-6">
+            <div 
+              onClick={handleBudgetClick}
+              className="bg-white rounded-xl shadow-md p-6 cursor-pointer hover:shadow-lg transition-shadow"
+            >
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-gray-500 text-sm uppercase font-semibold">Budget Remaining</p>
@@ -421,7 +466,10 @@ export const TargetingWorkingGroup: React.FC = () => {
               </div>
             </div>
 
-            <div className="bg-white rounded-xl shadow-md p-6">
+            <div 
+              onClick={handleEventsClick}
+              className="bg-white rounded-xl shadow-md p-6 cursor-pointer hover:shadow-lg transition-shadow"
+            >
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-gray-500 text-sm uppercase font-semibold">Active Events</p>
@@ -431,7 +479,10 @@ export const TargetingWorkingGroup: React.FC = () => {
               </div>
             </div>
 
-            <div className="bg-white rounded-xl shadow-md p-6">
+            <div 
+              onClick={handleTargetsClick}
+              className="bg-white rounded-xl shadow-md p-6 cursor-pointer hover:shadow-lg transition-shadow"
+            >
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-gray-500 text-sm uppercase font-semibold">Must Win Targets</p>
@@ -464,7 +515,11 @@ export const TargetingWorkingGroup: React.FC = () => {
                 </thead>
                 <tbody className="divide-y divide-gray-200">
                   {aarReports.map((aar) => (
-                    <tr key={aar.event_id} className="hover:bg-gray-50">
+                    <tr 
+                      key={aar.event_id} 
+                      onClick={() => handleAARClick()}
+                      className="hover:bg-gray-50 cursor-pointer"
+                    >
                       <td className="px-6 py-4 font-semibold text-gray-900">{aar.event_name}</td>
                       <td className="px-6 py-4 text-gray-600">{aar.date}</td>
                       <td className="px-6 py-4 text-gray-600">{aar.due_date}</td>
@@ -732,7 +787,21 @@ export const TargetingWorkingGroup: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  <tr className="hover:bg-gray-50">
+                  <tr 
+                    onClick={() => handleEventClick({
+                      event_id: 'EVT001',
+                      name: 'State University Football Game',
+                      date: '2025-02-15',
+                      location: 'University Stadium',
+                      type: 'event_targeting',
+                      target_audience: 'College students, families',
+                      expected_leads: 45,
+                      budget: 12500,
+                      status: 'planned',
+                      priority: 'must_win'
+                    })}
+                    className="hover:bg-gray-50 cursor-pointer"
+                  >
                     <td className="px-4 py-3 font-semibold text-gray-900">State University Football Game</td>
                     <td className="px-4 py-3 text-gray-600">2025-02-15</td>
                     <td className="px-4 py-3 text-gray-600">University Stadium</td>
@@ -749,7 +818,21 @@ export const TargetingWorkingGroup: React.FC = () => {
                     <td className="px-4 py-3 font-semibold text-blue-600">45</td>
                     <td className="px-4 py-3 font-semibold text-green-600">$12,500</td>
                   </tr>
-                  <tr className="hover:bg-gray-50">
+                  <tr 
+                    onClick={() => handleEventClick({
+                      event_id: 'EVT002',
+                      name: 'Lincoln High School Visit',
+                      date: '2025-02-20',
+                      location: 'Lincoln HS (ZIP: 28301)',
+                      type: 'geographic_targeting',
+                      target_audience: 'High school students',
+                      expected_leads: 30,
+                      budget: 3200,
+                      status: 'planned',
+                      priority: 'must_keep'
+                    })}
+                    className="hover:bg-gray-50 cursor-pointer"
+                  >
                     <td className="px-4 py-3 font-semibold text-gray-900">Lincoln High School Visit</td>
                     <td className="px-4 py-3 text-gray-600">2025-02-20</td>
                     <td className="px-4 py-3 text-gray-600">Lincoln HS (ZIP: 28301)</td>
@@ -792,15 +875,57 @@ export const TargetingWorkingGroup: React.FC = () => {
               </button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-white/10 backdrop-blur rounded-lg p-4 border border-white/20">
+              <div 
+                onClick={() => handleEventClick({
+                  event_id: 'EVT_EXPO',
+                  name: 'Youth Career Expo',
+                  date: '2025-03-10',
+                  location: 'Houston Convention Center',
+                  type: 'event_targeting',
+                  target_audience: 'High school and college students',
+                  expected_leads: 120,
+                  budget: 15000,
+                  status: 'planned',
+                  priority: 'must_win'
+                })}
+                className="bg-white/10 backdrop-blur rounded-lg p-4 border border-white/20 cursor-pointer hover:bg-white/20 transition-colors"
+              >
                 <h3 className="font-bold text-yellow-400 mb-2">Youth Career Expo</h3>
                 <p className="text-sm text-blue-100">High-impact youth engagement opportunity</p>
               </div>
-              <div className="bg-white/10 backdrop-blur rounded-lg p-4 border border-white/20">
+              <div 
+                onClick={() => handleEventClick({
+                  event_id: 'EVT_WESTBROOK',
+                  name: 'Westbrook HS Career Fair',
+                  date: '2025-03-18',
+                  location: 'Westbrook High School',
+                  type: 'geographic_targeting',
+                  target_audience: 'High school seniors',
+                  expected_leads: 65,
+                  budget: 4500,
+                  status: 'planned',
+                  priority: 'must_keep'
+                })}
+                className="bg-white/10 backdrop-blur rounded-lg p-4 border border-white/20 cursor-pointer hover:bg-white/20 transition-colors"
+              >
                 <h3 className="font-bold text-yellow-400 mb-2">Westbrook HS Career Fair</h3>
                 <p className="text-sm text-blue-100">Targeted high school recruitment event</p>
               </div>
-              <div className="bg-white/10 backdrop-blur rounded-lg p-4 border border-white/20">
+              <div 
+                onClick={() => handleEventClick({
+                  event_id: 'EVT_RODEO',
+                  name: 'Walker County Fair & Rodeo',
+                  date: '2025-04-05',
+                  location: 'Walker County Fairgrounds',
+                  type: 'event_targeting',
+                  target_audience: 'Community families',
+                  expected_leads: 90,
+                  budget: 8500,
+                  status: 'planned',
+                  priority: 'standard'
+                })}
+                className="bg-white/10 backdrop-blur rounded-lg p-4 border border-white/20 cursor-pointer hover:bg-white/20 transition-colors"
+              >
                 <h3 className="font-bold text-yellow-400 mb-2">Walker County Fair & Rodeo</h3>
                 <p className="text-sm text-blue-100">Community engagement - Exhibit space</p>
               </div>
@@ -1383,6 +1508,301 @@ export const TargetingWorkingGroup: React.FC = () => {
                 >
                   Cancel
                 </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* AAR Detail Modal */}
+      {showAARDetailModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b p-6 flex items-center justify-between">
+              <h3 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                <FileText className="w-6 h-6 text-red-600" />
+                AAR Reports - Overdue Events
+              </h3>
+              <button onClick={() => setShowAARDetailModal(false)} className="text-gray-500 hover:text-gray-700">
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            <div className="p-6">
+              <div className="bg-red-50 border-l-4 border-red-600 p-4 mb-6">
+                <p className="text-red-800 font-semibold">
+                  {aarReports.filter(r => r.status === 'overdue').length} AAR reports are overdue (past 72-hour deadline)
+                </p>
+              </div>
+              
+              <div className="space-y-4">
+                {aarReports.filter(r => r.status === 'overdue').map((aar) => (
+                  <div key={aar.event_id} className="border rounded-lg p-4 bg-gray-50">
+                    <div className="flex items-start justify-between mb-3">
+                      <div>
+                        <h4 className="font-bold text-lg text-gray-900">{aar.event_name}</h4>
+                        <p className="text-sm text-gray-600">Event Date: {aar.date}</p>
+                      </div>
+                      <span className="px-3 py-1 bg-red-100 text-red-800 rounded-full text-sm font-bold">
+                        {aar.hours_since_event}h OVERDUE
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4 text-sm mb-4">
+                      <div>
+                        <span className="text-gray-500">Due Date:</span>
+                        <span className="ml-2 font-semibold">{aar.due_date}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500">Status:</span>
+                        <span className="ml-2 font-semibold text-red-600">Overdue</span>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <button className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 flex items-center gap-2">
+                        <Upload className="w-4 h-4" />
+                        Submit AAR
+                      </button>
+                      <button className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300">
+                        View Event Details
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Budget Detail Modal */}
+      {showBudgetDetailModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-5xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b p-6 flex items-center justify-between">
+              <h3 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                <DollarSign className="w-6 h-6 text-green-600" />
+                Marketing Budget Breakdown
+              </h3>
+              <button onClick={() => setShowBudgetDetailModal(false)} className="text-gray-500 hover:text-gray-700">
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            <div className="p-6">
+              {marketingBudget && (
+                <>
+                  <div className="grid grid-cols-4 gap-4 mb-6">
+                    <div className="bg-blue-50 p-4 rounded-lg">
+                      <p className="text-sm text-gray-600">Total Budget</p>
+                      <p className="text-2xl font-bold text-blue-600">${(marketingBudget.total_budget / 1000).toFixed(0)}K</p>
+                    </div>
+                    <div className="bg-orange-50 p-4 rounded-lg">
+                      <p className="text-sm text-gray-600">Spent</p>
+                      <p className="text-2xl font-bold text-orange-600">${(marketingBudget.spent / 1000).toFixed(0)}K</p>
+                    </div>
+                    <div className="bg-green-50 p-4 rounded-lg">
+                      <p className="text-sm text-gray-600">Remaining</p>
+                      <p className="text-2xl font-bold text-green-600">${(marketingBudget.remaining / 1000).toFixed(0)}K</p>
+                    </div>
+                    <div className="bg-purple-50 p-4 rounded-lg">
+                      <p className="text-sm text-gray-600">Utilization</p>
+                      <p className="text-2xl font-bold text-purple-600">
+                        {((marketingBudget.spent / marketingBudget.total_budget) * 100).toFixed(1)}%
+                      </p>
+                    </div>
+                  </div>
+
+                  <h4 className="text-lg font-bold text-gray-900 mb-3">Quarterly Breakdown</h4>
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-gray-100">
+                        <tr>
+                          <th className="px-4 py-3 text-left text-sm font-bold text-gray-700">Quarter</th>
+                          <th className="px-4 py-3 text-left text-sm font-bold text-gray-700">Allocated</th>
+                          <th className="px-4 py-3 text-left text-sm font-bold text-gray-700">Budget Percentage</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y">
+                        {Object.entries(marketingBudget.by_quarter).map(([quarter, amount]) => (
+                          <tr key={quarter} className="hover:bg-gray-50">
+                            <td className="px-4 py-3 font-semibold">{quarter.toUpperCase()}</td>
+                            <td className="px-4 py-3">${(amount as number).toLocaleString()}</td>
+                            <td className="px-4 py-3">
+                              <div className="flex items-center gap-2">
+                                <div className="flex-1 bg-gray-200 rounded-full h-2">
+                                  <div 
+                                    className="bg-blue-600 h-2 rounded-full"
+                                    style={{width: `${((amount as number) / marketingBudget.total_budget * 100)}%`}}
+                                  />
+                                </div>
+                                <span className="text-sm font-semibold">
+                                  {(((amount as number) / marketingBudget.total_budget) * 100).toFixed(0)}%
+                                </span>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Events Detail Modal */}
+      {showEventsDetailModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b p-6 flex items-center justify-between">
+              <h3 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                <Calendar className="w-6 h-6 text-blue-600" />
+                Active Events Overview
+              </h3>
+              <button onClick={() => setShowEventsDetailModal(false)} className="text-gray-500 hover:text-gray-700">
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            <div className="p-6">
+              <div className="mb-4">
+                <button
+                  onClick={() => setShowAddEventModal(true)}
+                  className="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 flex items-center gap-2"
+                >
+                  <Plus className="w-5 h-5" />
+                  Add New Event
+                </button>
+              </div>
+              
+              <div className="grid gap-4">
+                {targetingPhases.flatMap(phase => phase.events).map((event) => (
+                  <div 
+                    key={event.event_id} 
+                    onClick={() => handleEventClick(event)}
+                    className="border rounded-lg p-4 hover:bg-gray-50 cursor-pointer"
+                  >
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex-1">
+                        <h4 className="font-bold text-lg text-gray-900">{event.name}</h4>
+                        <p className="text-sm text-gray-600 mt-1">{event.location}</p>
+                      </div>
+                      <div className="flex gap-2">
+                        <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                          event.type === 'event_targeting' 
+                            ? 'bg-purple-100 text-purple-800' 
+                            : 'bg-green-100 text-green-800'
+                        }`}>
+                          {event.type === 'event_targeting' ? 'Event' : 'Geographic'}
+                        </span>
+                        <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                          event.priority === 'must_win' ? 'bg-orange-100 text-orange-800' :
+                          event.priority === 'must_keep' ? 'bg-blue-100 text-blue-800' :
+                          'bg-gray-100 text-gray-800'
+                        }`}>
+                          {event.priority?.replace('_', ' ').toUpperCase() || 'STANDARD'}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-4 gap-4 text-sm">
+                      <div>
+                        <span className="text-gray-500">Date:</span>
+                        <span className="ml-2 font-semibold">{event.date}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500">Expected Leads:</span>
+                        <span className="ml-2 font-semibold text-blue-600">{event.expected_leads}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500">Budget:</span>
+                        <span className="ml-2 font-semibold text-green-600">${event.budget.toLocaleString()}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500">Status:</span>
+                        <span className={`ml-2 font-semibold ${
+                          event.status === 'completed' ? 'text-green-600' :
+                          event.status === 'in_progress' ? 'text-blue-600' :
+                          'text-gray-600'
+                        }`}>
+                          {event.status?.replace('_', ' ').toUpperCase() || 'PLANNED'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Targets Detail Modal */}
+      {showTargetsDetailModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b p-6 flex items-center justify-between">
+              <h3 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                <Target className="w-6 h-6 text-orange-600" />
+                Must Win & Must Keep Targets
+              </h3>
+              <button onClick={() => setShowTargetsDetailModal(false)} className="text-gray-500 hover:text-gray-700">
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            <div className="p-6">
+              <div className="grid grid-cols-2 gap-6 mb-6">
+                <div className="bg-orange-50 border-l-4 border-orange-600 p-4 rounded">
+                  <h4 className="font-bold text-orange-900 mb-2">Must Win Targets (8)</h4>
+                  <p className="text-sm text-orange-800 mb-3">
+                    High-potential areas where we currently have low market share but significant opportunity.
+                  </p>
+                  <ul className="space-y-2 text-sm">
+                    <li className="flex items-center gap-2">
+                      <MapPin className="w-4 h-4 text-orange-600" />
+                      <span className="font-semibold">Downtown Houston (77002)</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <MapPin className="w-4 h-4 text-orange-600" />
+                      <span className="font-semibold">Pearland (77584)</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <MapPin className="w-4 h-4 text-orange-600" />
+                      <span className="font-semibold">Katy (77494)</span>
+                    </li>
+                    <li className="text-gray-500">+ 5 more locations</li>
+                  </ul>
+                </div>
+                
+                <div className="bg-blue-50 border-l-4 border-blue-600 p-4 rounded">
+                  <h4 className="font-bold text-blue-900 mb-2">Must Keep Targets (12)</h4>
+                  <p className="text-sm text-blue-800 mb-3">
+                    Strong-performing areas where we need to maintain presence and prevent competitor encroachment.
+                  </p>
+                  <ul className="space-y-2 text-sm">
+                    <li className="flex items-center gap-2">
+                      <MapPin className="w-4 h-4 text-blue-600" />
+                      <span className="font-semibold">Spring (77373)</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <MapPin className="w-4 h-4 text-blue-600" />
+                      <span className="font-semibold">Cypress (77433)</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <MapPin className="w-4 h-4 text-blue-600" />
+                      <span className="font-semibold">League City (77573)</span>
+                    </li>
+                    <li className="text-gray-500">+ 9 more locations</li>
+                  </ul>
+                </div>
+              </div>
+
+              <div className="bg-gray-100 p-4 rounded-lg">
+                <h4 className="font-bold text-gray-900 mb-2">Strategic Insights</h4>
+                <ul className="space-y-2 text-sm text-gray-700">
+                  <li>• <strong>Must Win</strong> areas receive aggressive event targeting and increased ad spend</li>
+                  <li>• <strong>Must Keep</strong> areas maintain consistent presence through geographic targeting</li>
+                  <li>• Target classification reviewed quarterly based on market intelligence and performance data</li>
+                  <li>• Sync Matrix tracks all targeting efforts across Must Win/Must Keep designations</li>
+                </ul>
               </div>
             </div>
           </div>
