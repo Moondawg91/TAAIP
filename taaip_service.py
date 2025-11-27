@@ -3766,6 +3766,73 @@ async def get_mission_analysis(
 # ====================
 # TWG (Targeting Working Group) ENDPOINTS
 # ====================
+def _ensure_twg_tables(conn):
+        cur = conn.cursor()
+        cur.execute(
+                """
+                CREATE TABLE IF NOT EXISTS twg_events (
+                    event_id TEXT PRIMARY KEY,
+                    name TEXT,
+                    date TEXT,
+                    location TEXT,
+                    type TEXT,
+                    target_audience TEXT,
+                    expected_leads INTEGER,
+                    budget INTEGER,
+                    status TEXT,
+                    priority TEXT
+                )
+                """
+        )
+        cur.execute(
+                """
+                CREATE TABLE IF NOT EXISTS twg_agenda_items (
+                    id TEXT PRIMARY KEY,
+                    meeting_id TEXT,
+                    section TEXT,
+                    presenter TEXT,
+                    status TEXT,
+                    notes TEXT,
+                    order_index INTEGER
+                )
+                """
+        )
+        cur.execute(
+                """
+                CREATE TABLE IF NOT EXISTS twg_aar_reports (
+                    event_id TEXT PRIMARY KEY,
+                    event_name TEXT,
+                    date TEXT,
+                    due_date TEXT,
+                    hours_since_event INTEGER,
+                    status TEXT,
+                    submitted_by TEXT,
+                    content TEXT
+                )
+                """
+        )
+        cur.execute(
+                """
+                CREATE TABLE IF NOT EXISTS twg_budget (
+                    fy INTEGER PRIMARY KEY,
+                    total_budget INTEGER,
+                    allocated INTEGER,
+                    spent INTEGER,
+                    remaining INTEGER,
+                    q1 INTEGER,
+                    q2 INTEGER,
+                    q3 INTEGER,
+                    q4 INTEGER
+                )
+                """
+        )
+        conn.commit()
+
+def _get_conn_with_twg():
+        conn = sqlite3.connect(DB_FILE)
+        _ensure_twg_tables(conn)
+        conn.row_factory = sqlite3.Row
+        return conn
 
 @app.get("/api/v2/twg/boards")
 async def get_twg_boards(
@@ -3775,7 +3842,7 @@ async def get_twg_boards(
 ):
     """Get all TWG review boards with optional filters"""
     try:
-        conn = sqlite3.connect(DB_FILE)
+        conn = _get_conn_with_twg()
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
         
@@ -3830,7 +3897,7 @@ async def get_twg_boards(
 async def get_twg_analysis(board_id: Optional[str] = None, status: Optional[str] = None):
     """Get TWG analysis items"""
     try:
-        conn = sqlite3.connect(DB_FILE)
+        conn = _get_conn_with_twg()
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
         
@@ -3880,7 +3947,7 @@ async def get_twg_analysis(board_id: Optional[str] = None, status: Optional[str]
 async def get_twg_decisions(board_id: Optional[str] = None, decision_type: Optional[str] = None):
     """Get TWG decisions"""
     try:
-        conn = sqlite3.connect(DB_FILE)
+        conn = _get_conn_with_twg()
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
         
@@ -3928,7 +3995,7 @@ async def get_twg_decisions(board_id: Optional[str] = None, decision_type: Optio
 async def get_twg_actions(board_id: Optional[str] = None, status: Optional[str] = None):
     """Get TWG action items"""
     try:
-        conn = sqlite3.connect(DB_FILE)
+        conn = _get_conn_with_twg()
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
         
@@ -3971,6 +4038,139 @@ async def get_twg_actions(board_id: Optional[str] = None, status: Optional[str] 
             status_code=500,
             content={"status": "error", "message": str(e)}
         )
+
+@app.post("/api/v2/twg/events")
+async def create_or_update_twg_event(payload: Dict[str, Any]):
+    try:
+        conn = _get_conn_with_twg()
+        cur = conn.cursor()
+        cur.execute(
+            """
+            INSERT INTO twg_events (event_id, name, date, location, type, target_audience, expected_leads, budget, status, priority)
+            VALUES (:event_id, :name, :date, :location, :type, :target_audience, :expected_leads, :budget, :status, :priority)
+            ON CONFLICT(event_id) DO UPDATE SET
+              name=excluded.name,
+              date=excluded.date,
+              location=excluded.location,
+              type=excluded.type,
+              target_audience=excluded.target_audience,
+              expected_leads=excluded.expected_leads,
+              budget=excluded.budget,
+              status=excluded.status,
+              priority=excluded.priority
+            """,
+            payload,
+        )
+        conn.commit()
+        return JSONResponse(content={"status": "ok", "event_id": payload.get("event_id")})
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"status": "error", "message": str(e)})
+
+@app.post("/api/v2/twg/aar")
+async def submit_twg_aar(payload: Dict[str, Any]):
+    try:
+        conn = _get_conn_with_twg()
+        cur = conn.cursor()
+        cur.execute(
+            """
+            INSERT INTO twg_aar_reports (event_id, event_name, date, due_date, hours_since_event, status, submitted_by, content)
+            VALUES (:event_id, :event_name, :date, :due_date, :hours_since_event, :status, :submitted_by, :content)
+            ON CONFLICT(event_id) DO UPDATE SET
+              event_name=excluded.event_name,
+              date=excluded.date,
+              due_date=excluded.due_date,
+              hours_since_event=excluded.hours_since_event,
+              status=excluded.status,
+              submitted_by=excluded.submitted_by,
+              content=excluded.content
+            """,
+            payload,
+        )
+        conn.commit()
+        return JSONResponse(content={"status": "ok", "event_id": payload.get("event_id")})
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"status": "error", "message": str(e)})
+
+@app.post("/api/v2/twg/agenda")
+async def save_twg_agenda_item(item: Dict[str, Any]):
+    try:
+        conn = _get_conn_with_twg()
+        cur = conn.cursor()
+        cur.execute(
+            """
+            INSERT INTO twg_agenda_items (id, meeting_id, section, presenter, status, notes, order_index)
+            VALUES (:id, :meeting_id, :section, :presenter, :status, :notes, :order_index)
+            ON CONFLICT(id) DO UPDATE SET
+              meeting_id=excluded.meeting_id,
+              section=excluded.section,
+              presenter=excluded.presenter,
+              status=excluded.status,
+              notes=excluded.notes,
+              order_index=excluded.order_index
+            """,
+            item,
+        )
+        conn.commit()
+        return JSONResponse(content={"status": "ok", "id": item.get("id")})
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"status": "error", "message": str(e)})
+
+@app.get("/api/v2/twg/agenda")
+async def get_twg_agenda(meeting_id: Optional[str] = None):
+    try:
+        conn = _get_conn_with_twg()
+        cur = conn.cursor()
+        if meeting_id:
+            cur.execute(
+                "SELECT id, meeting_id, section, presenter, status, notes, order_index FROM twg_agenda_items WHERE meeting_id=? ORDER BY order_index ASC",
+                (meeting_id,)
+            )
+        else:
+            cur.execute(
+                "SELECT id, meeting_id, section, presenter, status, notes, order_index FROM twg_agenda_items ORDER BY meeting_id, order_index ASC"
+            )
+        rows = cur.fetchall()
+        items = [
+            {
+                "id": r[0],
+                "meeting_id": r[1],
+                "section": r[2],
+                "presenter": r[3],
+                "status": r[4],
+                "notes": r[5],
+                "order_index": r[6],
+            }
+            for r in rows
+        ]
+        return JSONResponse(content={"status": "ok", "items": items, "count": len(items)})
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"status": "error", "message": str(e)})
+
+@app.post("/api/v2/twg/budget")
+async def update_twg_budget(budget: Dict[str, Any]):
+    try:
+        conn = _get_conn_with_twg()
+        cur = conn.cursor()
+        cur.execute(
+            """
+            INSERT INTO twg_budget (fy, total_budget, allocated, spent, remaining, q1, q2, q3, q4)
+            VALUES (:fy, :total_budget, :allocated, :spent, :remaining, :q1, :q2, :q3, :q4)
+            ON CONFLICT(fy) DO UPDATE SET
+              total_budget=excluded.total_budget,
+              allocated=excluded.allocated,
+              spent=excluded.spent,
+              remaining=excluded.remaining,
+              q1=excluded.q1,
+              q2=excluded.q2,
+              q3=excluded.q3,
+              q4=excluded.q4
+            """,
+            budget,
+        )
+        conn.commit()
+        return JSONResponse(content={"status": "ok", "fy": budget.get("fy")})
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"status": "error", "message": str(e)})
 
 
 # ====================
