@@ -54,6 +54,8 @@ export interface User {
   user_id: string;
   username: string;
   email: string;
+  first_name?: string;
+  last_name?: string;
   rank?: string;
   position: string; // XO, 420T, Company Commander, Station Commander, Recruiter
   unit_id: string;
@@ -64,6 +66,8 @@ export interface User {
   created_at: string;
   last_login?: string;
   is_active: boolean;
+  start_date?: string;
+  end_date?: string;
 }
 
 // Predefined Role Templates

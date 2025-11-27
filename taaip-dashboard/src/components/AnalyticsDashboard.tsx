@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { BarChart, Bar, Line, LineChart, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Area, AreaChart } from 'recharts';
 import { TrendingUp, MapPin, School, Users, Target, CheckCircle, AlertCircle, RefreshCw } from 'lucide-react';
 import { UniversalFilter, FilterState } from './UniversalFilter';
+import { PrintButton } from './PrintButton';
 import { ExportButton } from './ExportButton';
 import { VisualizationController, DataVisualizer, VisualizationType } from './VisualizationController';
 import { API_BASE } from '../config/api';
@@ -119,7 +120,16 @@ export const AnalyticsDashboard: React.FC = () => {
       if (cbsa.status === 'ok') setCbsaData(cbsa.cbsas);
       if (schools.status === 'ok') setSchoolData(schools.schools);
       if (segments.status === 'ok') setSegmentData(segments.segments);
-      if (contracts.status === 'ok') setContractData(contracts.metrics);
+      if (contracts.status === 'ok') {
+        const m = contracts.metrics as ContractMetrics;
+        const filtered = {
+          ...m,
+          by_component: Array.isArray(m.by_component)
+            ? m.by_component.filter(c => (c.component || '').toUpperCase() !== 'ARNG' && (c.component || '').toUpperCase() !== 'ARMY NATIONAL GUARD (ARNG)')
+            : [],
+        } as ContractMetrics;
+        setContractData(filtered);
+      }
     } catch (error) {
       console.error('Error fetching analytics:', error);
     } finally {
@@ -184,6 +194,8 @@ export const AnalyticsDashboard: React.FC = () => {
             <RefreshCw className="w-4 h-4" />
             Refresh Data
           </button>
+          {/* Print Button */}
+          <PrintButton />
         </div>
       </div>
 
@@ -496,23 +508,57 @@ const SchoolsSection: React.FC<{ data: SchoolData[]; visualizationType: Visualiz
 
       {/* Charts */}
       <div className="grid grid-cols-1 gap-6">
-        {/* Combined Bar/Line Chart */}
         <div className="bg-white border-2 border-gray-300 p-6">
           <div className="bg-gray-100 -m-6 mb-4 p-4 border-b-2 border-gray-300">
             <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wide">Top Schools - Leads & Conversion Performance</h3>
           </div>
           <ResponsiveContainer width="100%" height={400}>
-            <BarChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" angle={-45} textAnchor="end" height={120} fontSize={11} />
-              <YAxis yAxisId="left" />
-              <YAxis yAxisId="right" orientation="right" />
-              <Tooltip />
-              <Legend />
-              <Bar yAxisId="left" dataKey="leads" fill={COLORS.primary} name="Leads" />
-              <Bar yAxisId="left" dataKey="conversions" fill={COLORS.success} name="Conversions" />
-              <Line yAxisId="right" type="monotone" dataKey="conversionRate" stroke={COLORS.danger} strokeWidth={2} name="Conv. Rate %" />
-            </BarChart>
+            <DataVisualizer
+              data={chartData}
+              visualizationType={visualizationType}
+              renderChart={() => (
+                <BarChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" angle={-45} textAnchor="end" height={120} fontSize={11} />
+                  <YAxis yAxisId="left" />
+                  <YAxis yAxisId="right" orientation="right" />
+                  <Tooltip />
+                  <Legend />
+                  <Bar yAxisId="left" dataKey="leads" fill={COLORS.primary} name="Leads" />
+                  <Bar yAxisId="left" dataKey="conversions" fill={COLORS.success} name="Conversions" />
+                </BarChart>
+              )}
+              renderLine={() => (
+                <LineChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" angle={-45} textAnchor="end" height={120} fontSize={11} />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Line type="monotone" dataKey="leads" stroke={COLORS.primary} name="Leads" />
+                  <Line type="monotone" dataKey="conversions" stroke={COLORS.success} name="Conversions" />
+                  <Line type="monotone" dataKey="conversionRate" stroke={COLORS.danger} name="Conv. Rate %" />
+                </LineChart>
+              )}
+              renderPie={() => (
+                <PieChart>
+                  <Tooltip />
+                  <Legend />
+                  <Pie data={chartData} dataKey="leads" nameKey="name" cx="50%" cy="50%" outerRadius={140} fill={COLORS.primary} label />
+                </PieChart>
+              )}
+              renderArea={() => (
+                <AreaChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" angle={-45} textAnchor="end" height={120} fontSize={11} />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Area type="monotone" dataKey="leads" stroke={COLORS.primary} fill={COLORS.primary} fillOpacity={0.4} name="Leads" />
+                  <Area type="monotone" dataKey="conversions" stroke={COLORS.success} fill={COLORS.success} fillOpacity={0.4} name="Conversions" />
+                </AreaChart>
+              )}
+            />
           </ResponsiveContainer>
         </div>
       </div>
@@ -611,35 +657,95 @@ const SegmentsSection: React.FC<{ data: SegmentData[]; visualizationType: Visual
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Penetration Rate by Segment */}
         <div className="bg-white border-2 border-gray-300 p-6">
           <div className="bg-gray-100 -m-6 mb-4 p-4 border-b-2 border-gray-300">
             <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wide">Penetration Rate by Segment</h3>
           </div>
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={scatterData} layout="horizontal">
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis type="number" unit="%" />
-              <YAxis dataKey="name" type="category" width={150} fontSize={11} />
-              <Tooltip />
-              <Bar dataKey="penetration" fill={COLORS.primary} name="Penetration %" />
-            </BarChart>
+            <DataVisualizer
+              data={scatterData}
+              visualizationType={visualizationType}
+              renderChart={() => (
+                <BarChart data={scatterData} layout="horizontal">
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis type="number" unit="%" />
+                  <YAxis dataKey="name" type="category" width={150} fontSize={11} />
+                  <Tooltip />
+                  <Bar dataKey="penetration" fill={COLORS.primary} name="Penetration %" />
+                </BarChart>
+              )}
+              renderLine={() => (
+                <LineChart data={scatterData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} fontSize={11} />
+                  <YAxis />
+                  <Tooltip />
+                  <Line type="monotone" dataKey="penetration" stroke={COLORS.primary} name="Penetration %" />
+                </LineChart>
+              )}
+              renderPie={() => (
+                <PieChart>
+                  <Tooltip />
+                  <Legend />
+                  <Pie data={scatterData} dataKey="penetration" nameKey="name" cx="50%" cy="50%" outerRadius={120} fill={COLORS.primary} label />
+                </PieChart>
+              )}
+              renderArea={() => (
+                <AreaChart data={scatterData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} fontSize={11} />
+                  <YAxis />
+                  <Tooltip />
+                  <Area type="monotone" dataKey="penetration" stroke={COLORS.primary} fill={COLORS.primary} fillOpacity={0.4} name="Penetration %" />
+                </AreaChart>
+              )}
+            />
           </ResponsiveContainer>
         </div>
 
-        {/* Propensity Score by Segment */}
         <div className="bg-white border-2 border-gray-300 p-6">
           <div className="bg-gray-100 -m-6 mb-4 p-4 border-b-2 border-gray-300">
             <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wide">Average Propensity Score</h3>
           </div>
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={scatterData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} fontSize={11} />
-              <YAxis domain={[0, 10]} />
-              <Tooltip />
-              <Bar dataKey="propensity" fill={COLORS.purple} name="Propensity Score" />
-            </BarChart>
+            <DataVisualizer
+              data={scatterData}
+              visualizationType={visualizationType}
+              renderChart={() => (
+                <BarChart data={scatterData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} fontSize={11} />
+                  <YAxis domain={[0, 10]} />
+                  <Tooltip />
+                  <Bar dataKey="propensity" fill={COLORS.purple} name="Propensity Score" />
+                </BarChart>
+              )}
+              renderLine={() => (
+                <LineChart data={scatterData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} fontSize={11} />
+                  <YAxis domain={[0, 10]} />
+                  <Tooltip />
+                  <Line type="monotone" dataKey="propensity" stroke={COLORS.purple} name="Propensity Score" />
+                </LineChart>
+              )}
+              renderPie={() => (
+                <PieChart>
+                  <Tooltip />
+                  <Legend />
+                  <Pie data={scatterData} dataKey="propensity" nameKey="name" cx="50%" cy="50%" outerRadius={120} fill={COLORS.purple} label />
+                </PieChart>
+              )}
+              renderArea={() => (
+                <AreaChart data={scatterData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} fontSize={11} />
+                  <YAxis domain={[0, 10]} />
+                  <Tooltip />
+                  <Area type="monotone" dataKey="propensity" stroke={COLORS.purple} fill={COLORS.purple} fillOpacity={0.4} name="Propensity Score" />
+                </AreaChart>
+              )}
+            />
           </ResponsiveContainer>
         </div>
       </div>
@@ -650,15 +756,50 @@ const SegmentsSection: React.FC<{ data: SegmentData[]; visualizationType: Visual
           <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wide">Segment Size vs Leads Generated vs Remaining Potential</h3>
         </div>
         <ResponsiveContainer width="100%" height={350}>
-          <AreaChart data={scatterData}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} fontSize={11} />
-            <YAxis />
-            <Tooltip />
-            <Legend />
-            <Area type="monotone" dataKey="size" stackId="1" stroke={COLORS.primary} fill={COLORS.primary} fillOpacity={0.6} name="Total Size" />
-            <Area type="monotone" dataKey="remaining" stackId="2" stroke={COLORS.warning} fill={COLORS.warning} fillOpacity={0.6} name="Remaining Potential" />
-          </AreaChart>
+          <DataVisualizer
+            data={scatterData}
+            visualizationType={visualizationType}
+            renderArea={() => (
+              <AreaChart data={scatterData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} fontSize={11} />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Area type="monotone" dataKey="size" stackId="1" stroke={COLORS.primary} fill={COLORS.primary} fillOpacity={0.6} name="Total Size" />
+                <Area type="monotone" dataKey="remaining" stackId="2" stroke={COLORS.warning} fill={COLORS.warning} fillOpacity={0.6} name="Remaining Potential" />
+              </AreaChart>
+            )}
+            renderChart={() => (
+              <BarChart data={scatterData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} fontSize={11} />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="size" fill={COLORS.primary} name="Total Size" />
+                <Bar dataKey="remaining" fill={COLORS.warning} name="Remaining Potential" />
+              </BarChart>
+            )}
+            renderLine={() => (
+              <LineChart data={scatterData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} fontSize={11} />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Line type="monotone" dataKey="size" stroke={COLORS.primary} name="Total Size" />
+                <Line type="monotone" dataKey="remaining" stroke={COLORS.warning} name="Remaining Potential" />
+              </LineChart>
+            )}
+            renderPie={() => (
+              <PieChart>
+                <Tooltip />
+                <Legend />
+                <Pie data={scatterData} dataKey="size" nameKey="name" cx="50%" cy="50%" outerRadius={120} fill={COLORS.primary} label />
+              </PieChart>
+            )}
+          />
         </ResponsiveContainer>
       </div>
 
@@ -789,19 +930,55 @@ const ContractsSection: React.FC<{ data: ContractMetrics; visualizationType: Vis
 
       {/* Monthly Performance Chart */}
       <div className="bg-white border-2 border-gray-300 p-6">
-        <div className="bg-gray-100 -m-6 mb-4 p-4 border-b-2 border-gray-300">
+        <div className="bg-gray-100 -m-6 mb-4 p-4 border-b-2 border-gray-300 flex items-center justify-between">
           <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wide">Monthly Contract Achievement</h3>
+          <span className="text-xs text-gray-500 ml-2">Visualization selector only affects the chart below</span>
         </div>
         <ResponsiveContainer width="100%" height={350}>
-          <AreaChart data={monthlyData}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="month" />
-            <YAxis />
-            <Tooltip />
-            <Legend />
-            <Area type="monotone" dataKey="goal" stroke={COLORS.warning} fill={COLORS.warning} fillOpacity={0.3} name="Goal" />
-            <Area type="monotone" dataKey="achieved" stroke={COLORS.success} fill={COLORS.success} fillOpacity={0.6} name="Achieved" />
-          </AreaChart>
+          <DataVisualizer
+            data={monthlyData}
+            visualizationType={visualizationType}
+            renderArea={() => (
+              <AreaChart data={monthlyData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="month" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Area type="monotone" dataKey="goal" stroke={COLORS.warning} fill={COLORS.warning} fillOpacity={0.3} name="Goal" />
+                <Area type="monotone" dataKey="achieved" stroke={COLORS.success} fill={COLORS.success} fillOpacity={0.6} name="Achieved" />
+              </AreaChart>
+            )}
+            renderChart={() => (
+              <BarChart data={monthlyData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="month" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="goal" fill={COLORS.warning} name="Goal" />
+                <Bar dataKey="achieved" fill={COLORS.success} name="Achieved" />
+              </BarChart>
+            )}
+            renderLine={() => (
+              <LineChart data={monthlyData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="month" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Line type="monotone" dataKey="goal" stroke={COLORS.warning} name="Goal" />
+                <Line type="monotone" dataKey="achieved" stroke={COLORS.success} name="Achieved" />
+              </LineChart>
+            )}
+            renderPie={() => (
+              <PieChart>
+                <Tooltip />
+                <Legend />
+                <Pie data={monthlyData} dataKey="achieved" nameKey="month" cx="50%" cy="50%" outerRadius={130} fill={COLORS.success} label />
+              </PieChart>
+            )}
+          />
         </ResponsiveContainer>
       </div>
 

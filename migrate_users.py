@@ -32,14 +32,18 @@ def migrate():
         email TEXT UNIQUE NOT NULL,
         password_hash TEXT NOT NULL,
         password_salt TEXT NOT NULL,
+        first_name TEXT NOT NULL,
+        last_name TEXT NOT NULL,
         rank TEXT,
         role TEXT NOT NULL DEFAULT 'analyst',
         tier INTEGER NOT NULL DEFAULT 3,
+        start_date TEXT NOT NULL,
+        end_date TEXT NOT NULL,
         is_active INTEGER NOT NULL DEFAULT 1,
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL,
         last_login TEXT
-    )
+    );
     """)
 
     # User permissions table (many-to-many)
@@ -77,16 +81,20 @@ def migrate():
 
     cursor.execute("""
     INSERT OR IGNORE INTO users 
-    (username, email, password_hash, password_salt, rank, role, tier, is_active, created_at, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    (username, email, password_hash, password_salt, first_name, last_name, rank, role, tier, start_date, end_date, is_active, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, (
         "admin",
         "admin@taaip.mil",
         admin_password,
         admin_salt,
+        "Admin",
+        "User",
         "O-6",
         "administrator",
         1,
+        now,
+        now,
         1,
         now,
         now
@@ -111,20 +119,19 @@ def migrate():
 
     # Create sample users for testing
     sample_users = [
-        ("jsmith", "jsmith@taaip.mil", "Capt", "manager", 2),
-        ("mjohnson", "mjohnson@taaip.mil", "Lt", "analyst", 3),
-        ("rwilliams", "rwilliams@taaip.mil", "MSgt", "recruiter", 3),
+        ("jsmith", "jsmith@taaip.mil", "John", "Smith", "Capt", "manager", 2),
+        ("mjohnson", "mjohnson@taaip.mil", "Mary", "Johnson", "Lt", "analyst", 3),
+        ("rwilliams", "rwilliams@taaip.mil", "Robert", "Williams", "MSgt", "recruiter", 3),
     ]
 
-    for username, email, rank, role, tier in sample_users:
+    for username, email, first_name, last_name, rank, role, tier in sample_users:
         salt = secrets.token_hex(16)
         password = hash_password("password123", salt)
-        
         cursor.execute("""
         INSERT OR IGNORE INTO users 
-        (username, email, password_hash, password_salt, rank, role, tier, is_active, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (username, email, password, salt, rank, role, tier, 1, now, now))
+        (username, email, password_hash, password_salt, first_name, last_name, rank, role, tier, start_date, end_date, is_active, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (username, email, password, salt, first_name, last_name, rank, role, tier, now, now, 1, now, now))
 
     conn.commit()
     print("✅ User management tables created successfully")

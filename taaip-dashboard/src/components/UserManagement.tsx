@@ -69,9 +69,13 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) =
           username: userData.username,
           email: userData.email,
           password: 'changeme123', // Default password
+          first_name: userData.first_name,
+          last_name: userData.last_name,
           rank: userData.rank,
           role: userData.role?.role_name || 'analyst',
           tier: getTierNumber(userData.role?.tier),
+          start_date: userData.start_date,
+          end_date: userData.end_date,
           permissions: userData.role?.permissions || []
         })
       });
@@ -151,14 +155,14 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) =
     }
   };
 
-  // Check if current user can manage users
-  if (!hasPermission(currentUser, 'manage_users')) {
+  // Restrict access to only global administrators (tier-4-global)
+  if (currentUser.role.tier !== 'tier-4-global') {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <Lock className="w-16 h-16 text-red-500 mx-auto mb-4" />
           <p className="text-xl font-bold text-gray-900">Access Denied</p>
-          <p className="text-gray-600">You do not have permission to manage users</p>
+          <p className="text-gray-600">Only Global Administrators can access User Management</p>
         </div>
       </div>
     );
@@ -334,10 +338,20 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) =
             <form onSubmit={(e) => {
               e.preventDefault();
               const formData = new FormData(e.currentTarget);
+              const email = formData.get('email') as string;
+              const rank = formData.get('rank') as string;
+              if (!email.endsWith('.mil')) {
+                alert('Email must be a .mil address');
+                return;
+              }
               createUser({
                 username: formData.get('username') as string,
-                email: formData.get('email') as string,
-                rank: formData.get('rank') as string,
+                email,
+                rank,
+                first_name: formData.get('first_name') as string,
+                last_name: formData.get('last_name') as string,
+                start_date: formData.get('start_date') as string,
+                end_date: formData.get('end_date') as string,
                 role: {
                   role_id: formData.get('role') as string,
                   role_name: formData.get('role') as string,
@@ -348,16 +362,68 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) =
               });
             }} className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-1">Username</label>
-                <input type="text" name="username" required className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
+                <label className="block text-sm font-bold text-gray-700 mb-1">First Name</label>
+                <input type="text" name="first_name" required className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
               </div>
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-1">Email</label>
-                <input type="email" name="email" required className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
+                <label className="block text-sm font-bold text-gray-700 mb-1">Last Name</label>
+                <input type="text" name="last_name" required className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1">Email (.mil only)</label>
+                <input type="email" name="email" required pattern=".+\.mil" className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
               </div>
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-1">Rank</label>
-                <input type="text" name="rank" className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
+                <select name="rank" required className="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                  <option value="">Select Rank</option>
+                  <option value="CIV">Civilian</option>
+                  <option value="PVT">Private (E-1)</option>
+                  <option value="PV2">Private (E-2)</option>
+                  <option value="PFC">Private First Class (E-3)</option>
+                  <option value="SPC">Specialist (E-4)</option>
+                  <option value="CPL">Corporal (E-4)</option>
+                  <option value="SGT">Sergeant (E-5)</option>
+                  <option value="SSG">Staff Sergeant (E-6)</option>
+                  <option value="SFC">Sergeant First Class (E-7)</option>
+                  <option value="MSG">Master Sergeant (E-8)</option>
+                  <option value="1SG">First Sergeant (E-8)</option>
+                  <option value="SGM">Sergeant Major (E-9)</option>
+                  <option value="CSM">Command Sergeant Major (E-9)</option>
+                  <option value="SMA">Sergeant Major of the Army</option>
+                  <option value="WO1">Warrant Officer 1 (WO1)</option>
+                  <option value="CW2">Chief Warrant Officer 2 (CW2)</option>
+                  <option value="CW3">Chief Warrant Officer 3 (CW3)</option>
+                  <option value="CW4">Chief Warrant Officer 4 (CW4)</option>
+                  <option value="CW5">Chief Warrant Officer 5 (CW5)</option>
+                  <option value="2LT">Second Lieutenant (O-1)</option>
+                  <option value="1LT">First Lieutenant (O-2)</option>
+                  <option value="CPT">Captain (O-3)</option>
+                  <option value="MAJ">Major (O-4)</option>
+                  <option value="LTC">Lieutenant Colonel (O-5)</option>
+                  <option value="COL">Colonel (O-6)</option>
+                  <option value="BG">Brigadier General (O-7)</option>
+                  <option value="MG">Major General (O-8)</option>
+                  <option value="LTG">Lieutenant General (O-9)</option>
+                  <option value="GEN">General (O-10)</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1">Tier Level</label>
+                <select name="tier" required className="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                  <option value="tier-1-user">Tier 1 - User</option>
+                  <option value="tier-2-manager">Tier 2 - Manager</option>
+                  <option value="tier-3-admin">Tier 3 - Administrator</option>
+                  <option value="tier-4-global">Tier 4 - Global</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1">Start Date</label>
+                <input type="date" name="start_date" required className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1">End Date</label>
+                <input type="date" name="end_date" required className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
               </div>
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-1">Role</label>
@@ -368,15 +434,6 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) =
                   <option value="company_commander">Company Commander</option>
                   <option value="420t">420T Administrator</option>
                   <option value="admin">Global Administrator</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-1">Tier</label>
-                <select name="tier" required className="w-full px-3 py-2 border border-gray-300 rounded-lg">
-                  <option value="tier-1-user">Tier 1 - User</option>
-                  <option value="tier-2-manager">Tier 2 - Manager</option>
-                  <option value="tier-3-admin">Tier 3 - Administrator</option>
-                  <option value="tier-4-global">Tier 4 - Global</option>
                 </select>
               </div>
               <div className="flex gap-3 justify-end pt-4 border-t">

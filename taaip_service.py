@@ -5039,9 +5039,13 @@ class CreateUserRequest(BaseModel):
     username: str
     email: str
     password: str
-    rank: Optional[str] = None
+    first_name: str
+    last_name: str
+    rank: str
     role: str = "analyst"
     tier: int = 3
+    start_date: str
+    end_date: str
     permissions: list[str] = []
 
 class UpdateUserRequest(BaseModel):
@@ -5156,16 +5160,20 @@ async def create_user(request: CreateUserRequest):
         # Create user
         cursor.execute("""
             INSERT INTO users 
-            (username, email, password_hash, password_salt, rank, role, tier, is_active, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            (username, email, password_hash, password_salt, first_name, last_name, rank, role, tier, start_date, end_date, is_active, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             request.username,
             request.email,
             password_hash,
             salt,
+            request.first_name,
+            request.last_name,
             request.rank,
             request.role,
             request.tier,
+            request.start_date,
+            request.end_date,
             1,
             now,
             now
