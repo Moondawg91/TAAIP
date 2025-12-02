@@ -48,6 +48,14 @@ fi
 
 log "Creating data + logs directories"; mkdir -p data logs backups; ok "Directories ready"
 
+log "Running repository migration scripts (if any) against local DB"
+for m in migrate_*.py; do
+  if [ -f "$m" ]; then
+    log "Running $m" || true
+    python3 "$m" || warn "Migration $m exited with non-zero code"
+  fi
+done
+
 log "Writing .env file"
 cat > .env <<EOF
 DATABASE_URL=sqlite:///./data/recruiting.db

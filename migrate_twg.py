@@ -1,3 +1,102 @@
+#!/usr/bin/env python3
+"""
+Idempotent migration to create TWG (Targeting Working Group) tables.
+Run from the repo root. Uses ./data/recruiting.db by default.
+"""
+import sqlite3
+from pathlib import Path
+import sys
+
+ROOT = Path(__file__).parent.resolve()
+DB = ROOT / "data" / "recruiting.db"
+
+SQL = r"""
+PRAGMA foreign_keys = OFF;
+
+CREATE TABLE IF NOT EXISTS twg_review_boards (
+  board_id TEXT PRIMARY KEY,
+  name TEXT,
+  review_type TEXT,
+  status TEXT,
+  scheduled_date TEXT,
+  completed_date TEXT,
+  facilitator TEXT,
+  attendees TEXT,
+  rsid TEXT,
+  brigade TEXT,
+  battalion TEXT,
+  created_at TEXT DEFAULT (datetime('now')),
+  updated_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS twg_analysis_items (
+  analysis_id TEXT PRIMARY KEY,
+  board_id TEXT,
+  category TEXT,
+  title TEXT,
+  description TEXT,
+  findings TEXT,
+  recommendations TEXT,
+  priority TEXT,
+  status TEXT,
+  assigned_to TEXT,
+  due_date TEXT,
+  created_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS twg_decisions (
+  decision_id TEXT PRIMARY KEY,
+  board_id TEXT,
+  analysis_id TEXT,
+  decision_text TEXT,
+  decision_type TEXT,
+  rationale TEXT,
+  impact TEXT,
+  decided_by TEXT,
+  decision_date TEXT,
+  created_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS twg_action_items (
+  action_id TEXT PRIMARY KEY,
+  board_id TEXT,
+  decision_id TEXT,
+  action_text TEXT,
+  assigned_to TEXT,
+  due_date TEXT,
+  status TEXT,
+  priority TEXT,
+  completion_notes TEXT,
+  completed_date TEXT,
+  created_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_twg_board ON twg_review_boards (board_id);
+CREATE INDEX IF NOT EXISTS idx_twg_analysis_board ON twg_analysis_items (board_id);
+CREATE INDEX IF NOT EXISTS idx_twg_decisions_board ON twg_decisions (board_id);
+CREATE INDEX IF NOT EXISTS idx_twg_actions_board ON twg_action_items (board_id);
+
+PRAGMA foreign_keys = ON;
+"""
+
+
+def main():
+    if not DB.exists():
+        print(f"ERROR: DB not found at {DB}")
+        sys.exit(1)
+
+    conn = sqlite3.connect(str(DB))
+    try:
+        cur = conn.cursor()
+        cur.executescript(SQL)
+        conn.commit()
+        print("OK: TWG tables created or already exist.")
+    finally:
+        conn.close()
+
+
+if __name__ == '__main__':
+    main()
 """
 Database Migration: Add Targeting Working Group (TWG) Tables
 Enables review boards, analysis tracking, and approval workflows
