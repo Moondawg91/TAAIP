@@ -8,7 +8,7 @@ import random
 from datetime import datetime
 import uuid
 
-DB_FILE = "/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3"
+DB_FILE = "/opt/TAAIP/recruiting.db"
 
 # Sample CBSAs and their characteristics
 SAMPLE_CBSAS = [

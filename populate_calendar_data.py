@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 import random
 import json
 
-DB_FILE = 'recruiting.db'
+DB_FILE = '/opt/TAAIP/recruiting.db'
 
 # Sample data
 EVENT_TYPES = ['event', 'marketing', 'meeting', 'deadline', 'training', 'report_due', 'review']

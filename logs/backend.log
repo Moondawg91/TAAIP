@@ -9,3 +9,188 @@ INFO:     Waiting for application startup.
 INFO:     Application startup complete.
 INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
 INFO:     127.0.0.1:53041 - "POST /api/v2/users HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55036 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55038 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55040 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55043 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55045 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55048 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55050 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55053 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55057 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55061 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55069 - "GET /api/v2/analytics/schools?limit=15 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55070 - "GET /api/v2/analytics/segments HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55071 - "GET /api/v2/analytics/contracts HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55068 - "GET /api/v2/analytics/cbsa?limit=10 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55097 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55098 - "GET /api/v2/analytics/schools?limit=15 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55099 - "GET /api/v2/analytics/segments HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55100 - "GET /api/v2/analytics/contracts HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55097 - "GET /api/v2/analytics/cbsa?limit=10 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55178 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55183 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55185 - "GET /api/v2/420t/kpi-metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55185 - "GET /api/v2/420t/school-targets HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55185 - "GET /api/v2/420t/recruiting-ops-plans HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55189 - "GET /api/v2/recruiting-funnel/metrics?fiscal_year=2025 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55192 - "GET /api/v2/analytics/schools?limit=15 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55191 - "GET /api/v2/analytics/cbsa?limit=10 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55193 - "GET /api/v2/analytics/segments HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55194 - "GET /api/v2/analytics/contracts HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55199 - "GET /api/v2/mission-analysis?analysis_level=brigade&fiscal_year=2025&quarter=Q4 HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:55202 - "GET /api/v2/twg/boards HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:55204 - "GET /api/v2/projects/dashboard/summary HTTP/1.1" 500 Internal Server Error
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/uvicorn/protocols/http/h11_impl.py", line 403, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/uvicorn/middleware/proxy_headers.py", line 60, in __call__
+    return await self.app(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/fastapi/applications.py", line 1134, in __call__
+    await super().__call__(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/applications.py", line 113, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/middleware/base.py", line 196, in __call__
+    recv_stream.close()
+  File "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/contextlib.py", line 135, in __exit__
+    self.gen.throw(type, value, traceback)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/_utils.py", line 85, in collapse_excgroups
+    raise exc
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/middleware/base.py", line 193, in __call__
+    response = await self.dispatch_func(request, call_next)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/middleware/base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/middleware/base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/middleware/cors.py", line 93, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/middleware/cors.py", line 144, in simple_response
+    await self.app(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/fastapi/routing.py", line 125, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/fastapi/routing.py", line 111, in app
+    response = await f(request)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/fastapi/routing.py", line 391, in app
+    raw_response = await run_endpoint_function(
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/fastapi/routing.py", line 292, in run_endpoint_function
+    return await run_in_threadpool(dependant.call, **values)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/concurrency.py", line 38, in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/anyio/to_thread.py", line 56, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/anyio/_backends/_asyncio.py", line 2485, in run_sync_in_worker_thread
+    return await future
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/anyio/_backends/_asyncio.py", line 976, in run
+    result = context.run(func, *args)
+  File "/Users/ambermooney/Desktop/TAAIP/taaip_service.py", line 2949, in get_project_dashboard_summary
+    cur.execute("SELECT COUNT(*) FROM projects WHERE is_archived = 0")
+sqlite3.OperationalError: no such column: is_archived
+INFO:     127.0.0.1:55205 - "GET /api/v2/projects HTTP/1.1" 500 Internal Server Error
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/uvicorn/protocols/http/h11_impl.py", line 403, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/uvicorn/middleware/proxy_headers.py", line 60, in __call__
+    return await self.app(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/fastapi/applications.py", line 1134, in __call__
+    await super().__call__(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/applications.py", line 113, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/middleware/base.py", line 196, in __call__
+    recv_stream.close()
+  File "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/contextlib.py", line 135, in __exit__
+    self.gen.throw(type, value, traceback)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/_utils.py", line 85, in collapse_excgroups
+    raise exc
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/middleware/base.py", line 193, in __call__
+    response = await self.dispatch_func(request, call_next)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/middleware/base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/middleware/base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/middleware/cors.py", line 93, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/middleware/cors.py", line 144, in simple_response
+    await self.app(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/fastapi/routing.py", line 125, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/fastapi/routing.py", line 111, in app
+    response = await f(request)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/fastapi/routing.py", line 391, in app
+    raw_response = await run_endpoint_function(
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/fastapi/routing.py", line 292, in run_endpoint_function
+    return await run_in_threadpool(dependant.call, **values)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/starlette/concurrency.py", line 38, in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/anyio/to_thread.py", line 56, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/anyio/_backends/_asyncio.py", line 2485, in run_sync_in_worker_thread
+    return await future
+  File "/Users/ambermooney/Library/Python/3.9/lib/python/site-packages/anyio/_backends/_asyncio.py", line 976, in run
+    result = context.run(func, *args)
+  File "/Users/ambermooney/Desktop/TAAIP/taaip_service.py", line 2735, in get_all_projects
+    cur.execute(query, params)
+sqlite3.OperationalError: no such column: is_archived
+INFO:     127.0.0.1:55217 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55233 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55236 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55239 - "GET /api/v2/budget/allocations?fiscal_year=2025 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55241 - "GET /api/v2/budget/allocations?fiscal_year=2025&unit_id=brigade_6 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55246 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55260 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55268 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55274 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55277 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55280 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55289 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55297 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55312 - "GET /api/v2/standings/companies HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [49912]

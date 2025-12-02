@@ -9,7 +9,8 @@ import random
 import os
 
 # Use unified recruiting.db so backend endpoints reflect sample data
-DB_FILE = os.path.join(os.path.dirname(__file__), "recruiting.db")
+# Use absolute path on the droplet to avoid relative path issues
+DB_FILE = "/opt/TAAIP/recruiting.db"
 
 # Sample data pools
 FIRST_NAMES = ["James", "John", "Michael", "David", "William", "Robert", "Joseph", "Thomas", "Charles", "Christopher"]

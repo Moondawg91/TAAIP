@@ -8,7 +8,7 @@ import uuid
 import random
 from datetime import datetime, timedelta
 
-DB_FILE = 'recruiting.db'
+DB_FILE = '/opt/TAAIP/recruiting.db'
 
 def populate_sample_data():
     conn = sqlite3.connect(DB_FILE)
