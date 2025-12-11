@@ -10,21 +10,16 @@ const app = express();
 
 const FASTAPI_URL = process.env.FASTAPI_URL || 'http://127.0.0.1:8000';
 const PORT = process.env.PORT || 3000;
-const API_TOKEN = process.env.TAAIP_API_TOKEN || null;
-const REQUIRE_AUTH = !!API_TOKEN;
+// Authentication is intentionally disabled for this deployment.
+// To re-enable, set TAAIP_API_TOKEN and restore REQUIRE_AUTH logic.
+const API_TOKEN = null;
+const REQUIRE_AUTH = false;
 
 app.use(express.json());
 app.use(cors());
 
 // Optional gateway-level auth enforcement (helps protect the gateway itself).
-if (REQUIRE_AUTH) {
-  console.log('API Gateway: requiring Bearer token for incoming requests');
-  app.use((req, res, next) => {
-    const auth = req.headers['authorization'];
-    if (!auth || auth !== `Bearer ${API_TOKEN}`) return res.status(401).json({ detail: 'Unauthorized' });
-    next();
-  });
-}
+// Auth enforcement removed — gateway will forward requests without checking a token.
 
 // Health check endpoint
 app.get('/health', async (req, res) => {

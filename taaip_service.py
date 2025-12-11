@@ -521,17 +521,17 @@ logging.info(f"ML Model initialized. Status: {ML_MODEL['status']}")
 
 # --- Simple token auth (optional) ---
 API_TOKEN = os.environ.get("TAAIP_API_TOKEN")
+# Permanently disable auth checks for this deployment (temporary, but persistent)
+# NOTE: This change removes authentication checks at the application level.
+# Revert by setting DISABLE_AUTH back to False or restoring the original logic.
+DISABLE_AUTH = True
 if API_TOKEN:
-    logging.info("API token auth enabled for /api/v1 endpoints")
+    logging.warning("TAAIP_API_TOKEN present but auth checks are permanently disabled in this build")
 
 
 @app.middleware("http")
 def auth_middleware(request: Request, call_next):
-    # If an API token is configured, require Bearer token for internal API paths
-    if API_TOKEN and request.url.path.startswith("/api/v1"):
-        auth = request.headers.get("authorization")
-        if not auth or auth != f"Bearer {API_TOKEN}":
-            return JSONResponse(status_code=401, content={"detail": "Unauthorized"})
+    # Authentication is disabled in this deployment. Allow all requests.
     return call_next(request)
 
 
@@ -1314,13 +1314,25 @@ def record_funnel_transition(transition: FunnelTransitionCreate):
     now = datetime.utcnow().isoformat()
     conn = get_db_conn()
     cur = conn.cursor()
-    cur.execute(
-        """
-        INSERT INTO funnel_transitions (lead_id, from_stage, to_stage, transition_date, transition_reason, technician_id, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-        """,
-        (transition.lead_id, transition.from_stage, transition.to_stage, now, transition.transition_reason, transition.technician_id, now),
-    )
+    # Insert using whichever identifier column exists in the DB (`lead_id` or `prid`).
+    cur.execute("PRAGMA table_info(funnel_transitions)")
+    existing_cols = [r[1] for r in cur.fetchall()]
+    if "prid" in existing_cols:
+        cur.execute(
+            """
+            INSERT INTO funnel_transitions (prid, from_stage, to_stage, transition_date, transition_reason, technician_id, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+            (transition.lead_id, transition.from_stage, transition.to_stage, now, transition.transition_reason, transition.technician_id, now),
+        )
+    else:
+        cur.execute(
+            """
+            INSERT INTO funnel_transitions (lead_id, from_stage, to_stage, transition_date, transition_reason, technician_id, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+            (transition.lead_id, transition.from_stage, transition.to_stage, now, transition.transition_reason, transition.technician_id, now),
+        )
     conn.commit()
     conn.close()
     return {"status": "ok", "message": f"Lead {transition.lead_id} transitioned to {transition.to_stage}"}
@@ -1332,32 +1344,68 @@ def get_funnel_metrics():
     conn = get_db_conn()
     cur = conn.cursor()
     
-    # Count leads in each stage (via most recent transition)
-    cur.execute("""
-        SELECT DISTINCT on_stage, COUNT(*) as count
-        FROM (
-            SELECT lead_id, to_stage as on_stage
-            FROM funnel_transitions
-            WHERE (lead_id, created_at) IN (
-                SELECT lead_id, MAX(created_at)
-                FROM funnel_transitions
-                GROUP BY lead_id
-            )
-        ) latest_stage
-        GROUP BY on_stage
-        ORDER BY on_stage
-    """)
-    
-    # Fallback if distinct on not supported
+    # Count leads in each stage (via most recent transition).
+    # The DB schema may use `lead_id` (older) or `prid` (migrated). Attempt
+    # the `lead_id`-based query first, and fall back to a `prid`-based
+    # equivalent if the column doesn't exist.
     try:
-        stage_counts = {row[0]: row[1] for row in cur.fetchall()}
-    except Exception:
         cur.execute("""
-            SELECT to_stage, COUNT(DISTINCT lead_id) as count
-            FROM funnel_transitions
-            GROUP BY to_stage
+            SELECT on_stage, COUNT(*) as count
+            FROM (
+                SELECT lead_id, to_stage as on_stage
+                FROM funnel_transitions
+                WHERE (lead_id, created_at) IN (
+                    SELECT lead_id, MAX(created_at)
+                    FROM funnel_transitions
+                    GROUP BY lead_id
+                )
+            ) latest_stage
+            GROUP BY on_stage
+            ORDER BY on_stage
         """)
         stage_counts = {row[0]: row[1] for row in cur.fetchall()}
+    except sqlite3.OperationalError:
+        # Likely no `lead_id` column — try using `prid` instead.
+        try:
+            cur.execute("""
+                SELECT on_stage, COUNT(*) as count
+                FROM (
+                    SELECT prid, to_stage as on_stage
+                    FROM funnel_transitions
+                    WHERE (prid, created_at) IN (
+                        SELECT prid, MAX(created_at)
+                        FROM funnel_transitions
+                        GROUP BY prid
+                    )
+                ) latest_stage
+                GROUP BY on_stage
+                ORDER BY on_stage
+            """)
+            stage_counts = {row[0]: row[1] for row in cur.fetchall()}
+        except Exception:
+            # Final fallback: count distinct identifiers per stage.
+            cur.execute("""
+                SELECT to_stage, COUNT(DISTINCT prid) as count
+                FROM funnel_transitions
+                GROUP BY to_stage
+            """)
+            stage_counts = {row[0]: row[1] for row in cur.fetchall()}
+    except Exception:
+        # Fallback for DBs that don't support tuple-comparison in WHERE
+        try:
+            cur.execute("""
+                SELECT to_stage, COUNT(DISTINCT lead_id) as count
+                FROM funnel_transitions
+                GROUP BY to_stage
+            """)
+            stage_counts = {row[0]: row[1] for row in cur.fetchall()}
+        except sqlite3.OperationalError:
+            cur.execute("""
+                SELECT to_stage, COUNT(DISTINCT prid) as count
+                FROM funnel_transitions
+                GROUP BY to_stage
+            """)
+            stage_counts = {row[0]: row[1] for row in cur.fetchall()}
     
     conn.close()
     return {"stage_distribution": stage_counts}

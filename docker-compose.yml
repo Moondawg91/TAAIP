@@ -7,7 +7,7 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - TAAIP_API_TOKEN=dev-token
+      # Authentication is disabled for this deployment; do not set TAAIP_API_TOKEN
     volumes:
       - ./data:/app/data
       - ./recruiting.db:/app/recruiting.db
