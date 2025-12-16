@@ -93,3 +93,25 @@ jobs:
             echo "Docker not available on remote; skipping container restart"
           fi
           REMOTE
+
+      - name: Post-deploy health check
+        if: always()
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+        run: |
+          set -e
+          echo "Checking public endpoints on https://${DEPLOY_HOST}"
+          endpoints=("/health" "/projects")
+          for ep in "${endpoints[@]}"; do
+            ok=0
+            for i in 1 2 3 4 5 6; do
+              status=$(curl -k -s -o /dev/null -w "%{http_code}" "https://${DEPLOY_HOST}${ep}" || echo "000")
+              echo "Attempt $i: ${ep} -> ${status}"
+              if [ "$status" = "200" ]; then ok=1; break; fi
+              sleep 10
+            done
+            if [ "$ok" -ne 1 ]; then
+              echo "Health check failed for ${ep} (last status: ${status})" >&2
+              exit 1
+            fi
+          done
