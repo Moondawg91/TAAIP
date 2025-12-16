@@ -6,8 +6,7 @@ services:
       dockerfile: Dockerfile.backend
     ports:
       - "8000:8000"
-    environment:
-      # Authentication is disabled for this deployment; do not set TAAIP_API_TOKEN
+    environment: {}
     volumes:
       - ./data:/app/data
       - ./recruiting.db:/app/recruiting.db
@@ -25,8 +24,8 @@ services:
     build:
       context: ./taaip-dashboard
       dockerfile: Dockerfile
-    ports:
-      - "80:80"
+    expose:
+      - "80"
     depends_on:
       - gateway
     volumes:
