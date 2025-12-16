@@ -1,0 +1,39 @@
+name: CI Build
+
+on:
+  push:
+    branches:
+      - feat/optimize-app
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: |
+          cd taaip-dashboard
+          npm ci
+
+      - name: Build frontend
+        run: |
+          cd taaip-dashboard
+          npm run build
+
+      - name: Archive build
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: taaip-dashboard/dist
+
+      - name: Deploy (placeholder)
+        run: |
+          echo "Deployment step is disabled in this workflow."
+          echo "To enable, add an SSH/rsync step and set secrets: DEPLOY_USER, DEPLOY_HOST, DEPLOY_KEY."

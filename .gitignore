@@ -22,3 +22,11 @@ data/
 exports/
 server.log
 server.pid
+
+# Generated headless-capture artifacts
+pm_*.png
+pm_*.json
+pm_capture.png
+pm_debug.png
+tmp_puppeteer*
+
