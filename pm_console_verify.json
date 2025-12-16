@@ -1,0 +1,10 @@
+[
+  {
+    "type": "log",
+    "text": "API_BASE configured as: https://taaip.app"
+  },
+  {
+    "type": "error",
+    "text": "Failed to load resource: the server responded with a status of 404 ()"
+  }
+]

@@ -50,14 +50,17 @@ set -e
 echo "→ Navigating to app directory..."
 cd /root/TAAIP
 
-echo "→ Checking current branch..."
-git branch
-
-echo "→ Fetching latest changes..."
+echo "→ Ensuring we are on the deployment branch..."
+# fetch remote and force-reset local working tree to match remote branch
 git fetch origin
+if git show-ref --verify --quiet refs/heads/feat/optimize-app; then
+    git checkout feat/optimize-app || true
+else
+    git checkout -b feat/optimize-app origin/feat/optimize-app || true
+fi
 
-echo "→ Pulling latest code from feat/optimize-app..."
-git pull origin feat/optimize-app
+echo "→ Resetting local tree to origin/feat/optimize-app (will overwrite local changes)"
+git reset --hard origin/feat/optimize-app
 
 echo "→ Installing dependencies..."
 cd taaip-dashboard
@@ -69,10 +72,18 @@ npm run build
 echo "→ Checking if Docker is running..."
 if command -v docker &> /dev/null && docker ps &> /dev/null; then
     echo "→ Restarting Docker containers..."
-    cd /root/TAAIP
-    docker-compose down
-    docker-compose up -d
-    echo "✓ Docker containers restarted"
+    cd /root/TAAIP || true
+    # Validate docker-compose config first; if invalid, skip restart instead of failing the deploy
+    if docker-compose config &> /dev/null; then
+        if docker-compose down && docker-compose up -d; then
+            echo "✓ Docker containers restarted"
+        else
+            echo "⚠ Docker restart failed (non-fatal). Please investigate on the droplet."
+        fi
+    else
+        echo "⚠ docker-compose config invalid — skipping docker-compose restart"
+        echo "  You may need to fix /root/TAAIP/docker-compose.yml on the droplet and restart manually."
+    fi
 else
     echo "⚠ Docker not detected - skipping container restart"
     echo "  You may need to manually restart your web server"

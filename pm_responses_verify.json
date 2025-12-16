@@ -1,0 +1,32 @@
+[
+  {
+    "url": "https://taaip.app/projects",
+    "status": 200,
+    "contentType": "text/html",
+    "bodySnippet": ""
+  },
+  {
+    "url": "https://taaip.app/assets/index-ceUyExNy.css",
+    "status": 200,
+    "contentType": "text/css",
+    "bodySnippet": ""
+  },
+  {
+    "url": "https://taaip.app/assets/index-D2v-qLjC.js",
+    "status": 200,
+    "contentType": "application/javascript",
+    "bodySnippet": ""
+  },
+  {
+    "url": "https://taaip.app/vite.svg",
+    "status": 404,
+    "contentType": "text/html",
+    "bodySnippet": ""
+  },
+  {
+    "url": "https://taaip.app/api/v2/standings/companies",
+    "status": 200,
+    "contentType": "application/json",
+    "bodySnippet": "{\"status\":\"ok\",\"standings\":[{\"rank\":1,\"previous_rank\":1,\"company_id\":\"CO-015\",\"company_name\":\"Charlie Co, 2-2 BN\",\"battalion\":\"2-2 BN\",\"brigade\":\"2nd Brigade\",\"ytd_mission\":68,\"ytd_actual\":90,\"ytd_attainment\":132.35,\"monthly_mission\":10,\"monthly_actual\":13,\"monthly_attainment\":130.0,\"total_enlistments\":96,\"future_soldier_losses\":7,\"net_gain\":89,\"last_enlistment\":\"2025-11-05T15:04:11.083234\",\"trend\":\"stable\"},{\"rank\":2,\"previous_rank\":2,\"company_id\":\"CO-038\",\"company_name\":\"Bravo Co, 5-1 BN\",\"battalion\":\"5-1 BN\",\"brigade\":\"5th Brigade\",\"ytd_mission\":50,\"ytd_actual\":66,\"ytd_attainment\":132.0,\"monthly_mission\":10,\"monthly_actual\":5,\"monthly_attainment\":50.0,\"total_enlistments\":69,\"future_soldier_losses\":10,\"net_gain\":59,\"last_enlistment\":\"2025-11-11T15:04:11.083411\",\"trend\":\"stable\"},{\"rank\":3,\"previous_rank\":3,\"company_id\":\"CO-025\",\"company_name\":\"Alpha Co, 3-3 BN\",\"battalion\":\"3-3 BN\",\"brigade\":\"3rd Brigade\",\"ytd_mission\":69,\"ytd_actual\":90,\"ytd_attainment\":130.43,\"monthly_mission\":14,\"monthly_actual\":10,\"monthly_attainment\":71.43,\"total_enlistments\":97,\"future_soldier_losses\":7,\"net_gain\":90,\"last_enlistment\":\"2025-11-14T15:04:11.083312\",\"trend\":\"stable\"},{\"rank\":4,\"previous_rank\":4,\"company_id\":\"CO-053\",\"company_name\":\"Bravo Co, 6-3 BN\",\"battalion\":\"6-3 BN\",\"brigade\":\"6th Brigade\",\"ytd_mission\":67,\"ytd_actual\":87,\"ytd_attainment\":129.85,\"monthly_mission\":12,\"monthly_actual\":17,\"monthly_attainment\":141.67,\"total_enlistments\":94,\"future_soldier_losses\":13,\"net_gain\":81,\"last_enlistment\":\"2025-11-14T15:04:11.083525\",\"trend\":\"stable\"},{\"rank\":5,\"previous_rank\":5,\"company_id\":\"CO-026\",\"company_name\":\"Bravo Co, 3-3 BN\",\"battalion\":\"3-3 BN\",\"brigade\":\"3rd Brigade\",\"ytd_mission\":48,\"ytd_actual\":61,\"ytd_attainment\":127.08,\"monthly_mission\":15,\"monthly_actual\":22,\"monthly_attainment\":146.67,\"total_enlistments\":68,\"future_soldier_losses\":4,\"net_gain\":64,\"last_enlistment\":\"2025-11-04T15:04:11.083319\",\"trend\":\"stable\"},{\"rank\":6,\"previous_rank\":6,\"company_id\":\"CO-008\",\"company_"
+  }
+]
