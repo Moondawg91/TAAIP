@@ -21,12 +21,32 @@ jobs:
       - name: Install dependencies
         run: |
           cd taaip-dashboard
-          npm ci
+          mkdir -p build-logs
+          # retry npm ci up to 3 times to avoid transient registry/network errors
+          for i in 1 2 3; do
+            if npm ci 2>&1 | tee build-logs/npm_ci.log; then break; fi
+            echo "npm ci failed (attempt $i)" >&2
+            sleep $((i * 5))
+            if [ "$i" -eq 3 ]; then exit 1; fi
+          done
 
       - name: Build frontend
         run: |
           cd taaip-dashboard
-          npm run build
+          # retry build up to 3 times (captures stdout/stderr)
+          for i in 1 2 3; do
+            if npm run build 2>&1 | tee build-logs/npm_build.log; then break; fi
+            echo "npm run build failed (attempt $i)" >&2
+            sleep $((i * 5))
+            if [ "$i" -eq 3 ]; then exit 1; fi
+          done
+
+      - name: Upload build logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-build-logs
+          path: taaip-dashboard/build-logs
 
       - name: Archive build
         uses: actions/upload-artifact@v4
