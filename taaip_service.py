@@ -4450,6 +4450,10 @@ app.include_router(budget_router, prefix="/api/v2", tags=["Budget Management"])
 from backend.routers.data_upload import router as data_upload_router
 app.include_router(data_upload_router, prefix="/api/v2", tags=["Data Upload"])
 
+# --- Task Requests (separate workflow from Helpdesk) ---
+from backend.routers.task_requests import router as task_requests_router
+app.include_router(task_requests_router, prefix="/api/v2", tags=["Task Requests"])
+
 
 if __name__ == "__main__":
     uvicorn.run("taaip_service:app", host="0.0.0.0", port=8000, reload=False)

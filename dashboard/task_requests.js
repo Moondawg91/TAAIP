@@ -1,5 +1,5 @@
-// Use the existing backend helpdesk API
-const apiEndpoint = '/api/v2/helpdesk/requests';
+// Use the new dedicated Task Requests API
+const apiEndpoint = '/api/v2/task_requests';
 
 function loadPending(){
   const raw = localStorage.getItem('task_requests_pending');
