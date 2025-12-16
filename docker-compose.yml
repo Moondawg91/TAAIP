@@ -29,3 +29,5 @@ services:
       - "80:80"
     depends_on:
       - gateway
+    volumes:
+      - ./dashboard:/usr/share/nginx/html/dashboard:ro
