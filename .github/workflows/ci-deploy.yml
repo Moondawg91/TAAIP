@@ -32,8 +32,37 @@ jobs:
         with:
           name: frontend-dist
           path: taaip-dashboard/dist
+      - name: Setup SSH agent
+        uses: webfactory/ssh-agent@v0.8.1
+        with:
+          ssh-private-key: ${{ secrets.DEPLOY_KEY }}
 
-      - name: Deploy (placeholder)
+      - name: Add deploy host to known_hosts
         run: |
-          echo "Deployment step is disabled in this workflow."
-          echo "To enable, add an SSH/rsync step and set secrets: DEPLOY_USER, DEPLOY_HOST, DEPLOY_KEY."
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.DEPLOY_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy to droplet via SSH
+        env:
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_BRANCH: ${{ secrets.DEPLOY_BRANCH || 'feat/optimize-app' }}
+        run: |
+          echo "Starting remote deploy on ${DEPLOY_USER}@${DEPLOY_HOST}"
+          ssh -o StrictHostKeyChecking=yes ${DEPLOY_USER}@${DEPLOY_HOST} << 'REMOTE'
+          set -e
+          cd /root/TAAIP || exit 1
+          git fetch origin
+          git checkout ${DEPLOY_BRANCH} || git checkout -b ${DEPLOY_BRANCH} origin/${DEPLOY_BRANCH} || true
+          git reset --hard origin/${DEPLOY_BRANCH}
+          cd taaip-dashboard
+          npm ci --silent
+          npm run build --silent
+          cd /root/TAAIP
+          if command -v docker &> /dev/null && docker ps &> /dev/null; then
+            docker-compose build --no-cache frontend || true
+            docker-compose up -d || true
+          else
+            echo "Docker not available on remote; skipping container restart"
+          fi
+          REMOTE
