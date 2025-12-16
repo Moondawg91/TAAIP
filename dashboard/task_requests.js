@@ -64,6 +64,30 @@ async function resendRequest(index){
   }
 }
 
+  // Fetch recent requests from backend and render
+  async function fetchRequests(){
+    const el = document.getElementById('serverRequests');
+    el.innerHTML = '<em>Loading...</em>';
+    try{
+      const r = await fetch(apiEndpoint + '?status=pending');
+      if(!r.ok){ el.innerHTML = `<div class="error">Server returned ${r.status}</div>`; return; }
+      const j = await r.json();
+      const list = j.requests || [];
+      if(list.length === 0){ el.innerHTML = '<em>No requests found</em>'; return; }
+      el.innerHTML = '';
+      list.forEach(req=>{
+        const d = document.createElement('div');
+        d.className = 'request';
+        d.innerHTML = `<strong>${req.title}</strong> — <em>${req.priority}</em><div>${req.description||''}</div><div style="margin-top:6px">Submitted by: ${req.submitted_by||req.submittedBy||'—'} | At: ${req.submitted_at||req.submittedAt||req.created_at||'—'}</div>`;
+        el.appendChild(d);
+      });
+    }catch(e){
+      el.innerHTML = '<div class="error">Failed to fetch — offline or API blocked.</div>';
+    }
+  }
+
+  document.getElementById('fetchRequests').addEventListener('click', fetchRequests);
+
 document.getElementById('taskForm').addEventListener('submit', async (evt)=>{
   evt.preventDefault();
   // Build payload compatible with backend `HelpdeskRequest` model
