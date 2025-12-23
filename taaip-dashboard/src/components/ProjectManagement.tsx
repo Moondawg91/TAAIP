@@ -235,9 +235,46 @@ export const ProjectManagement: React.FC = () => {
   const fetchProjectDetail = async (projectId: string) => {
     try {
       const res = await fetch(`${API_BASE}/api/v2/projects/${projectId}`);
-      const data = await res.json();
-      if (data.status === 'ok') {
-        setProjectDetail(data);
+      const text = await res.text();
+      let data: any = null;
+      try {
+        data = text ? JSON.parse(text) : null;
+      } catch (e) {
+        console.error('Project detail API returned non-JSON response:', e, text.slice(0, 200));
+        data = null;
+      }
+
+      if (data && data.status === 'ok' && data.project) {
+        const pRaw: any = data.project || {};
+        const p = {
+          ...pRaw,
+          percent_complete: Number(pRaw.percent_complete) || 0,
+          funding_amount: Number(pRaw.funding_amount) || 0,
+          spent_amount: Number(pRaw.spent_amount) || 0,
+          name: String(pRaw.name || 'Untitled'),
+          start_date: String(pRaw.start_date || new Date().toISOString()),
+          target_date: String(pRaw.target_date || new Date().toISOString()),
+        };
+
+        const statsRaw: any = data.statistics || {};
+        const statistics = {
+          total_tasks: Number(statsRaw.total_tasks) || (Array.isArray(data.tasks) ? data.tasks.length : 0),
+          completed_tasks: Number(statsRaw.completed_tasks) || 0,
+          in_progress_tasks: Number(statsRaw.in_progress_tasks) || 0,
+          blocked_tasks: Number(statsRaw.blocked_tasks) || 0,
+          completion_rate: Number(statsRaw.completion_rate) || 0,
+          funding_amount: Number(statsRaw.funding_amount) || p.funding_amount || 0,
+          spent_amount: Number(statsRaw.spent_amount) || p.spent_amount || 0,
+          remaining_budget: Number(statsRaw.remaining_budget) || 0,
+          budget_utilized: Number(statsRaw.budget_utilized) || 0,
+        };
+
+        const tasks = Array.isArray(data.tasks) ? data.tasks.map((t: any) => ({ ...t })) : [];
+        const milestones = Array.isArray(data.milestones) ? data.milestones.map((m: any) => ({ ...m })) : [];
+
+        setProjectDetail({ project: p, tasks, milestones, statistics });
+      } else {
+        console.error('Project detail API returned unexpected payload:', data, text);
       }
     } catch (error) {
       console.error('Error fetching project detail:', error);
