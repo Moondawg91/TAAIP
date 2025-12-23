@@ -4,6 +4,7 @@ import {
   AlertCircle, Clock, DollarSign, Award, Map, Briefcase, Shield, Edit, Plus, X, Save,
   MessageSquare, ArrowRight, Link as LinkIcon, Trash2, UserPlus
 } from 'lucide-react';
+import DueTasksPage from './DueTasksPage';
 
 interface FusionTeamMember {
   role: string;
@@ -129,6 +130,8 @@ const FUSION_ROLES = {
 
 export const FusionTeamDashboard: React.FC = () => {
   const [activeView, setActiveView] = useState<'overview' | 'cycle' | 'paperwork' | 'calendar' | 'roles'>('overview');
+  const [showDueTasksPage, setShowDueTasksPage] = useState(false);
+  const [selectedRoleForTasks, setSelectedRoleForTasks] = useState('');
   const [teamMembers, setTeamMembers] = useState<FusionTeamMember[]>([]);
   const [cyclePhases, setCyclePhases] = useState<FusionCyclePhase[]>([]);
   const [paperwork, setPaperwork] = useState<PaperworkTracker[]>([]);
@@ -795,13 +798,13 @@ export const FusionTeamDashboard: React.FC = () => {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        setSelectedRole(roleKey);
-                        setShowTaskModal(true);
+                        setSelectedRoleForTasks(roleKey);
+                        setShowDueTasksPage(true);
                       }}
                       className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white py-3 px-4 rounded-lg font-semibold hover:from-blue-700 hover:to-blue-800 flex items-center justify-center gap-2"
                     >
                       <CheckSquare className="w-5 h-5" />
-                      Manage Tasks & Status Updates
+                      View Due Tasks & Status
                     </button>
                   </div>
                 )}
@@ -836,7 +839,16 @@ export const FusionTeamDashboard: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-6">
+    <>
+      {showDueTasksPage && selectedRoleForTasks ? (
+        <DueTasksPage
+          role={selectedRoleForTasks}
+          tasks={tasks}
+          onBack={() => setShowDueTasksPage(false)}
+          teamMembers={teamMembers}
+        />
+      ) : (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-6">
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-gray-800 flex items-center">
@@ -1369,6 +1381,8 @@ export const FusionTeamDashboard: React.FC = () => {
         </div>
       )}
     </div>
+      )}
+    </>
   );
 };
 

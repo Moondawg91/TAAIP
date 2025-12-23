@@ -286,13 +286,13 @@ export const HelpDeskPortal: React.FC<{ currentUser?: UserAccess }> = ({ current
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg"
                   required
                 >
-                  <option value="standard">Standard User</option>
-                  <option value="editor">Editor</option>
-                  <option value="admin">Administrator</option>
-                  <option value="super_admin">Super Admin</option>
+                  <option value="tier_1">Standard User</option>
+                  <option value="tier_2">Editor</option>
+                  <option value="tier_3">Administrator</option>
+                  <option value="tier_4">Super Admin</option>
                 </select>
                 <p className="text-xs text-gray-600 mt-1">
-                  {formData.requestedAccessLevel && ACCESS_LEVEL_INFO[formData.requestedAccessLevel].description}
+                  {formData.requestedAccessLevel && ACCESS_LEVEL_INFO[formData.requestedAccessLevel]?.description}
                 </p>
               </div>
             )}
