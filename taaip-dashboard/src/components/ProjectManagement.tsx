@@ -123,11 +123,59 @@ export const ProjectManagement: React.FC = () => {
     setLoading(true);
     try {
       const res = await fetch(`${API_BASE}/api/v2/projects/dashboard/summary`);
-      const data = await res.json();
-      if (data.status === 'ok') {
-        setDashboardData(data);
+      // defensively parse JSON and coerce expected numeric fields
+      const text = await res.text();
+      let data: any = null;
+      try {
+        data = text ? JSON.parse(text) : null;
+      } catch (e) {
+        console.error('Dashboard API returned non-JSON response:', e, text.slice(0, 200));
+        data = null;
+      }
+
+      if (data && data.status === 'ok') {
+        // sanitize numeric fields to avoid NaN in charts
+        const safe = { ...data };
+        if (safe.summary) {
+          const s = safe.summary;
+          s.total_projects = Number(s.total_projects) || 0;
+          s.active_projects = Number(s.active_projects) || 0;
+          s.completed_projects = Number(s.completed_projects) || 0;
+          s.at_risk_projects = Number(s.at_risk_projects) || 0;
+          s.total_tasks = Number(s.total_tasks) || 0;
+          s.completed_tasks = Number(s.completed_tasks) || 0;
+          s.blocked_tasks = Number(s.blocked_tasks) || 0;
+          s.task_completion_rate = Number(s.task_completion_rate) || 0;
+          s.total_budget = Number(s.total_budget) || 0;
+          s.total_spent = Number(s.total_spent) || 0;
+          s.budget_remaining = Number(s.budget_remaining) || 0;
+          s.budget_utilization = Number(s.budget_utilization) || 0;
+        }
+
+        if (Array.isArray(safe.recent_projects)) {
+          safe.recent_projects = safe.recent_projects.map((p: any) => ({
+            ...p,
+            percent_complete: Number((p && p.percent_complete) as any) || 0,
+            funding_amount: Number((p && p.funding_amount) as any) || 0,
+            spent_amount: Number((p && p.spent_amount) as any) || 0,
+            name: String((p && p.name) || 'Untitled')
+          }));
+        } else {
+          safe.recent_projects = [];
+        }
+
+        if (Array.isArray(safe.status_distribution)) {
+          safe.status_distribution = safe.status_distribution.map((d: any) => ({
+            status: String(d.status || 'unknown'),
+            count: Number(d.count) || 0
+          }));
+        } else {
+          safe.status_distribution = [];
+        }
+
+        setDashboardData(safe);
       } else {
-        console.error('Dashboard API returned error:', data);
+        console.error('Dashboard API returned error or empty response:', data, text);
       }
     } catch (error) {
       console.error('Error fetching dashboard:', error);
@@ -158,9 +206,26 @@ export const ProjectManagement: React.FC = () => {
   const fetchProjects = async () => {
     try {
       const res = await fetch(`${API_BASE}/api/v2/projects`);
-      const data = await res.json();
-      if (data.status === 'ok') {
-        setProjects(data.projects);
+      const text = await res.text();
+      let data: any = null;
+      try {
+        data = text ? JSON.parse(text) : null;
+      } catch (e) {
+        console.error('Projects API returned non-JSON response:', e, text.slice(0, 200));
+        data = null;
+      }
+
+      if (data && data.status === 'ok' && Array.isArray(data.projects)) {
+        const safeProjects = data.projects.map((p: any) => ({
+          ...p,
+          percent_complete: Number((p && p.percent_complete) as any) || 0,
+          funding_amount: Number((p && p.funding_amount) as any) || 0,
+          spent_amount: Number((p && p.spent_amount) as any) || 0,
+          name: String((p && p.name) || 'Untitled')
+        }));
+        setProjects(safeProjects);
+      } else {
+        console.error('Projects API returned unexpected payload:', data);
       }
     } catch (error) {
       console.error('Error fetching projects:', error);

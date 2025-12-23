@@ -2771,15 +2771,29 @@ def get_all_projects(status: Optional[str] = None):
     conn = get_db_conn()
     cur = conn.cursor()
     
-    query = "SELECT * FROM projects WHERE is_archived = 0"
-    params = []
-    
-    if status:
-        query += " AND status = ?"
-        params.append(status)
-    
+    # detect whether the `is_archived` column exists in the schema
+    try:
+        cur.execute("PRAGMA table_info(projects)")
+        cols = [r['name'] for r in cur.fetchall()]
+    except Exception:
+        cols = []
+
+    has_is_archived = 'is_archived' in cols
+
+    params: List[Any] = []
+    if has_is_archived:
+        query = "SELECT * FROM projects WHERE is_archived = 0"
+        if status:
+            query += " AND status = ?"
+            params.append(status)
+    else:
+        query = "SELECT * FROM projects WHERE 1=1"
+        if status:
+            query += " AND status = ?"
+            params.append(status)
+
     query += " ORDER BY created_at DESC"
-    
+
     cur.execute(query, params)
     rows = cur.fetchall()
     conn.close()
@@ -2993,17 +3007,38 @@ def get_project_dashboard_summary():
     conn = get_db_conn()
     cur = conn.cursor()
     
+    # detect whether the `is_archived` column exists and adjust queries
+    try:
+        cur.execute("PRAGMA table_info(projects)")
+        cols = [r['name'] for r in cur.fetchall()]
+    except Exception:
+        cols = []
+
+    has_is_archived = 'is_archived' in cols
+
     # Overall statistics
-    cur.execute("SELECT COUNT(*) FROM projects WHERE is_archived = 0")
+    query = "SELECT COUNT(*) FROM projects"
+    if has_is_archived:
+        query += " WHERE is_archived = 0"
+    cur.execute(query)
     total_projects = cur.fetchone()[0] or 0
-    
-    cur.execute("SELECT COUNT(*) FROM projects WHERE status = 'in_progress' AND is_archived = 0")
+
+    query = "SELECT COUNT(*) FROM projects WHERE status = 'in_progress'"
+    if has_is_archived:
+        query += " AND is_archived = 0"
+    cur.execute(query)
     active_projects = cur.fetchone()[0] or 0
-    
-    cur.execute("SELECT COUNT(*) FROM projects WHERE status = 'completed' AND is_archived = 0")
+
+    query = "SELECT COUNT(*) FROM projects WHERE status = 'completed'"
+    if has_is_archived:
+        query += " AND is_archived = 0"
+    cur.execute(query)
     completed_projects = cur.fetchone()[0] or 0
-    
-    cur.execute("SELECT COUNT(*) FROM projects WHERE status = 'at_risk' AND is_archived = 0")
+
+    query = "SELECT COUNT(*) FROM projects WHERE status = 'at_risk'"
+    if has_is_archived:
+        query += " AND is_archived = 0"
+    cur.execute(query)
     at_risk_projects = cur.fetchone()[0] or 0
     
     # Task statistics
@@ -3017,28 +3052,50 @@ def get_project_dashboard_summary():
     blocked_tasks = cur.fetchone()[0] or 0
     
     # Budget statistics
-    cur.execute("SELECT SUM(funding_amount), SUM(spent_amount) FROM projects WHERE is_archived = 0")
-    budget_row = cur.fetchone()
-    total_budget = budget_row[0] or 0
-    total_spent = budget_row[1] or 0
+    # Budget statistics — only SUM existing columns, otherwise default to 0
+    total_budget = 0
+    total_spent = 0
+    if 'funding_amount' in cols or 'spent_amount' in cols:
+        parts = []
+        if 'funding_amount' in cols:
+            parts.append('SUM(funding_amount)')
+        else:
+            parts.append('0')
+        if 'spent_amount' in cols:
+            parts.append('SUM(spent_amount)')
+        else:
+            parts.append('0')
+
+        sum_query = f"SELECT {', '.join(parts)} FROM projects"
+        if has_is_archived:
+            sum_query += " WHERE is_archived = 0"
+        cur.execute(sum_query)
+        budget_row = cur.fetchone() or (0, 0)
+        total_budget = budget_row[0] or 0
+        total_spent = budget_row[1] or 0
     
     # Recent projects
-    cur.execute("""
-        SELECT project_id, name, status, percent_complete, funding_amount, spent_amount, start_date, target_date
-        FROM projects 
-        WHERE is_archived = 0
-        ORDER BY created_at DESC
-        LIMIT 5
-    """)
+    # Recent projects — select only columns that exist, fallback to literals for missing ones
+    select_fields = ['project_id', 'name', 'status']
+    select_fields.append('percent_complete' if 'percent_complete' in cols else '0 as percent_complete')
+    select_fields.append('funding_amount' if 'funding_amount' in cols else '0 as funding_amount')
+    select_fields.append('spent_amount' if 'spent_amount' in cols else '0 as spent_amount')
+    select_fields.append('start_date' if 'start_date' in cols else "'' as start_date")
+    select_fields.append('target_date' if 'target_date' in cols else "'' as target_date")
+
+    recent_query = f"SELECT {', '.join(select_fields)} FROM projects"
+    if has_is_archived:
+        recent_query += " WHERE is_archived = 0"
+    recent_query += " ORDER BY created_at DESC LIMIT 5"
+    cur.execute(recent_query)
     recent_projects = [dict(row) for row in cur.fetchall()]
     
     # Projects by status
-    cur.execute("""
-        SELECT status, COUNT(*) as count
-        FROM projects
-        WHERE is_archived = 0
-        GROUP BY status
-    """)
+    status_query = "SELECT status, COUNT(*) as count FROM projects"
+    if has_is_archived:
+        status_query += " WHERE is_archived = 0"
+    status_query += " GROUP BY status"
+    cur.execute(status_query)
     status_distribution = [{"status": row[0], "count": row[1]} for row in cur.fetchall()]
     
     conn.close()
