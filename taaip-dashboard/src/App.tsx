@@ -13,7 +13,7 @@ const AnalyticsDashboard = lazy(() => import('./components/AnalyticsDashboard').
 const MarketPotentialDashboard = lazy(() => import('./components/MarketPotentialDashboard'));
 const MissionAnalysisDashboard = lazy(() => import('./components/MissionAnalysisDashboard'));
 const TargetingDecisionBoard = lazy(() => import('./components/TargetingDecisionBoard').then(m => ({ default: m.TargetingDecisionBoard })));
-const ProjectManagement = lazy(() => import('./components/ProjectManagement').then(m => ({ default: m.ProjectManagement })));
+const ProjectManagement = lazy(() => import('./components/ProjectManagement').then(m => ({ default: m.ProjectManagement })) as any);
 const LeadStatusReport = lazy(() => import('./components/LeadStatusReport').then(m => ({ default: m.LeadStatusReport })));
 const EventPerformanceDashboard = lazy(() => import('./components/EventPerformanceDashboard').then(m => ({ default: m.EventPerformanceDashboard })));
 const G2ZonePerformanceDashboard = lazy(() => import('./components/G2ZonePerformanceDashboard').then(m => ({ default: m.G2ZonePerformanceDashboard })));
