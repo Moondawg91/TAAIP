@@ -43,7 +43,16 @@ export const CompanyStandingsLeaderboard: React.FC<CompanyStandingsLeaderboardPr
 
   const fetchStandings = async () => {
     try {
-      const response = await fetch(`${API_BASE}/api/v2/standings/companies`);
+      // Build query params for server-side filtering when a filter is active
+      const params = new URLSearchParams();
+      if (filterValue !== 'all') {
+        if (filterType === 'brigade') params.append('brigade', filterValue);
+        if (filterType === 'rsid') params.append('rsid', filterValue);
+        if (filterType === 'station') params.append('station', filterValue);
+      }
+
+      const url = `${API_BASE}/api/v2/standings/companies${params.toString() ? `?${params.toString()}` : ''}`;
+      const response = await fetch(url);
       const data = await response.json();
       if (data.status === 'ok') {
         setStandings(data.standings);
@@ -57,11 +66,13 @@ export const CompanyStandingsLeaderboard: React.FC<CompanyStandingsLeaderboardPr
   };
 
   useEffect(() => {
+    setLoading(true);
     fetchStandings();
     // Auto-refresh every 30 seconds
     const interval = setInterval(fetchStandings, 30000);
     return () => clearInterval(interval);
-  }, []);
+    // Re-run when filters change so server-side filtering takes effect immediately
+  }, [filterType, filterValue]);
 
   const filteredStandings = standings.filter(s => {
     if (filterValue === 'all') return true;
