@@ -217,6 +217,43 @@ app.use('/api/actions', async (req, res, next) => {
   }
 });
 
+// Proxy all /dashboard requests to the frontend container (serves static SPA)
+app.all('/dashboard/*', async (req, res) => {
+  try {
+    const forwardPath = req.originalUrl.replace(/^\/dashboard/, '') || '/';
+    const url = `http://frontend${forwardPath}`;
+
+    const config = {
+      method: req.method,
+      url,
+      headers: { ...req.headers },
+      responseType: 'stream'
+    };
+    if (req.method !== 'GET' && req.method !== 'HEAD') {
+      config.data = req.body;
+    }
+
+    const response = await axios(config);
+
+    // Forward status and headers (exclude hop-by-hop headers)
+    res.status(response.status);
+    Object.entries(response.headers || {}).forEach(([k, v]) => {
+      const name = k.toLowerCase();
+      if (!['transfer-encoding', 'connection', 'keep-alive', 'proxy-authenticate', 'proxy-authorization', 'te', 'trailers', 'upgrade'].includes(name)) {
+        res.setHeader(k, v);
+      }
+    });
+
+    response.data.pipe(res);
+  } catch (error) {
+    console.error('Dashboard proxy error:', error?.response?.data || error.message);
+    if (error.response) {
+      return res.status(error.response.status).send(error.response.data);
+    }
+    return res.status(502).json({ message: 'Frontend unreachable via gateway' });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`API Gateway running on http://127.0.0.1:${PORT}`);
   console.log(`Proxying to FastAPI at ${FASTAPI_URL}`);
