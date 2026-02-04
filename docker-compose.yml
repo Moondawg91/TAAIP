@@ -5,10 +5,11 @@ services:
       dockerfile: Dockerfile.backend
     ports:
       - "8000:8000"
-    environment: {}
+    environment:
+      - DB_PATH=/app/recruiting.db
     volumes:
       - ./data:/app/data
-      - ./recruiting.db:/app/recruiting.db
+      - ./data/recruiting.db:/app/recruiting.db
   gateway:
     build:
       context: .

@@ -184,7 +184,7 @@ app.all('/api/v2/*', async (req, res) => {
     const config = {
       method: req.method,
       url: url,
-      headers: { authorization: req.headers['authorization'] },
+      headers: { ...req.headers, authorization: req.headers['authorization'] },
       params: req.query,
     };
     
@@ -193,6 +193,7 @@ app.all('/api/v2/*', async (req, res) => {
     }
     
     const response = await axios(config);
+    // Forward status and JSON data; avoid copying hop-by-hop headers
     res.status(response.status).json(response.data);
   } catch (error) {
     console.error(`API v2 proxy error [${req.method} ${req.originalUrl}]:`, error.message);
@@ -200,6 +201,19 @@ app.all('/api/v2/*', async (req, res) => {
       return res.status(error.response.status).json(error.response.data);
     }
     return res.status(503).json({ message: 'Failed to reach FastAPI backend.' });
+  }
+});
+
+// Alias /api/actions -> /api/v2/actions to support older frontend calls
+app.use('/api/actions', async (req, res, next) => {
+  try {
+    // Rewrite path and delegate to the v2 proxy handler
+    req.url = req.url.replace(/^\/api\/actions/, '/api/v2/actions');
+    req.originalUrl = req.originalUrl.replace(/^\/api\/actions/, '/api/v2/actions');
+    return app._router.handle(req, res, next);
+  } catch (e) {
+    console.error('Actions alias error:', e?.message || e);
+    return res.status(500).json({ message: 'Gateway internal error processing actions alias' });
   }
 });
 

@@ -2763,6 +2763,35 @@ def get_analytics_overview():
     }
 
 
+@app.get("/api/v2/meta/last-updated")
+def get_meta_last_updated():
+    """Return last-updated timestamps (updated_at or created_at) for key tables."""
+    conn = get_db_conn()
+    cur = conn.cursor()
+    tables = [
+        "events",
+        "event_metrics",
+        "leads",
+        "projects",
+        "general_actions",
+        "marketing_activities",
+        "funnel_stages",
+        "recruiters",
+        "recruiter_metrics",
+    ]
+    out = {}
+    for t in tables:
+        try:
+            cur.execute(f"SELECT COALESCE(MAX(updated_at), MAX(created_at)) as ts FROM {t}")
+            row = cur.fetchone()
+            ts = row[0] if row and row[0] is not None else None
+            out[t] = ts
+        except Exception:
+            out[t] = None
+    conn.close()
+    return {"status": "ok", "last_updated": out, "as_of": datetime.utcnow().isoformat() + "Z"}
+
+
 # --- PROJECT MANAGEMENT ENDPOINTS ---
 
 @app.get("/api/v2/projects")

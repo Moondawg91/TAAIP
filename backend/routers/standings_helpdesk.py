@@ -53,7 +53,13 @@ class UserAccess(BaseModel):
 
 
 @router.get("/standings/companies")
-async def get_company_standings():
+async def get_company_standings(
+    battalion: Optional[str] = None,
+    brigade: Optional[str] = None,
+    company_id: Optional[str] = None,
+    rsid: Optional[str] = None,
+    station: Optional[str] = None,
+):
     """Get real-time company standings with YTD and monthly metrics"""
     try:
         conn = sqlite3.connect("data/taaip.sqlite3")
@@ -129,8 +135,18 @@ async def get_company_standings():
             """, companies)
             conn.commit()
 
-        # Fetch current standings ordered by YTD attainment
-        cursor.execute("""
+        # Ensure optional columns exist (rsid, station) so filters work
+        try:
+            cursor.execute("ALTER TABLE company_standings ADD COLUMN rsid TEXT")
+        except Exception:
+            pass
+        try:
+            cursor.execute("ALTER TABLE company_standings ADD COLUMN station TEXT")
+        except Exception:
+            pass
+
+        # Build filtered query
+        query = """
             SELECT 
                 company_id, company_name, battalion, brigade, rsid, station,
                 ytd_mission, ytd_actual, ytd_attainment,
@@ -138,8 +154,27 @@ async def get_company_standings():
                 total_enlistments, future_soldier_losses, net_gain,
                 last_enlistment, previous_rank
             FROM company_standings
-            ORDER BY ytd_attainment DESC, ytd_actual DESC, company_name ASC
-        """)
+            WHERE 1=1
+        """
+        params = []
+        if battalion:
+            query += " AND battalion = ?"
+            params.append(battalion)
+        if brigade:
+            query += " AND brigade = ?"
+            params.append(brigade)
+        if company_id:
+            query += " AND company_id = ?"
+            params.append(company_id)
+        if rsid:
+            query += " AND rsid = ?"
+            params.append(rsid)
+        if station:
+            query += " AND station = ?"
+            params.append(station)
+
+        query += " ORDER BY ytd_attainment DESC, ytd_actual DESC, company_name ASC"
+        cursor.execute(query, params)
         
         standings = []
         for idx, row in enumerate(cursor.fetchall(), 1):
