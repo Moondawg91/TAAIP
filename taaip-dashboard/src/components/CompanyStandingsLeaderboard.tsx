@@ -84,16 +84,20 @@ export const CompanyStandingsLeaderboard: React.FC<CompanyStandingsLeaderboardPr
     return true;
   });
 
-  const brigades = Array.from(new Set(standings.map(s => s.brigade))).sort();
-  const rsids = Array.from(new Set(standings.map(s => s.rsid))).sort();
-  const stations = Array.from(new Set(standings.map(s => s.station))).sort();
+  // Filter out empty/null/undefined values so the dropdown doesn't show invalid options
+  const brigades = Array.from(new Set(standings.map(s => s.brigade).filter(Boolean))).sort();
+  const rsids = Array.from(new Set(standings.map(s => s.rsid).filter(Boolean))).sort();
+  const stations = Array.from(new Set(standings.map(s => s.station).filter(Boolean))).sort();
   
   const filterOptions = filterType === 'brigade' ? brigades : 
                         filterType === 'rsid' ? rsids : stations;
   
   const handleFilterTypeChange = (type: 'brigade' | 'rsid' | 'station') => {
     setFilterType(type);
-    setFilterValue('all');
+    // If there are available options for the selected type, pre-select the first
+    // option so the UI responds immediately; otherwise keep 'all'.
+    const opts = type === 'brigade' ? brigades : type === 'rsid' ? rsids : stations;
+    setFilterValue(opts && opts.length > 0 ? opts[0] : 'all');
   };
   
   // Prepare export data
