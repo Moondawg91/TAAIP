@@ -4515,6 +4515,10 @@ app.include_router(integrations_router, prefix="/api/v2/integrations", tags=["Ar
 from backend.routers.budget import router as budget_router
 app.include_router(budget_router, prefix="/api/v2", tags=["Budget Management"])
 
+# --- Project Management (MVP extension) ---
+from backend.routers.project_mgmt import router as project_mgmt_router
+app.include_router(project_mgmt_router, prefix="/api/v2/projects_pm", tags=["Project Management"])
+
 # --- Data Import (Bulk CSV/Excel Upload) ---
 from backend.routers.data_upload import router as data_upload_router
 app.include_router(data_upload_router, prefix="/api/v2", tags=["Data Upload"])
