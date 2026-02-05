@@ -30,7 +30,7 @@ def run():
         sys.exit(2)
     pid = r.json().get('project_id')
     # add participant
-    r = s.post(f'{BASE}/api/v2/projects_pm/projects/{pid}/participants', data={'person_id':'p1','role':'recruiter','unit':'1-101','attendance':1})
+    r = s.post(f'{BASE}/api/v2/projects_pm/projects/{pid}/participants', json={'person_id':'p1','role':'recruiter','unit':'1-101','attendance':1})
     print('add participant:', r.status_code, r.text)
     # add budget transaction
     r = s.post(f'{BASE}/api/v2/projects_pm/projects/{pid}/budget/transaction', params={'type':'event','description':'integration','amount':500,'category':'events'})

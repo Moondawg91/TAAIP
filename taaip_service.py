@@ -3252,6 +3252,155 @@ def list_emm_mappings(project_id: str):
     return {"status": "ok", "count": len(out), "mappings": out}
 
 
+# --- Compatibility routes for older /api/v2/projects_pm/* paths used by integration tests ---
+@app.post("/api/v2/projects_pm/init_migrations")
+def projects_pm_init_migrations():
+    """Create/ensure project management-related tables and columns exist."""
+    conn = get_db_conn()
+    cur = conn.cursor()
+    # Ensure participants table
+    cur.execute(
+        """
+        CREATE TABLE IF NOT EXISTS participants (
+            participant_id TEXT PRIMARY KEY,
+            project_id TEXT,
+            person_id TEXT,
+            role TEXT,
+            unit TEXT,
+            attendance INTEGER,
+            created_at TEXT
+        )
+        """
+    )
+    # Ensure budget/roi/emm tables
+    cur.execute(
+        """
+        CREATE TABLE IF NOT EXISTS budget_transactions (
+            txn_id TEXT PRIMARY KEY,
+            project_id TEXT,
+            amount REAL,
+            type TEXT,
+            description TEXT,
+            created_at TEXT
+        )
+        """
+    )
+    cur.execute(
+        """
+        CREATE TABLE IF NOT EXISTS roi_records (
+            roi_id TEXT PRIMARY KEY,
+            project_id TEXT,
+            benefit_est REAL,
+            total_spent REAL,
+            roi REAL,
+            computed_at TEXT
+        )
+        """
+    )
+    cur.execute(
+        """
+        CREATE TABLE IF NOT EXISTS emm_mappings (
+            mapping_id TEXT PRIMARY KEY,
+            project_id TEXT,
+            source_id TEXT,
+            payload TEXT,
+            created_at TEXT
+        )
+        """
+    )
+
+    # Add optional columns to projects if missing
+    try:
+        cur.execute("PRAGMA table_info(projects)")
+        existing = [r[1] for r in cur.fetchall()]
+        if 'funding_amount' not in existing:
+            cur.execute("ALTER TABLE projects ADD COLUMN funding_amount REAL DEFAULT 0")
+        if 'spent_amount' not in existing:
+            cur.execute("ALTER TABLE projects ADD COLUMN spent_amount REAL DEFAULT 0")
+        if 'metadata' not in existing:
+            cur.execute("ALTER TABLE projects ADD COLUMN metadata TEXT DEFAULT NULL")
+    except Exception:
+        pass
+
+    conn.commit()
+    conn.close()
+    return {"status": "ok", "message": "migrations applied"}
+
+
+@app.post("/api/v2/projects_pm/projects")
+def projects_pm_create_project(request: Request):
+    body = request.json() if hasattr(request, 'json') else {}
+    try:
+        data = request.json()
+    except Exception:
+        data = {}
+    # reuse existing create_project
+    try:
+        pc = ProjectCreate(**data)
+        return create_project(pc)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.post("/api/v2/projects_pm/projects/{project_id}/participants")
+def projects_pm_add_participant(project_id: str, request: Request):
+    """Compatibility endpoint: accept JSON body to add participant."""
+    import uuid
+    try:
+        payload = request.json()
+    except Exception:
+        # fallback to form/query
+        payload = {k: v for k, v in request.query_params.items()} if request.query_params else {}
+
+    person_id = payload.get('person_id') or payload.get('person')
+    role = payload.get('role')
+    unit = payload.get('unit')
+    attendance = int(payload.get('attendance', 0) or 0)
+
+    if not person_id:
+        raise HTTPException(status_code=422, detail=[{"loc":["body","person_id"],"msg":"Field required","type":"value_error.missing"}])
+
+    pid = f"ptc_{uuid.uuid4().hex[:12]}"
+    now = datetime.now().isoformat()
+    conn = get_db_conn()
+    cur = conn.cursor()
+    cur.execute(
+        "INSERT INTO participants (participant_id, project_id, person_id, role, unit, attendance, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        (pid, project_id, person_id, role, unit, attendance, now)
+    )
+    conn.commit()
+    conn.close()
+    return {"status": "ok", "participant_id": pid}
+
+
+@app.post("/api/v2/projects_pm/projects/{project_id}/budget/transaction")
+def projects_pm_budget_transaction(project_id: str, request: Request):
+    try:
+        txn = request.json()
+    except Exception:
+        txn = {k: v for k, v in request.query_params.items()} if request.query_params else {}
+    return add_project_budget_transaction(project_id, txn)
+
+
+@app.post("/api/v2/projects_pm/projects/{project_id}/emm/import")
+def projects_pm_emm_import(project_id: str, request: Request):
+    try:
+        payload = request.json()
+    except Exception:
+        payload = {k: v for k, v in request.query_params.items()} if request.query_params else {}
+    return import_emm_event(project_id, payload)
+
+
+@app.get("/api/v2/projects_pm/projects/{project_id}/emm")
+def projects_pm_emm_list(project_id: str):
+    return list_emm_mappings(project_id)
+
+
+@app.get("/api/v2/projects_pm/projects/{project_id}")
+def projects_pm_get_project(project_id: str):
+    return get_project_detail(project_id)
+
+
 @app.get("/api/v2/projects/dashboard/summary")
 def get_project_dashboard_summary():
     """Get project management dashboard summary with KPIs."""
