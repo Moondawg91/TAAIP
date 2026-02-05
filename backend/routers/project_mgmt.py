@@ -16,6 +16,7 @@ import uuid
 import asyncio
 import json
 from fastapi.responses import StreamingResponse
+from fastapi import WebSocket, WebSocketDisconnect
 
 router = APIRouter()
 
@@ -200,21 +201,58 @@ def add_budget_transaction(project_id: str, type: str, description: str, amount:
     crow = cursor.fetchone()
     cost_total = crow['cost_total'] if crow and crow['cost_total'] is not None else 0.0
 
-    # fetch estimated benefit from project
-    cursor.execute('SELECT estimated_benefit FROM projects_pm WHERE id = ?', (project_id,))
+    # fetch estimated benefit from project and participant-driven benefit
+    cursor.execute('SELECT estimated_benefit, metadata FROM projects_pm WHERE id = ?', (project_id,))
     prow = cursor.fetchone()
-    benefit_est = prow['estimated_benefit'] if prow and prow['estimated_benefit'] is not None else 0.0
+    benefit_est = 0.0
+    if prow:
+        benefit_est = prow['estimated_benefit'] if prow['estimated_benefit'] is not None else 0.0
+        # try to extract additional benefit factors from metadata (stored as str)
+        try:
+            meta = prow['metadata']
+            if meta:
+                # metadata stored as str(dict) in MVP; attempt json.loads fallback
+                try:
+                    meta_obj = json.loads(meta)
+                except Exception:
+                    # attempt eval as fallback (not ideal) — safe here in controlled env
+                    try:
+                        meta_obj = eval(meta)
+                    except Exception:
+                        meta_obj = {}
+                # support a 'benefit_per_participant' multiplier
+                benefit_per_participant = float(meta_obj.get('benefit_per_participant', 0)) if isinstance(meta_obj, dict) and meta_obj.get('benefit_per_participant') else 0
+            else:
+                benefit_per_participant = 0
+        except Exception:
+            benefit_per_participant = 0
+    else:
+        benefit_per_participant = 0
+
+    # include participants-driven benefit estimate
+    cursor.execute('SELECT COUNT(*) as cnt FROM participants WHERE project_id = ?', (project_id,))
+    part_row = cursor.fetchone()
+    participants_count = part_row['cnt'] if part_row and part_row['cnt'] is not None else 0
+    participants_benefit = participants_count * (benefit_per_participant or 0)
+
+    total_benefit_est = float(benefit_est or 0.0) + float(participants_benefit or 0.0)
 
     roi_value = None
+    roi_pct = None
+    btr = None
     if cost_total and cost_total > 0:
         try:
-            roi_value = (benefit_est - cost_total) / cost_total
+            roi_value = (total_benefit_est - cost_total) / cost_total
+            roi_pct = roi_value * 100 if roi_value is not None else None
+            btr = (total_benefit_est / cost_total) if cost_total > 0 else None
         except Exception:
             roi_value = None
+            roi_pct = None
+            btr = None
 
     rid = str(uuid.uuid4())
     calculated_at = datetime.utcnow().isoformat()
-    cursor.execute('INSERT INTO roi_records (id, project_id, calculated_at, cost_total, benefit_est, roi) VALUES (?, ?, ?, ?, ?, ?)', (rid, project_id, calculated_at, cost_total, benefit_est, roi_value))
+    cursor.execute('INSERT INTO roi_records (id, project_id, calculated_at, cost_total, benefit_est, roi) VALUES (?, ?, ?, ?, ?, ?)', (rid, project_id, calculated_at, cost_total, total_benefit_est, roi_value))
     conn.commit()
     conn.close()
 
@@ -228,7 +266,10 @@ def add_budget_transaction(project_id: str, type: str, description: str, amount:
             'amount': amount,
             'category': category,
             'calculated_at': calculated_at,
-            'roi': roi_value
+            'roi': roi_value,
+            'roi_pct': roi_pct,
+            'benefit_est': total_benefit_est,
+            'benefit_to_cost_ratio': btr
         }
         # schedule publish in event loop
         try:
@@ -241,6 +282,7 @@ def add_budget_transaction(project_id: str, type: str, description: str, amount:
         pass
 
     return {'status': 'ok', 'transaction_id': tid, 'roi': roi_value}
+
 
 
 @router.post('/projects/{project_id}/lessons')
@@ -296,6 +338,43 @@ def list_aars(project_id: str, limit: int = 100):
     rows = [dict(r) for r in cur.fetchall()]
     conn.close()
     return {'status': 'ok', 'aars': rows}
+
+
+@router.post('/projects/{project_id}/emm/import')
+def import_emm_event(project_id: str, emm_event_id: str, payload: Dict[str, Any]):
+    """Stub endpoint to import/match an EMM event to a project.
+
+    Stores the raw payload and returns a mapping ID. Integration with real EMM
+    systems will replace this stub.
+    """
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute('SELECT 1 FROM projects_pm WHERE id = ?', (project_id,))
+    if not cur.fetchone():
+        conn.close()
+        raise HTTPException(status_code=404, detail='project not found')
+
+    mid = str(uuid.uuid4())
+    now = datetime.utcnow().isoformat()
+    cur.execute('INSERT INTO emm_mappings (id, project_id, emm_event_id, raw_payload) VALUES (?, ?, ?, ?)', (mid, project_id, emm_event_id, json.dumps(payload)))
+    conn.commit()
+    conn.close()
+    return {'status': 'ok', 'mapping_id': mid}
+
+
+@router.get('/projects/{project_id}/emm')
+def list_emm_mappings(project_id: str):
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute('SELECT id, emm_event_id, raw_payload FROM emm_mappings WHERE project_id = ? ORDER BY id DESC', (project_id,))
+    rows = [dict(r) for r in cur.fetchall()]
+    for r in rows:
+        try:
+            r['raw_payload'] = json.loads(r['raw_payload'])
+        except Exception:
+            pass
+    conn.close()
+    return {'status': 'ok', 'mappings': rows}
 
 
 # --- Scope endpoints ---
@@ -387,4 +466,26 @@ async def budget_stream():
                 pass
 
     return StreamingResponse(event_generator(), media_type='text/event-stream')
+
+
+@router.websocket('/ws/budget')
+async def websocket_budget(websocket: WebSocket):
+    await websocket.accept()
+    q: asyncio.Queue = asyncio.Queue()
+    _budget_subscribers.append(q)
+    try:
+        while True:
+            try:
+                msg = await q.get()
+                await websocket.send_text(json.dumps(msg))
+            except WebSocketDisconnect:
+                break
+            except Exception:
+                # if no messages, sleep briefly to yield
+                await asyncio.sleep(0.1)
+    finally:
+        try:
+            _budget_subscribers.remove(q)
+        except Exception:
+            pass
 
