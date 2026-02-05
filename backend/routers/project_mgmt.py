@@ -21,8 +21,8 @@ router = APIRouter()
 
 
 def get_db():
-    # Keep same DB path pattern as existing routers
-    db_path = '/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3'
+    # Resolve DB path: prefer environment `DB_FILE`, then common container paths, then local repo path
+    db_path = os.environ.get('DB_FILE') or '/app/recruiting.db' or '/root/TAAIP/data/recruiting.db' or '/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3'
     conn = sqlite3.connect(db_path, check_same_thread=False)
     conn.row_factory = sqlite3.Row
     return conn
