@@ -13,7 +13,7 @@ const AnalyticsDashboard = lazy(() => import('./components/AnalyticsDashboard').
 const MarketPotentialDashboard = lazy(() => import('./components/MarketPotentialDashboard'));
 const MissionAnalysisDashboard = lazy(() => import('./components/MissionAnalysisDashboard'));
 const TargetingDecisionBoard = lazy(() => import('./components/TargetingDecisionBoard').then(m => ({ default: m.TargetingDecisionBoard })));
-const ProjectManagement = lazy(() => import('./components/ProjectManagement').then(m => ({ default: m.ProjectManagement })) as any);
+// ProjectManagement removed per request
 const LeadStatusReport = lazy(() => import('./components/LeadStatusReport').then(m => ({ default: m.LeadStatusReport })));
 const EventPerformanceDashboard = lazy(() => import('./components/EventPerformanceDashboard').then(m => ({ default: m.EventPerformanceDashboard })));
 const G2ZonePerformanceDashboard = lazy(() => import('./components/G2ZonePerformanceDashboard').then(m => ({ default: m.G2ZonePerformanceDashboard })));
@@ -29,6 +29,7 @@ const AssetRecommendationEngine = lazy(() => import('./components/AssetRecommend
 const HistoricalDataArchive = lazy(() => import('./components/HistoricalDataArchive'));
 const PowerBIBundle = lazy(() => import('./components/PowerBIEmbed').then(m => ({ default: m.PowerBIBundle })));
 const UserManagement = lazy(() => import('./components/UserManagement'));
+const AdminConsole = lazy(() => import('./components/AdminConsole'));
 const MarketingEngagementDashboard = lazy(() => import('./components/MarketingEngagementDashboard'));
 const UniversalDataUpload = lazy(() => import('./components/UniversalDataUpload'));
 
@@ -36,7 +37,7 @@ const UniversalDataUpload = lazy(() => import('./components/UniversalDataUpload'
 // Optimized for 420T Talent Acquisition Technicians
 
 const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'home' | '420t' | 'funnel' | 'analytics' | 'market' | 'mission' | 'targeting' | 'projects' | 'leads' | 'events' | 'g2zones' | 'calendar' | 'sharepoint' | 'budget' | 'twg' | 'fusion' | 'segmentation' | 'methodology' | 'universal-upload' | 'quarter-assessment' | 'asset-recommend' | 'historical' | 'user-management' | 'powerbi' | 'marketing-engagement'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | '420t' | 'funnel' | 'analytics' | 'market' | 'mission' | 'targeting' | 'leads' | 'events' | 'g2zones' | 'calendar' | 'sharepoint' | 'budget' | 'twg' | 'fusion' | 'segmentation' | 'methodology' | 'universal-upload' | 'quarter-assessment' | 'asset-recommend' | 'historical' | 'user-management' | 'powerbi' | 'marketing-engagement' | 'admin-console'>('home');
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const menuCategories = [
@@ -55,16 +56,15 @@ const App: React.FC = () => {
         { id: 'segmentation', label: 'Market Segmentation', icon: <Target className="w-5 h-5" />, category: '420T Core' },
       ]
     },
-    {
-      name: 'Mission Planning',
-      items: [
+        {
+          name: 'Mission Planning',
+          items: [
         { id: 'fusion', label: 'Fusion Team Operations', icon: <Users className="w-5 h-5" />, category: 'Mission Planning' },
         { id: 'mission', label: 'Mission Analysis (M-IPOE)', icon: <Target className="w-5 h-5" />, category: 'Mission Planning' },
         { id: 'methodology', label: 'USAREC Targeting Methodology', icon: <Clipboard className="w-5 h-5" />, category: 'Mission Planning' },
         { id: 'asset-recommend', label: 'Asset Recommendations', icon: <Target className="w-5 h-5" />, category: 'Mission Planning' },
         { id: 'targeting', label: 'Targeting Board', icon: <Clipboard className="w-5 h-5" />, category: 'Mission Planning' },
         { id: 'twg', label: 'Targeting Working Group', icon: <Users className="w-5 h-5" />, category: 'Mission Planning' },
-        { id: 'projects', label: 'Project Management', icon: <Briefcase className="w-5 h-5" />, category: 'Mission Planning' },
       ]
     },
     {
@@ -93,6 +93,7 @@ const App: React.FC = () => {
       name: 'Administration',
       items: [
         { id: 'user-management', label: 'User Management', icon: <Users className="w-5 h-5" />, category: 'Administration' },
+        { id: 'admin-console', label: 'Admin Console', icon: <FileCheck className="w-5 h-5" />, category: 'Administration' },
       ]
     }
   ];
@@ -193,7 +194,6 @@ const App: React.FC = () => {
            activeTab === 'market' ? <MarketPotentialDashboard /> :
            activeTab === 'mission' ? <MissionAnalysisDashboard /> :
            activeTab === 'targeting' ? <TargetingDecisionBoard /> :
-           activeTab === 'projects' ? <ProjectManagement /> :
            activeTab === 'quarter-assessment' ? <QuarterAssessment /> :
            activeTab === 'asset-recommend' ? <AssetRecommendationEngine /> :
            activeTab === 'historical' ? <HistoricalDataArchive /> :
@@ -218,6 +218,7 @@ const App: React.FC = () => {
              ]} />
            ) :
            activeTab === 'marketing-engagement' ? <MarketingEngagementDashboard /> :
+           activeTab === 'admin-console' ? <AdminConsole /> :
            activeTab === 'user-management' ? <UserManagement currentUser={{
              user_id: 'current-user',
              username: 'admin',

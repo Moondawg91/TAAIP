@@ -3,25 +3,63 @@ Enhanced Data Upload API Router
 Handles bulk CSV/Excel file uploads for all recruiting pipeline data types
 """
 
-from fastapi import APIRouter, UploadFile, File, HTTPException
+from fastapi import APIRouter, UploadFile, File, HTTPException, Form
 from fastapi.responses import JSONResponse
 from typing import List, Dict, Any
 import pandas as pd
 import io
 import sqlite3
+import os
+import shutil
+import json
 from datetime import datetime
 
 router = APIRouter()
 
 # Database connection
 def get_db():
-    conn = sqlite3.connect("data/recruiting.db")
+    # Resolve DB path from environment variables used by docker-compose / deployment
+    db_path = os.environ.get("DB_PATH") or os.environ.get("DATABASE_URL") or "data/recruiting.db"
+    # If DATABASE_URL is a sqlite URI like sqlite:///./data/recruiting.db, extract path
+    if isinstance(db_path, str) and db_path.startswith("sqlite"):
+        parts = db_path.split(":///")
+        if len(parts) == 2:
+            db_path = parts[1]
+    conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
     return conn
 
 
+def resolve_db_path() -> str:
+    """Return the resolved filesystem path to the SQLite DB used by this service."""
+    db_path = os.environ.get("DB_PATH") or os.environ.get("DATABASE_URL") or "data/recruiting.db"
+    if isinstance(db_path, str) and db_path.startswith("sqlite"):
+        parts = db_path.split(":///")
+        if len(parts) == 2:
+            db_path = parts[1]
+    # If relative, make absolute relative to project root
+    if not os.path.isabs(db_path):
+        repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+        db_path = os.path.normpath(os.path.join(repo_root, db_path))
+    return db_path
+
+
+def backup_db_internal() -> str:
+    """Create a backup copy of the current DB and return the backup path."""
+    src = resolve_db_path()
+    if not os.path.exists(src):
+        raise FileNotFoundError(src)
+    repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+    backups_dir = os.path.join(repo_root, "data", "backups")
+    os.makedirs(backups_dir, exist_ok=True)
+    ts = datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
+    dest = os.path.join(backups_dir, f"recruiting.db.backup.{ts}")
+    shutil.copy2(src, dest)
+    return dest
+
+
 @router.post("/upload/leads")
-async def upload_leads(file: UploadFile = File(...)) -> Dict[str, Any]:
+async def upload_leads(file: UploadFile = File(...), replace: bool = False, mapping: str = Form(None)) -> Dict[str, Any]:
     """
     Import leads from CSV/Excel file
     
@@ -50,6 +88,14 @@ async def upload_leads(file: UploadFile = File(...)) -> Dict[str, Any]:
         else:
             raise HTTPException(status_code=400, detail="Only CSV and Excel files are supported")
         
+        # apply mapping if provided (mapping should be JSON: {"csvColumnName": "target_field_name", ...})
+        if mapping:
+            try:
+                m = json.loads(mapping)
+                df = df.rename(columns=m)
+            except Exception:
+                raise HTTPException(status_code=400, detail="Invalid mapping JSON")
+
         required_cols = ['first_name', 'last_name', 'date_of_birth', 'education_code', 'phone_number', 'lead_source', 'prid']
         missing_cols = [col for col in required_cols if col not in df.columns]
         if missing_cols:
@@ -60,6 +106,13 @@ async def upload_leads(file: UploadFile = File(...)) -> Dict[str, Any]:
         
         db = get_db()
         cursor = db.cursor()
+        if replace:
+            # create a backup before destructive replace
+            try:
+                backup_db_internal()
+            except Exception as e:
+                raise HTTPException(status_code=500, detail=f"Pre-replace backup failed: {str(e)}")
+            cursor.execute("DELETE FROM leads")
         
         imported_count = 0
         errors = []
@@ -108,13 +161,100 @@ async def upload_leads(file: UploadFile = File(...)) -> Dict[str, Any]:
             "errors": errors if errors else None,
             "message": f"Successfully imported {imported_count} of {len(df)} leads"
         }
+
+
+        # Admin backup management and mapping persistence
+        @router.get("/upload/backups")
+        async def list_backups() -> Dict[str, Any]:
+            """List available DB backups (filename, path, modified)."""
+            try:
+                repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+                backups_dir = os.path.join(repo_root, "data", "backups")
+                if not os.path.exists(backups_dir):
+                    return {"status": "ok", "backups": []}
+
+                entries = []
+                for fname in sorted(os.listdir(backups_dir), reverse=True):
+                    path = os.path.join(backups_dir, fname)
+                    if os.path.isfile(path):
+                        mtime = os.path.getmtime(path)
+                        entries.append({
+                            "filename": fname,
+                            "path": path,
+                            "modified": datetime.utcfromtimestamp(mtime).isoformat()
+                        })
+
+                return {"status": "ok", "backups": entries}
+            except Exception as e:
+                raise HTTPException(status_code=500, detail=f"Failed to list backups: {str(e)}")
+
+
+        @router.post("/upload/restore")
+        async def restore_backup(backup_filename: str = Form(...)) -> Dict[str, Any]:
+            """Restore the active DB from a backup file. Creates a pre-restore backup first."""
+            try:
+                repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+                backups_dir = os.path.join(repo_root, "data", "backups")
+                src = os.path.join(backups_dir, backup_filename)
+                if not os.path.exists(src):
+                    raise HTTPException(status_code=404, detail=f"Backup not found: {backup_filename}")
+
+                # create a pre-restore backup
+                try:
+                    pre_restore = backup_db_internal()
+                except Exception:
+                    pre_restore = None
+
+                dest = resolve_db_path()
+                shutil.copy2(src, dest)
+
+                return {"status": "ok", "restored_from": src, "pre_restore_backup": pre_restore}
+            except HTTPException:
+                raise
+            except Exception as e:
+                raise HTTPException(status_code=500, detail=f"Restore failed: {str(e)}")
+
+
+        @router.post("/upload/save_mapping")
+        async def save_mapping(data_type: str = Form(...), mapping: str = Form(...)) -> Dict[str, Any]:
+            """Persist a JSON mapping for a given upload `data_type` (e.g. 'leads')."""
+            try:
+                # validate mapping is JSON
+                jm = json.loads(mapping)
+
+                repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+                mappings_dir = os.path.join(repo_root, "data", "mappings")
+                os.makedirs(mappings_dir, exist_ok=True)
+                path = os.path.join(mappings_dir, f"{data_type}.json")
+                with open(path, "w") as f:
+                    json.dump(jm, f, indent=2)
+                return {"status": "ok", "path": path}
+            except Exception as e:
+                raise HTTPException(status_code=400, detail=f"Invalid mapping or save failed: {str(e)}")
+
+
+        @router.get("/upload/mappings/{data_type}")
+        async def get_mapping(data_type: str) -> Dict[str, Any]:
+            """Retrieve a saved mapping for a given upload `data_type`, or null if not present."""
+            try:
+                repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+                mappings_dir = os.path.join(repo_root, "data", "mappings")
+                path = os.path.join(mappings_dir, f"{data_type}.json")
+                if not os.path.exists(path):
+                    return {"status": "ok", "mapping": None}
+                with open(path, "r") as f:
+                    jm = json.load(f)
+                return {"status": "ok", "mapping": jm}
+            except Exception as e:
+                raise HTTPException(status_code=500, detail=f"Failed to read mapping: {str(e)}")
+
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Import failed: {str(e)}")
 
 
 @router.post("/upload/prospects")
-async def upload_prospects(file: UploadFile = File(...)) -> Dict[str, Any]:
+async def upload_prospects(file: UploadFile = File(...), replace: bool = False, mapping: str = Form(None)) -> Dict[str, Any]:
     """
     Import prospects from CSV/Excel file
     
@@ -144,6 +284,13 @@ async def upload_prospects(file: UploadFile = File(...)) -> Dict[str, Any]:
         else:
             raise HTTPException(status_code=400, detail="Only CSV and Excel files are supported")
         
+        if mapping:
+            try:
+                m = json.loads(mapping)
+                df = df.rename(columns=m)
+            except Exception:
+                raise HTTPException(status_code=400, detail="Invalid mapping JSON")
+
         required_cols = ['first_name', 'last_name', 'date_of_birth', 'education_code', 'phone_number', 'lead_source', 'prid', 'prospect_status']
         missing_cols = [col for col in required_cols if col not in df.columns]
         if missing_cols:
@@ -154,6 +301,12 @@ async def upload_prospects(file: UploadFile = File(...)) -> Dict[str, Any]:
         
         db = get_db()
         cursor = db.cursor()
+        if replace:
+            try:
+                backup_db_internal()
+            except Exception as e:
+                raise HTTPException(status_code=500, detail=f"Pre-replace backup failed: {str(e)}")
+            cursor.execute("DELETE FROM prospects")
         
         imported_count = 0
         errors = []
@@ -212,7 +365,7 @@ async def upload_prospects(file: UploadFile = File(...)) -> Dict[str, Any]:
 
 
 @router.post("/upload/applicants")
-async def upload_applicants(file: UploadFile = File(...)) -> Dict[str, Any]:
+async def upload_applicants(file: UploadFile = File(...), replace: bool = False, mapping: str = Form(None)) -> Dict[str, Any]:
     """
     Import applicants from CSV/Excel file
     
@@ -238,6 +391,13 @@ async def upload_applicants(file: UploadFile = File(...)) -> Dict[str, Any]:
         else:
             raise HTTPException(status_code=400, detail="Only CSV and Excel files are supported")
         
+        if mapping:
+            try:
+                m = json.loads(mapping)
+                df = df.rename(columns=m)
+            except Exception:
+                raise HTTPException(status_code=400, detail="Invalid mapping JSON")
+
         required_cols = ['first_name', 'last_name', 'date_of_birth', 'education_code', 'phone_number', 'lead_source', 'prid', 'application_date', 'applicant_status']
         missing_cols = [col for col in required_cols if col not in df.columns]
         if missing_cols:
@@ -248,6 +408,12 @@ async def upload_applicants(file: UploadFile = File(...)) -> Dict[str, Any]:
         
         db = get_db()
         cursor = db.cursor()
+        if replace:
+            try:
+                backup_db_internal()
+            except Exception as e:
+                raise HTTPException(status_code=500, detail=f"Pre-replace backup failed: {str(e)}")
+            cursor.execute("DELETE FROM applicants")
         
         imported_count = 0
         errors = []
@@ -307,7 +473,7 @@ async def upload_applicants(file: UploadFile = File(...)) -> Dict[str, Any]:
 
 
 @router.post("/upload/future_soldiers")
-async def upload_future_soldiers(file: UploadFile = File(...)) -> Dict[str, Any]:
+async def upload_future_soldiers(file: UploadFile = File(...), replace: bool = False, mapping: str = Form(None)) -> Dict[str, Any]:
     """
     Import future soldiers from CSV/Excel file
     
@@ -334,6 +500,13 @@ async def upload_future_soldiers(file: UploadFile = File(...)) -> Dict[str, Any]
         else:
             raise HTTPException(status_code=400, detail="Only CSV and Excel files are supported")
         
+        if mapping:
+            try:
+                m = json.loads(mapping)
+                df = df.rename(columns=m)
+            except Exception:
+                raise HTTPException(status_code=400, detail="Invalid mapping JSON")
+
         required_cols = ['first_name', 'last_name', 'date_of_birth', 'education_code', 'phone_number', 'lead_source', 'prid', 'contract_date', 'ship_date', 'mos_assigned', 'future_soldier_status']
         missing_cols = [col for col in required_cols if col not in df.columns]
         if missing_cols:
@@ -344,6 +517,12 @@ async def upload_future_soldiers(file: UploadFile = File(...)) -> Dict[str, Any]
         
         db = get_db()
         cursor = db.cursor()
+        if replace:
+            try:
+                backup_db_internal()
+            except Exception as e:
+                raise HTTPException(status_code=500, detail=f"Pre-replace backup failed: {str(e)}")
+            cursor.execute("DELETE FROM future_soldiers")
         
         imported_count = 0
         errors = []
@@ -405,7 +584,7 @@ async def upload_future_soldiers(file: UploadFile = File(...)) -> Dict[str, Any]
 
 
 @router.post("/upload/events")
-async def upload_events(file: UploadFile = File(...)) -> Dict[str, Any]:
+async def upload_events(file: UploadFile = File(...), replace: bool = False, mapping: str = Form(None)) -> Dict[str, Any]:
     """
     Import events from CSV/Excel file
     
@@ -425,6 +604,13 @@ async def upload_events(file: UploadFile = File(...)) -> Dict[str, Any]:
         else:
             raise HTTPException(status_code=400, detail="Only CSV and Excel files are supported")
         
+        if mapping:
+            try:
+                m = json.loads(mapping)
+                df = df.rename(columns=m)
+            except Exception:
+                raise HTTPException(status_code=400, detail="Invalid mapping JSON")
+
         required_cols = ['name', 'location', 'start_date', 'end_date']
         missing_cols = [col for col in required_cols if col not in df.columns]
         if missing_cols:
@@ -435,6 +621,12 @@ async def upload_events(file: UploadFile = File(...)) -> Dict[str, Any]:
         
         db = get_db()
         cursor = db.cursor()
+        if replace:
+            try:
+                backup_db_internal()
+            except Exception as e:
+                raise HTTPException(status_code=500, detail=f"Pre-replace backup failed: {str(e)}")
+            cursor.execute("DELETE FROM events")
         
         imported_count = 0
         errors = []
@@ -481,7 +673,7 @@ async def upload_events(file: UploadFile = File(...)) -> Dict[str, Any]:
 
 
 @router.post("/upload/projects")
-async def upload_projects(file: UploadFile = File(...)) -> Dict[str, Any]:
+async def upload_projects(file: UploadFile = File(...), replace: bool = False, mapping: str = Form(None)) -> Dict[str, Any]:
     """
     Import projects from CSV/Excel file
     
@@ -501,6 +693,13 @@ async def upload_projects(file: UploadFile = File(...)) -> Dict[str, Any]:
         else:
             raise HTTPException(status_code=400, detail="Only CSV and Excel files are supported")
         
+        if mapping:
+            try:
+                m = json.loads(mapping)
+                df = df.rename(columns=m)
+            except Exception:
+                raise HTTPException(status_code=400, detail="Invalid mapping JSON")
+
         required_cols = ['name', 'owner_id', 'start_date', 'target_date', 'objectives']
         missing_cols = [col for col in required_cols if col not in df.columns]
         if missing_cols:
@@ -511,6 +710,12 @@ async def upload_projects(file: UploadFile = File(...)) -> Dict[str, Any]:
         
         db = get_db()
         cursor = db.cursor()
+        if replace:
+            try:
+                backup_db_internal()
+            except Exception as e:
+                raise HTTPException(status_code=500, detail=f"Pre-replace backup failed: {str(e)}")
+            cursor.execute("DELETE FROM projects")
         
         imported_count = 0
         errors = []
@@ -522,8 +727,8 @@ async def upload_projects(file: UploadFile = File(...)) -> Dict[str, Any]:
                 cursor.execute("""
                     INSERT INTO projects (
                         project_id, name, event_id, start_date, target_date,
-                        owner_id, status, objectives, funding_amount, created_at
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        owner_id, status, objectives, created_at
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """, (
                     project_id,
                     row['name'],
@@ -533,7 +738,6 @@ async def upload_projects(file: UploadFile = File(...)) -> Dict[str, Any]:
                     row['owner_id'],
                     row.get('status', 'planning'),
                     row['objectives'],
-                    row.get('funding_amount', 0),
                     datetime.now().isoformat()
                 ))
                 imported_count += 1
@@ -556,7 +760,7 @@ async def upload_projects(file: UploadFile = File(...)) -> Dict[str, Any]:
 
 
 @router.post("/upload/marketing_activities")
-async def upload_marketing_activities(file: UploadFile = File(...)) -> Dict[str, Any]:
+async def upload_marketing_activities(file: UploadFile = File(...), replace: bool = False, mapping: str = Form(None)) -> Dict[str, Any]:
     """
     Import marketing activities from CSV/Excel file
     
@@ -576,6 +780,13 @@ async def upload_marketing_activities(file: UploadFile = File(...)) -> Dict[str,
         else:
             raise HTTPException(status_code=400, detail="Only CSV and Excel files are supported")
         
+        if mapping:
+            try:
+                m = json.loads(mapping)
+                df = df.rename(columns=m)
+            except Exception:
+                raise HTTPException(status_code=400, detail="Invalid mapping JSON")
+
         required_cols = ['activity_name', 'campaign_type', 'start_date', 'end_date', 'budget_allocated']
         missing_cols = [col for col in required_cols if col not in df.columns]
         if missing_cols:
@@ -586,6 +797,12 @@ async def upload_marketing_activities(file: UploadFile = File(...)) -> Dict[str,
         
         db = get_db()
         cursor = db.cursor()
+        if replace:
+            try:
+                backup_db_internal()
+            except Exception as e:
+                raise HTTPException(status_code=500, detail=f"Pre-replace backup failed: {str(e)}")
+            cursor.execute("DELETE FROM marketing_activities")
         
         imported_count = 0
         errors = []
@@ -634,7 +851,7 @@ async def upload_marketing_activities(file: UploadFile = File(...)) -> Dict[str,
 
 
 @router.post("/upload/budgets")
-async def upload_budgets(file: UploadFile = File(...)) -> Dict[str, Any]:
+async def upload_budgets(file: UploadFile = File(...), replace: bool = False, mapping: str = Form(None)) -> Dict[str, Any]:
     """
     Import budget records from CSV/Excel file
     
@@ -654,6 +871,13 @@ async def upload_budgets(file: UploadFile = File(...)) -> Dict[str, Any]:
         else:
             raise HTTPException(status_code=400, detail="Only CSV and Excel files are supported")
         
+        if mapping:
+            try:
+                m = json.loads(mapping)
+                df = df.rename(columns=m)
+            except Exception:
+                raise HTTPException(status_code=400, detail="Invalid mapping JSON")
+
         required_cols = ['campaign_name', 'allocated_amount', 'start_date', 'end_date']
         missing_cols = [col for col in required_cols if col not in df.columns]
         if missing_cols:
@@ -664,6 +888,12 @@ async def upload_budgets(file: UploadFile = File(...)) -> Dict[str, Any]:
         
         db = get_db()
         cursor = db.cursor()
+        if replace:
+            try:
+                backup_db_internal()
+            except Exception as e:
+                raise HTTPException(status_code=500, detail=f"Pre-replace backup failed: {str(e)}")
+            cursor.execute("DELETE FROM budgets")
         
         imported_count = 0
         errors = []
@@ -708,6 +938,56 @@ async def upload_budgets(file: UploadFile = File(...)) -> Dict[str, Any]:
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Import failed: {str(e)}")
+
+
+@router.post("/upload/preview")
+async def upload_preview(file: UploadFile = File(...)) -> Dict[str, Any]:
+    """Preview uploaded CSV/Excel: return columns and first 5 rows for schema inference/UI mapping."""
+    try:
+        content = await file.read()
+
+        if file.filename.endswith('.csv'):
+            df = pd.read_csv(io.BytesIO(content))
+        elif file.filename.endswith(('.xlsx', '.xls')):
+            df = pd.read_excel(io.BytesIO(content))
+        else:
+            raise HTTPException(status_code=400, detail="Only CSV and Excel files are supported")
+
+        # Normalize and sample
+        cols = [str(c) for c in df.columns]
+        sample = df.head(5).fillna('').to_dict(orient='records')
+
+        return {
+            "status": "ok",
+            "filename": file.filename,
+            "columns": cols,
+            "sample_rows": sample,
+            "row_count": len(df)
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Preview failed: {str(e)}")
+
+
+@router.post("/upload/backup")
+async def backup_db() -> Dict[str, Any]:
+    """Create a timestamped backup of the active DB file and return path."""
+    try:
+        src = resolve_db_path()
+        if not os.path.exists(src):
+            raise HTTPException(status_code=404, detail=f"DB file not found: {src}")
+
+        repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+        backups_dir = os.path.join(repo_root, "data", "backups")
+        os.makedirs(backups_dir, exist_ok=True)
+        ts = datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
+        dest = os.path.join(backups_dir, f"recruiting.db.backup.{ts}")
+        shutil.copy2(src, dest)
+
+        return {"status": "ok", "backup_path": dest}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Backup failed: {str(e)}")
 
 
 @router.get("/upload/templates")

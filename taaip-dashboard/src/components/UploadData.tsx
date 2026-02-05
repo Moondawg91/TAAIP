@@ -28,6 +28,10 @@ export const UploadData: React.FC = () => {
   const [result, setResult] = useState<UploadResult | null>(null);
   const [dragActive, setDragActive] = useState(false);
   const [showTemplateInfo, setShowTemplateInfo] = useState(true);
+  const [replaceExisting, setReplaceExisting] = useState(false);
+  const [showMappingModal, setShowMappingModal] = useState(false);
+  const [preview, setPreview] = useState<any>(null);
+  const [columnMapping, setColumnMapping] = useState<Record<string, string>>({});
 
   const currentDataType = DATA_TYPES.find(dt => dt.id === selectedType);
 
@@ -72,40 +76,108 @@ export const UploadData: React.FC = () => {
 
   const handleUpload = async () => {
     if (!file) return;
-
+    // Step 1: preview file to allow mapping
     setUploading(true);
     setResult(null);
-
     try {
       const formData = new FormData();
       formData.append('file', file);
 
-      const response = await fetch(`${API_BASE}/api/v2/upload/${selectedType}`, {
-        method: 'POST',
-        body: formData,
+      const previewResp = await fetch(`${API_BASE}/api/v2/upload/preview`, { method: 'POST', body: formData });
+      if (!previewResp.ok) {
+        const e = await previewResp.json();
+        throw new Error(e.detail || 'Preview failed');
+      }
+      const previewJson = await previewResp.json();
+      setPreview(previewJson);
+
+      // build default mapping: try to auto-match uploaded columns to known fields
+      const knownFields = [...fieldInfo.required, ...fieldInfo.optional];
+      const mappingInit: Record<string, string> = {};
+      (previewJson.columns || []).forEach((col: string) => {
+        const lower = col.toLowerCase();
+        const match = knownFields.find(f => f.toLowerCase() === lower || f.toLowerCase() === lower.replace(/\s|_/g, ''));
+        if (match) mappingInit[col] = match;
+        else mappingInit[col] = '';
       });
-
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.detail || 'Upload failed');
+      // try to load a previously saved mapping for this data type and merge
+      try {
+        const saved = await fetch(`${API_BASE}/api/v2/upload/mappings/${selectedType}`);
+        if (saved.ok) {
+          const sm = await saved.json();
+          if (sm && sm.mapping) {
+            // map saved target fields onto uploaded columns where possible
+            Object.keys(mappingInit).forEach(col => {
+              if (sm.mapping[col]) mappingInit[col] = sm.mapping[col];
+            });
+          }
+        }
+      } catch (e) {
+        // ignore mapping load errors
+        console.warn('Failed to load saved mapping', e);
       }
-
-      setResult(data);
-      if (data.status === 'success' && (!data.errors || data.errors.length === 0)) {
-        setFile(null);
-      }
+      setColumnMapping(mappingInit);
+      setShowMappingModal(true);
     } catch (error: any) {
-      setResult({
-        status: 'error',
-        imported: 0,
-        total_rows: 0,
-        message: error.message || 'Upload failed',
-        errors: [error.message]
-      });
+      setResult({ status: 'error', imported: 0, total_rows: 0, message: error.message || 'Preview failed', errors: [error.message] });
+      setUploading(false);
+    }
+  };
+
+  const confirmMappingAndUpload = async () => {
+    if (!file) return;
+    setUploading(true);
+    setShowMappingModal(false);
+    try {
+      // validate required fields are mapped
+      const requiredFields = fieldInfo.required || [];
+      const mappedTargets = Object.values(columnMapping || {}).filter(Boolean);
+      const missingRequired = requiredFields.filter((req: string) => !mappedTargets.includes(req));
+      if (missingRequired.length > 0) {
+        setResult({ status: 'error', imported: 0, total_rows: 0, message: `Missing mappings for required fields: ${missingRequired.join(', ')}`, errors: ["Please map all required fields before uploading."] });
+        setUploading(false);
+        setShowMappingModal(true);
+        return;
+      }
+
+      // persist mapping for future uploads (best-effort)
+      try {
+        const mform = new FormData();
+        mform.append('data_type', selectedType);
+        mform.append('mapping', JSON.stringify(columnMapping));
+        await fetch(`${API_BASE}/api/v2/upload/save_mapping`, { method: 'POST', body: mform });
+      } catch (e) {
+        console.warn('Failed to save mapping', e);
+      }
+      // if replace flag set, create server backup first
+      if (replaceExisting) {
+        const bak = await fetch(`${API_BASE}/api/v2/upload/backup`, { method: 'POST' });
+        if (!bak.ok) {
+          const be = await bak.json();
+          throw new Error(be.detail || 'Backup failed');
+        }
+      }
+
+      const formData = new FormData();
+      formData.append('file', file);
+      // send mapping as JSON string in form field 'mapping'
+      formData.append('mapping', JSON.stringify(columnMapping));
+
+      const uploadUrl = `${API_BASE}/api/v2/upload/${selectedType}${replaceExisting ? '?replace=true' : ''}`;
+      const resp = await fetch(uploadUrl, { method: 'POST', body: formData });
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.detail || 'Upload failed');
+      setResult(data);
+      if (data.status === 'success') setFile(null);
+    } catch (error: any) {
+      setResult({ status: 'error', imported: 0, total_rows: 0, message: error.message || 'Upload failed', errors: [error.message] });
     } finally {
       setUploading(false);
     }
+  };
+
+  const updateMapping = (col: string, val: string) => {
+    setColumnMapping(prev => ({ ...prev, [col]: val }));
   };
 
   const downloadTemplate = async () => {
@@ -273,6 +345,12 @@ export const UploadData: React.FC = () => {
         </div>
       )}
 
+      {/* Replace toggle (admin) */}
+      <div className="mt-4 mb-6 flex items-center gap-3">
+        <input id="replaceToggle" type="checkbox" checked={replaceExisting} onChange={(e) => setReplaceExisting(e.target.checked)} className="w-4 h-4" />
+        <label htmlFor="replaceToggle" className="text-sm text-gray-700">Replace existing data (admin only) — creates backup before replace</label>
+      </div>
+
       {/* Upload Area */}
       <div className="bg-white rounded-lg shadow-md p-8">
         <div
@@ -366,6 +444,47 @@ export const UploadData: React.FC = () => {
                   <p>Total rows processed: <strong>{result.total_rows}</strong></p>
                 </div>
               )}
+
+                {/* Mapping Modal */}
+                {showMappingModal && preview && (
+                  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg w-11/12 max-w-3xl p-6">
+                      <h3 className="text-lg font-bold mb-3">Preview & Field Mapping</h3>
+                      <p className="text-sm text-gray-600 mb-3">File: {preview.filename} — {preview.row_count} rows. Map uploaded columns to target fields below.</p>
+                      <div className="max-h-96 overflow-y-auto">
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr className="text-left">
+                              <th className="p-2 border-b">Uploaded Column</th>
+                              <th className="p-2 border-b">Sample</th>
+                              <th className="p-2 border-b">Map To Field</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {preview.columns.map((col: string, idx: number) => (
+                              <tr key={col} className="align-top">
+                                <td className="p-2 border-b align-top"><strong>{col}</strong></td>
+                                <td className="p-2 border-b align-top">{(preview.sample_rows && preview.sample_rows[0] && preview.sample_rows[0][col]) || ''}</td>
+                                <td className="p-2 border-b align-top">
+                                  <select value={columnMapping[col] || ''} onChange={(e) => updateMapping(col, e.target.value)} className="w-full px-2 py-1 border rounded">
+                                    <option value="">-- ignore --</option>
+                                    {[...fieldInfo.required, ...fieldInfo.optional].map(f => (
+                                      <option key={f} value={f}>{f}</option>
+                                    ))}
+                                  </select>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                      <div className="mt-4 flex justify-end gap-3">
+                        <button onClick={() => setShowMappingModal(false)} className="px-4 py-2 bg-gray-200 rounded">Cancel</button>
+                        <button onClick={confirmMappingAndUpload} className="px-4 py-2 bg-blue-600 text-white rounded">Confirm & Upload</button>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
               {result.errors && result.errors.length > 0 && (
                 <div className="mt-4">

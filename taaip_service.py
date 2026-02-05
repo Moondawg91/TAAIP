@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, Form
 from fastapi.responses import JSONResponse, StreamingResponse
 import io
 import csv
@@ -11,6 +11,7 @@ import random
 import os
 import json
 import sqlite3
+import shutil
 import secrets
 from datetime import datetime
 from typing import Optional, Dict, Any
@@ -1390,22 +1391,6 @@ def get_funnel_metrics():
                 GROUP BY to_stage
             """)
             stage_counts = {row[0]: row[1] for row in cur.fetchall()}
-    except Exception:
-        # Fallback for DBs that don't support tuple-comparison in WHERE
-        try:
-            cur.execute("""
-                SELECT to_stage, COUNT(DISTINCT lead_id) as count
-                FROM funnel_transitions
-                GROUP BY to_stage
-            """)
-            stage_counts = {row[0]: row[1] for row in cur.fetchall()}
-        except sqlite3.OperationalError:
-            cur.execute("""
-                SELECT to_stage, COUNT(DISTINCT prid) as count
-                FROM funnel_transitions
-                GROUP BY to_stage
-            """)
-            stage_counts = {row[0]: row[1] for row in cur.fetchall()}
     
     conn.close()
     return {"stage_distribution": stage_counts}
@@ -2125,9 +2110,7 @@ def odata_activities(select: Optional[str] = None, filter: Optional[str] = None,
     if select:
         cols = [c.strip() for c in select.split(',') if c.strip() and c.strip() in allowed_cols]
         if not cols:
-            cols = ["activity_id", "event_id", "activity_type"]
-    else:
-        cols = ["activity_id", "event_id", "activity_type", "campaign_name", "channel", "data_source", "impressions", "engagement_count", "reporting_date"]
+            cols = ["activity_id", "event_id", "activity_type", "campaign_name", "channel", "data_source", "impressions", "engagement_count", "reporting_date"]
 
     params = []
     where_clauses = []
@@ -2568,7 +2551,7 @@ def get_targeted_schools(limit: int = 20):
         {"name": "Georgia Institute of Technology", "city": "Atlanta, GA", "type": "4-Year", "leads": 154, "conversions": 25, "events": 6, "priority": "Must Win"},
         {"name": "University of Florida", "city": "Gainesville, FL", "type": "4-Year", "leads": 143, "conversions": 22, "events": 8, "priority": "Must Keep"},
         {"name": "Texas A&M University", "city": "College Station, TX", "type": "4-Year", "leads": 139, "conversions": 28, "events": 11, "priority": "Must Keep"},
-        {"name": "University of Georgia", "city": "Athens, GA", "type": "4-Year", "leads": 128, "conversions": 19, "events": 7, "priority": "Opportunity"},
+        {"name": "University of Georgia", "city": "Athens, GA", "type": "4-Year", "leads": 98, "conversions": 15, "events": 7, "priority": "Opportunity"},
         {"name": "Clemson University", "city": "Clemson, SC", "type": "4-Year", "leads": 117, "conversions": 20, "events": 9, "priority": "Must Keep"},
         {"name": "San Diego State University", "city": "San Diego, CA", "type": "4-Year", "leads": 112, "conversions": 16, "events": 5, "priority": "Opportunity"},
         {"name": "Virginia Tech", "city": "Blacksburg, VA", "type": "4-Year", "leads": 108, "conversions": 18, "events": 6, "priority": "Must Keep"},
@@ -4541,6 +4524,82 @@ from backend.routers.task_requests import router as task_requests_router
 app.include_router(task_requests_router, prefix="/api/v2", tags=["Task Requests"])
 
 
+# --- Admin backup & mapping endpoints (complements data_upload router) ---
+@app.get('/api/v2/upload/backups')
+def list_backups():
+    try:
+        repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "backend"))
+        backups_dir = os.path.join(repo_root, "data", "backups")
+        if not os.path.exists(backups_dir):
+            return {"status": "ok", "backups": []}
+        entries = []
+        for fname in sorted(os.listdir(backups_dir), reverse=True):
+            path = os.path.join(backups_dir, fname)
+            if os.path.isfile(path):
+                mtime = os.path.getmtime(path)
+                entries.append({
+                    "filename": fname,
+                    "path": path,
+                    "modified": datetime.utcfromtimestamp(mtime).isoformat()
+                })
+        return {"status": "ok", "backups": entries}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to list backups: {str(e)}")
+
+
+@app.post('/api/v2/upload/restore')
+def restore_backup(backup_filename: str = Form(...)):
+    try:
+        repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "backend"))
+        backups_dir = os.path.join(repo_root, "data", "backups")
+        src = os.path.join(backups_dir, backup_filename)
+        if not os.path.exists(src):
+            raise HTTPException(status_code=404, detail=f"Backup not found: {backup_filename}")
+        # create pre-restore backup of the active DB file
+        try:
+            ts = datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
+            pre = os.path.join(backups_dir, f"pre_restore.{ts}.db")
+            shutil.copy2(DB_FILE, pre)
+        except Exception:
+            pre = None
+        shutil.copy2(src, DB_FILE)
+        return {"status": "ok", "restored_from": src, "pre_restore_backup": pre}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Restore failed: {str(e)}")
+
+
+@app.post('/api/v2/upload/save_mapping')
+def save_mapping(data_type: str = Form(...), mapping: str = Form(...)):
+    try:
+        jm = json.loads(mapping)
+        repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "backend"))
+        mappings_dir = os.path.join(repo_root, "data", "mappings")
+        os.makedirs(mappings_dir, exist_ok=True)
+        path = os.path.join(mappings_dir, f"{data_type}.json")
+        with open(path, 'w') as f:
+            json.dump(jm, f, indent=2)
+        return {"status": "ok", "path": path}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Invalid mapping or save failed: {str(e)}")
+
+
+@app.get('/api/v2/upload/mappings/{data_type}')
+def get_mapping(data_type: str):
+    try:
+        repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "backend"))
+        mappings_dir = os.path.join(repo_root, "data", "mappings")
+        path = os.path.join(mappings_dir, f"{data_type}.json")
+        if not os.path.exists(path):
+            return {"status": "ok", "mapping": None}
+        with open(path, 'r') as f:
+            jm = json.load(f)
+        return {"status": "ok", "mapping": jm}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to read mapping: {str(e)}")
+
+
 if __name__ == "__main__":
     uvicorn.run("taaip_service:app", host="0.0.0.0", port=8000, reload=False)
 
@@ -4893,12 +4952,12 @@ async def create_project_from_calendar_event(calendar_event_id: str):
             project_start[:10],
             project_target[:10],
             calendar_event.get('created_by', 'system'),
-            f"Plan and execute {calendar_event['title']}. {calendar_event.get('description', '')}",
+            f"Plan and execute {calendar_event['title']}. {calendar.event.get('description', '')}",
             "Successfully execute event and achieve target metrics",
             now, now,
-            calendar_event.get('rsid'),
-            calendar_event.get('brigade'),
-            calendar_event.get('battalion')
+            calendar.event.get('rsid'),
+            calendar.event.get('brigade'),
+            calendar.event.get('battalion')
         ))
         
         # Create default tasks for event planning
@@ -4940,7 +4999,7 @@ async def create_project_from_calendar_event(calendar_event_id: str):
                 ) VALUES (?, ?, ?, ?, ?, ?, 'open', ?, ?)
             """, (
                 task_id, project_id, task_template['title'], task_template['description'],
-                calendar_event.get('assigned_to', 'team'), task_due, task_template['priority'], now
+                calendar.event.get('assigned_to', 'team'), task_due, task_template['priority'], now
             ))
         
         conn.commit()

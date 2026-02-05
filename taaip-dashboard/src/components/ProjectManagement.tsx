@@ -134,44 +134,39 @@ export const ProjectManagement: React.FC = () => {
       }
 
       if (data && data.status === 'ok') {
-        // sanitize numeric fields to avoid NaN in charts
+        // sanitize numeric fields to avoid NaN/Infinity in charts
         const safe = { ...data };
-        if (safe.summary) {
-          const s = safe.summary;
-          s.total_projects = Number(s.total_projects) || 0;
-          s.active_projects = Number(s.active_projects) || 0;
-          s.completed_projects = Number(s.completed_projects) || 0;
-          s.at_risk_projects = Number(s.at_risk_projects) || 0;
-          s.total_tasks = Number(s.total_tasks) || 0;
-          s.completed_tasks = Number(s.completed_tasks) || 0;
-          s.blocked_tasks = Number(s.blocked_tasks) || 0;
-          s.task_completion_rate = Number(s.task_completion_rate) || 0;
-          s.total_budget = Number(s.total_budget) || 0;
-          s.total_spent = Number(s.total_spent) || 0;
-          s.budget_remaining = Number(s.budget_remaining) || 0;
-          s.budget_utilization = Number(s.budget_utilization) || 0;
-        }
 
-        if (Array.isArray(safe.recent_projects)) {
-          safe.recent_projects = safe.recent_projects.map((p: any) => ({
-            ...p,
-            percent_complete: Number((p && p.percent_complete) as any) || 0,
-            funding_amount: Number((p && p.funding_amount) as any) || 0,
-            spent_amount: Number((p && p.spent_amount) as any) || 0,
-            name: String((p && p.name) || 'Untitled')
-          }));
-        } else {
-          safe.recent_projects = [];
-        }
+        // Recursively replace non-finite numbers and invalid numeric strings with 0
+        const sanitizeNumbers = (obj: any): any => {
+          if (obj === null || obj === undefined) return obj;
+          if (typeof obj === 'number') {
+            return Number.isFinite(obj) ? obj : 0;
+          }
+          if (typeof obj === 'string') {
+            // treat explicit numeric strings; convert invalid tokens to 0
+            if (obj.trim() === 'NaN' || obj.trim() === 'Infinity' || obj.trim() === '-Infinity') return 0;
+            const n = Number(obj);
+            return Number.isFinite(n) ? n : obj;
+          }
+          if (Array.isArray(obj)) return obj.map(sanitizeNumbers);
+          if (typeof obj === 'object') {
+            const out: any = {};
+            for (const k of Object.keys(obj)) {
+              out[k] = sanitizeNumbers(obj[k]);
+            }
+            return out;
+          }
+          return obj;
+        };
 
-        if (Array.isArray(safe.status_distribution)) {
-          safe.status_distribution = safe.status_distribution.map((d: any) => ({
-            status: String(d.status || 'unknown'),
-            count: Number(d.count) || 0
-          }));
-        } else {
-          safe.status_distribution = [];
-        }
+        // apply sanitizer to top-level response
+        const sanitized = sanitizeNumbers(safe);
+        // merge sanitized values back into safe and ensure arrays exist
+        Object.assign(safe, sanitized);
+
+        if (!Array.isArray(safe.recent_projects)) safe.recent_projects = [];
+        if (!Array.isArray(safe.status_distribution)) safe.status_distribution = [];
 
         setDashboardData(safe);
       } else {

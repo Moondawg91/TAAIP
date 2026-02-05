@@ -143,16 +143,19 @@ async def import_projects(file: UploadFile = File(...)) -> Dict[str, Any]:
         imported_count = 0
         errors = []
         
+        # Detect which columns actually exist in the projects table and only insert available ones
+        cursor.execute("PRAGMA table_info(projects)")
+        existing_cols = {r[1] for r in cursor.fetchall()} if cursor.description is not None else set()
+
         for index, row in df.iterrows():
             try:
                 project_id = f"PRJ-{int(datetime.now().timestamp() * 1000)}-{index}"
-                
-                cursor.execute("""
-                    INSERT INTO projects (
-                        project_id, name, event_id, start_date, target_date,
-                        owner_id, status, objectives, funding_amount, created_at
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """, (
+
+                # base fields always present in our expectation
+                insert_fields = [
+                    'project_id', 'name', 'event_id', 'start_date', 'target_date', 'owner_id', 'status', 'objectives', 'created_at'
+                ]
+                values = [
                     project_id,
                     row['name'],
                     row.get('event_id', ''),
@@ -161,9 +164,19 @@ async def import_projects(file: UploadFile = File(...)) -> Dict[str, Any]:
                     row['owner_id'],
                     row.get('status', 'planning'),
                     row['objectives'],
-                    row.get('funding_amount', 0),
                     datetime.now().isoformat()
-                ))
+                ]
+
+                # Include funding_amount only if the column exists in the DB schema
+                if 'funding_amount' in existing_cols:
+                    insert_fields.insert(-1, 'funding_amount')
+                    values.insert(-1, row.get('funding_amount', 0))
+
+                placeholders = ', '.join(['?'] * len(insert_fields))
+                fields_sql = ', '.join(insert_fields)
+
+                sql = f"INSERT INTO projects ({fields_sql}) VALUES ({placeholders})"
+                cursor.execute(sql, tuple(values))
                 imported_count += 1
             except Exception as e:
                 errors.append(f"Row {index + 2}: {str(e)}")
