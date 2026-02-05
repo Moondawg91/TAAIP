@@ -21,7 +21,10 @@ def run():
         'description': 'Created by integration_test_project_mgmt',
         'total_budget': 10000,
         'estimated_benefit': 20000,
-        'metadata': {'benefit_per_participant': 25}
+        'metadata': {'benefit_per_participant': 25},
+        'start_date': '2026-02-05',
+        'target_date': '2026-03-05',
+        'owner_id': 'integration_test_user'
     }
     r = s.post(f'{BASE}/api/v2/projects_pm/projects', json=payload)
     print('create project:', r.status_code, r.text)
