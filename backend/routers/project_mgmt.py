@@ -6,7 +6,7 @@ endpoint to create necessary tables and basic CRUD endpoints for projects,
 lessons and budget transactions with an ROI calculation helper.
 """
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
 from datetime import datetime
@@ -341,12 +341,22 @@ def list_aars(project_id: str, limit: int = 100):
 
 
 @router.post('/projects/{project_id}/emm/import')
-def import_emm_event(project_id: str, emm_event_id: str, payload: Dict[str, Any]):
-    """Stub endpoint to import/match an EMM event to a project.
+async def import_emm_event(project_id: str, request: Request, emm_event_id: Optional[str] = None):
+    """Stub endpoint to import/match an EMM event to a project. Accepts JSON body.
 
-    Stores the raw payload and returns a mapping ID. Integration with real EMM
-    systems will replace this stub.
+    Body may be either {'emm_event_id': 'id', 'payload': {...}} or a raw payload.
     """
+    try:
+        body = await request.json()
+    except Exception:
+        body = {}
+
+    # support query param or body field
+    if not emm_event_id:
+        emm_event_id = body.get('emm_event_id') or body.get('source_id') or None
+
+    payload = body.get('payload') if isinstance(body, dict) and 'payload' in body else body
+
     conn = get_db()
     cur = conn.cursor()
     cur.execute('SELECT 1 FROM projects_pm WHERE id = ?', (project_id,))
@@ -408,7 +418,22 @@ def get_scope(project_id: str):
 
 # --- Participants endpoints ---
 @router.post('/projects/{project_id}/participants')
-def add_participant(project_id: str, person_id: str, role: Optional[str] = None, unit: Optional[str] = None, attendance: int = 0):
+async def add_participant(project_id: str, request: Request, person_id: Optional[str] = None, role: Optional[str] = None, unit: Optional[str] = None, attendance: int = 0):
+    # Accept either JSON body or query/form parameters for backward compatibility
+    try:
+        body = await request.json()
+        if isinstance(body, dict):
+            person_id = body.get('person_id') or person_id
+            role = body.get('role') or role
+            unit = body.get('unit') or unit
+            attendance = int(body.get('attendance', attendance) or attendance)
+    except Exception:
+        # ignore parse errors and fall back to provided args
+        pass
+
+    if not person_id:
+        raise HTTPException(status_code=422, detail='person_id required')
+
     conn = get_db()
     cur = conn.cursor()
     cur.execute('SELECT 1 FROM projects_pm WHERE id = ?', (project_id,))
