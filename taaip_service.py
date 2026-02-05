@@ -3328,10 +3328,9 @@ def projects_pm_init_migrations():
 
 
 @app.post("/api/v2/projects_pm/projects")
-def projects_pm_create_project(request: Request):
-    body = request.json() if hasattr(request, 'json') else {}
+async def projects_pm_create_project(request: Request):
     try:
-        data = request.json()
+        data = await request.json()
     except Exception:
         data = {}
     # reuse existing create_project
@@ -3343,11 +3342,11 @@ def projects_pm_create_project(request: Request):
 
 
 @app.post("/api/v2/projects_pm/projects/{project_id}/participants")
-def projects_pm_add_participant(project_id: str, request: Request):
+async def projects_pm_add_participant(project_id: str, request: Request):
     """Compatibility endpoint: accept JSON body to add participant."""
     import uuid
     try:
-        payload = request.json()
+        payload = await request.json()
     except Exception:
         # fallback to form/query
         payload = {k: v for k, v in request.query_params.items()} if request.query_params else {}
@@ -3374,18 +3373,18 @@ def projects_pm_add_participant(project_id: str, request: Request):
 
 
 @app.post("/api/v2/projects_pm/projects/{project_id}/budget/transaction")
-def projects_pm_budget_transaction(project_id: str, request: Request):
+async def projects_pm_budget_transaction(project_id: str, request: Request):
     try:
-        txn = request.json()
+        txn = await request.json()
     except Exception:
         txn = {k: v for k, v in request.query_params.items()} if request.query_params else {}
     return add_project_budget_transaction(project_id, txn)
 
 
 @app.post("/api/v2/projects_pm/projects/{project_id}/emm/import")
-def projects_pm_emm_import(project_id: str, request: Request):
+async def projects_pm_emm_import(project_id: str, request: Request):
     try:
-        payload = request.json()
+        payload = await request.json()
     except Exception:
         payload = {k: v for k, v in request.query_params.items()} if request.query_params else {}
     return import_emm_event(project_id, payload)
