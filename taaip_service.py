@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Request, Form
+from fastapi import FastAPI, HTTPException, Request, Form, WebSocket, WebSocketDisconnect
 from fastapi.responses import JSONResponse, StreamingResponse
 import io
 import csv
@@ -16,6 +16,7 @@ import secrets
 from datetime import datetime
 from typing import Optional, Dict, Any
 import threading
+import asyncio
 
 
 # --- Configuration & Initialization ---
@@ -3011,6 +3012,244 @@ def update_project_budget(project_id: str, budget_update: Dict[str, Any]):
     conn.close()
     
     return {"status": "ok", "message": "Budget updated"}
+
+
+# In-memory registry for project budget WebSocket subscribers
+_project_budget_subscribers: Dict[str, list] = {}
+
+
+async def _broadcast_project_budget(project_id: str, payload: Dict[str, Any]):
+    """Send a JSON payload to all active WebSocket subscribers for a project."""
+    subs = _project_budget_subscribers.get(project_id, [])
+    remove = []
+    for ws in list(subs):
+        try:
+            await ws.send_json(payload)
+        except Exception:
+            remove.append(ws)
+    for ws in remove:
+        try:
+            subs.remove(ws)
+        except Exception:
+            pass
+
+
+@app.websocket("/api/v2/projects/{project_id}/ws/budget")
+async def project_budget_ws(websocket: WebSocket, project_id: str):
+    """WebSocket endpoint to receive live budget updates for a project."""
+    await websocket.accept()
+    subs = _project_budget_subscribers.setdefault(project_id, [])
+    subs.append(websocket)
+    try:
+        # Send initial snapshot
+        conn = get_db_conn()
+        cur = conn.cursor()
+        cur.execute("SELECT funding_amount, spent_amount FROM projects WHERE project_id = ?", (project_id,))
+        row = cur.fetchone()
+        if row:
+            snap = {
+                "type": "snapshot",
+                "project_id": project_id,
+                "funding_amount": row["funding_amount"] or 0,
+                "spent_amount": row["spent_amount"] or 0,
+            }
+        else:
+            snap = {"type": "error", "message": "project not found", "project_id": project_id}
+        await websocket.send_json(snap)
+
+        # Keep connection open; react to pings/messages if client sends any
+        while True:
+            try:
+                await websocket.receive_text()
+            except WebSocketDisconnect:
+                break
+            except Exception:
+                # ignore other receive errors, continue keeping connection
+                await asyncio.sleep(1)
+    except WebSocketDisconnect:
+        pass
+    finally:
+        try:
+            _project_budget_subscribers.get(project_id, []).remove(websocket)
+        except Exception:
+            pass
+
+
+@app.post("/api/v2/projects/{project_id}/budget/transaction")
+def add_project_budget_transaction(project_id: str, txn: Dict[str, Any]):
+    """Add a budget transaction (spend or funding) and recompute ROI for the project.
+
+    Expected JSON body: {"amount": 100.0, "type": "spend"|"fund", "description": "..."}
+    """
+    import uuid
+
+    conn = get_db_conn()
+    cur = conn.cursor()
+
+    # ensure supporting tables
+    cur.execute(
+        """CREATE TABLE IF NOT EXISTS budget_transactions (
+            txn_id TEXT PRIMARY KEY,
+            project_id TEXT,
+            amount REAL,
+            type TEXT,
+            description TEXT,
+            created_at TEXT
+        )"""
+    )
+    cur.execute(
+        """CREATE TABLE IF NOT EXISTS roi_records (
+            roi_id TEXT PRIMARY KEY,
+            project_id TEXT,
+            benefit_est REAL,
+            total_spent REAL,
+            roi REAL,
+            computed_at TEXT
+        )"""
+    )
+
+    now = datetime.now().isoformat()
+    txn_id = f"txn_{uuid.uuid4().hex[:12]}"
+    amount = float(txn.get("amount", 0) or 0)
+    ttype = txn.get("type", "spend")
+    desc = txn.get("description")
+
+    cur.execute(
+        "INSERT INTO budget_transactions (txn_id, project_id, amount, type, description, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+        (txn_id, project_id, amount, ttype, desc, now),
+    )
+
+    # reflect change on project record if columns exist
+    try:
+        cur.execute("PRAGMA table_info(projects)")
+        pcols = [r[1] for r in cur.fetchall()]
+    except Exception:
+        pcols = []
+
+    if ttype == "spend" and "spent_amount" in pcols:
+        cur.execute("UPDATE projects SET spent_amount = COALESCE(spent_amount, 0) + ?, updated_at = ? WHERE project_id = ?", (amount, now, project_id))
+    elif ttype == "fund" and "funding_amount" in pcols:
+        cur.execute("UPDATE projects SET funding_amount = COALESCE(funding_amount, 0) + ?, updated_at = ? WHERE project_id = ?", (amount, now, project_id))
+
+    conn.commit()
+
+    # Recompute ROI: estimate benefit = benefit_per_participant * participant_count
+    cur.execute("SELECT spent_amount, funding_amount, metadata FROM projects WHERE project_id = ?", (project_id,))
+    prow = cur.fetchone()
+    total_spent = float(prow[0] or 0) if prow else 0.0
+
+    # participant count
+    participant_count = 0
+    try:
+        cur.execute("SELECT COUNT(*) FROM participants WHERE project_id = ?", (project_id,))
+        participant_count = cur.fetchone()[0] or 0
+    except Exception:
+        participant_count = 0
+
+    # default benefit per participant
+    benefit_per_participant = 1000.0
+    # try to read from project columns/metadata
+    try:
+        if prow:
+            # prow[2] is metadata if present
+            if prow[2]:
+                try:
+                    md = json.loads(prow[2])
+                    benefit_per_participant = float(md.get("benefit_per_participant", benefit_per_participant))
+                except Exception:
+                    pass
+    except Exception:
+        pass
+
+    benefit_est = benefit_per_participant * (participant_count or 0)
+    roi = None
+    if total_spent > 0:
+        try:
+            roi = round((benefit_est - total_spent) / total_spent, 4)
+        except Exception:
+            roi = None
+
+    roi_id = f"roi_{uuid.uuid4().hex[:12]}"
+    cur.execute(
+        "INSERT INTO roi_records (roi_id, project_id, benefit_est, total_spent, roi, computed_at) VALUES (?, ?, ?, ?, ?, ?)",
+        (roi_id, project_id, benefit_est, total_spent, roi, now),
+    )
+    conn.commit()
+    conn.close()
+
+    payload = {
+        "type": "budget_transaction",
+        "project_id": project_id,
+        "txn_id": txn_id,
+        "amount": amount,
+        "txn_type": ttype,
+        "total_spent": total_spent,
+        "benefit_est": benefit_est,
+        "roi": roi,
+    }
+
+    # broadcast to websocket subscribers (best-effort)
+    try:
+        asyncio.create_task(_broadcast_project_budget(project_id, payload))
+    except Exception:
+        pass
+
+    return {"status": "ok", "transaction_id": txn_id, "roi": roi}
+
+
+@app.get("/api/v2/projects/{project_id}/roi")
+def get_project_roi(project_id: str):
+    conn = get_db_conn()
+    cur = conn.cursor()
+    cur.execute("CREATE TABLE IF NOT EXISTS roi_records (roi_id TEXT PRIMARY KEY, project_id TEXT, benefit_est REAL, total_spent REAL, roi REAL, computed_at TEXT)")
+    cur.execute("SELECT roi_id, benefit_est, total_spent, roi, computed_at FROM roi_records WHERE project_id = ? ORDER BY computed_at DESC", (project_id,))
+    rows = cur.fetchall()
+    conn.close()
+    records = [dict(r) for r in rows]
+    return {"status": "ok", "count": len(records), "records": records}
+
+
+@app.post("/api/v2/projects/{project_id}/emm/import")
+def import_emm_event(project_id: str, payload: Dict[str, Any]):
+    """Stub endpoint to import/store EMM event mappings for a project."""
+    import uuid
+
+    conn = get_db_conn()
+    cur = conn.cursor()
+    cur.execute(
+        """CREATE TABLE IF NOT EXISTS emm_mappings (
+            mapping_id TEXT PRIMARY KEY,
+            project_id TEXT,
+            source_id TEXT,
+            payload TEXT,
+            created_at TEXT
+        )"""
+    )
+    now = datetime.now().isoformat()
+    mapping_id = f"emm_{uuid.uuid4().hex[:12]}"
+    source_id = payload.get("source_id") or payload.get("emm_id") or None
+    cur.execute("INSERT INTO emm_mappings (mapping_id, project_id, source_id, payload, created_at) VALUES (?, ?, ?, ?, ?)", (mapping_id, project_id, source_id, json.dumps(payload), now))
+    conn.commit()
+    conn.close()
+    return {"status": "ok", "mapping_id": mapping_id}
+
+
+@app.get("/api/v2/projects/{project_id}/emm")
+def list_emm_mappings(project_id: str):
+    conn = get_db_conn()
+    cur = conn.cursor()
+    cur.execute("CREATE TABLE IF NOT EXISTS emm_mappings (mapping_id TEXT PRIMARY KEY, project_id TEXT, source_id TEXT, payload TEXT, created_at TEXT)")
+    cur.execute("SELECT mapping_id, source_id, payload, created_at FROM emm_mappings WHERE project_id = ? ORDER BY created_at DESC", (project_id,))
+    rows = cur.fetchall()
+    conn.close()
+    out = []
+    for r in rows:
+        try:
+            payload = json.loads(r[2]) if r[2] else None
+        except Exception:
+            payload = r[2]
+        out.append({"mapping_id": r[0], "source_id": r[1], "payload": payload, "created_at": r[3]})
+    return {"status": "ok", "count": len(out), "mappings": out}
 
 
 @app.get("/api/v2/projects/dashboard/summary")
