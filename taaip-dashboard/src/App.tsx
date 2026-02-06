@@ -33,12 +33,14 @@ const AdminConsole = lazy(() => import('./components/AdminConsole'));
 const MarketingEngagementDashboard = lazy(() => import('./components/MarketingEngagementDashboard'));
 const UniversalDataUpload = lazy(() => import('./components/UniversalDataUpload'));
 const DataUploadManager = lazy(() => import('./components/DataUploadManager'));
+const AdminQuery = lazy(() => import('./components/AdminQuery'));
 
 // TAAIP - Talent Acquisition AI Platform
 // Optimized for 420T Talent Acquisition Technicians
 
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'home' | '420t' | 'funnel' | 'analytics' | 'market' | 'mission' | 'targeting' | 'leads' | 'events' | 'g2zones' | 'calendar' | 'sharepoint' | 'budget' | 'twg' | 'fusion' | 'segmentation' | 'methodology' | 'universal-upload' | 'data-manager' | 'quarter-assessment' | 'asset-recommend' | 'historical' | 'user-management' | 'powerbi' | 'marketing-engagement' | 'admin-console'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | '420t' | 'funnel' | 'analytics' | 'market' | 'mission' | 'targeting' | 'leads' | 'events' | 'g2zones' | 'calendar' | 'sharepoint' | 'budget' | 'twg' | 'fusion' | 'segmentation' | 'methodology' | 'universal-upload' | 'data-manager' | 'quarter-assessment' | 'asset-recommend' | 'historical' | 'user-management' | 'powerbi' | 'marketing-engagement' | 'admin-console' | 'admin-query'>('home');
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const menuCategories = [
@@ -96,6 +98,7 @@ const App: React.FC = () => {
       items: [
         { id: 'user-management', label: 'User Management', icon: <Users className="w-5 h-5" />, category: 'Administration' },
         { id: 'admin-console', label: 'Admin Console', icon: <FileCheck className="w-5 h-5" />, category: 'Administration' },
+        { id: 'admin-query', label: 'DB Query', icon: <FileCheck className="w-5 h-5" />, category: 'Administration' },
       ]
     }
   ];
@@ -211,6 +214,7 @@ const App: React.FC = () => {
            activeTab === 'methodology' ? <TargetingMethodologyGuide /> :
            activeTab === 'universal-upload' ? <UniversalDataUpload /> :
            activeTab === 'data-manager' ? <DataUploadManager /> :
+           activeTab === 'admin-query' ? <AdminQuery /> :
            activeTab === 'powerbi' ? (
              <PowerBIBundle reportIds={[
                '898af0e0-6d0c-47a6-b4ff-7690661eacda',

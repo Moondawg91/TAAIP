@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 import uvicorn
 import logging
+from logging.handlers import RotatingFileHandler
 import random
 import os
 import json
@@ -28,6 +29,17 @@ app = FastAPI(
     version="2.0.0",
 )
 logging.basicConfig(level=logging.INFO)
+
+# Ensure logs directory exists and add rotating file handler for persistent logs
+LOG_DIR = os.path.join(os.path.dirname(__file__), 'logs')
+os.makedirs(LOG_DIR, exist_ok=True)
+log_file = os.path.join(LOG_DIR, 'taaip.log')
+file_handler = RotatingFileHandler(log_file, maxBytes=5*1024*1024, backupCount=5)
+file_handler.setLevel(logging.INFO)
+formatter = logging.Formatter('%(asctime)s %(levelname)s %(name)s %(message)s')
+file_handler.setFormatter(formatter)
+if not any(isinstance(h, RotatingFileHandler) for h in logging.getLogger().handlers):
+    logging.getLogger().addHandler(file_handler)
 
 
 # Verbose request/response logging middleware for upload/action endpoints
