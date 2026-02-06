@@ -25,14 +25,11 @@ export default function DataUploadManager(){
       // Try direct ingest route first
       let r = await fetch(`/api/v2/data/ingest/${name}`, {method: 'POST'});
       if(r.status === 404){
-        // Fallback: fetch the processed dataset and post to universal upload endpoint
-        const ds = await (await fetch(`/api/v2/data/${name}`)).json();
-        const rows = (ds && ds.dataset && ds.dataset.rows) ? ds.dataset.rows : [];
-        if(rows.length === 0){ setMessage('No rows to ingest'); return; }
-        const uploadResp = await fetch('/api/v2/upload/uploaded', {method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({data: rows, category: 'uploaded'})});
-        const uj = await uploadResp.json().catch(()=>({detail: 'No JSON response'}));
-        if(uploadResp.ok){ setMessage(`Imported ${uj.rows_processed || uj.rows_processed} rows to category 'uploaded'`); fetchList(); }
-        else setMessage(uj.detail || 'Universal upload failed');
+        // Fallback: call server-side ingest action to create uploaded_{dataset} table
+        const actionResp = await fetch('/api/v2/upload/actions/ingest_dataset', {method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({dataset_name: name})});
+        const aj = await actionResp.json().catch(()=>({detail: 'No JSON response'}));
+        if(actionResp.ok){ setMessage(`Ingested via server action: ${aj.result.table} (${aj.result.rows} rows)`); fetchList(); }
+        else setMessage(aj.detail || 'Server-side ingest failed');
         return;
       }
       const j = await r.json().catch(()=>({detail: 'No JSON response'}));

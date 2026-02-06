@@ -5076,6 +5076,24 @@ def api_upload_ingest_dataset(body: dict = Body(...)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f'Ingest failed: {str(e)}')
 
+# Use a non-colliding action path so it isn't matched by the generic /api/v2/upload/{category} route
+@app.post('/api/v2/upload/actions/ingest_dataset')
+def api_upload_ingest_dataset_action(body: dict = Body(...)):
+    """Server-side ingestion (alternate path): accepts JSON {"dataset_name": "dataset_xxx"} and creates uploaded_{dataset} table."""
+    try:
+        dataset_name = body.get('dataset_name') if isinstance(body, dict) else None
+        if not dataset_name:
+            raise HTTPException(status_code=400, detail='Missing dataset_name')
+        db_path = DB_FILE
+        result = ingest_dataset(dataset_name, db_path)
+        return {'status': 'ok', 'result': result}
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail='Dataset not found')
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f'Ingest failed: {str(e)}')
+
 
 @app.get('/api/v2/upload/tables')
 def api_list_uploaded_tables():
