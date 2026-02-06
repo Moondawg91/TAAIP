@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Request, Form, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, HTTPException, Request, Form, WebSocket, WebSocketDisconnect, UploadFile, File
 from fastapi.responses import JSONResponse, StreamingResponse
 import io
 import csv
@@ -17,6 +17,7 @@ from datetime import datetime
 from typing import Optional, Dict, Any
 import threading
 import asyncio
+from backend.data_pipeline import process_csv, list_datasets, get_dataset
 
 
 # --- Configuration & Initialization ---
@@ -4989,6 +4990,46 @@ def get_mapping(data_type: str):
         return {"status": "ok", "mapping": jm}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to read mapping: {str(e)}")
+
+
+@app.post('/api/v2/data/upload')
+async def upload_data(file: UploadFile = File(...)):
+    """Accept CSV upload, process it to JSON and store mapping metadata."""
+    try:
+        if not file.filename.lower().endswith('.csv'):
+            raise HTTPException(status_code=400, detail='Only CSV files are accepted')
+        repo_root = os.path.abspath(os.path.dirname(__file__))
+        uploads_dir = os.path.join(repo_root, 'data', 'uploads')
+        os.makedirs(uploads_dir, exist_ok=True)
+        dest = os.path.join(uploads_dir, file.filename)
+        with open(dest, 'wb') as out:
+            content = await file.read()
+            out.write(content)
+        dataset_name, metadata = process_csv(dest)
+        return {'status': 'ok', 'dataset': dataset_name, 'metadata': metadata}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f'Upload processing failed: {str(e)}')
+
+
+@app.get('/api/v2/data/list')
+def api_list_datasets():
+    try:
+        return {'status': 'ok', 'datasets': list_datasets()}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f'Failed to list datasets: {str(e)}')
+
+
+@app.get('/api/v2/data/{dataset_name}')
+def api_get_dataset(dataset_name: str):
+    try:
+        data = get_dataset(dataset_name)
+        return {'status': 'ok', 'dataset': data}
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail='Dataset not found')
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f'Failed to read dataset: {str(e)}')
 
 
 if __name__ == "__main__":
