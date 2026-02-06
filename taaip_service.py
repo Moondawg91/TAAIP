@@ -5046,6 +5046,19 @@ def api_ingest_dataset(dataset_name: str):
         raise HTTPException(status_code=500, detail=f'Ingest failed: {str(e)}')
 
 
+@app.post('/api/v2/upload/ingest/{dataset_name}')
+def api_upload_ingest(dataset_name: str):
+    """Alternate ingest route under /api/v2/upload to align with gateway routing."""
+    try:
+        db_path = DB_FILE
+        result = ingest_dataset(dataset_name, db_path)
+        return {'status': 'ok', 'result': result}
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail='Dataset not found')
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f'Ingest failed: {str(e)}')
+
+
 from fastapi import Body
 
 
