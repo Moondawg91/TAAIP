@@ -22,11 +22,18 @@ export default function DataUploadManager(){
   async function ingest(name:string){
     setMessage('Ingesting...');
     try{
-      // Primary endpoint
+      // Try direct ingest route first
       let r = await fetch(`/api/v2/data/ingest/${name}`, {method: 'POST'});
       if(r.status === 404){
-        // Fallback to upload namespace
-        r = await fetch(`/api/v2/upload/ingest/${name}`, {method: 'POST'});
+        // Fallback: fetch the processed dataset and post to universal upload endpoint
+        const ds = await (await fetch(`/api/v2/data/${name}`)).json();
+        const rows = (ds && ds.dataset && ds.dataset.rows) ? ds.dataset.rows : [];
+        if(rows.length === 0){ setMessage('No rows to ingest'); return; }
+        const uploadResp = await fetch('/api/v2/upload/uploaded', {method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({data: rows, category: 'uploaded'})});
+        const uj = await uploadResp.json().catch(()=>({detail: 'No JSON response'}));
+        if(uploadResp.ok){ setMessage(`Imported ${uj.rows_processed || uj.rows_processed} rows to category 'uploaded'`); fetchList(); }
+        else setMessage(uj.detail || 'Universal upload failed');
+        return;
       }
       const j = await r.json().catch(()=>({detail: 'No JSON response'}));
       if(r.ok){ setMessage(`Ingested: ${j.result.table} (${j.result.rows} rows)`); fetchList(); }
