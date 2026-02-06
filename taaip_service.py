@@ -5059,6 +5059,65 @@ def api_upload_ingest(dataset_name: str):
         raise HTTPException(status_code=500, detail=f'Ingest failed: {str(e)}')
 
 
+@app.post('/api/v2/upload/ingest_dataset')
+def api_upload_ingest_dataset(body: dict = Body(...)):
+    """Server-side ingestion: accepts JSON {"dataset_name": "dataset_xxx"} and creates uploaded_{dataset} table."""
+    try:
+        dataset_name = body.get('dataset_name') if isinstance(body, dict) else None
+        if not dataset_name:
+            raise HTTPException(status_code=400, detail='Missing dataset_name')
+        db_path = DB_FILE
+        result = ingest_dataset(dataset_name, db_path)
+        return {'status': 'ok', 'result': result}
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail='Dataset not found')
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f'Ingest failed: {str(e)}')
+
+
+@app.get('/api/v2/upload/tables')
+def api_list_uploaded_tables():
+    """List uploaded_* tables and rows counts for quick inspection."""
+    try:
+        conn = get_db_conn()
+        cur = conn.cursor()
+        cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'uploaded_%'")
+        tables = [r[0] for r in cur.fetchall()]
+        res = []
+        for t in tables:
+            try:
+                cur.execute(f'SELECT COUNT(*) FROM "{t}"')
+                cnt = cur.fetchone()[0]
+            except Exception:
+                cnt = None
+            res.append({'table': t, 'rows': cnt})
+        conn.close()
+        return {'status': 'ok', 'tables': res}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f'Failed to list uploaded tables: {str(e)}')
+
+
+@app.get('/api/v2/upload/table/{table_name}')
+def api_get_table_rows(table_name: str, limit: int = 20):
+    """Return up to `limit` rows from a given uploaded_* table for inspection."""
+    try:
+        if not table_name.startswith('uploaded_') and table_name != 'data_imports':
+            raise HTTPException(status_code=400, detail='Table not allowed')
+        conn = get_db_conn()
+        cur = conn.cursor()
+        cur.execute(f'SELECT * FROM "{table_name}" LIMIT ?', (limit,))
+        cols = [d[0] for d in cur.description] if cur.description else []
+        rows = [dict(zip(cols, row)) for row in cur.fetchall()]
+        conn.close()
+        return {'status': 'ok', 'table': table_name, 'rows': rows}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f'Failed to read table: {str(e)}')
+
+
 from fastapi import Body
 
 

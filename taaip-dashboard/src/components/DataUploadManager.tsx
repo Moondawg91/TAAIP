@@ -104,6 +104,7 @@ export default function DataUploadManager(){
         <div style={{marginTop:20, padding:12, border:'1px solid #ddd', borderRadius:6, background:'#fff'}}>
           <h3>Editing mapping for {editingDataset}</h3>
           <div style={{display:'grid', gap:8}}>
+            <div style={{fontSize:12, color:'#666'}}>Preview (first two rows):</div>
             {Object.entries(mappingEdits).map(([orig,mapped])=> (
               <div key={orig} style={{display:'flex', gap:8, alignItems:'center'}}>
                 <div style={{minWidth:200}}>{orig}</div>
@@ -112,7 +113,7 @@ export default function DataUploadManager(){
             ))}
           </div>
           <div style={{marginTop:12}}>
-            <button onClick={()=>saveMapping(editingDataset)}>Save Mapping</button>
+            <button disabled={Object.values(mappingEdits).some(v=>!v||v.trim()==='')} onClick={()=>saveMapping(editingDataset)}>Save Mapping</button>
             <button style={{marginLeft:8}} onClick={()=>{ setEditingDataset(null); setMessage(''); }}>Cancel</button>
           </div>
         </div>
