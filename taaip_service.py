@@ -30,33 +30,45 @@ app = FastAPI(
 logging.basicConfig(level=logging.INFO)
 
 
-# Request/response logging middleware for action endpoints
+# Verbose request/response logging middleware for upload/action endpoints
 @app.middleware("http")
-async def log_actions_requests(request: Request, call_next):
+async def log_upload_requests(request: Request, call_next):
     try:
         path = request.url.path
-        if path.startswith('/api/v2/upload/actions'):
-            logging.info(f"[ACTIONS] Request: {request.method} {request.url}")
+        if path.startswith('/api/v2/upload') or path.startswith('/api/v2/data'):
+            # Log basic request line and selected headers
+            logging.info(f"[UPLOAD] Request: {request.method} {request.url}")
+            try:
+                headers = {k: v for k, v in request.headers.items() if k.lower() in ('content-type', 'content-length', 'authorization', 'host')}
+                logging.info(f"[UPLOAD] Request headers: {headers}")
+            except Exception:
+                logging.info("[UPLOAD] Failed to read request headers for logging")
+            # Read and log a truncated request body (if present)
             try:
                 body = await request.body()
                 if body:
-                    logging.info(f"[ACTIONS] Request body: {body.decode('utf-8', errors='replace')}")
+                    text = body.decode('utf-8', errors='replace')
+                    trunc = text[:2000]
+                    logging.info(f"[UPLOAD] Request body (truncated to 2000 chars): {trunc}")
             except Exception:
-                logging.info("[ACTIONS] Failed to read request body for logging")
+                logging.info("[UPLOAD] Failed to read request body for logging")
+
+            # Call downstream and capture response body
             resp = await call_next(request)
             try:
                 content = b""
                 async for chunk in resp.body_iterator:
                     content += chunk
-                logging.info(f"[ACTIONS] Response status: {resp.status_code}, body: {content.decode('utf-8', errors='replace')}")
+                text = content.decode('utf-8', errors='replace')
+                logging.info(f"[UPLOAD] Response status: {resp.status_code}; body (truncated 2000 chars): {text[:2000]}")
                 return StreamingResponse(iter([content]), status_code=resp.status_code, headers=dict(resp.headers))
             except Exception:
-                logging.info(f"[ACTIONS] Response status: {resp.status_code} (body omitted)")
+                logging.info(f"[UPLOAD] Response status: {getattr(resp, 'status_code', 'unknown')} (body omitted)")
                 return resp
         else:
             return await call_next(request)
     except Exception as e:
-        logging.exception(f"Error in actions logging middleware: {e}")
+        logging.exception(f"Error in upload logging middleware: {e}")
         return await call_next(request)
 
 # Allow CORS for local development (adjust origins for production)
@@ -5164,6 +5176,63 @@ def api_get_table_rows(table_name: str, limit: int = 20):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f'Failed to read table: {str(e)}')
+
+
+@app.post('/api/v2/admin/query')
+def api_admin_query(body: dict = Body(...)):
+    """Safe read-only SQL query executor for inspection.
+
+    Accepts JSON: {"sql": "SELECT ...", "limit": 100}
+    Restrictions:
+      - Only single SELECT queries allowed
+      - No semicolons
+      - Forbids tokens: INSERT, UPDATE, DELETE, DROP, ALTER, ATTACH, PRAGMA, CREATE
+      - Referenced tables must exist
+    """
+    try:
+        sql = body.get('sql') if isinstance(body, dict) else None
+        limit = int(body.get('limit', 100)) if isinstance(body, dict) else 100
+        if not sql or not isinstance(sql, str):
+            raise HTTPException(status_code=400, detail='Missing sql')
+        s = sql.strip()
+        if ';' in s:
+            raise HTTPException(status_code=400, detail='Multiple statements not allowed')
+        sl = s.lower()
+        if not sl.startswith('select'):
+            raise HTTPException(status_code=400, detail='Only SELECT queries are allowed')
+        forbidden = ['insert', 'update', 'delete', 'drop', 'alter', 'attach', 'pragma', 'create', 'replace', 'vacuum']
+        for token in forbidden:
+            if token in sl:
+                raise HTTPException(status_code=400, detail=f'Forbidden token in query: {token}')
+
+        import re
+        tables = set(re.findall(r'from\s+"?([A-Za-z0-9_]+)"?', sl))
+        tables |= set(re.findall(r'join\s+"?([A-Za-z0-9_]+)"?', sl))
+
+        conn = get_db_conn()
+        cur = conn.cursor()
+        cur.execute("SELECT name FROM sqlite_master WHERE type='table'")
+        existing = {r[0] for r in cur.fetchall()}
+        for t in tables:
+            if t not in existing:
+                conn.close()
+                raise HTTPException(status_code=400, detail=f'Table not found: {t}')
+
+        # Append limit if not present
+        if 'limit' not in sl:
+            s_exec = f"{s} LIMIT {min(max(1, limit), 1000)}"
+        else:
+            s_exec = s
+
+        cur.execute(s_exec)
+        cols = [d[0] for d in cur.description] if cur.description else []
+        rows = [dict(zip(cols, row)) for row in cur.fetchall()]
+        conn.close()
+        return {'status': 'ok', 'query': s_exec, 'rows': rows}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f'Query failed: {str(e)}')
 
 
 @app.post('/api/v2/data/save_mapping/{dataset_name}')
