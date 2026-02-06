@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Request, Form, WebSocket, WebSocketDisconnect, UploadFile, File
+from fastapi import FastAPI, HTTPException, Request, Form, WebSocket, WebSocketDisconnect, UploadFile, File, Body
 from fastapi.responses import JSONResponse, StreamingResponse
 import io
 import csv
@@ -5164,9 +5164,6 @@ def api_get_table_rows(table_name: str, limit: int = 20):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f'Failed to read table: {str(e)}')
-
-
-from fastapi import Body
 
 
 @app.post('/api/v2/data/save_mapping/{dataset_name}')
