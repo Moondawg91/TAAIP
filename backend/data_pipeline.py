@@ -137,7 +137,8 @@ def ingest_dataset(dataset_name: str, db_path: str) -> Dict[str, Any]:
 
     # Insert rows
     placeholders = ', '.join(['?'] * len(cols))
-    insert_sql = f'INSERT INTO "{table_name}" ({", ".join(["\""+c+"\"" for c in cols])}) VALUES ({placeholders})'
+    col_list = ', '.join([f'"{c}"' for c in cols])
+    insert_sql = f'INSERT INTO "{table_name}" ({col_list}) VALUES ({placeholders})'
     values = []
     for r in rows:
         values.append([r.get(c) for c in cols])
