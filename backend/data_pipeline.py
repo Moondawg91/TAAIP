@@ -109,3 +109,94 @@ def get_dataset(dataset_name: str) -> Dict[str, Any]:
         with open(path, 'r', encoding='utf-8') as f:
             return json.load(f)
     raise FileNotFoundError(dataset_name)
+
+
+def ingest_dataset(dataset_name: str, db_path: str) -> Dict[str, Any]:
+    """Create a SQL table for the dataset and insert rows. Returns a summary dict.
+
+    Table name will be `uploaded_{dataset_name}`. Columns are created as TEXT.
+    """
+    data = get_dataset(dataset_name)
+    rows = data.get('rows', [])
+    mapping = data.get('mapping', {})
+    if not rows:
+        return {'status': 'empty', 'rows': 0}
+
+    table_name = f"uploaded_{dataset_name}"
+    import sqlite3
+    conn = sqlite3.connect(db_path)
+    cur = conn.cursor()
+
+    # Determine columns from first row
+    first_row = rows[0] if rows else {}
+    cols = list(first_row.keys())
+
+    # Create table with TEXT columns
+    cols_def = ', '.join([f'"{c}" TEXT' for c in cols])
+    cur.execute(f'CREATE TABLE IF NOT EXISTS "{table_name}" (id INTEGER PRIMARY KEY AUTOINCREMENT, {cols_def})')
+
+    # Insert rows
+    placeholders = ', '.join(['?'] * len(cols))
+    insert_sql = f'INSERT INTO "{table_name}" ({", ".join(["\""+c+"\"" for c in cols])}) VALUES ({placeholders})'
+    values = []
+    for r in rows:
+        values.append([r.get(c) for c in cols])
+
+    cur.executemany(insert_sql, values)
+    conn.commit()
+    cur.execute(f'SELECT COUNT(*) as cnt FROM "{table_name}"')
+    cnt = cur.fetchone()[0]
+    conn.close()
+    return {'status': 'ok', 'table': table_name, 'rows': cnt}
+
+
+def save_mapping(dataset_name: str, new_mapping: Dict[str, str]) -> Dict[str, Any]:
+    """Update the mapping for a processed dataset and rename keys in stored rows.
+
+    This will update the processed JSON and the central mappings registry.
+    Returns the updated metadata for the dataset.
+    """
+    path = os.path.join(PROCESSED_DIR, f"{dataset_name}.json")
+    if not os.path.exists(path):
+        raise FileNotFoundError(dataset_name)
+
+    with open(path, 'r', encoding='utf-8') as f:
+        payload = json.load(f)
+
+    old_mapping = payload.get('mapping', {})
+    rows = payload.get('rows', [])
+
+    # For each original header, if the mapped canonical name changed, rename keys in rows
+    for orig_header, old_mapped in old_mapping.items():
+        new_mapped = new_mapping.get(orig_header, old_mapped)
+        if new_mapped != old_mapped:
+            for r in rows:
+                if old_mapped in r:
+                    # Avoid overwriting an existing value accidentally
+                    if new_mapped in r and r.get(new_mapped) is None:
+                        r[new_mapped] = r.pop(old_mapped)
+                    else:
+                        r[new_mapped] = r.pop(old_mapped)
+
+    # Update payload mapping and save back
+    payload['mapping'] = new_mapping
+    payload['rows'] = rows
+    with open(path, 'w', encoding='utf-8') as f:
+        json.dump(payload, f, ensure_ascii=False, indent=2)
+
+    # Update central mappings file
+    mappings = {}
+    if os.path.exists(MAPPINGS_FILE):
+        try:
+            with open(MAPPINGS_FILE, 'r', encoding='utf-8') as mfp:
+                mappings = json.load(mfp)
+        except Exception:
+            mappings = {}
+
+    if dataset_name in mappings:
+        mappings[dataset_name]['mapping'] = new_mapping
+        mappings[dataset_name]['rows'] = len(rows)
+        with open(MAPPINGS_FILE, 'w', encoding='utf-8') as mfp:
+            json.dump(mappings, mfp, ensure_ascii=False, indent=2)
+
+    return mappings.get(dataset_name, {'mapping': new_mapping, 'rows': len(rows)})

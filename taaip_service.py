@@ -18,6 +18,7 @@ from typing import Optional, Dict, Any
 import threading
 import asyncio
 from backend.data_pipeline import process_csv, list_datasets, get_dataset
+from backend.data_pipeline import ingest_dataset, save_mapping
 
 
 # --- Configuration & Initialization ---
@@ -5030,6 +5031,40 @@ def api_get_dataset(dataset_name: str):
         raise HTTPException(status_code=404, detail='Dataset not found')
     except Exception as e:
         raise HTTPException(status_code=500, detail=f'Failed to read dataset: {str(e)}')
+
+
+@app.post('/api/v2/data/ingest/{dataset_name}')
+def api_ingest_dataset(dataset_name: str):
+    """Create a SQL table from a processed dataset and insert rows."""
+    try:
+        db_path = DB_FILE
+        result = ingest_dataset(dataset_name, db_path)
+        return {'status': 'ok', 'result': result}
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail='Dataset not found')
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f'Ingest failed: {str(e)}')
+
+
+from fastapi import Body
+
+
+@app.post('/api/v2/data/save_mapping/{dataset_name}')
+def api_save_mapping(dataset_name: str, body: dict = Body(...)):
+    """Save user-edited mapping for a processed dataset."""
+    try:
+        mapping = body.get('mapping') if isinstance(body, dict) else None
+        if not mapping or not isinstance(mapping, dict):
+            raise HTTPException(status_code=400, detail='Missing mapping payload')
+
+        updated = save_mapping(dataset_name, mapping)
+        return {'status': 'ok', 'dataset': dataset_name, 'metadata': updated}
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail='Dataset not found')
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f'Failed to save mapping: {str(e)}')
 
 
 if __name__ == "__main__":
