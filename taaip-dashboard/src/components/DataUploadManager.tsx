@@ -4,6 +4,8 @@ export default function DataUploadManager(){
   const [datasets, setDatasets] = useState<any>({});
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
+  const [editingDataset, setEditingDataset] = useState<string | null>(null);
+  const [mappingEdits, setMappingEdits] = useState<Record<string,string>>({});
 
   useEffect(()=>{ fetchList(); }, []);
 
@@ -20,11 +22,54 @@ export default function DataUploadManager(){
   async function ingest(name:string){
     setMessage('Ingesting...');
     try{
-      const r = await fetch(`/api/v2/data/ingest/${name}`, {method: 'POST'});
-      const j = await r.json();
+      // Primary endpoint
+      let r = await fetch(`/api/v2/data/ingest/${name}`, {method: 'POST'});
+      if(r.status === 404){
+        // Fallback to upload namespace
+        r = await fetch(`/api/v2/upload/ingest/${name}`, {method: 'POST'});
+      }
+      const j = await r.json().catch(()=>({detail: 'No JSON response'}));
       if(r.ok){ setMessage(`Ingested: ${j.result.table} (${j.result.rows} rows)`); fetchList(); }
       else setMessage(j.detail || 'Ingest failed');
     }catch(e){ console.error(e); setMessage('Ingest request failed'); }
+  }
+
+  async function editMapping(name:string){
+    setMessage('Loading mapping...');
+    try{
+      const r = await fetch(`/api/v2/data/${name}`);
+      const j = await r.json();
+      if(r.ok && j.dataset){
+        const mapping = j.dataset.mapping || {};
+        setMappingEdits(mapping);
+        setEditingDataset(name);
+        setMessage('');
+      } else {
+        setMessage('Failed to load mapping');
+      }
+    }catch(e){ console.error(e); setMessage('Failed to load mapping'); }
+  }
+
+  async function saveMapping(name:string){
+    setMessage('Saving mapping...');
+    try{
+      // Try JSON API first
+      let r = await fetch(`/api/v2/data/save_mapping/${name}`, {method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({mapping: mappingEdits})});
+      if(r.status === 404){
+        // Fallback to legacy upload save_mapping (expects form fields: data_type, mapping)
+        const form = new FormData();
+        form.append('data_type', name);
+        form.append('mapping', JSON.stringify(mappingEdits));
+        r = await fetch('/api/v2/upload/save_mapping', {method: 'POST', body: form});
+      }
+      const j = await r.json().catch(()=>({detail: 'No JSON response'}));
+      if(r.ok){ setMessage('Mapping saved'); setEditingDataset(null); fetchList(); }
+      else setMessage(j.detail || 'Save failed');
+    }catch(e){ console.error(e); setMessage('Save request failed'); }
+  }
+
+  function updateMappingKey(orig:string, val:string){
+    setMappingEdits(prev=>({ ...prev, [orig]: val }));
   }
 
   return (
@@ -41,11 +86,29 @@ export default function DataUploadManager(){
                 <td style={{padding:8}}>{v.rows}</td>
                 <td style={{padding:8}}>
                   <button onClick={()=>ingest(k)}>Ingest</button>
+                  <button style={{marginLeft:8}} onClick={()=>editMapping(k)}>Edit Mapping</button>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
+      )}
+      {editingDataset && (
+        <div style={{marginTop:20, padding:12, border:'1px solid #ddd', borderRadius:6, background:'#fff'}}>
+          <h3>Editing mapping for {editingDataset}</h3>
+          <div style={{display:'grid', gap:8}}>
+            {Object.entries(mappingEdits).map(([orig,mapped])=> (
+              <div key={orig} style={{display:'flex', gap:8, alignItems:'center'}}>
+                <div style={{minWidth:200}}>{orig}</div>
+                <input value={mapped} onChange={(e)=>updateMappingKey(orig, e.target.value)} style={{flex:1, padding:6}} />
+              </div>
+            ))}
+          </div>
+          <div style={{marginTop:12}}>
+            <button onClick={()=>saveMapping(editingDataset)}>Save Mapping</button>
+            <button style={{marginLeft:8}} onClick={()=>{ setEditingDataset(null); setMessage(''); }}>Cancel</button>
+          </div>
+        </div>
       )}
     </div>
   );
