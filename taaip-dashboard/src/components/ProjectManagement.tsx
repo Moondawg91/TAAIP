@@ -6,6 +6,7 @@ import {
   Target, Briefcase, ListTodo, Flag, Download
 } from 'lucide-react';
 import { ProjectEditor } from './ProjectEditor';
+import { CreateProjectModal } from './CreateProjectModal';
 import { RSIDFilter } from './RSIDFilter';
 import { API_BASE } from '../config/api';
 
@@ -113,6 +114,7 @@ export const ProjectManagement: React.FC = () => {
   const [view, setView] = useState<'dashboard' | 'list' | 'detail'>('dashboard');
   const [selectedProject, setSelectedProject] = useState<string | null>(null);
   const [editingProject, setEditingProject] = useState<string | null>(null);
+  const [creatingProject, setCreatingProject] = useState(false);
   const [filterRSID, setFilterRSID] = useState<string | null>(null);
   
   const [dashboardData, setDashboardData] = useState<DashboardSummary | null>(null);
@@ -385,6 +387,13 @@ export const ProjectManagement: React.FC = () => {
             Refresh
           </button>
           <button
+            onClick={() => setCreatingProject(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            New Project
+          </button>
+          <button
             onClick={() => window.open(`${API_BASE}/api/v2/export/projects?rsid=${filterRSID || ''}`, '_blank')}
             className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
           >
@@ -419,6 +428,15 @@ export const ProjectManagement: React.FC = () => {
             fetchDashboard();
             fetchProjects();
             if (selectedProject) fetchProjectDetail(selectedProject);
+          }}
+        />
+      )}
+      {creatingProject && (
+        <CreateProjectModal
+          onClose={() => {
+            setCreatingProject(false);
+            fetchDashboard();
+            fetchProjects();
           }}
         />
       )}

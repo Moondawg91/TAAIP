@@ -38,7 +38,7 @@ export const ProjectEditor: React.FC<{ projectId: string; onClose: () => void }>
   const [project, setProject] = useState<Project | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [milestones, setMilestones] = useState<Milestone[]>([]);
-  const [activeTab, setActiveTab] = useState<'details' | 'tasks' | 'budget' | 'milestones'>('details');
+  const [activeTab, setActiveTab] = useState<'details' | 'tasks' | 'budget' | 'milestones' | 'participants' | 'emm'>('details');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -165,7 +165,7 @@ export const ProjectEditor: React.FC<{ projectId: string; onClose: () => void }>
 
         {/* Tabs */}
         <div className="flex border-b border-gray-200 px-6">
-          {(['details', 'tasks', 'budget', 'milestones'] as const).map((tab) => (
+          {(['details', 'tasks', 'budget', 'milestones', 'participants', 'emm'] as const).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -193,6 +193,12 @@ export const ProjectEditor: React.FC<{ projectId: string; onClose: () => void }>
           )}
           {activeTab === 'milestones' && (
             <MilestonesTab milestones={milestones} onCreate={createMilestone} projectId={projectId} />
+          )}
+          {activeTab === 'participants' && (
+            <ParticipantsTab projectId={projectId} />
+          )}
+          {activeTab === 'emm' && (
+            <EmmTab projectId={projectId} />
           )}
         </div>
       </div>
@@ -454,6 +460,37 @@ const TasksTab: React.FC<{ tasks: Task[]; onCreate: (task: Partial<Task>) => voi
 const BudgetTab: React.FC<{ project: Project; onUpdate: (updates: Partial<Project>) => void; saving: boolean }> = ({ project, onUpdate, saving }) => {
   const [fundingAmount, setFundingAmount] = useState(project.funding_amount || 0);
   const [spentAmount, setSpentAmount] = useState(project.spent_amount || 0);
+  const [wsConnected, setWsConnected] = useState(false);
+
+  // Listen for live budget updates via websocket
+  React.useEffect(() => {
+    let ws: WebSocket | null = null;
+
+    try {
+      const base = API_BASE.startsWith('https') ? API_BASE.replace(/^https/, 'wss') : API_BASE.replace(/^http/, 'ws');
+      ws = new WebSocket(`${base}/api/v2/projects/${project.project_id}/ws/budget`);
+      ws.onopen = () => setWsConnected(true);
+      ws.onmessage = (ev) => {
+        try {
+          const msg = JSON.parse(ev.data);
+          if (msg && msg.type === 'snapshot') {
+            if (typeof msg.funding_amount !== 'undefined') setFundingAmount(Number(msg.funding_amount) || 0);
+            if (typeof msg.spent_amount !== 'undefined') setSpentAmount(Number(msg.spent_amount) || 0);
+          }
+        } catch (e) {
+          // ignore parse errors
+        }
+      };
+      ws.onclose = () => setWsConnected(false);
+      ws.onerror = () => setWsConnected(false);
+    } catch (e) {
+      // ignore
+    }
+
+    return () => {
+      try { ws && ws.close(); } catch (e) {}
+    };
+  }, [project.project_id]);
 
   const remaining = fundingAmount - spentAmount;
   const utilization = fundingAmount > 0 ? (spentAmount / fundingAmount * 100) : 0;
@@ -606,6 +643,114 @@ const MilestonesTab: React.FC<{ milestones: Milestone[]; onCreate: (milestone: {
         {milestones.length === 0 && (
           <p className="text-gray-500 text-center py-8">No milestones yet. Click "Add Milestone" to create one.</p>
         )}
+      </div>
+    </div>
+  );
+};
+
+// Participants Tab
+const ParticipantsTab: React.FC<{ projectId: string }> = ({ projectId }) => {
+  const [participants, setParticipants] = React.useState<any[]>([]);
+  const [personId, setPersonId] = React.useState('');
+  const [role, setRole] = React.useState('');
+
+  const load = async () => {
+    try {
+      let res = await fetch(`${API_BASE}/api/v2/projects_pm/projects/${projectId}/participants`);
+      if (!res.ok) res = await fetch(`${API_BASE}/api/v2/projects/${projectId}/participants`);
+      const data = await res.json();
+      if (data && Array.isArray(data)) setParticipants(data);
+      else if (data && data.status === 'ok' && Array.isArray(data.participants)) setParticipants(data.participants);
+    } catch (e) {
+      console.error('Failed loading participants', e);
+    }
+  };
+
+  React.useEffect(() => { load(); }, [projectId]);
+
+  const add = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/v2/projects_pm/projects/${projectId}/participants`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ person_id: personId, role }),
+      });
+      if (res.ok) { setPersonId(''); setRole(''); await load(); }
+    } catch (e) { console.error(e); }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <input value={personId} onChange={(e) => setPersonId(e.target.value)} placeholder="Person ID" className="px-3 py-2 border rounded-md" />
+        <input value={role} onChange={(e) => setRole(e.target.value)} placeholder="Role" className="px-3 py-2 border rounded-md" />
+        <button onClick={add} className="px-4 py-2 bg-blue-600 text-white rounded-md">Add Participant</button>
+      </div>
+      <div className="bg-white rounded-md shadow p-4">
+        <h4 className="font-semibold mb-2">Participants ({participants.length})</h4>
+        <ul className="space-y-2">
+          {participants.map((p) => (
+            <li key={p.participant_id || p.id || JSON.stringify(p)} className="flex justify-between">
+              <div>
+                <div className="font-medium">{p.person_id || p.person || 'unknown'}</div>
+                <div className="text-sm text-gray-500">{p.role || p.unit || ''}</div>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+};
+
+// EMM Tab
+const EmmTab: React.FC<{ projectId: string }> = ({ projectId }) => {
+  const [mappings, setMappings] = React.useState<any[]>([]);
+  const [payload, setPayload] = React.useState('');
+
+  const load = async () => {
+    try {
+      let res = await fetch(`${API_BASE}/api/v2/projects_pm/projects/${projectId}/emm`);
+      if (!res.ok) res = await fetch(`${API_BASE}/api/v2/projects/${projectId}/emm`);
+      const data = await res.json();
+      if (data && data.status === 'ok') setMappings(data.mappings || data.mappings || []);
+    } catch (e) { console.error(e); }
+  };
+
+  React.useEffect(() => { load(); }, [projectId]);
+
+  const doImport = async () => {
+    try {
+      const obj = payload ? JSON.parse(payload) : {};
+      const res = await fetch(`${API_BASE}/api/v2/projects_pm/projects/${projectId}/emm/import`, {
+        method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(obj)
+      });
+      if (res.ok) { setPayload(''); await load(); }
+    } catch (e) { console.error(e); }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">EMM JSON Payload</label>
+        <textarea value={payload} onChange={(e) => setPayload(e.target.value)} rows={6} className="w-full border rounded-md px-3 py-2" />
+        <div className="flex justify-end mt-2">
+          <button onClick={doImport} className="px-4 py-2 bg-indigo-600 text-white rounded-md">Import</button>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-md shadow p-4">
+        <h4 className="font-semibold mb-2">Mappings ({mappings.length})</h4>
+        <ul className="space-y-2">
+          {mappings.map((m) => (
+            <li key={m.mapping_id || JSON.stringify(m)} className="flex justify-between">
+              <div>
+                <div className="font-medium">{m.mapping_id}</div>
+                <div className="text-sm text-gray-500">{JSON.stringify(m.payload || m.raw_payload || {})}</div>
+              </div>
+            </li>
+          ))}
+        </ul>
       </div>
     </div>
   );
