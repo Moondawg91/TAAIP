@@ -209,6 +209,22 @@ export const ProjectEditor: React.FC<{ projectId: string; onClose: () => void }>
 // Details Tab
 const DetailsTab: React.FC<{ project: Project; onUpdate: (updates: Partial<Project>) => void; saving: boolean }> = ({ project, onUpdate, saving }) => {
   const [formData, setFormData] = useState(project);
+  const [errors, setErrors] = useState<string[]>([]);
+
+  const validate = (data: typeof formData) => {
+    const errs: string[] = [];
+    if (!data.name || data.name.trim().length === 0) errs.push('Project name is required');
+    if (!data.owner_id || data.owner_id.trim().length === 0) errs.push('Owner is required');
+    try {
+      if (data.start_date && data.target_date) {
+        const sd = new Date(data.start_date);
+        const td = new Date(data.target_date);
+        if (sd > td) errs.push('Start date must be before target date');
+      }
+    } catch (e) {}
+    setErrors(errs);
+    return errs.length === 0;
+  };
 
   return (
     <div className="space-y-6">
@@ -319,8 +335,18 @@ const DetailsTab: React.FC<{ project: Project; onUpdate: (updates: Partial<Proje
         />
       </div>
 
+      {errors.length > 0 && (
+        <div className="bg-red-50 border border-red-200 text-red-800 rounded-md p-3">
+          <ul className="list-disc pl-5">
+            {errors.map((err, i) => (
+              <li key={i}>{err}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       <button
-        onClick={() => onUpdate(formData)}
+        onClick={() => { if (validate(formData)) onUpdate(formData); }}
         disabled={saving}
         className="w-full flex items-center justify-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
       >

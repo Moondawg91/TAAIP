@@ -57,7 +57,7 @@ export const CreateProjectModal: React.FC<{ onClose: () => void }> = ({ onClose 
           {message && <div className="text-sm text-red-600">{message}</div>}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Project Name</label>
-            <input value={name} onChange={(e) => setName(e.target.value)} className="w-full px-3 py-2 border rounded-md" />
+            <input autoFocus value={name} onChange={(e) => setName(e.target.value)} className="w-full px-3 py-2 border rounded-md" />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
