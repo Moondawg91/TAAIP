@@ -29,6 +29,36 @@ app = FastAPI(
 )
 logging.basicConfig(level=logging.INFO)
 
+
+# Request/response logging middleware for action endpoints
+@app.middleware("http")
+async def log_actions_requests(request: Request, call_next):
+    try:
+        path = request.url.path
+        if path.startswith('/api/v2/upload/actions'):
+            logging.info(f"[ACTIONS] Request: {request.method} {request.url}")
+            try:
+                body = await request.body()
+                if body:
+                    logging.info(f"[ACTIONS] Request body: {body.decode('utf-8', errors='replace')}")
+            except Exception:
+                logging.info("[ACTIONS] Failed to read request body for logging")
+            resp = await call_next(request)
+            try:
+                content = b""
+                async for chunk in resp.body_iterator:
+                    content += chunk
+                logging.info(f"[ACTIONS] Response status: {resp.status_code}, body: {content.decode('utf-8', errors='replace')}")
+                return StreamingResponse(iter([content]), status_code=resp.status_code, headers=dict(resp.headers))
+            except Exception:
+                logging.info(f"[ACTIONS] Response status: {resp.status_code} (body omitted)")
+                return resp
+        else:
+            return await call_next(request)
+    except Exception as e:
+        logging.exception(f"Error in actions logging middleware: {e}")
+        return await call_next(request)
+
 # Allow CORS for local development (adjust origins for production)
 app.add_middleware(
     CORSMiddleware,

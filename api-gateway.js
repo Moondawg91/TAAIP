@@ -204,6 +204,34 @@ app.all('/api/v2/*', async (req, res) => {
   }
 });
 
+// Explicit proxy for /api/v2/upload/actions/* to avoid accidental route collisions
+app.all('/api/v2/upload/actions/*', async (req, res) => {
+  try {
+    console.log(`Forwarding actions path to FastAPI: ${req.method} ${req.originalUrl}`);
+    const url = `${FASTAPI_URL}${req.originalUrl}`;
+    const config = {
+      method: req.method,
+      url: url,
+      headers: { ...req.headers, authorization: req.headers['authorization'] },
+      params: req.query,
+    };
+
+    // Preserve body for non-GET requests. If body is empty, axios will handle it.
+    if (req.method !== 'GET' && req.method !== 'HEAD') {
+      config.data = req.body;
+    }
+
+    const response = await axios(config);
+    res.status(response.status).json(response.data);
+  } catch (error) {
+    console.error(`Actions proxy error [${req.method} ${req.originalUrl}]:`, error.message);
+    if (error.response) {
+      return res.status(error.response.status).json(error.response.data);
+    }
+    return res.status(503).json({ message: 'Failed to reach FastAPI backend (actions proxy).' });
+  }
+});
+
 // Alias /api/actions -> /api/v2/actions to support older frontend calls
 app.use('/api/actions', async (req, res, next) => {
   try {
