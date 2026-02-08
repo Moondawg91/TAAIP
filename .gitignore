@@ -30,3 +30,13 @@ pm_capture.png
 pm_debug.png
 tmp_puppeteer*
 
+
+# local artifacts
+_backups/
+backups/
+uploads/
+tmp/
+*.bak
+._*
+.DS_Store
+*.zip
