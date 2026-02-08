@@ -4,6 +4,9 @@
 import express from 'express';
 import cors from 'cors';
 import axios from 'axios';
+import fs from 'fs';
+import http from 'http';
+import https from 'https';
 import { ConfidentialClientApplication } from '@azure/msal-node';
 
 const app = express();
@@ -17,6 +20,31 @@ const REQUIRE_AUTH = false;
 
 app.use(express.json());
 app.use(cors());
+
+// Helper: safely forward axios error responses to the client.
+function forwardUpstreamError(res, error) {
+  const resp = error && error.response;
+  if (!resp) return res.status(502).json({ message: 'Upstream service error' });
+  const status = resp.status || 502;
+  const data = resp.data;
+
+  // If data is a stream (responseType: 'stream'), pipe it directly.
+  if (data && typeof data.pipe === 'function') {
+    res.status(status);
+    return data.pipe(res);
+  }
+
+  // Try to send JSON safely; fall back to string if circular.
+  try {
+    return res.status(status).json(data);
+  } catch (e) {
+    try {
+      return res.status(status).send(JSON.stringify(data));
+    } catch (e2) {
+      return res.status(status).send(String(data));
+    }
+  }
+}
 
 // Optional gateway-level auth enforcement (helps protect the gateway itself).
 // Auth enforcement removed — gateway will forward requests without checking a token.
@@ -86,9 +114,7 @@ app.post('/api/powerbi/embedToken', async (req, res) => {
     return res.json({ embedUrl, embedToken: token, tokenExpiration: expiration, reportId });
   } catch (error) {
     console.error('Power BI embed token error:', error?.response?.data || error.message);
-    if (error.response) {
-      return res.status(error.response.status).json(error.response.data);
-    }
+    if (error.response) return forwardUpstreamError(res, error);
     return res.status(500).json({ message: 'Unexpected server error generating embed token' });
   }
 });
@@ -117,16 +143,8 @@ app.post('/api/targeting/scoreLead', async (req, res) => {
     res.json(response.data);
   } catch (error) {
     console.error('Scoring error:', error.message);
-    
-    if (error.response) {
-      // FastAPI returned an error
-      res.status(error.response.status).json(error.response.data);
-    } else {
-      // Network or other error
-      res.status(503).json({
-        message: 'Failed to reach FastAPI backend. Ensure it is running on port 8000.'
-      });
-    }
+    if (error.response) return forwardUpstreamError(res, error);
+    return res.status(503).json({ message: 'Failed to reach FastAPI backend. Ensure it is running on port 8000.' });
   }
 });
 
@@ -137,7 +155,7 @@ app.post('/api/targeting/ingestLead', async (req, res) => {
     res.json(response.data);
   } catch (error) {
     console.error('Ingest error:', error.message);
-    if (error.response) return res.status(error.response.status).json(error.response.data);
+    if (error.response) return forwardUpstreamError(res, error);
     return res.status(503).json({ message: 'Failed to reach FastAPI backend.' });
   }
 });
@@ -149,7 +167,7 @@ app.get('/api/targeting/metrics', async (req, res) => {
     res.json(response.data);
   } catch (error) {
     console.error('Metrics error:', error.message);
-    if (error.response) return res.status(error.response.status).json(error.response.data);
+    if (error.response) return forwardUpstreamError(res, error);
     return res.status(503).json({ message: 'Failed to reach FastAPI backend.' });
   }
 });
@@ -161,7 +179,7 @@ app.post('/api/targeting/startPilot', async (req, res) => {
     res.json(response.data);
   } catch (error) {
     console.error('StartPilot error:', error.message);
-    if (error.response) return res.status(error.response.status).json(error.response.data);
+    if (error.response) return forwardUpstreamError(res, error);
     return res.status(503).json({ message: 'Failed to reach FastAPI backend.' });
   }
 });
@@ -172,7 +190,7 @@ app.get('/api/targeting/pilotStatus', async (req, res) => {
     res.json(response.data);
   } catch (error) {
     console.error('PilotStatus error:', error.message);
-    if (error.response) return res.status(error.response.status).json(error.response.data);
+    if (error.response) return forwardUpstreamError(res, error);
     return res.status(503).json({ message: 'Failed to reach FastAPI backend.' });
   }
 });
@@ -197,9 +215,7 @@ app.all('/api/v2/*', async (req, res) => {
     res.status(response.status).json(response.data);
   } catch (error) {
     console.error(`API v2 proxy error [${req.method} ${req.originalUrl}]:`, error.message);
-    if (error.response) {
-      return res.status(error.response.status).json(error.response.data);
-    }
+    if (error.response) return forwardUpstreamError(res, error);
     return res.status(503).json({ message: 'Failed to reach FastAPI backend.' });
   }
 });
@@ -225,9 +241,7 @@ app.all('/api/v2/upload/actions/*', async (req, res) => {
     res.status(response.status).json(response.data);
   } catch (error) {
     console.error(`Actions proxy error [${req.method} ${req.originalUrl}]:`, error.message);
-    if (error.response) {
-      return res.status(error.response.status).json(error.response.data);
-    }
+    if (error.response) return forwardUpstreamError(res, error);
     return res.status(503).json({ message: 'Failed to reach FastAPI backend (actions proxy).' });
   }
 });
@@ -275,9 +289,7 @@ app.all('/dashboard/*', async (req, res) => {
     response.data.pipe(res);
   } catch (error) {
     console.error('Dashboard proxy error:', error?.response?.data || error.message);
-    if (error.response) {
-      return res.status(error.response.status).send(error.response.data);
-    }
+    if (error.response) return forwardUpstreamError(res, error);
     return res.status(502).json({ message: 'Frontend unreachable via gateway' });
   }
 });
@@ -309,7 +321,7 @@ app.all('/assets/*', async (req, res) => {
     response.data.pipe(res);
   } catch (error) {
     console.error('Assets proxy error:', error?.response?.data || error.message);
-    if (error.response) return res.status(error.response.status).send(error.response.data);
+    if (error.response) return forwardUpstreamError(res, error);
     return res.status(502).json({ message: 'Frontend assets unreachable via gateway' });
   }
 });
@@ -326,7 +338,35 @@ app.get('/favicon.ico', async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`API Gateway running on http://127.0.0.1:${PORT}`);
-  console.log(`Proxying to FastAPI at ${FASTAPI_URL}`);
-});
+// Start both HTTP and HTTPS servers. Do not perform HTTP->HTTPS redirects.
+const HTTP_PORT = parseInt(process.env.PORT_HTTP || '80', 10);
+const HTTPS_PORT = 443;
+
+const startHttpServer = () => {
+  const server = http.createServer(app);
+  server.listen(HTTP_PORT, '0.0.0.0', () => {
+    console.log(`API Gateway HTTP running on http://0.0.0.0:${HTTP_PORT}`);
+    console.log(`Proxying to FastAPI at ${FASTAPI_URL}`);
+  });
+};
+
+const startHttpsServer = () => {
+  const SSL_CERT = process.env.SSL_CERT || '/etc/letsencrypt/live/taaip.app/fullchain.pem';
+  const SSL_KEY = process.env.SSL_KEY || '/etc/letsencrypt/live/taaip.app/privkey.pem';
+  try {
+    const cert = fs.readFileSync(SSL_CERT);
+    const key = fs.readFileSync(SSL_KEY);
+    const server = https.createServer({ key, cert }, app);
+    server.listen(HTTPS_PORT, '0.0.0.0', () => {
+      console.log(`API Gateway HTTPS running on https://0.0.0.0:${HTTPS_PORT}`);
+    });
+    return true;
+  } catch (e) {
+    console.warn('HTTPS not started (cert/key not found or unreadable):', e.message);
+    return false;
+  }
+};
+
+// Start servers
+startHttpServer();
+startHttpsServer();

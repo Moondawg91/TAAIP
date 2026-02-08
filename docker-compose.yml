@@ -10,16 +10,22 @@ services:
     volumes:
       - ./data:/app/data
       - ./data/recruiting.db:/app/recruiting.db
+
   gateway:
     build:
       context: .
       dockerfile: Dockerfile.gateway
     ports:
-      - "3000:3000"
+      - "80:80"
+      - "443:443"
     environment:
       - FASTAPI_URL=http://backend:8000
+    volumes:
+      - /etc/letsencrypt:/etc/letsencrypt:ro
     depends_on:
       - backend
+    restart: unless-stopped
+
   frontend:
     build:
       context: ./taaip-dashboard
@@ -30,3 +36,22 @@ services:
       - gateway
     volumes:
       - ./dashboard:/usr/share/nginx/html/dashboard:ro
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    command: ["python", "-m", "rq.worker", "-u", "redis://redis:6379", "default"]
+    depends_on:
+      - redis
+      - backend
+    environment:
+      - REDIS_URL=redis://redis:6379
+    volumes:
+      - ./:/app
+    restart: unless-stopped

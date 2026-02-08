@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Request, Form, WebSocket, WebSocketDisconnect, UploadFile, File, Body
+from fastapi import FastAPI, HTTPException, Request, Form, WebSocket, WebSocketDisconnect, UploadFile, File, Body, Query
 from fastapi.responses import JSONResponse, StreamingResponse
 import io
 import csv
@@ -20,6 +20,9 @@ import threading
 import asyncio
 from backend.data_pipeline import process_csv, list_datasets, get_dataset
 from backend.data_pipeline import ingest_dataset, save_mapping
+from backend import importer as importer_module
+from backend.mappings import usarec as usarec_mappings
+from backend.mappings import dod as dod_mappings
 
 
 # --- Configuration & Initialization ---
@@ -45,40 +48,20 @@ if not any(isinstance(h, RotatingFileHandler) for h in logging.getLogger().handl
 # Verbose request/response logging middleware for upload/action endpoints
 @app.middleware("http")
 async def log_upload_requests(request: Request, call_next):
+    # Lightweight logging for upload/data endpoints. Do NOT read or
+    # consume the request body here because it may be a multipart/form-data
+    # stream which must be parsed by downstream handlers. Keep logging to
+    # the request line and a few headers only.
     try:
         path = request.url.path
         if path.startswith('/api/v2/upload') or path.startswith('/api/v2/data'):
-            # Log basic request line and selected headers
             logging.info(f"[UPLOAD] Request: {request.method} {request.url}")
             try:
                 headers = {k: v for k, v in request.headers.items() if k.lower() in ('content-type', 'content-length', 'authorization', 'host')}
                 logging.info(f"[UPLOAD] Request headers: {headers}")
             except Exception:
                 logging.info("[UPLOAD] Failed to read request headers for logging")
-            # Read and log a truncated request body (if present)
-            try:
-                body = await request.body()
-                if body:
-                    text = body.decode('utf-8', errors='replace')
-                    trunc = text[:2000]
-                    logging.info(f"[UPLOAD] Request body (truncated to 2000 chars): {trunc}")
-            except Exception:
-                logging.info("[UPLOAD] Failed to read request body for logging")
-
-            # Call downstream and capture response body
-            resp = await call_next(request)
-            try:
-                content = b""
-                async for chunk in resp.body_iterator:
-                    content += chunk
-                text = content.decode('utf-8', errors='replace')
-                logging.info(f"[UPLOAD] Response status: {resp.status_code}; body (truncated 2000 chars): {text[:2000]}")
-                return StreamingResponse(iter([content]), status_code=resp.status_code, headers=dict(resp.headers))
-            except Exception:
-                logging.info(f"[UPLOAD] Response status: {getattr(resp, 'status_code', 'unknown')} (body omitted)")
-                return resp
-        else:
-            return await call_next(request)
+        return await call_next(request)
     except Exception as e:
         logging.exception(f"Error in upload logging middleware: {e}")
         return await call_next(request)
@@ -205,6 +188,39 @@ def init_db():
             created_at TEXT,
             FOREIGN KEY(event_id) REFERENCES events(event_id)
         )
+        """
+    )
+
+    # --- Raw import staging / audit tables for BI ingestion ---
+    cur.execute(
+        """
+        CREATE TABLE IF NOT EXISTS raw_import_batches (
+            batch_id TEXT PRIMARY KEY,
+            source_system TEXT NOT NULL,
+            filename TEXT NOT NULL,
+            stored_path TEXT NOT NULL,
+            file_hash TEXT NOT NULL,
+            imported_at TEXT NOT NULL,
+            detected_profile TEXT,
+            status TEXT NOT NULL DEFAULT 'received',
+            notes TEXT
+        );
+        """
+    )
+    cur.execute(
+        """
+        CREATE TABLE IF NOT EXISTS raw_import_tables (
+            batch_id TEXT NOT NULL,
+            sheet_name TEXT,
+            table_index INTEGER NOT NULL DEFAULT 0,
+            header_row_index INTEGER,
+            detected_profile TEXT,
+            column_map_json TEXT,
+            row_count INTEGER,
+            preview_json TEXT,
+            PRIMARY KEY (batch_id, table_index),
+            FOREIGN KEY (batch_id) REFERENCES raw_import_batches(batch_id)
+        );
         """
     )
     
@@ -491,6 +507,86 @@ def init_db():
     except Exception as e:
         logging.warning(f"USAREC funnel stages already initialized: {e}")
     
+    # --- Staging & BI ingestion tables ---
+    cur.execute(
+        """
+        CREATE TABLE IF NOT EXISTS raw_import_batches (
+            batch_id TEXT PRIMARY KEY,
+            source_system TEXT,
+            file_name TEXT,
+            file_hash TEXT,
+            imported_at TEXT,
+            detected_sheet TEXT,
+            detected_header_row INTEGER,
+            status TEXT,
+            notes TEXT
+        )
+        """
+    )
+    cur.execute(
+        """
+        CREATE TABLE IF NOT EXISTS raw_import_rows (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            batch_id TEXT,
+            row_index INTEGER,
+            row_json TEXT,
+            FOREIGN KEY(batch_id) REFERENCES raw_import_batches(batch_id)
+        )
+        """
+    )
+    cur.execute(
+        """
+        CREATE TABLE IF NOT EXISTS dataset_registry (
+            dataset_type TEXT PRIMARY KEY,
+            description TEXT,
+            canonical_table TEXT,
+            default_mapping_profile TEXT,
+            templates TEXT
+        )
+        """
+    )
+    cur.execute(
+        """
+        CREATE TABLE IF NOT EXISTS mapping_profiles (
+            profile_id TEXT PRIMARY KEY,
+            dataset_type TEXT,
+            synonyms TEXT,
+            required_fields TEXT
+        )
+        """
+    )
+    cur.execute(
+        """
+        CREATE TABLE IF NOT EXISTS dim_org_hierarchy (
+            rsid TEXT PRIMARY KEY,
+            station_code TEXT,
+            org TEXT,
+            bde TEXT,
+            bn TEXT,
+            co TEXT,
+            station TEXT,
+            zip_code TEXT,
+            effective_start TEXT,
+            effective_end TEXT
+        )
+        """
+    )
+    cur.execute(
+        """
+        CREATE TABLE IF NOT EXISTS fact_market_share (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            batch_id TEXT,
+            rsid TEXT,
+            station_code TEXT,
+            zip_code TEXT,
+            service TEXT,
+            contracts INTEGER,
+            share_pct REAL,
+            fy INTEGER,
+            imported_at TEXT
+        )
+        """
+    )
     conn.commit()
     conn.close()
 
@@ -791,6 +887,45 @@ def get_targeting_recommendations():
             "last_updated": datetime.now().isoformat()
         }
     }
+
+
+@app.post("/api/v2/import")
+async def api_import(file: UploadFile = File(...), source_system: Optional[str] = Form("auto"), mapping_profile_id: Optional[str] = Form(None), batch_id: Optional[str] = Form(None)):
+    """General import endpoint: accepts XLSX or CSV, detects table, maps, and loads into canonical tables."""
+    try:
+        contents = await file.read()
+        mapping_profile = None
+        # Try to resolve mapping_profile_id from known profiles
+        if mapping_profile_id:
+            # Check USAREC profiles
+            for k, v in usarec_mappings.DEFAULT_PROFILES.items():
+                if v.get('profile_id') == mapping_profile_id or k == mapping_profile_id:
+                    mapping_profile = v
+                    break
+            # Check DOD profiles
+            if mapping_profile is None:
+                for k, v in dod_mappings.DEFAULT_PROFILES.items():
+                    if v.get('profile_id') == mapping_profile_id or k == mapping_profile_id:
+                        mapping_profile = v
+                        break
+
+        result = importer_module.process_import(DB_FILE, contents, file.filename, source_system=source_system, mapping_profile=mapping_profile, batch_id=batch_id)
+        return JSONResponse(content=result)
+    except Exception as e:
+        logging.exception(f"Import failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/v2/import/usarec")
+async def api_import_usarec(file: UploadFile = File(...), mapping_profile_id: Optional[str] = Form(None), batch_id: Optional[str] = Form(None)):
+    """USAREC shortcut: prefer USAREC mapping profiles."""
+    return await api_import(file=file, source_system="USAREC", mapping_profile_id=mapping_profile_id, batch_id=batch_id)
+
+
+@app.post("/api/v2/import/dod")
+async def api_import_dod(file: UploadFile = File(...), mapping_profile_id: Optional[str] = Form(None), batch_id: Optional[str] = Form(None)):
+    """DoD shortcut: prefer DoD mapping profiles."""
+    return await api_import(file=file, source_system="DoD", mapping_profile_id=mapping_profile_id, batch_id=batch_id)
 
 
 
@@ -4966,6 +5101,18 @@ app.include_router(project_mgmt_router, prefix="/api/v2/projects_pm", tags=["Pro
 from backend.routers.data_upload import router as data_upload_router
 app.include_router(data_upload_router, prefix="/api/v2", tags=["Data Upload"])
 
+# --- Ingestion router (BI-style uploads) ---
+from backend.routers.upload_ingest import router as upload_ingest_router
+app.include_router(upload_ingest_router)
+
+# --- New: Import router v2 for production ingestion spine ---
+from backend.routers.imports_v2 import router as imports_v2_router
+app.include_router(imports_v2_router)
+
+# --- New: Import router for BI-style ingestion ---
+from backend.routers.imports import router as imports_router
+app.include_router(imports_router, prefix="/api/v2", tags=["Imports"])
+
 # --- Task Requests (separate workflow from Helpdesk) ---
 from backend.routers.task_requests import router as task_requests_router
 app.include_router(task_requests_router, prefix="/api/v2", tags=["Task Requests"])
@@ -4992,6 +5139,46 @@ def list_backups():
         return {"status": "ok", "backups": entries}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to list backups: {str(e)}")
+
+
+@app.post('/api/v2/upload/raw')
+async def upload_raw_main(file: UploadFile = File(...), source_system: str = Query('USAREC')):
+    """Direct upload endpoint (fallback) that accepts multipart file uploads.
+    Stores the uploaded file under the `/uploads` mount and records an audit row.
+    """
+    try:
+        data = await file.read()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f'read failed: {e}')
+    if not data:
+        raise HTTPException(status_code=400, detail='empty upload')
+
+    UPLOAD_DIR = '/uploads' if os.path.isdir('/uploads') else '/tmp/uploads'
+    os.makedirs(UPLOAD_DIR, exist_ok=True)
+    ext = os.path.splitext(file.filename or '')[1] or ''
+    safe_name = f"{uuid.uuid4().hex}_{source_system}{ext}"
+    dest = os.path.join(UPLOAD_DIR, safe_name)
+    try:
+        with open(dest, 'wb') as fh:
+            fh.write(data)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f'write failed: {e}')
+
+    # record batch in DB (use DB_FILE defined in this module)
+    try:
+        con = sqlite3.connect(DB_FILE)
+        cur = con.cursor()
+        batch_id = uuid.uuid4().hex
+        fhash = hashlib.sha256(data).hexdigest()
+        imported_at = datetime.utcnow().isoformat()
+        cur.execute('''INSERT OR REPLACE INTO raw_import_batches(batch_id, source_system, filename, stored_path, file_hash, imported_at, status, notes)
+                       VALUES(?,?,?,?,?,?,?,?)''', (batch_id, source_system, safe_name, dest, fhash, imported_at, 'received', None))
+        con.commit()
+        con.close()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f'db insert failed: {e}')
+
+    return {'status': 'ok', 'batch_id': batch_id, 'filename': safe_name, 'bytes': len(data)}
 
 
 @app.post('/api/v2/upload/restore')
