@@ -247,6 +247,84 @@ def _insert_raw_rows(con: sqlite3.Connection, batch_id: str, df) -> int:
         return inserted
 
 
+def _persist_raw_rows(con: sqlite3.Connection, batch_id: str, df) -> int:
+    """Ensure `raw_import_rows` exists, delete any previous rows for this batch,
+    then insert every row from `df` as JSON. Update raw_import_batches.raw_rows_inserted.
+    Returns number of rows inserted.
+    """
+    import json as _json
+    cur = con.cursor()
+
+    # Ensure table exists (safe)
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS raw_import_rows (
+      batch_id TEXT NOT NULL,
+      row_index INTEGER NOT NULL,
+      row_json TEXT NOT NULL,
+      created_at TEXT DEFAULT (datetime('now')),
+      PRIMARY KEY (batch_id, row_index)
+    );
+    """)
+    con.commit()
+
+    # Clear any previous raw rows for idempotent re-process
+    cur.execute("DELETE FROM raw_import_rows WHERE batch_id = ?", (batch_id,))
+    con.commit()
+
+    rows = []
+    try:
+        recs = df.to_dict(orient="records")
+    except Exception:
+        # fallback: iterate rows
+        recs = []
+        for _, r in df.iterrows():
+            try:
+                recs.append({str(k): (None if pd.isna(v) else v) for k, v in r.items()})
+            except Exception:
+                try:
+                    recs.append(r.to_dict())
+                except Exception:
+                    recs.append({})
+
+    for i, rec in enumerate(recs):
+        try:
+            payload = _json.dumps(rec, ensure_ascii=False, default=str)
+        except Exception:
+            try:
+                payload = _json.dumps({k: (None if pd.isna(v) else v) for k, v in rec.items()}, default=str)
+            except Exception:
+                payload = _json.dumps({}, default=str)
+        rows.append((batch_id, int(i), payload))
+
+    inserted = 0
+    if rows:
+        try:
+            cur.executemany("INSERT INTO raw_import_rows (batch_id, row_index, row_json) VALUES (?,?,?)", rows)
+            con.commit()
+            inserted = len(rows)
+        except Exception:
+            # try one-by-one
+            for r in rows:
+                try:
+                    cur.execute("INSERT INTO raw_import_rows (batch_id, row_index, row_json) VALUES (?,?,?)", r)
+                    inserted += 1
+                except Exception:
+                    continue
+            con.commit()
+
+    # Best-effort update of batch counter
+    try:
+        cur.execute("UPDATE raw_import_batches SET raw_rows_inserted = ? WHERE batch_id = ?", (inserted, batch_id))
+        con.commit()
+    except Exception:
+        try:
+            con.rollback()
+        except Exception:
+            pass
+
+    return inserted
+
+
 @router.post("/upload")
 async def imports_upload(
     file: Optional[UploadFile] = File(None),
@@ -550,24 +628,7 @@ def process_batch(batch_id: str, sync: bool = Query(True)):
 
         # Persist raw rows for auditing/UI and update batch metadata
         try:
-            # ensure table exists
-            cur = con.cursor()
-            cur.execute("CREATE TABLE IF NOT EXISTS raw_import_rows (id INTEGER PRIMARY KEY AUTOINCREMENT, batch_id TEXT, row_index INTEGER, row_json TEXT);")
-            con.commit()
-        except Exception:
-            pass
-
-        try:
-            # delete previous rows for idempotent re-process
-            cur = con.cursor()
-            cur.execute("DELETE FROM raw_import_rows WHERE batch_id=?", (batch_id,))
-            con.commit()
-            raw_count = _insert_raw_rows(con, batch_id, df)
-            try:
-                cur.execute("UPDATE raw_import_batches SET raw_rows_inserted=? WHERE batch_id=?", (raw_count, batch_id))
-                con.commit()
-            except Exception:
-                pass
+            raw_count = _persist_raw_rows(con, batch_id, df)
         except Exception:
             raw_count = 0
 
