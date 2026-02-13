@@ -47,6 +47,27 @@ datasets:
   raw_storage:
     store_all_rows: true
     table: raw_import_rows
+- dataset_key: usarec_vol_contracts_by_service
+  source_system: USAREC
+  description: Volume contracts by service (FY,RQ,SERVICE,SUM OF CONTRACTS,ZIP,STATION)
+  format: csv
+  file_types: [csv, xlsx]
+  loader: backend.ingestion.loaders.market_share_loader:load_market_share
+  target_tables:
+  - fact_market_share_contracts
+  required_columns_norm:
+  - fy
+  - rq
+  - service
+  - sum_of_contracts
+  - zip
+  - station
+  preview:
+    enabled: true
+    default_limit: 50
+  raw_storage:
+    store_all_rows: true
+    table: raw_import_rows
 - dataset_key: USAREC_ZIP_CATEGORY
   source_files:
   - Act+Res ZIP Code by Category Report for All ZIP codes of STNs in USAREC thru 30JAN2026.xlsx
