@@ -13,17 +13,68 @@ import pandas as pd
 _KNOWN_TOKENS = {"zip", "zip code", "zipcode", "share", "market share", "contr", "contract", "contracts", "sum of contracts", "service", "ry", "rq", "fy", "stn", "rsid"}
 
 def detect_header_csv(path: str, max_rows: int = 60) -> Optional[int]:
+    # Read up to max_rows rows and score each row similar to XLSX heuristic
+    rows = []
     with open(path, newline='') as f:
         reader = csv.reader(f)
-        rows = []
         for i, row in enumerate(reader):
             rows.append(row)
             if i >= max_rows - 1:
                 break
-    for i, row in enumerate(rows[:25]):
-        nonempty = sum(1 for v in row if v and str(v).strip())
-        if nonempty >= 4:
-            return i
+
+    best_idx = None
+    best_score = -1.0
+    for i, row in enumerate(rows[:max_rows]):
+        # join row into lowercase combined string to filter metadata rows
+        row_text = " ".join(["" if v is None else str(v) for v in row])
+        low = row_text.strip().lower()
+        if not low:
+            continue
+        if 'applied filters' in low or 'applied filter' in low or ('included' in low and 'not' in low):
+            continue
+
+        nonempty = sum(1 for v in row if v is not None and str(v).strip() != "")
+        text_like = 0
+        token_bonus = 0
+        for v in row:
+            if v is None:
+                continue
+            s = str(v).strip()
+            if s == "":
+                continue
+            # numeric check
+            try:
+                float(s.replace(',', ''))
+                # numeric values are less likely headers
+            except Exception:
+                text_like += 1
+                if normalize_col(s) in _KNOWN_TOKENS:
+                    token_bonus += 1
+
+        score = text_like + (nonempty * 0.05) + (token_bonus * 0.5)
+        if score > best_score:
+            best_score = score
+            best_idx = i
+
+    # require at least some textual signal to accept a header
+    if best_score >= 1.0:
+        return best_idx
+    # fallback: if first row has several non-empty cells and non-numeric entries, use it
+    if rows:
+        first = rows[0]
+        nonempty = sum(1 for v in first if v and str(v).strip())
+        text_like = 0
+        for v in first:
+            if v is None:
+                continue
+            s = str(v).strip()
+            try:
+                float(s.replace(',', ''))
+            except Exception:
+                if s:
+                    text_like += 1
+        if nonempty >= 3 and text_like >= 2:
+            return 0
     return None
 
 def normalize_col(c: Any) -> str:
@@ -65,7 +116,6 @@ def classify_columns(cols: List[str]) -> Dict[str, Any]:
 
 def inspect_csv(path: str) -> Dict[str, Any]:
     header_row = detect_header_csv(path)
-    # read header using csv when header_row found
     header = []
     if header_row is not None:
         with open(path, newline='') as f:
@@ -74,6 +124,17 @@ def inspect_csv(path: str) -> Dict[str, Any]:
                 if i == header_row:
                     header = [normalize_col(c) for c in row]
                     break
+    else:
+        # try to read first row as header fallback
+        try:
+            with open(path, newline='') as f:
+                reader = csv.reader(f)
+                first = next(reader, None)
+                if first:
+                    header = [normalize_col(c) for c in first]
+        except Exception:
+            header = []
+
     return {
         'header_row': header_row,
         'columns': header,

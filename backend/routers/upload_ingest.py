@@ -9,10 +9,10 @@ from typing import Optional, List
 from datetime import datetime
 
 from backend.ingestion.classifier import inspect_file
-from backend.ingestion.dataset_registry import classify
+from backend.ingestion.dataset_registry import classify, detect_dataset
 
 router = APIRouter()
-DB = os.getenv('DB_PATH', '/app/recruiting.db')
+DB = os.getenv('DB_PATH') or os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'recruiting.db')
 UPLOAD_DIR = '/uploads' if os.path.isdir('/uploads') else '/tmp/uploads'
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
@@ -62,7 +62,12 @@ async def upload_raw(
     info = inspect_file(dest)
     cols = info.get('columns') or []
     header_row = info.get('header_row')
-    dataset_key = classify(cols, source_system) or 'unknown'
+    # prefer deterministic detection (expects cols normalized by inspector)
+    try:
+        detected = detect_dataset({c.upper() for c in cols}, source_system)
+    except Exception:
+        detected = None
+    dataset_key = detected or classify(cols, source_system) or 'unknown'
     # row_count
     try:
         with open(dest, newline='') as fh:
@@ -81,6 +86,45 @@ async def upload_raw(
                    VALUES(?,?,?,?,?,?,?,?,?)''', (batch_id, source_system, safe_name, dest, fhash, imported_at, dataset_key, 'received', None))
     con.commit()
     con.close()
+
+    # If we deterministically recognized SAMA, attempt immediate load into DB
+    low_key = (dataset_key or '').lower()
+    if dataset_key == 'USAREC_SAMA' or low_key == 'usarec_sama' or 'sama' in low_key:
+        try:
+            from backend.ingestion.loaders.sama_loader import load_sama
+            con2 = sqlite3.connect(DB)
+            load_sama(con2, dest, batch_id)
+            con2.close()
+            # mark processed
+            con3 = sqlite3.connect(DB)
+            cur3 = con3.cursor()
+            cur3.execute('UPDATE raw_import_batches SET status=?, notes=? WHERE batch_id=?', ('processed', 'SAMA loaded', batch_id))
+            con3.commit()
+            con3.close()
+        except Exception as e:
+            con4 = sqlite3.connect(DB)
+            cur4 = con4.cursor()
+            cur4.execute('UPDATE raw_import_batches SET status=?, notes=? WHERE batch_id=?', ('failed', str(e), batch_id))
+            con4.commit()
+            con4.close()
+    # If we detected any contracts/volume dataset, attempt immediate load
+    elif 'contract' in low_key or 'contracts' in low_key:
+        try:
+            from backend.ingestion.loaders.market_share_loader import load_market_share
+            con2 = sqlite3.connect(DB)
+            load_market_share(con2, dest, batch_id)
+            con2.close()
+            con3 = sqlite3.connect(DB)
+            cur3 = con3.cursor()
+            cur3.execute('UPDATE raw_import_batches SET status=?, notes=? WHERE batch_id=?', ('processed', 'market-share loaded', batch_id))
+            con3.commit()
+            con3.close()
+        except Exception as e:
+            con4 = sqlite3.connect(DB)
+            cur4 = con4.cursor()
+            cur4.execute('UPDATE raw_import_batches SET status=?, notes=? WHERE batch_id=?', ('failed', str(e), batch_id))
+            con4.commit()
+            con4.close()
 
     return {
         'batch_id': batch_id,

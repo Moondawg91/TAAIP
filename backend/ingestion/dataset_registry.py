@@ -61,3 +61,28 @@ def classify(columns: List[str], source_system: str = 'USAREC') -> Optional[str]
         if ok:
             return ds["key"]
     return None
+
+
+def detect_dataset(columns: set, source_system: str = 'USAREC') -> Optional[str]:
+  """Deterministic detector for known dataset profiles.
+
+  `columns` may be a set of column names (already normalized or raw).
+  This function uses clear, deterministic rules to map known exports to
+  dataset keys used by loader modules.
+  """
+  cols = {norm(c) for c in columns}
+  if source_system == 'USAREC':
+    if {"zip code", "station", "sama score"}.issubset(cols):
+      return "USAREC_SAMA"
+    if {"zip code", "category"}.issubset(cols):
+      return "USAREC_ZIP_CATEGORY"
+    if {"recruiter", "productivity rate"}.issubset(cols):
+      return "USAREC_PRODUCTIVITY"
+  # generic detectors
+  if {"mission category"}.issubset(cols):
+    return "MISSION_CATEGORY"
+  if {"test score"}.issubset(cols) or {"test", "score"}.issubset(cols):
+    return "TEST_SCORE_AVG"
+  if {"cbsa", "urbanicity %"}.issubset(cols) or {"cbsa", "urbanicity"}.issubset(cols):
+    return "URBANICITY_CBSA"
+  return None

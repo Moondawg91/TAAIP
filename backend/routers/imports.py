@@ -118,6 +118,24 @@ def canonicalize_columns(cols: List[str]) -> Tuple[List[str], Dict[str,str]]:
     return canonical, orig_to_can
 
 def classify_profile(canonical_cols: set) -> Tuple[Optional[str], float]:
+    # Deterministic profile detection: prefer explicit token checks
+    cols = set(canonical_cols)
+
+    # SAMA: ZIP + STATION + SAMA/SCORE token
+    if (any(x in cols for x in ("ZIP", "ZIPCODE")) and
+        any(x in cols for x in ("STN", "STATION", "RSID")) and
+        any(x in cols for x in ("SAMA", "SAMASCORE", "SAMA_SCORE", "SCORE"))):
+        return "USAREC_SAMA", 1.0
+
+    # ZIP by category
+    if (any(x in cols for x in ("ZIP", "ZIPCODE")) and any(x in cols for x in ("CAT", "CATEGORY", "CAT1"))):
+        return "USAREC_ZIP_CATEGORY", 1.0
+
+    # Productivity / recruiter metrics
+    if ("RECRUITER" in cols and any(x in cols for x in ("PRODUCTIVITY", "PRODUCTIVITYRATE"))):
+        return "USAREC_PRODUCTIVITY", 1.0
+
+    # Market share / contracts (fallback to previous heuristic)
     best = (None, 0.0)
     for name, meta in PROFILES.items():
         req = meta["required"]
@@ -127,7 +145,16 @@ def classify_profile(canonical_cols: set) -> Tuple[Optional[str], float]:
             best = (name, score)
     if best[1] >= 0.8:
         return best[0], best[1]
-    return None, best[1]
+
+    # Other generic detectors
+    if any(x in cols for x in ("MISSIONCATEGORY", "MISSION")):
+        return "MISSION_CATEGORY", 1.0
+    if any(x in cols for x in ("TESTSCORE", "TEST_SCORE", "TEST", "SCORE")):
+        return "TEST_SCORE_AVG", 1.0
+    if ("CBSA" in cols and any(x in cols for x in ("URBANICITY", "URBANICITYPERCENT"))):
+        return "URBANICITY_CBSA", 1.0
+
+    return None, 0.0
 
 # -------------------------
 # Header row detection (Excel-like)
@@ -215,6 +242,52 @@ def ensure_fact_tables(con: sqlite3.Connection):
     );
     """)
 
+    con.commit()
+
+
+def load_usarec_sama(con: sqlite3.Connection, df: pd.DataFrame, batch_id: str):
+    """Load SAMA dataset from DataFrame into `sama_data` table.
+
+    The function tolerates messy column names by normalizing and locating
+    ZIP, STATION, and SAMA score-like columns.
+    """
+    df_local = df.copy()
+    # build normalized column map: normalized -> original
+    norm_map = {normalize_col(c): c for c in df_local.columns}
+
+    def pick_col(cands):
+        for cand in cands:
+            nc = normalize_col(cand)
+            for ncol in norm_map:
+                if cand == ncol or cand in ncol or ncol in cand:
+                    return norm_map[ncol]
+        # try substring matching
+        for ncol, orig in norm_map.items():
+            for cand in cands:
+                if cand in ncol:
+                    return orig
+        return None
+
+    zip_col = pick_col(("ZIP", "ZIPCODE", "ZIP_CODE"))
+    station_col = pick_col(("STN", "STATION", "RSID", "STATIONNAME"))
+    sama_col = pick_col(("SAMA", "SAMASCORE", "SAMA_SCORE", "SCORE"))
+
+    if not (zip_col and station_col and sama_col):
+        raise ValueError(f"Missing required SAMA columns; available: {list(df_local.columns)}")
+
+    cur = con.cursor()
+    imported_at = _utc_now()
+    rows = []
+    for _, r in df_local.iterrows():
+        try:
+            zipv = r.get(zip_col)
+            stn = r.get(station_col)
+            scorev = r.get(sama_col)
+        except Exception:
+            zipv = None; stn = None; scorev = None
+        rows.append((zipv, stn, float(scorev) if pd.notna(scorev) else None, batch_id, imported_at))
+
+    cur.executemany("INSERT INTO sama_data(zip_code, station, sama_score, batch_id, created_at) VALUES (?,?,?,?,?)", rows)
     con.commit()
 
 def load_usarec_market(con: sqlite3.Connection, df: pd.DataFrame, batch_id: str):

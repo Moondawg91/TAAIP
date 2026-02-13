@@ -203,6 +203,8 @@ def init_db():
             imported_at TEXT NOT NULL,
             detected_profile TEXT,
             status TEXT NOT NULL DEFAULT 'received',
+            raw_rows_inserted INTEGER DEFAULT 0,
+            inserted_rows INTEGER DEFAULT 0,
             notes TEXT
         );
         """
@@ -223,6 +225,39 @@ def init_db():
         );
         """
     )
+    # Raw row staging table (stores each uploaded row as JSON for preview/audit)
+    cur.execute(
+        """
+        CREATE TABLE IF NOT EXISTS raw_import_rows (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            batch_id TEXT,
+            row_index INTEGER,
+            row_json TEXT,
+            FOREIGN KEY(batch_id) REFERENCES raw_import_batches(batch_id)
+        );
+        """
+    )
+    # --- Ingested SAMA data table ---
+    cur.execute(
+        """
+        CREATE TABLE IF NOT EXISTS sama_data (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            zip_code TEXT,
+            station TEXT,
+            sama_score REAL,
+            batch_id TEXT,
+            created_at TEXT DEFAULT (datetime('now')),
+            FOREIGN KEY(batch_id) REFERENCES raw_import_batches(batch_id)
+        );
+        """
+    )
+    # Ensure import/fact tables used by ingestion exist
+    try:
+        from backend.routers.imports import ensure_fact_tables
+        ensure_fact_tables(conn)
+    except Exception:
+        # best-effort: don't fail DB init if imports module has issues
+        pass
     
     # --- Extended: Recruiting Funnel ---
     cur.execute(
@@ -5109,9 +5144,17 @@ app.include_router(upload_ingest_router)
 from backend.routers.imports_v2 import router as imports_v2_router
 app.include_router(imports_v2_router)
 
-# --- New: Import router for BI-style ingestion ---
-from backend.routers.imports import router as imports_router
-app.include_router(imports_router, prefix="/api/v2", tags=["Imports"])
+# --- TOR metrics router (420T Alignment) ---
+try:
+    from backend.routers.tor import router as tor_router
+    app.include_router(tor_router)
+except Exception:
+    # best-effort: continuing without TOR router if module missing
+    pass
+
+# --- Legacy imports router disabled: use imports_v2 instead ---
+# The old `backend.routers.imports` module is unstable/corrupted.
+# We intentionally do not import or include it to avoid startup failures.
 
 # --- Task Requests (separate workflow from Helpdesk) ---
 from backend.routers.task_requests import router as task_requests_router

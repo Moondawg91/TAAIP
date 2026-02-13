@@ -5,6 +5,7 @@ import express from 'express';
 import cors from 'cors';
 import axios from 'axios';
 import fs from 'fs';
+import path from 'path';
 import http from 'http';
 import https from 'https';
 import { ConfidentialClientApplication } from '@azure/msal-node';
@@ -20,6 +21,23 @@ const REQUIRE_AUTH = false;
 
 app.use(express.json());
 app.use(cors());
+
+// Serve a local dashboard folder if present (developer convenience when not using Docker)
+try {
+  const localDashboard = path.join(process.cwd(), 'dashboard');
+  if (fs.existsSync(localDashboard)) {
+    console.log(`Serving dashboard static files from ${localDashboard}`);
+    app.use('/dashboard', express.static(localDashboard));
+    app.use('/assets', express.static(localDashboard));
+    app.get('/favicon.ico', (req, res) => {
+      const fav = path.join(localDashboard, 'favicon.ico');
+      if (fs.existsSync(fav)) return res.sendFile(fav);
+      res.status(404).send('Not found');
+    });
+  }
+} catch (e) {
+  console.warn('Local dashboard static serve setup failed:', e.message);
+}
 
 // Helper: safely forward axios error responses to the client.
 function forwardUpstreamError(res, error) {
@@ -217,6 +235,39 @@ app.all('/api/v2/*', async (req, res) => {
     console.error(`API v2 proxy error [${req.method} ${req.originalUrl}]:`, error.message);
     if (error.response) return forwardUpstreamError(res, error);
     return res.status(503).json({ message: 'Failed to reach FastAPI backend.' });
+  }
+});
+
+// Special proxy for multipart/form-data uploads (stream-preserving)
+// This ensures file uploads are forwarded to the FastAPI backend without
+// relying on Express body parsers which would consume the stream.
+app.post('/api/v2/imports/upload', (req, res) => {
+  try {
+    const target = `${FASTAPI_URL}${req.originalUrl}`;
+    const parsed = new URL(target);
+    const options = {
+      hostname: parsed.hostname,
+      port: parsed.port || (parsed.protocol === 'https:' ? 443 : 80),
+      path: parsed.pathname + (parsed.search || ''),
+      method: 'POST',
+      headers: { ...req.headers }
+    };
+
+    const proxyReq = http.request(options, (upstreamRes) => {
+      res.writeHead(upstreamRes.statusCode, upstreamRes.headers);
+      upstreamRes.pipe(res);
+    });
+
+    proxyReq.on('error', (err) => {
+      console.error('Upload proxy error:', err.message || err);
+      try { res.status(502).json({ message: 'Upload proxy failed' }); } catch (e) { /* ignore */ }
+    });
+
+    // Pipe raw request body (multipart stream) directly to backend
+    req.pipe(proxyReq);
+  } catch (e) {
+    console.error('Upload proxy exception:', e.message || e);
+    res.status(500).json({ message: 'Upload proxy error' });
   }
 });
 

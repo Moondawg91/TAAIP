@@ -82,3 +82,49 @@ document.getElementById('csvUploadBtn')?.addEventListener('click', async ()=>{
   }
   status.innerText = `Upload complete — success: ${success}, failed: ${failed}`;
 });
+
+// Ingest file upload flow: upload -> process -> poll -> preview
+async function uploadIngestFile(){
+  const input = document.getElementById('ingestFile');
+  const source = document.getElementById('sourceSystem')?.value || 'USAREC';
+  const status = document.getElementById('ingestStatus');
+  const previewEl = document.getElementById('ingestPreview');
+  previewEl.textContent = '';
+  if(!input || !input.files || input.files.length===0){ status.textContent='No file selected'; return; }
+  const file = input.files[0];
+  status.textContent = 'Uploading...';
+  try{
+    const fd = new FormData();
+    fd.append('file', file, file.name);
+    fd.append('source_system', source);
+    const dk = document.getElementById('datasetKey')?.value || '';
+    if(dk && dk.trim()!=='') fd.append('dataset_key', dk.trim());
+
+    const up = await fetch(`${base}/api/v2/imports/upload`, { method: 'POST', body: fd });
+    if(!up.ok){ const txt = await up.text(); status.textContent = 'Upload failed: '+txt; return; }
+    const info = await up.json();
+    status.textContent = `Uploaded -> batch ${info.batch_id}. Processing...`;
+
+    // kick processing
+    const proc = await fetch(`${base}/api/v2/imports/batches/${info.batch_id}/process`, { method: 'POST' });
+    if(!proc.ok){ status.textContent = 'Processing request failed'; return; }
+
+    // poll batch status
+    const terminal = ['LOADED','ERROR','FAILED'];
+    let done=false;
+    for(let i=0;i<60;i++){
+      await new Promise(r=>setTimeout(r, 1500));
+      const st = await fetch(`${base}/api/v2/imports/batches?offset=0&limit=50`);
+      const sj = await st.json();
+      const batch = (sj.items||[]).find(b=>b.batch_id===info.batch_id);
+      if(batch){ status.textContent = `Processing: ${batch.status}`; if(terminal.includes(batch.status)){ done=true; break; } }
+    }
+
+    // show preview if loaded
+    const prev = await fetch(`${base}/api/v2/imports/batches/${info.batch_id}/preview`);
+    if(prev.ok){ const pj = await prev.json(); previewEl.textContent = JSON.stringify(pj, null, 2); status.textContent = 'Done.'; }
+    else { previewEl.textContent = 'No preview available'; }
+  }catch(e){ status.textContent = 'Upload error: '+String(e); }
+}
+
+document.getElementById('ingestUploadBtn')?.addEventListener('click', uploadIngestFile);

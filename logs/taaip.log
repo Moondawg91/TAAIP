@@ -1,0 +1,375 @@
+2026-02-12 08:00:17,163 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 08:00:17,164 INFO root ML Model initialized. Status: simulated
+2026-02-12 08:24:08,736 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 08:24:08,737 INFO root ML Model initialized. Status: simulated
+2026-02-12 08:47:12,092 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 08:47:12,092 INFO root ML Model initialized. Status: simulated
+2026-02-12 08:47:20,220 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 08:47:20,220 INFO root ML Model initialized. Status: simulated
+2026-02-12 08:48:14,683 INFO root [UPLOAD] Request: POST http://127.0.0.1:8000/api/v2/upload/raw
+2026-02-12 08:48:14,683 INFO root [UPLOAD] Request headers: {'host': '127.0.0.1:8000', 'content-length': '420', 'content-type': 'multipart/form-data; boundary=------------------------P6ECSwFZUwBoio10G4sf8I'}
+2026-02-12 08:50:03,385 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 08:50:03,385 INFO root ML Model initialized. Status: simulated
+2026-02-12 08:50:14,444 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 08:50:14,444 INFO root ML Model initialized. Status: simulated
+2026-02-12 08:51:21,231 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 08:51:21,231 INFO root ML Model initialized. Status: simulated
+2026-02-12 08:51:29,986 INFO root [UPLOAD] Request: POST http://127.0.0.1:8000/api/v2/upload/raw
+2026-02-12 08:51:29,987 INFO root [UPLOAD] Request headers: {'host': '127.0.0.1:8000', 'content-length': '486', 'content-type': 'multipart/form-data; boundary=------------------------3wSW4WSDD1KhyfXQlMrqqP'}
+2026-02-12 08:53:08,214 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 08:53:08,214 INFO root ML Model initialized. Status: simulated
+2026-02-12 08:53:12,470 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 08:53:12,470 INFO root ML Model initialized. Status: simulated
+2026-02-12 08:54:10,326 INFO root [UPLOAD] Request: POST http://127.0.0.1:8000/api/v2/upload/raw
+2026-02-12 08:54:10,326 INFO root [UPLOAD] Request headers: {'host': '127.0.0.1:8000', 'content-length': '486', 'content-type': 'multipart/form-data; boundary=------------------------mgy2TFQy54vuKSU8ypsbug'}
+2026-02-12 08:55:15,369 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 08:55:15,370 INFO root ML Model initialized. Status: simulated
+2026-02-12 08:55:20,660 INFO root [UPLOAD] Request: POST http://127.0.0.1:8000/api/v2/upload/raw
+2026-02-12 08:55:20,660 INFO root [UPLOAD] Request headers: {'host': '127.0.0.1:8000', 'content-length': '486', 'content-type': 'multipart/form-data; boundary=------------------------V2kOAPAEEnH3ObkXdkYNBG'}
+2026-02-12 08:56:09,055 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 08:56:09,055 INFO root ML Model initialized. Status: simulated
+2026-02-12 08:56:33,926 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 08:56:33,926 INFO root ML Model initialized. Status: simulated
+2026-02-12 08:56:39,260 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 08:56:39,261 INFO root ML Model initialized. Status: simulated
+2026-02-12 08:56:39,550 INFO root [UPLOAD] Request: POST http://127.0.0.1:8000/api/v2/upload/raw
+2026-02-12 08:56:39,550 INFO root [UPLOAD] Request headers: {'host': '127.0.0.1:8000', 'content-length': '486', 'content-type': 'multipart/form-data; boundary=------------------------REieo3Sk4F9SPSmS3cBoRX'}
+2026-02-12 09:00:03,740 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 09:00:03,740 INFO root ML Model initialized. Status: simulated
+2026-02-12 09:00:32,068 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 09:00:32,068 INFO root ML Model initialized. Status: simulated
+2026-02-12 09:00:46,110 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 09:00:46,111 INFO root ML Model initialized. Status: simulated
+2026-02-12 09:01:03,486 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 09:01:03,486 INFO root ML Model initialized. Status: simulated
+2026-02-12 09:02:21,138 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 09:02:21,138 INFO root ML Model initialized. Status: simulated
+2026-02-12 09:02:35,763 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 09:02:35,763 INFO root ML Model initialized. Status: simulated
+2026-02-12 09:02:48,105 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 09:02:48,105 INFO root ML Model initialized. Status: simulated
+2026-02-12 09:04:30,170 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 09:04:30,170 INFO root ML Model initialized. Status: simulated
+2026-02-12 09:04:58,493 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 09:04:58,493 INFO root ML Model initialized. Status: simulated
+2026-02-12 09:05:36,939 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 09:05:36,939 INFO root ML Model initialized. Status: simulated
+2026-02-12 09:05:39,597 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 09:05:39,597 INFO root ML Model initialized. Status: simulated
+2026-02-12 09:06:23,687 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 09:06:23,688 INFO root ML Model initialized. Status: simulated
+2026-02-12 09:07:26,019 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 09:07:26,019 INFO root ML Model initialized. Status: simulated
+2026-02-12 09:07:28,834 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 09:07:28,834 INFO root ML Model initialized. Status: simulated
+2026-02-12 09:08:25,720 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 09:08:25,721 INFO root ML Model initialized. Status: simulated
+2026-02-12 09:08:43,104 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 09:08:43,104 INFO root ML Model initialized. Status: simulated
+2026-02-12 09:08:55,094 ERROR root Error in upload logging middleware: unable to open database file
+Traceback (most recent call last):
+  File "/Users/ambermooney/Desktop/TAAIP/taaip_service.py", line 64, in log_upload_requests
+    return await call_next(request)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/middleware/base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/middleware/base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/fastapi/routing.py", line 119, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/fastapi/routing.py", line 105, in app
+    response = await f(request)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/fastapi/routing.py", line 424, in app
+    raw_response = await run_endpoint_function(
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/fastapi/routing.py", line 312, in run_endpoint_function
+    return await dependant.call(**values)
+  File "/Users/ambermooney/Desktop/TAAIP/backend/routers/imports_v2.py", line 225, in imports_upload
+    con = _connect()
+  File "/Users/ambermooney/Desktop/TAAIP/backend/routers/imports_v2.py", line 119, in _connect
+    con = sqlite3.connect(DB)
+sqlite3.OperationalError: unable to open database file
+2026-02-12 09:09:09,581 ERROR root Error in upload logging middleware: unable to open database file
+Traceback (most recent call last):
+  File "/Users/ambermooney/Desktop/TAAIP/taaip_service.py", line 64, in log_upload_requests
+    return await call_next(request)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/middleware/base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/middleware/base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/fastapi/routing.py", line 119, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/fastapi/routing.py", line 105, in app
+    response = await f(request)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/fastapi/routing.py", line 424, in app
+    raw_response = await run_endpoint_function(
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/fastapi/routing.py", line 312, in run_endpoint_function
+    return await dependant.call(**values)
+  File "/Users/ambermooney/Desktop/TAAIP/backend/routers/imports_v2.py", line 225, in imports_upload
+    con = _connect()
+  File "/Users/ambermooney/Desktop/TAAIP/backend/routers/imports_v2.py", line 119, in _connect
+    con = sqlite3.connect(DB)
+sqlite3.OperationalError: unable to open database file
+2026-02-12 09:13:25,180 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 09:13:25,180 INFO root ML Model initialized. Status: simulated
+2026-02-12 09:14:03,743 ERROR root Error in upload logging middleware: unable to open database file
+Traceback (most recent call last):
+  File "/Users/ambermooney/Desktop/TAAIP/taaip_service.py", line 64, in log_upload_requests
+    return await call_next(request)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/middleware/base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/middleware/base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/fastapi/routing.py", line 119, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/fastapi/routing.py", line 105, in app
+    response = await f(request)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/fastapi/routing.py", line 424, in app
+    raw_response = await run_endpoint_function(
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/fastapi/routing.py", line 312, in run_endpoint_function
+    return await dependant.call(**values)
+  File "/Users/ambermooney/Desktop/TAAIP/backend/routers/imports_v2.py", line 225, in imports_upload
+    con = _connect()
+  File "/Users/ambermooney/Desktop/TAAIP/backend/routers/imports_v2.py", line 119, in _connect
+    con = sqlite3.connect(DB)
+sqlite3.OperationalError: unable to open database file
+2026-02-12 09:14:33,959 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 09:14:33,959 INFO root ML Model initialized. Status: simulated
+2026-02-12 09:14:35,304 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 09:14:35,304 INFO root ML Model initialized. Status: simulated
+2026-02-12 12:03:35,684 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 12:03:35,684 INFO root ML Model initialized. Status: simulated
+2026-02-12 12:03:47,727 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 12:03:47,727 INFO root ML Model initialized. Status: simulated
+2026-02-12 12:04:26,851 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 12:04:26,851 INFO root ML Model initialized. Status: simulated
+2026-02-12 12:04:52,733 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 12:04:52,733 INFO root ML Model initialized. Status: simulated
+2026-02-12 12:05:12,031 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 12:05:12,031 INFO root ML Model initialized. Status: simulated
+2026-02-12 12:06:02,267 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 12:06:02,268 INFO root ML Model initialized. Status: simulated
+2026-02-12 12:06:07,925 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 12:06:07,926 INFO root ML Model initialized. Status: simulated
+2026-02-12 12:12:39,699 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 12:12:39,699 INFO root ML Model initialized. Status: simulated
+2026-02-12 12:32:27,103 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 12:32:27,104 INFO root ML Model initialized. Status: simulated
+2026-02-12 12:32:28,219 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 12:32:28,219 INFO root ML Model initialized. Status: simulated
+2026-02-12 12:32:34,231 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 12:32:34,231 INFO root ML Model initialized. Status: simulated
+2026-02-12 12:32:35,587 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 12:32:35,587 INFO root ML Model initialized. Status: simulated
+2026-02-12 12:32:46,136 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 12:32:46,136 INFO root ML Model initialized. Status: simulated
+2026-02-12 12:32:47,499 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 12:32:47,499 INFO root ML Model initialized. Status: simulated
+2026-02-12 12:33:17,233 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 12:33:17,233 INFO root ML Model initialized. Status: simulated
+2026-02-12 12:33:20,078 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 12:33:20,078 INFO root ML Model initialized. Status: simulated
+2026-02-12 12:33:25,097 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 12:33:25,097 INFO root ML Model initialized. Status: simulated
+2026-02-12 12:36:31,974 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 12:36:31,974 INFO root ML Model initialized. Status: simulated
+2026-02-12 12:36:43,099 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 12:36:43,248 INFO root ML Model initialized. Status: simulated
+2026-02-12 12:37:22,444 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 12:37:22,445 INFO root ML Model initialized. Status: simulated
+2026-02-12 12:39:03,915 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 12:39:03,915 INFO root ML Model initialized. Status: simulated
+2026-02-12 12:42:39,204 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 12:42:39,204 INFO root ML Model initialized. Status: simulated
+2026-02-12 12:42:42,701 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 12:42:42,701 INFO root ML Model initialized. Status: simulated
+2026-02-12 12:42:47,973 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 12:42:47,974 INFO root ML Model initialized. Status: simulated
+2026-02-12 12:44:53,051 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 12:44:53,051 INFO root ML Model initialized. Status: simulated
+2026-02-12 13:27:45,025 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 13:27:45,025 INFO root ML Model initialized. Status: simulated
+2026-02-12 13:28:39,504 ERROR root Error in upload logging middleware: local variable 'source_system' referenced before assignment
+Traceback (most recent call last):
+  File "/Users/ambermooney/Desktop/TAAIP/taaip_service.py", line 64, in log_upload_requests
+    return await call_next(request)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/middleware/base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/middleware/base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/fastapi/routing.py", line 119, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/fastapi/routing.py", line 105, in app
+    response = await f(request)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/fastapi/routing.py", line 424, in app
+    raw_response = await run_endpoint_function(
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/fastapi/routing.py", line 312, in run_endpoint_function
+    return await dependant.call(**values)
+  File "/Users/ambermooney/Desktop/TAAIP/backend/routers/imports_v2.py", line 217, in imports_upload
+    safe_name = f"{uuid.uuid4().hex}_{source_system}{ext}"
+UnboundLocalError: local variable 'source_system' referenced before assignment
+2026-02-12 13:28:39,641 ERROR root Error in upload logging middleware: local variable 'source_system' referenced before assignment
+Traceback (most recent call last):
+  File "/Users/ambermooney/Desktop/TAAIP/taaip_service.py", line 64, in log_upload_requests
+    return await call_next(request)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/middleware/base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/middleware/base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/fastapi/routing.py", line 119, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/fastapi/routing.py", line 105, in app
+    response = await f(request)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/fastapi/routing.py", line 424, in app
+    raw_response = await run_endpoint_function(
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/fastapi/routing.py", line 312, in run_endpoint_function
+    return await dependant.call(**values)
+  File "/Users/ambermooney/Desktop/TAAIP/backend/routers/imports_v2.py", line 217, in imports_upload
+    safe_name = f"{uuid.uuid4().hex}_{source_system}{ext}"
+UnboundLocalError: local variable 'source_system' referenced before assignment
+2026-02-12 13:29:07,855 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 13:29:07,855 INFO root ML Model initialized. Status: simulated
+2026-02-12 13:29:27,959 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 13:29:27,960 INFO root ML Model initialized. Status: simulated
+2026-02-12 13:41:42,239 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 13:41:42,239 INFO root ML Model initialized. Status: simulated
+2026-02-12 13:41:46,433 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 13:41:46,433 INFO root ML Model initialized. Status: simulated
+2026-02-12 13:41:49,491 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 13:41:49,492 INFO root ML Model initialized. Status: simulated
+2026-02-12 13:41:58,689 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 13:41:58,689 INFO root ML Model initialized. Status: simulated
+2026-02-12 13:42:13,979 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 13:42:13,979 INFO root ML Model initialized. Status: simulated
+2026-02-12 18:06:46,223 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 18:06:46,223 INFO root ML Model initialized. Status: simulated
+2026-02-12 18:07:00,303 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 18:07:00,303 INFO root ML Model initialized. Status: simulated
+2026-02-12 18:07:22,910 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 18:07:22,910 INFO root ML Model initialized. Status: simulated
+2026-02-12 18:07:37,899 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 18:07:37,899 INFO root ML Model initialized. Status: simulated
+2026-02-12 18:07:45,460 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 18:07:45,460 INFO root ML Model initialized. Status: simulated
+2026-02-12 18:07:58,231 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 18:07:58,231 INFO root ML Model initialized. Status: simulated
+2026-02-12 18:08:47,340 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 18:08:47,340 INFO root ML Model initialized. Status: simulated
+2026-02-12 18:08:56,587 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 18:08:56,587 INFO root ML Model initialized. Status: simulated
+2026-02-12 18:09:35,707 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 18:09:35,708 INFO root ML Model initialized. Status: simulated
+2026-02-12 18:12:29,277 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 18:12:29,278 INFO root ML Model initialized. Status: simulated
+2026-02-12 18:13:12,230 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 18:13:12,230 INFO root ML Model initialized. Status: simulated
+2026-02-12 18:13:25,018 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 18:13:25,019 INFO root ML Model initialized. Status: simulated
+2026-02-12 18:13:50,203 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 18:13:50,203 INFO root ML Model initialized. Status: simulated
+2026-02-12 18:14:11,725 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 18:14:11,726 INFO root ML Model initialized. Status: simulated
+2026-02-12 18:14:37,498 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 18:14:37,498 INFO root ML Model initialized. Status: simulated
+2026-02-12 18:15:56,958 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 18:15:56,958 INFO root ML Model initialized. Status: simulated
+2026-02-12 18:16:11,071 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 18:16:11,072 INFO root ML Model initialized. Status: simulated
+2026-02-12 18:24:27,624 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 18:24:27,624 INFO root ML Model initialized. Status: simulated
+2026-02-12 18:25:03,314 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 18:25:03,315 INFO root ML Model initialized. Status: simulated
+2026-02-12 18:25:31,284 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 18:25:31,285 INFO root ML Model initialized. Status: simulated
+2026-02-12 18:47:04,728 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 18:47:04,728 INFO root ML Model initialized. Status: simulated
+2026-02-12 18:47:55,684 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 18:47:55,684 INFO root ML Model initialized. Status: simulated
