@@ -22,8 +22,45 @@ router = APIRouter()
 
 
 def get_db():
-    # Resolve DB path: prefer environment `DB_FILE`, then common container paths, then local repo path
-    db_path = os.environ.get('DB_FILE') or '/app/recruiting.db' or '/root/TAAIP/data/recruiting.db' or '/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3'
+    # Resolve DB path across environments. Prefer env var; otherwise try common container and repo locations.
+    candidates = []
+    env_path = os.environ.get('DB_FILE')
+    if env_path:
+        candidates.append(env_path)
+    # common container path
+    candidates.append('/app/recruiting.db')
+    # relative repo data paths
+    candidates.append(os.path.join(os.getcwd(), 'data', 'recruiting.db'))
+    candidates.append(os.path.join(os.path.dirname(os.path.dirname(__file__)), 'recruiting.db'))
+    candidates.append(os.path.join(os.getcwd(), 'recruiting.db'))
+
+    db_path = None
+    for c in candidates:
+        try:
+            if c and os.path.exists(c):
+                db_path = c
+                break
+        except Exception:
+            continue
+
+    # If no existing path found, prefer env path if set, otherwise create a local data directory
+    if not db_path:
+        if env_path:
+            db_path = env_path
+            db_dir = os.path.dirname(db_path)
+            if db_dir and not os.path.isdir(db_dir):
+                try:
+                    os.makedirs(db_dir, exist_ok=True)
+                except Exception:
+                    pass
+        else:
+            db_dir = os.path.join(os.getcwd(), 'data')
+            try:
+                os.makedirs(db_dir, exist_ok=True)
+            except Exception:
+                pass
+            db_path = os.path.join(db_dir, 'recruiting.db')
+
     conn = sqlite3.connect(db_path, check_same_thread=False)
     conn.row_factory = sqlite3.Row
     return conn
@@ -148,8 +185,19 @@ def create_project(payload: ProjectCreate):
 def list_projects(limit: int = 100, offset: int = 0):
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute('SELECT * FROM projects_pm ORDER BY created_at DESC LIMIT ? OFFSET ?', (limit, offset))
-    rows = [dict(r) for r in cursor.fetchall()]
+    try:
+        cursor.execute('SELECT * FROM projects_pm ORDER BY created_at DESC LIMIT ? OFFSET ?', (limit, offset))
+        rows = [dict(r) for r in cursor.fetchall()]
+    except sqlite3.OperationalError as e:
+        # If the table doesn't exist or DB is not initialized, attempt migrations once and retry
+        try:
+            run_migrations()
+            cursor = conn.cursor()
+            cursor.execute('SELECT * FROM projects_pm ORDER BY created_at DESC LIMIT ? OFFSET ?', (limit, offset))
+            rows = [dict(r) for r in cursor.fetchall()]
+        except Exception:
+            conn.close()
+            raise HTTPException(status_code=500, detail=str(e))
     conn.close()
     return {'status': 'ok', 'projects': rows}
 
@@ -513,4 +561,12 @@ async def websocket_budget(websocket: WebSocket):
             _budget_subscribers.remove(q)
         except Exception:
             pass
+
+
+# Ensure migrations exist on import so running server processes have tables
+try:
+    run_migrations()
+except Exception as _err:
+    import sys
+    print(f"project_mgmt: run_migrations failed: {_err}", file=sys.stderr)
 

@@ -10,13 +10,22 @@ from typing import List, Dict, Any
 import pandas as pd
 import io
 import sqlite3
+import os
 from datetime import datetime
 
 router = APIRouter()
 
 # Database connection
 def get_db():
-    conn = sqlite3.connect("data/recruiting.db")
+    # Resolve DB file: prefer env, otherwise repo data path
+    db = os.environ.get('DB_FILE') or os.environ.get('DB_PATH') or os.path.join(os.getcwd(), 'data', 'recruiting.db')
+    db_dir = os.path.dirname(db)
+    if db_dir and not os.path.isdir(db_dir):
+        try:
+            os.makedirs(db_dir, exist_ok=True)
+        except Exception:
+            pass
+    conn = sqlite3.connect(db, check_same_thread=False)
     conn.row_factory = sqlite3.Row
     return conn
 

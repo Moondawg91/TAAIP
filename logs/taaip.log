@@ -373,3 +373,476 @@ UnboundLocalError: local variable 'source_system' referenced before assignment
 2026-02-12 18:47:04,728 INFO root ML Model initialized. Status: simulated
 2026-02-12 18:47:55,684 INFO root Loading Lead Scoring Model from storage...
 2026-02-12 18:47:55,684 INFO root ML Model initialized. Status: simulated
+2026-02-12 19:24:02,626 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 19:24:02,627 INFO root ML Model initialized. Status: simulated
+2026-02-12 19:30:59,167 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 19:30:59,167 INFO root ML Model initialized. Status: simulated
+2026-02-12 19:38:59,856 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 19:38:59,857 INFO root ML Model initialized. Status: simulated
+2026-02-12 19:39:02,744 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 19:39:02,744 INFO root ML Model initialized. Status: simulated
+2026-02-12 19:39:16,691 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 19:39:16,691 INFO root ML Model initialized. Status: simulated
+2026-02-12 20:40:16,725 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 20:40:16,725 INFO root ML Model initialized. Status: simulated
+2026-02-12 20:41:37,017 INFO root Loading Lead Scoring Model from storage...
+2026-02-12 20:41:37,017 INFO root ML Model initialized. Status: simulated
+2026-02-13 17:21:35,019 ERROR root Error in upload logging middleware: unable to open database file
+Traceback (most recent call last):
+  File "/Users/ambermooney/Desktop/TAAIP/taaip_service.py", line 81, in log_upload_requests
+    return await call_next(request)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/middleware/base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/middleware/base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/fastapi/routing.py", line 119, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/fastapi/routing.py", line 105, in app
+    response = await f(request)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/fastapi/routing.py", line 424, in app
+    raw_response = await run_endpoint_function(
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/fastapi/routing.py", line 314, in run_endpoint_function
+    return await run_in_threadpool(dependant.call, **values)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/concurrency.py", line 32, in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/anyio/to_thread.py", line 63, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/anyio/_backends/_asyncio.py", line 2502, in run_sync_in_worker_thread
+    return await future
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/anyio/_backends/_asyncio.py", line 986, in run
+    result = context.run(func, *args)
+  File "/Users/ambermooney/Desktop/TAAIP/backend/routers/project_mgmt.py", line 149, in list_projects
+    conn = get_db()
+  File "/Users/ambermooney/Desktop/TAAIP/backend/routers/project_mgmt.py", line 27, in get_db
+    conn = sqlite3.connect(db_path, check_same_thread=False)
+sqlite3.OperationalError: unable to open database file
+2026-02-13 17:21:53,155 ERROR root Error in upload logging middleware: unable to open database file
+Traceback (most recent call last):
+  File "/Users/ambermooney/Desktop/TAAIP/taaip_service.py", line 81, in log_upload_requests
+    return await call_next(request)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/middleware/base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/middleware/base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/fastapi/routing.py", line 119, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/fastapi/routing.py", line 105, in app
+    response = await f(request)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/fastapi/routing.py", line 424, in app
+    raw_response = await run_endpoint_function(
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/fastapi/routing.py", line 314, in run_endpoint_function
+    return await run_in_threadpool(dependant.call, **values)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/concurrency.py", line 32, in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/anyio/to_thread.py", line 63, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/anyio/_backends/_asyncio.py", line 2502, in run_sync_in_worker_thread
+    return await future
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/anyio/_backends/_asyncio.py", line 986, in run
+    result = context.run(func, *args)
+  File "/Users/ambermooney/Desktop/TAAIP/backend/routers/project_mgmt.py", line 149, in list_projects
+    conn = get_db()
+  File "/Users/ambermooney/Desktop/TAAIP/backend/routers/project_mgmt.py", line 27, in get_db
+    conn = sqlite3.connect(db_path, check_same_thread=False)
+sqlite3.OperationalError: unable to open database file
+2026-02-13 17:22:25,851 ERROR root Error in upload logging middleware: unable to open database file
+Traceback (most recent call last):
+  File "/Users/ambermooney/Desktop/TAAIP/taaip_service.py", line 81, in log_upload_requests
+    return await call_next(request)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/middleware/base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/middleware/base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/fastapi/routing.py", line 119, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/fastapi/routing.py", line 105, in app
+    response = await f(request)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/fastapi/routing.py", line 424, in app
+    raw_response = await run_endpoint_function(
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/fastapi/routing.py", line 314, in run_endpoint_function
+    return await run_in_threadpool(dependant.call, **values)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/concurrency.py", line 32, in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/anyio/to_thread.py", line 63, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/anyio/_backends/_asyncio.py", line 2502, in run_sync_in_worker_thread
+    return await future
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/anyio/_backends/_asyncio.py", line 986, in run
+    result = context.run(func, *args)
+  File "/Users/ambermooney/Desktop/TAAIP/backend/routers/project_mgmt.py", line 149, in list_projects
+    conn = get_db()
+  File "/Users/ambermooney/Desktop/TAAIP/backend/routers/project_mgmt.py", line 27, in get_db
+    conn = sqlite3.connect(db_path, check_same_thread=False)
+sqlite3.OperationalError: unable to open database file
+2026-02-13 17:44:50,781 ERROR root Error in upload logging middleware: unable to open database file
+Traceback (most recent call last):
+  File "/Users/ambermooney/Desktop/TAAIP/taaip_service.py", line 81, in log_upload_requests
+    return await call_next(request)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/middleware/base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/middleware/base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/fastapi/routing.py", line 119, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/fastapi/routing.py", line 105, in app
+    response = await f(request)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/fastapi/routing.py", line 424, in app
+    raw_response = await run_endpoint_function(
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/fastapi/routing.py", line 314, in run_endpoint_function
+    return await run_in_threadpool(dependant.call, **values)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/concurrency.py", line 32, in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/anyio/to_thread.py", line 63, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/anyio/_backends/_asyncio.py", line 2502, in run_sync_in_worker_thread
+    return await future
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/anyio/_backends/_asyncio.py", line 986, in run
+    result = context.run(func, *args)
+  File "/Users/ambermooney/Desktop/TAAIP/backend/routers/project_mgmt.py", line 149, in list_projects
+    conn = get_db()
+  File "/Users/ambermooney/Desktop/TAAIP/backend/routers/project_mgmt.py", line 27, in get_db
+    conn = sqlite3.connect(db_path, check_same_thread=False)
+sqlite3.OperationalError: unable to open database file
+2026-02-13 17:44:57,582 ERROR root Error in upload logging middleware: unable to open database file
+Traceback (most recent call last):
+  File "/Users/ambermooney/Desktop/TAAIP/taaip_service.py", line 81, in log_upload_requests
+    return await call_next(request)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/middleware/base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/middleware/base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/fastapi/routing.py", line 119, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/fastapi/routing.py", line 105, in app
+    response = await f(request)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/fastapi/routing.py", line 424, in app
+    raw_response = await run_endpoint_function(
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/fastapi/routing.py", line 314, in run_endpoint_function
+    return await run_in_threadpool(dependant.call, **values)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/concurrency.py", line 32, in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/anyio/to_thread.py", line 63, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/anyio/_backends/_asyncio.py", line 2502, in run_sync_in_worker_thread
+    return await future
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/anyio/_backends/_asyncio.py", line 986, in run
+    result = context.run(func, *args)
+  File "/Users/ambermooney/Desktop/TAAIP/backend/routers/project_mgmt.py", line 149, in list_projects
+    conn = get_db()
+  File "/Users/ambermooney/Desktop/TAAIP/backend/routers/project_mgmt.py", line 27, in get_db
+    conn = sqlite3.connect(db_path, check_same_thread=False)
+sqlite3.OperationalError: unable to open database file
+2026-02-13 17:48:00,283 ERROR root Error in upload logging middleware: unable to open database file
+Traceback (most recent call last):
+  File "/Users/ambermooney/Desktop/TAAIP/taaip_service.py", line 81, in log_upload_requests
+    return await call_next(request)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/middleware/base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/middleware/base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/fastapi/routing.py", line 119, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/fastapi/routing.py", line 105, in app
+    response = await f(request)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/fastapi/routing.py", line 424, in app
+    raw_response = await run_endpoint_function(
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/fastapi/routing.py", line 314, in run_endpoint_function
+    return await run_in_threadpool(dependant.call, **values)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/concurrency.py", line 32, in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/anyio/to_thread.py", line 63, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/anyio/_backends/_asyncio.py", line 2502, in run_sync_in_worker_thread
+    return await future
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/anyio/_backends/_asyncio.py", line 986, in run
+    result = context.run(func, *args)
+  File "/Users/ambermooney/Desktop/TAAIP/backend/routers/project_mgmt.py", line 149, in list_projects
+    conn = get_db()
+  File "/Users/ambermooney/Desktop/TAAIP/backend/routers/project_mgmt.py", line 27, in get_db
+    conn = sqlite3.connect(db_path, check_same_thread=False)
+sqlite3.OperationalError: unable to open database file
+2026-02-13 17:51:27,089 ERROR root Error in upload logging middleware: unable to open database file
+Traceback (most recent call last):
+  File "/Users/ambermooney/Desktop/TAAIP/taaip_service.py", line 81, in log_upload_requests
+    return await call_next(request)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/middleware/base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/middleware/base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/fastapi/routing.py", line 119, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/fastapi/routing.py", line 105, in app
+    response = await f(request)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/fastapi/routing.py", line 424, in app
+    raw_response = await run_endpoint_function(
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/fastapi/routing.py", line 314, in run_endpoint_function
+    return await run_in_threadpool(dependant.call, **values)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/concurrency.py", line 32, in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/anyio/to_thread.py", line 63, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/anyio/_backends/_asyncio.py", line 2502, in run_sync_in_worker_thread
+    return await future
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/anyio/_backends/_asyncio.py", line 986, in run
+    result = context.run(func, *args)
+  File "/Users/ambermooney/Desktop/TAAIP/backend/routers/project_mgmt.py", line 149, in list_projects
+    conn = get_db()
+  File "/Users/ambermooney/Desktop/TAAIP/backend/routers/project_mgmt.py", line 27, in get_db
+    conn = sqlite3.connect(db_path, check_same_thread=False)
+sqlite3.OperationalError: unable to open database file
+2026-02-13 17:53:39,658 ERROR root Error in upload logging middleware: unable to open database file
+Traceback (most recent call last):
+  File "/Users/ambermooney/Desktop/TAAIP/taaip_service.py", line 81, in log_upload_requests
+    return await call_next(request)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/middleware/base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/middleware/base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/fastapi/routing.py", line 119, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/fastapi/routing.py", line 105, in app
+    response = await f(request)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/fastapi/routing.py", line 424, in app
+    raw_response = await run_endpoint_function(
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/fastapi/routing.py", line 314, in run_endpoint_function
+    return await run_in_threadpool(dependant.call, **values)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/concurrency.py", line 32, in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/anyio/to_thread.py", line 63, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/anyio/_backends/_asyncio.py", line 2502, in run_sync_in_worker_thread
+    return await future
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/anyio/_backends/_asyncio.py", line 986, in run
+    result = context.run(func, *args)
+  File "/Users/ambermooney/Desktop/TAAIP/backend/routers/project_mgmt.py", line 149, in list_projects
+    conn = get_db()
+  File "/Users/ambermooney/Desktop/TAAIP/backend/routers/project_mgmt.py", line 27, in get_db
+    conn = sqlite3.connect(db_path, check_same_thread=False)
+sqlite3.OperationalError: unable to open database file
+2026-02-13 18:05:39,905 INFO root Loading Lead Scoring Model from storage...
+2026-02-13 18:05:39,905 INFO root ML Model initialized. Status: simulated
+2026-02-13 18:06:10,702 INFO root Loading Lead Scoring Model from storage...
+2026-02-13 18:06:10,703 INFO root ML Model initialized. Status: simulated
+2026-02-13 18:11:42,281 INFO root Loading Lead Scoring Model from storage...
+2026-02-13 18:11:42,281 INFO root ML Model initialized. Status: simulated
+2026-02-13 18:11:42,622 ERROR root Error in upload logging middleware: unable to open database file
+Traceback (most recent call last):
+  File "/Users/ambermooney/Desktop/TAAIP/taaip_service.py", line 81, in log_upload_requests
+    return await call_next(request)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/middleware/base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/middleware/base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/fastapi/routing.py", line 119, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/fastapi/routing.py", line 105, in app
+    response = await f(request)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/fastapi/routing.py", line 424, in app
+    raw_response = await run_endpoint_function(
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/fastapi/routing.py", line 314, in run_endpoint_function
+    return await run_in_threadpool(dependant.call, **values)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/starlette/concurrency.py", line 32, in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/anyio/to_thread.py", line 63, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/anyio/_backends/_asyncio.py", line 2502, in run_sync_in_worker_thread
+    return await future
+  File "/Users/ambermooney/.pyenv/versions/3.10.12/lib/python3.10/site-packages/anyio/_backends/_asyncio.py", line 986, in run
+    result = context.run(func, *args)
+  File "/Users/ambermooney/Desktop/TAAIP/backend/routers/project_mgmt.py", line 149, in list_projects
+    conn = get_db()
+  File "/Users/ambermooney/Desktop/TAAIP/backend/routers/project_mgmt.py", line 27, in get_db
+    conn = sqlite3.connect(db_path, check_same_thread=False)
+sqlite3.OperationalError: unable to open database file
+2026-02-13 18:12:00,275 INFO root Loading Lead Scoring Model from storage...
+2026-02-13 18:12:00,276 INFO root ML Model initialized. Status: simulated
+2026-02-13 18:12:07,403 INFO root Loading Lead Scoring Model from storage...
+2026-02-13 18:12:07,403 INFO root ML Model initialized. Status: simulated
+2026-02-13 18:17:17,537 INFO root Loading Lead Scoring Model from storage...
+2026-02-13 18:17:17,537 INFO root ML Model initialized. Status: simulated
+2026-02-13 18:17:24,375 INFO root Loading Lead Scoring Model from storage...
+2026-02-13 18:17:24,375 INFO root ML Model initialized. Status: simulated
+2026-02-13 18:17:56,033 INFO root [UPLOAD] Request: POST http://127.0.0.1:8000/api/v2/upload/_test_multipart
+2026-02-13 18:17:56,033 INFO root [UPLOAD] Request headers: {'host': '127.0.0.1:8000', 'content-length': '422', 'content-type': 'multipart/form-data; boundary=------------------------fS8iR0OSIUc3o5CdRka5jQ'}
+2026-02-13 18:17:57,780 INFO root Loading Lead Scoring Model from storage...
+2026-02-13 18:17:57,781 INFO root ML Model initialized. Status: simulated
+2026-02-13 18:38:42,025 INFO root Loading Lead Scoring Model from storage...
+2026-02-13 18:38:42,026 INFO root ML Model initialized. Status: simulated
+2026-02-13 18:38:48,100 INFO root Loading Lead Scoring Model from storage...
+2026-02-13 18:38:48,100 INFO root ML Model initialized. Status: simulated
+2026-02-13 18:38:55,409 INFO root Loading Lead Scoring Model from storage...
+2026-02-13 18:38:55,409 INFO root ML Model initialized. Status: simulated
+2026-02-13 18:40:07,902 INFO root Loading Lead Scoring Model from storage...
+2026-02-13 18:40:07,902 INFO root ML Model initialized. Status: simulated
+2026-02-13 18:40:13,759 INFO root Loading Lead Scoring Model from storage...
+2026-02-13 18:40:13,759 INFO root ML Model initialized. Status: simulated
+2026-02-13 18:40:51,139 INFO root Loading Lead Scoring Model from storage...
+2026-02-13 18:40:51,140 INFO root ML Model initialized. Status: simulated
+2026-02-13 18:41:51,238 INFO root Loading Lead Scoring Model from storage...
+2026-02-13 18:41:51,239 INFO root ML Model initialized. Status: simulated
+2026-02-13 18:41:58,270 INFO root Loading Lead Scoring Model from storage...
+2026-02-13 18:41:58,270 INFO root ML Model initialized. Status: simulated
+2026-02-13 18:50:40,999 INFO root Loading Lead Scoring Model from storage...
+2026-02-13 18:50:40,999 INFO root ML Model initialized. Status: simulated

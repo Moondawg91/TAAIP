@@ -19,6 +19,12 @@ const getBrowserOrigin = (): string => {
       return `${protocol}//${hostname}`;
     }
   }
+  // During local frontend dev (Vite) prefer the backend on port 8000 so
+  // the UI talks directly to the local backend if the gateway isn't running.
+  // Vite typically serves on port 5173; detect that and target backend:8000.
+  if (typeof window !== 'undefined' && window.location.port === '5173') {
+    return 'http://127.0.0.1:8000';
+  }
   return 'http://localhost:3000';
 };
 

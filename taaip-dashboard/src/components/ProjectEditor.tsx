@@ -50,12 +50,18 @@ export const ProjectEditor: React.FC<{ projectId: string; onClose: () => void }>
 
   const fetchProjectData = async () => {
     try {
-      const res = await fetch(`${API_BASE}/api/v2/projects/${projectId}`);
-      const data = await res.json();
-      if (data.status === 'ok') {
-        setProject(data.project);
-        setTasks(data.tasks || []);
-        setMilestones(data.milestones || []);
+      // Prefer new projects_pm router, fall back to legacy /api/v2/projects
+      let res = await fetch(`${API_BASE}/api/v2/projects_pm/projects/${projectId}`);
+      if (!res.ok) res = await fetch(`${API_BASE}/api/v2/projects/${projectId}`);
+      const text = await res.text();
+      let data: any = null;
+      try { data = text ? JSON.parse(text) : null; } catch (e) { data = null; }
+
+      if (data && data.status === 'ok') {
+        const src = data.project || data;
+        setProject(src.project || src);
+        setTasks(data.tasks || src.tasks || []);
+        setMilestones(data.milestones || src.milestones || []);
       }
     } catch (error) {
       console.error('Error fetching project:', error);
@@ -68,11 +74,15 @@ export const ProjectEditor: React.FC<{ projectId: string; onClose: () => void }>
   const updateProject = async (updates: Partial<Project>) => {
     setSaving(true);
     try {
-      const res = await fetch(`${API_BASE}/api/v2/projects/${projectId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updates),
+      // Try projects_pm update when available, otherwise use legacy endpoint
+      let res = await fetch(`${API_BASE}/api/v2/projects_pm/projects/${projectId}`, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updates)
       });
+      if (!res.ok) {
+        res = await fetch(`${API_BASE}/api/v2/projects/${projectId}`, {
+          method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updates)
+        });
+      }
       if (res.ok) {
         setMessage({ type: 'success', text: 'Project updated successfully!' });
         await fetchProjectData();
@@ -88,11 +98,14 @@ export const ProjectEditor: React.FC<{ projectId: string; onClose: () => void }>
 
   const createTask = async (taskData: Partial<Task>) => {
     try {
-      const res = await fetch(`${API_BASE}/api/v2/projects/${projectId}/tasks`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(taskData),
+      let res = await fetch(`${API_BASE}/api/v2/projects_pm/projects/${projectId}/tasks`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(taskData)
       });
+      if (!res.ok) {
+        res = await fetch(`${API_BASE}/api/v2/projects/${projectId}/tasks`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(taskData)
+        });
+      }
       if (res.ok) {
         setMessage({ type: 'success', text: 'Task created!' });
         await fetchProjectData();
@@ -104,11 +117,14 @@ export const ProjectEditor: React.FC<{ projectId: string; onClose: () => void }>
 
   const updateTask = async (taskId: string, updates: Partial<Task>) => {
     try {
-      const res = await fetch(`${API_BASE}/api/v2/projects/${projectId}/tasks/${taskId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updates),
+      let res = await fetch(`${API_BASE}/api/v2/projects_pm/projects/${projectId}/tasks/${taskId}`, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updates)
       });
+      if (!res.ok) {
+        res = await fetch(`${API_BASE}/api/v2/projects/${projectId}/tasks/${taskId}`, {
+          method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updates)
+        });
+      }
       if (res.ok) {
         setMessage({ type: 'success', text: 'Task updated!' });
         await fetchProjectData();
@@ -120,11 +136,14 @@ export const ProjectEditor: React.FC<{ projectId: string; onClose: () => void }>
 
   const createMilestone = async (milestoneData: { name: string; target_date: string }) => {
     try {
-      const res = await fetch(`${API_BASE}/api/v2/projects/${projectId}/milestones`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(milestoneData),
+      let res = await fetch(`${API_BASE}/api/v2/projects_pm/projects/${projectId}/milestones`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(milestoneData)
       });
+      if (!res.ok) {
+        res = await fetch(`${API_BASE}/api/v2/projects/${projectId}/milestones`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(milestoneData)
+        });
+      }
       if (res.ok) {
         setMessage({ type: 'success', text: 'Milestone created!' });
         await fetchProjectData();
@@ -494,7 +513,8 @@ const BudgetTab: React.FC<{ project: Project; onUpdate: (updates: Partial<Projec
 
     try {
       const base = API_BASE.startsWith('https') ? API_BASE.replace(/^https/, 'wss') : API_BASE.replace(/^http/, 'ws');
-      ws = new WebSocket(`${base}/api/v2/projects/${project.project_id}/ws/budget`);
+      // The backend exposes budget websocket at /api/v2/projects_pm/ws/budget (router prefix)
+      ws = new WebSocket(`${base}/api/v2/projects_pm/ws/budget`);
       ws.onopen = () => setWsConnected(true);
       ws.onmessage = (ev) => {
         try {

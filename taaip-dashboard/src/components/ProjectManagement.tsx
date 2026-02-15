@@ -202,7 +202,9 @@ export const ProjectManagement: React.FC = () => {
 
   const fetchProjects = async () => {
     try {
-      const res = await fetch(`${API_BASE}/api/v2/projects`);
+      // Prefer the projects_pm router for project CRUD; fall back to legacy /api/v2/projects if unavailable
+      let res = await fetch(`${API_BASE}/api/v2/projects_pm/projects`);
+      if (!res.ok) res = await fetch(`${API_BASE}/api/v2/projects`);
       const text = await res.text();
       let data: any = null;
       try {
@@ -231,7 +233,9 @@ export const ProjectManagement: React.FC = () => {
 
   const fetchProjectDetail = async (projectId: string) => {
     try {
-      const res = await fetch(`${API_BASE}/api/v2/projects/${projectId}`);
+      // Try projects_pm detail endpoint first, fallback to legacy route
+      let res = await fetch(`${API_BASE}/api/v2/projects_pm/projects/${projectId}`);
+      if (!res.ok) res = await fetch(`${API_BASE}/api/v2/projects/${projectId}`);
       const text = await res.text();
       let data: any = null;
       try {

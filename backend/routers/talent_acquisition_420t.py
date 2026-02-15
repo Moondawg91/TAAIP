@@ -13,8 +13,18 @@ from pydantic import BaseModel
 router = APIRouter()
 
 # Use the same database as the main TAAIP service
+import os
+
+# Resolve DB path for this router: prefer explicit env vars then repo data
 DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "data")
-DB_PATH = os.path.join(DATA_DIR, "taaip.sqlite3")
+db_candidate = os.environ.get('DB_FILE') or os.environ.get('DB_PATH')
+if not db_candidate:
+    db_candidate = os.path.join(DATA_DIR, "taaip.sqlite3")
+DB_PATH = db_candidate
+try:
+    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
+except Exception:
+    pass
 
 # --- Pydantic Models ---
 

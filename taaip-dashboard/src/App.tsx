@@ -13,7 +13,7 @@ const AnalyticsDashboard = lazy(() => import('./components/AnalyticsDashboard').
 const MarketPotentialDashboard = lazy(() => import('./components/MarketPotentialDashboard'));
 const MissionAnalysisDashboard = lazy(() => import('./components/MissionAnalysisDashboard'));
 const TargetingDecisionBoard = lazy(() => import('./components/TargetingDecisionBoard').then(m => ({ default: m.TargetingDecisionBoard })));
-// ProjectManagement removed per request
+const ProjectManagement = lazy(() => import('./components/ProjectManagement').then(m => ({ default: m.ProjectManagement })));
 const LeadStatusReport = lazy(() => import('./components/LeadStatusReport').then(m => ({ default: m.LeadStatusReport })));
 const EventPerformanceDashboard = lazy(() => import('./components/EventPerformanceDashboard').then(m => ({ default: m.EventPerformanceDashboard })));
 const G2ZonePerformanceDashboard = lazy(() => import('./components/G2ZonePerformanceDashboard').then(m => ({ default: m.G2ZonePerformanceDashboard })));
@@ -39,7 +39,7 @@ const AdminQuery = lazy(() => import('./components/AdminQuery'));
 // Optimized for 420T Talent Acquisition Technicians
 
 const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'home' | '420t' | 'funnel' | 'analytics' | 'market' | 'mission' | 'targeting' | 'leads' | 'events' | 'g2zones' | 'calendar' | 'sharepoint' | 'budget' | 'twg' | 'fusion' | 'segmentation' | 'methodology' | 'universal-upload' | 'data-manager' | 'quarter-assessment' | 'asset-recommend' | 'historical' | 'user-management' | 'powerbi' | 'marketing-engagement' | 'admin-console' | 'admin-query'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | '420t' | 'funnel' | 'analytics' | 'market' | 'mission' | 'targeting' | 'projects' | 'leads' | 'events' | 'g2zones' | 'calendar' | 'sharepoint' | 'budget' | 'twg' | 'fusion' | 'segmentation' | 'methodology' | 'universal-upload' | 'data-manager' | 'quarter-assessment' | 'asset-recommend' | 'historical' | 'user-management' | 'powerbi' | 'marketing-engagement' | 'admin-console' | 'admin-query'>('home');
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const menuCategories = [
@@ -85,6 +85,7 @@ const App: React.FC = () => {
       items: [
         { id: 'calendar', label: 'Calendar & Scheduler', icon: <Clipboard className="w-5 h-5" />, category: 'Operations' },
         { id: 'market', label: 'Market Potential', icon: <Globe className="w-5 h-5" />, category: 'Operations' },
+        { id: 'projects', label: 'Projects', icon: <Briefcase className="w-5 h-5" />, category: 'Operations' },
         { id: 'sharepoint', label: 'SharePoint Files', icon: <FolderOpen className="w-5 h-5" />, category: 'Operations' },
         { id: 'budget', label: 'Budget Tracker', icon: <DollarSign className="w-5 h-5" />, category: 'Operations' },
         { id: 'universal-upload', label: 'Data Upload', icon: <FileCheck className="w-5 h-5" />, category: 'Operations' },
@@ -201,6 +202,7 @@ const App: React.FC = () => {
            activeTab === 'quarter-assessment' ? <QuarterAssessment /> :
            activeTab === 'asset-recommend' ? <AssetRecommendationEngine /> :
            activeTab === 'historical' ? <HistoricalDataArchive /> :
+           activeTab === 'projects' ? <ProjectManagement /> :
            activeTab === 'leads' ? <LeadStatusReport /> :
            activeTab === 'events' ? <EventPerformanceDashboard /> :
            activeTab === 'g2zones' ? <G2ZonePerformanceDashboard /> :

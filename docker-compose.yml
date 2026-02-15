@@ -1,3 +1,41 @@
+version: '3.8'
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: taaip
+      POSTGRES_USER: taaip
+      POSTGRES_PASSWORD: taaip
+    ports:
+      - '5432:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  api:
+    build: ./services/api
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    volumes:
+      - ./services/api:/app
+    ports:
+      - '8000:8000'
+    environment:
+      DATABASE_URL: postgresql+psycopg2://taaip:taaip@db:5432/taaip
+      JWT_SECRET: devsecret
+    depends_on:
+      - db
+
+  web:
+    build: ./apps/web
+    command: sh -c "npm install && npm start"
+    volumes:
+      - ./apps/web:/app
+    ports:
+      - '3000:3000'
+    depends_on:
+      - api
+
+volumes:
+  pgdata:
 services:
   backend:
     build:
@@ -7,6 +45,7 @@ services:
       - "8000:8000"
     environment:
       - DB_PATH=/app/recruiting.db
+      - DISABLE_THIRD_PARTY_LLM=1
     volumes:
       - ./data:/app/data
       - ./data/recruiting.db:/app/recruiting.db
@@ -20,6 +59,7 @@ services:
       - "443:443"
     environment:
       - FASTAPI_URL=http://backend:8000
+      - DISABLE_THIRD_PARTY_LLM=1
     volumes:
       - /etc/letsencrypt:/etc/letsencrypt:ro
     depends_on:
@@ -36,6 +76,8 @@ services:
       - gateway
     volumes:
       - ./dashboard:/usr/share/nginx/html/dashboard:ro
+    environment:
+      - DISABLE_THIRD_PARTY_LLM=1
 
   redis:
     image: redis:7-alpine
@@ -46,12 +88,14 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.backend
-    command: ["python", "-m", "rq.worker", "-u", "redis://redis:6379", "default"]
+    # Run rq as a long-lived worker process (do not use module form that exits).
+    command: ["python", "-m", "rq", "worker", "default", "--url", "redis://redis:6379/0"]
     depends_on:
       - redis
       - backend
     environment:
       - REDIS_URL=redis://redis:6379
+      - DISABLE_THIRD_PARTY_LLM=1
     volumes:
       - ./:/app
     restart: unless-stopped

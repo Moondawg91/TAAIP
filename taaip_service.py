@@ -1,3 +1,5 @@
+from taaip_service.routes.power_query import router as pq_router
+from taaip_service.routes.powerbi import router as pbi_router
 from fastapi import FastAPI, HTTPException, Request, Form, WebSocket, WebSocketDisconnect, UploadFile, File, Body, Query
 from fastapi.responses import JSONResponse, StreamingResponse
 import io
@@ -15,6 +17,7 @@ import sqlite3
 import shutil
 import secrets
 from datetime import datetime
+import hashlib
 from typing import Optional, Dict, Any
 import threading
 import asyncio
@@ -32,6 +35,23 @@ app = FastAPI(
     version="2.0.0",
 )
 logging.basicConfig(level=logging.INFO)
+
+# Security: proactively remove/disable known third-party LLM vendor env vars
+# so the running service cannot accidentally use OpenAI/HuggingFace/Cohere/etc.
+try:
+    disabled_prefixes = ("OPENAI", "OPENAI_API", "OPENAI_ORG", "HUGGINGFACE", "HF_", "LANGCHAIN", "COHERE", "ANTHROPIC", "REPLICATE", "LLAMA", "GPT_")
+    removed = []
+    for k in list(os.environ.keys()):
+        uk = k.upper()
+        if any(uk.startswith(p) for p in disabled_prefixes):
+            os.environ.pop(k, None)
+            removed.append(k)
+    # Ensure a clear runtime flag is present
+    os.environ["DISABLE_THIRD_PARTY_LLM"] = "1"
+    if removed:
+        logging.info(f"Cleared third-party LLM env vars: {removed}")
+except Exception:
+    logging.exception("Failed to sanitize third-party LLM env vars at startup")
 
 # Ensure logs directory exists and add rotating file handler for persistent logs
 LOG_DIR = os.path.join(os.path.dirname(__file__), 'logs')
@@ -622,6 +642,24 @@ def init_db():
         )
         """
     )
+    # Ensure both legacy and newer filename columns exist on the staging table
+    try:
+        cur.execute("PRAGMA table_info(raw_import_batches)")
+        existing_cols = [r[1] for r in cur.fetchall()]
+        if 'filename' not in existing_cols:
+            try:
+                cur.execute("ALTER TABLE raw_import_batches ADD COLUMN filename TEXT DEFAULT ''")
+            except Exception:
+                pass
+        if 'file_name' not in existing_cols:
+            try:
+                cur.execute("ALTER TABLE raw_import_batches ADD COLUMN file_name TEXT DEFAULT ''")
+            except Exception:
+                pass
+    except Exception:
+        # best-effort: if PRAGMA fails, continue without raising
+        pass
+
     conn.commit()
     conn.close()
 
@@ -3559,8 +3597,34 @@ async def projects_pm_create_project(request: Request):
         data = await request.json()
     except Exception:
         data = {}
-    # reuse existing create_project
+    # Prefer creating via the new Project Management router when possible
     try:
+        # If backend router exists, map fields to its ProjectCreate and call it
+        try:
+            from backend.routers import project_mgmt as pm
+            pm_data = {
+                'name': data.get('name'),
+                'description': data.get('description') or data.get('objectives') or '',
+                'start_date': data.get('start_date') or data.get('start_date'),
+                'end_date': data.get('target_date') or data.get('end_date'),
+                'total_budget': float(data.get('funding_amount', 0) or data.get('total_budget', 0) or 0),
+                'estimated_benefit': float(data.get('estimated_benefit', 0) or 0),
+                'units': data.get('units') or None,
+                'metadata': data.get('metadata') or None
+            }
+            # only call pm.create_project when a name is present
+            if pm_data['name']:
+                try:
+                    pc_pm = pm.ProjectCreate(**pm_data)
+                    return pm.create_project(pc_pm)
+                except Exception:
+                    # fall through to legacy path
+                    pass
+        except Exception:
+            # unable to import pm router; fall back to legacy create
+            pass
+
+        # fallback: try legacy project create (requires legacy fields)
         pc = ProjectCreate(**data)
         return create_project(pc)
     except Exception as e:
@@ -3585,6 +3649,19 @@ async def projects_pm_add_participant(project_id: str, request: Request):
     if not person_id:
         raise HTTPException(status_code=422, detail=[{"loc":["body","person_id"],"msg":"Field required","type":"value_error.missing"}])
 
+    # Prefer the project_mgmt router's participant handler when available
+    try:
+        from backend.routers import project_mgmt as pm
+        if hasattr(pm, 'add_participant'):
+            try:
+                # delegate to project_mgmt handler (it accepts Request and is async)
+                return await pm.add_participant(project_id, request)
+            except Exception:
+                # fallback to legacy insertion
+                pass
+    except Exception:
+        pass
+
     pid = f"ptc_{uuid.uuid4().hex[:12]}"
     now = datetime.now().isoformat()
     conn = get_db_conn()
@@ -3604,6 +3681,24 @@ async def projects_pm_budget_transaction(project_id: str, request: Request):
         txn = await request.json()
     except Exception:
         txn = {k: v for k, v in request.query_params.items()} if request.query_params else {}
+    # Prefer project_mgmt implementation when possible
+    try:
+        from backend.routers import project_mgmt as pm
+        if hasattr(pm, 'add_budget_transaction'):
+            try:
+                # pm.add_budget_transaction(project_id, type, description, amount, category)
+                return pm.add_budget_transaction(
+                    project_id,
+                    txn.get('type', 'spend'),
+                    txn.get('description', ''),
+                    float(txn.get('amount', 0) or 0),
+                    txn.get('category', 'other')
+                )
+            except Exception:
+                pass
+    except Exception:
+        pass
+
     return add_project_budget_transaction(project_id, txn)
 
 
@@ -3623,6 +3718,16 @@ def projects_pm_emm_list(project_id: str):
 
 @app.get("/api/v2/projects_pm/projects/{project_id}")
 def projects_pm_get_project(project_id: str):
+    # Prefer new PM router detail if available
+    try:
+        from backend.routers import project_mgmt as pm
+        if hasattr(pm, 'get_project'):
+            try:
+                return pm.get_project(project_id)
+            except Exception:
+                pass
+    except Exception:
+        pass
     return get_project_detail(project_id)
 
 
@@ -5214,8 +5319,66 @@ async def upload_raw_main(file: UploadFile = File(...), source_system: str = Que
         batch_id = uuid.uuid4().hex
         fhash = hashlib.sha256(data).hexdigest()
         imported_at = datetime.utcnow().isoformat()
-        cur.execute('''INSERT OR REPLACE INTO raw_import_batches(batch_id, source_system, filename, stored_path, file_hash, imported_at, status, notes)
-                       VALUES(?,?,?,?,?,?,?,?)''', (batch_id, source_system, safe_name, dest, fhash, imported_at, 'received', None))
+
+        # Adapt to whichever schema exists for raw_import_batches
+        cur.execute("PRAGMA table_info(raw_import_batches)")
+        cols = [r[1] for r in cur.fetchall()]
+
+        def try_insert(sql, params):
+            try:
+                cur.execute(sql, params)
+                return True
+            except sqlite3.OperationalError as e:
+                err = str(e).lower()
+                # If column is missing, attempt to add it and retry once
+                if 'no column named file_name' in err:
+                    try:
+                        cur.execute("ALTER TABLE raw_import_batches ADD COLUMN file_name TEXT")
+                        cur.execute(sql, params)
+                        return True
+                    except Exception:
+                        return False
+                if 'no column named filename' in err:
+                    try:
+                        cur.execute("ALTER TABLE raw_import_batches ADD COLUMN filename TEXT")
+                        cur.execute(sql, params)
+                        return True
+                    except Exception:
+                        return False
+                # Other operational errors: propagate up
+                raise
+
+        if "filename" in cols and "file_name" in cols:
+            sql = ('''INSERT OR REPLACE INTO raw_import_batches(
+                       batch_id, source_system, filename, file_name, stored_path, file_hash, imported_at, status, notes)
+                   VALUES(?,?,?,?,?,?,?,?,?)''')
+            params = (batch_id, source_system, safe_name, safe_name, dest, fhash, imported_at, 'received', None)
+            if not try_insert(sql, params):
+                # fallback to minimal insert
+                cur.execute('''INSERT OR REPLACE INTO raw_import_batches(batch_id, source_system, stored_path, file_hash, imported_at, status, notes)
+                               VALUES(?,?,?,?,?,?,?)''', (batch_id, source_system, dest, fhash, imported_at, 'received', None))
+        elif "filename" in cols:
+            sql = ('''INSERT OR REPLACE INTO raw_import_batches(batch_id, source_system, filename, stored_path, file_hash, imported_at, status, notes)
+                   VALUES(?,?,?,?,?,?,?,?)''')
+            params = (batch_id, source_system, safe_name, dest, fhash, imported_at, 'received', None)
+            if not try_insert(sql, params):
+                cur.execute('''INSERT OR REPLACE INTO raw_import_batches(batch_id, source_system, stored_path, file_hash, imported_at, status, notes)
+                               VALUES(?,?,?,?,?,?,?)''', (batch_id, source_system, dest, fhash, imported_at, 'received', None))
+        elif "file_name" in cols:
+            sql = ('''INSERT OR REPLACE INTO raw_import_batches(batch_id, source_system, file_name, stored_path, file_hash, imported_at, status, notes)
+                   VALUES(?,?,?,?,?,?,?,?)''')
+            params = (batch_id, source_system, safe_name, dest, fhash, imported_at, 'received', None)
+            if not try_insert(sql, params):
+                cur.execute('''INSERT OR REPLACE INTO raw_import_batches(batch_id, source_system, stored_path, file_hash, imported_at, status, notes)
+                               VALUES(?,?,?,?,?,?,?)''', (batch_id, source_system, dest, fhash, imported_at, 'received', None))
+        else:
+            # Fallback: insert minimal columns if schema is older/different
+            cur.execute(
+                '''INSERT OR REPLACE INTO raw_import_batches(batch_id, source_system, stored_path, file_hash, imported_at, status, notes)
+                   VALUES(?,?,?,?,?,?,?)''',
+                (batch_id, source_system, dest, fhash, imported_at, 'received', None),
+            )
+
         con.commit()
         con.close()
     except Exception as e:
@@ -6878,4 +7041,6 @@ async def get_upload_history():
         logging.error(f"Error fetching upload history: {e}")
         return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
 
+app.include_router(pq_router)
+app.include_router(pbi_router)
 

@@ -12,7 +12,8 @@ from backend.ingestion.classifier import inspect_file
 from backend.ingestion.dataset_registry import classify, detect_dataset
 
 router = APIRouter()
-DB = os.getenv('DB_PATH') or os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'recruiting.db')
+# Resolve DB path: prefer `DB_PATH` then `DB_FILE`, then repo-relative recruiting.db
+DB = os.getenv('DB_PATH') or os.getenv('DB_FILE') or os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'recruiting.db')
 UPLOAD_DIR = '/uploads' if os.path.isdir('/uploads') else '/tmp/uploads'
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
@@ -80,6 +81,13 @@ async def upload_raw(
     batch_id = uuid.uuid4().hex
     # store batch record (match existing DB schema)
     imported_at = datetime.utcnow().isoformat()
+    # ensure DB directory exists so sqlite can create the file if needed
+    db_dir = os.path.dirname(DB)
+    if db_dir and not os.path.isdir(db_dir):
+        try:
+            os.makedirs(db_dir, exist_ok=True)
+        except Exception:
+            pass
     con = sqlite3.connect(DB)
     cur = con.cursor()
     cur.execute('''INSERT OR REPLACE INTO raw_import_batches(batch_id, source_system, filename, stored_path, file_hash, imported_at, detected_profile, status, notes)
