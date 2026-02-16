@@ -28,3 +28,83 @@ python scripts/import_zips.py /path/to/Zip\ Codes\ in\ USAREC.xlsx
 Notes:
 - The project uses SQLAlchemy and creates tables automatically on startup for local dev.
 - For Postgres in production, set `DATABASE_URL` env var and run Alembic (alembic support is scaffolded in requirements).
+
+## Phase 1 - Local Dev & Testing
+
+### Environment Variables
+
+```bash
+export DATABASE_URL="sqlite:///./services/api/taaip_dev.db"
+export JWT_SECRET="devsecret"
+export PYTHONPATH="$(pwd)"
+```
+
+### Run Migrations
+
+```bash
+cd services/api
+alembic upgrade head
+```
+
+### Run API
+
+```bash
+uvicorn app.main:app --reload
+```
+
+API Health Check:
+
+```
+GET http://localhost:8000/health
+```
+
+## Seeding and Imports (important — no demo data)
+
+This service does NOT seed demo or synthetic operational data. Only system defaults and reference tables are safe to seed.
+
+1) Seed system defaults (idempotent):
+
+```bash
+python services/api/scripts/seed_defaults.py
+```
+
+This will create only the `market_category_weights` defaults and `funnel_stages` baseline. It will not create events, metrics, funnel transitions, burden inputs, LOEs, or station/ZIP coverage.
+
+2) Optional admin users (ONLY when explicitly requested):
+
+```bash
+SEED_SAMPLE_USERS=true python services/api/scripts/seed_defaults.py
+```
+
+This will create only `sysadmin` and `usarec_admin` users. Do NOT enable this in production unless you intend to create admin accounts.
+
+3) Import org and ZIP coverage (authoritative source):
+
+```bash
+python services/api/scripts/import_rsids.py "/path/to/RSIDs USAREC.xlsx"
+python services/api/scripts/import_zips.py "/path/to/Zip Codes in USAREC.xlsx"
+```
+
+Import scripts are the only supported mechanism to populate `stations` and `station_zip_coverage`. Do not seed those tables manually.
+
+
+## Run Tests (Phase 1 Only)
+
+```bash
+pytest -q services/api/tests
+```
+
+Expected Output:
+
+```
+2 passed
+```
+
+## CI Command
+
+CI should run:
+
+```bash
+pytest -q services/api/tests
+```
+

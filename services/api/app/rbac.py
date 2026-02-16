@@ -1,6 +1,11 @@
+"""© 2025 Maroon Moon, LLC. All rights reserved.
+RBAC helpers for scope normalization and authorization checks.
+"""
+
 from typing import Dict
 from sqlalchemy.orm import Query
 from . import models
+from fastapi import HTTPException
 
 
 def normalize_scope(scope: str) -> Dict:
@@ -66,3 +71,47 @@ def is_rsid_in_scope(user_scope: str, rsid: str) -> bool:
     if norm['type'] == 'STN':
         return rsid == val
     return False
+
+
+def _role_is_view_only(role_name: str) -> bool:
+    if not role_name:
+        return True
+    return role_name.endswith('_VIEW') or role_name == 'STATION_VIEW'
+
+
+def can_create_in_scope(user, scope_type: str, scope_value: str) -> bool:
+    """Return True if user may create resources in the requested scope."""
+    # sysadmin and usarec always allowed
+    if not user:
+        return False
+    role = getattr(user, 'role', None)
+    if role and role.name == 'SYSADMIN':
+        return True
+    if _role_is_view_only(role.name if role else None):
+        return False
+    norm = normalize_scope(user.scope)
+    if norm['type'] == 'USAREC':
+        return True
+    # value-based prefix checks
+    user_val = norm['value']
+    if not user_val:
+        return False
+    # if user's scope is less granular or equal to requested scope -> allowed when prefix matches
+    return scope_value.startswith(user_val)
+
+
+def authorize_create(user, scope_type: str = None, scope_value: str = None, station_rsid: str = None):
+    # station_rsid maps to STN
+    if station_rsid:
+        if not is_rsid_in_scope(user.scope, station_rsid):
+            raise HTTPException(status_code=403, detail='station outside user scope')
+        # station-level writes: deny view-only roles
+        if _role_is_view_only(user.role.name):
+            raise HTTPException(status_code=403, detail='role not permitted to create at station level')
+        return True
+    if scope_type and scope_value:
+        if not can_create_in_scope(user, scope_type, scope_value):
+            raise HTTPException(status_code=403, detail='requested scope outside user permissions')
+        return True
+    # no scope provided -> deny
+    raise HTTPException(status_code=400, detail='no scope provided for create')

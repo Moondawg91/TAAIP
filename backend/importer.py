@@ -183,8 +183,27 @@ def process_import(db_path: str, file_bytes: bytes, filename: str, source_system
         batch_id = f"batch_{uuid.uuid4().hex[:12]}"
 
     cur = conn.cursor()
-    cur.execute("INSERT OR REPLACE INTO raw_import_batches (batch_id, source_system, file_name, file_hash, imported_at, detected_sheet, detected_header_row, status, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                (batch_id, source_system, filename, '', pd.Timestamp.now().isoformat(), det['sheet'], det['header_row'], 'imported', json.dumps({'dataset_type': dataset_type, 'confidence': confidence})))
+    # Ensure both `filename` (legacy/required NOT NULL) and `file_name` are populated
+    cur.execute(
+        """
+        INSERT OR REPLACE INTO raw_import_batches
+        (batch_id, source_system, filename, file_name, stored_path, file_hash, imported_at, detected_sheet, detected_header_row, status, notes)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            batch_id,
+            source_system,
+            filename or 'unknown',    # legacy required column
+            filename or 'unknown',    # newer file_name column
+            '',                       # stored_path (not used here)
+            '',
+            pd.Timestamp.now().isoformat(),
+            det['sheet'],
+            det['header_row'],
+            'imported',
+            json.dumps({'dataset_type': dataset_type, 'confidence': confidence}),
+        ),
+    )
     conn.commit()
 
     # save raw rows for audit

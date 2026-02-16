@@ -2,10 +2,10 @@
 import os
 import sys
 from pathlib import Path
-sys.path.append(str(Path(__file__).resolve().parents[2] / 'app'))
+sys.path.append(str(Path(__file__).resolve().parents[1]))
 
-from database import SessionLocal
-import crud
+from app.database import SessionLocal
+from app import crud
 
 
 def main(filepath: str):
