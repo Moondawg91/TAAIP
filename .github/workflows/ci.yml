@@ -18,34 +18,42 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Cache pip
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('**/requirements.txt') }}
-      - name: Create virtualenv & install deps
+          cache: 'pip'
+          cache-dependency-path: |
+            requirements.txt
+            services/api/requirements.txt
+      - name: Install Python dependencies (runner python)
         run: |
           set -euxo pipefail
-          echo "--- Environment ---"
+          echo "--- Diagnostics ---"
           uname -a
           lsb_release -a || true
           echo "Python executable: $(which python || true)"
           python -V
+          python -m pip -V
+          python -c "import sys; print(sys.executable)"
 
-          echo "--- Create virtualenv ---"
-          python -m venv .venv
-          ls -la .venv || true
-          echo "--- venv python ---"
-          .venv/bin/python -V || true
+          echo "--- Upgrade pip/setuptools/wheel ---"
+          python -m pip install --upgrade pip wheel setuptools
 
-          echo "--- Install pip & deps using venv python ---"
-          .venv/bin/python -m pip install --upgrade pip
-          .venv/bin/python -m pip install -r requirements.txt
-          pip install pytest-cov codecov
+          echo "--- Install requirements if present ---"
+          if [ -f requirements.txt ]; then
+            python -m pip install -r requirements.txt;
+          else
+            echo "No top-level requirements.txt found";
+          fi
+
+          if [ -f services/api/requirements.txt ]; then
+            python -m pip install -r services/api/requirements.txt;
+          else
+            echo "No services/api/requirements.txt found";
+          fi
+
+          python -m pip install pytest-cov codecov
       - name: Run tests with coverage and junit
         run: |
-          source .venv/bin/activate
-          pytest -q --junitxml=report.xml --cov=taaip_service,taaip_ai_pipeline,taaip_lms --cov-report=xml
+          set -euxo pipefail
+          python -m pytest -q --junitxml=report.xml --cov=taaip_service,taaip_ai_pipeline,taaip_lms --cov-report=xml
         env:
           EXPORT_API_TOKEN: ${{ secrets.EXPORT_API_TOKEN }}
       - name: Upload test artifacts
