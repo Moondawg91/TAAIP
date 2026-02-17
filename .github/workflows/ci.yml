@@ -25,10 +25,22 @@ jobs:
           key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('**/requirements.txt') }}
       - name: Create virtualenv & install deps
         run: |
+          set -euxo pipefail
+          echo "--- Environment ---"
+          uname -a
+          lsb_release -a || true
+          echo "Python executable: $(which python || true)"
+          python -V
+
+          echo "--- Create virtualenv ---"
           python -m venv .venv
-          source .venv/bin/activate
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          ls -la .venv || true
+          echo "--- venv python ---"
+          .venv/bin/python -V || true
+
+          echo "--- Install pip & deps using venv python ---"
+          .venv/bin/python -m pip install --upgrade pip
+          .venv/bin/python -m pip install -r requirements.txt
           pip install pytest-cov codecov
       - name: Run tests with coverage and junit
         run: |
