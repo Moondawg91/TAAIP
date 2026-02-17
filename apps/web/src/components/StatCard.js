@@ -1,4 +1,4 @@
-/* © 2025 Maroon Moon, LLC. All rights reserved. */
+/* © 2026 TAAIP. Copyright pending. */
 import React from 'react';
 
 export default function StatCard({title, children}){

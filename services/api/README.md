@@ -1,3 +1,25 @@
+Services API - local run
+
+From the repository root you can run the API using the package layout in this folder.
+
+Recommended (from repo root):
+
+```bash
+cd services/api
+source .venv/bin/activate
+python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
+```
+
+Or, from the repo root (equivalent):
+
+```bash
+source services/api/.venv/bin/activate
+python -m uvicorn services.api.app.main:app --host 127.0.0.1 --port 8000 --reload
+```
+
+Notes:
+- This README intentionally does not enable any demo seeding. The service will start with an empty database and empty-state UX.
+- If you need XLSX parsing support, install `openpyxl` into the `services/api` virtualenv: `pip install openpyxl`.
 # TAAIP - API Service (FastAPI)
 
 This service provides the backend API for TAAIP. It contains importers for RSIDs and ZIP coverage and implements basic endpoints for ZIP coverage lookups.

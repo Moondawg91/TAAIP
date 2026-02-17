@@ -1,4 +1,4 @@
-"""© 2025 Maroon Moon, LLC. All rights reserved.
+"""© 2026 TAAIP. Copyright pending.
 Canonical domain models for Phase 2 (events, marketing, funnel, burden, loes, decisions, audit)
 """
 

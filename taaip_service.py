@@ -26,6 +26,7 @@ from backend.data_pipeline import ingest_dataset, save_mapping
 from backend import importer as importer_module
 from backend.mappings import usarec as usarec_mappings
 from backend.mappings import dod as dod_mappings
+from backend import migrate as backend_migrate
 
 
 # --- Configuration & Initialization ---
@@ -103,6 +104,13 @@ PILOT_FILE = os.path.join(DATA_DIR, "pilot_state.json")
 
 # Use project-root DB aligned with all migration/populate scripts
 DB_FILE = os.path.join(os.path.dirname(__file__), "recruiting.db")
+
+# Apply migrations at startup to ensure schema is present and stable
+try:
+    backend_migrate.apply_all(DB_FILE)
+    logging.info("Applied backend migrations")
+except Exception:
+    logging.exception("Failed to apply backend migrations at startup")
 
 
 # --- SQLite helpers ---

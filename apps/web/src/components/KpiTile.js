@@ -1,7 +1,7 @@
 import React from 'react'
 import {Card, CardContent, Typography, Box} from '@mui/material'
 
-export default function KpiTile({title, value, sub}){
+export default function KpiTile({title, value, sub = ''}){
   return (
     <Card variant="outlined" sx={{minWidth:120}}>
       <CardContent>

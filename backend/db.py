@@ -68,14 +68,16 @@ DDL = [
 ]
 
 
-def connect():
-    path = db_path()
-    con = sqlite3.connect(path, timeout=30, check_same_thread=False)
-    con.execute("PRAGMA journal_mode=WAL;")
-    con.execute("PRAGMA synchronous=NORMAL;")
-    con.execute("PRAGMA busy_timeout=15000;")
-    con.row_factory = sqlite3.Row
-    return con
+def connect(db_path_arg: str = None):
+  path = db_path() if db_path_arg is None else db_path_arg
+  con = sqlite3.connect(path, timeout=30, check_same_thread=False)
+  # WAL and sensible timeouts reduce "database is locked" errors when concurrent readers/writers exist
+  con.execute("PRAGMA journal_mode=WAL;")
+  con.execute("PRAGMA synchronous=NORMAL;")
+  con.execute("PRAGMA busy_timeout=15000;")
+  con.execute("PRAGMA foreign_keys=ON;")
+  con.row_factory = sqlite3.Row
+  return con
 
 
 def migrate():

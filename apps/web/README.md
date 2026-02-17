@@ -30,4 +30,4 @@ Notes:
 
 If the UI shows empty states, import your organization's RSIDs and ZIPs and ingest domain exports using the backend ingest tools so the charts and tables render real values.
 
-© 2025 Maroon Moon, LLC. All rights reserved.
+© 2026 TAAIP. Copyright pending.

@@ -1,8 +1,4 @@
-"""© 2025 Maroon Moon, LLC. All rights reserved.
-CRUD helpers for Phase 2 canonical domain models. Queries are composable so RBAC filters can be applied before materialization.
-"""
-
-"""© 2025 Maroon Moon, LLC. All rights reserved.
+"""© 2026 TAAIP. Copyright pending.
 CRUD helpers for Phase 2 canonical domain models. Queries are composable so RBAC filters can be applied before materialization.
 """
 

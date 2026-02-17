@@ -1,4 +1,4 @@
-"""© 2025 Maroon Moon, LLC. All rights reserved.
+"""© 2026 TAAIP. Copyright pending.
 Domain API router implementing Phase 2 endpoints under /api/v2.
 All responses are structured as {"status":"ok","data":...}.
 """

@@ -184,6 +184,7 @@ def process_import(db_path: str, file_bytes: bytes, filename: str, source_system
 
     cur = conn.cursor()
     # Ensure both `filename` (legacy/required NOT NULL) and `file_name` are populated
+    safe_name = filename or 'uploaded_file'
     cur.execute(
         """
         INSERT OR REPLACE INTO raw_import_batches
@@ -193,9 +194,9 @@ def process_import(db_path: str, file_bytes: bytes, filename: str, source_system
         (
             batch_id,
             source_system,
-            filename or 'unknown',    # legacy required column
-            filename or 'unknown',    # newer file_name column
-            '',                       # stored_path (not used here)
+            safe_name,
+            safe_name,
+            '',
             '',
             pd.Timestamp.now().isoformat(),
             det['sheet'],

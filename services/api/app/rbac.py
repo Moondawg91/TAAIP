@@ -1,4 +1,4 @@
-"""© 2025 Maroon Moon, LLC. All rights reserved.
+"""© 2026 TAAIP. Copyright pending.
 RBAC helpers for scope normalization and authorization checks.
 """
 
