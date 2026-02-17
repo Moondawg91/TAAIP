@@ -1,0 +1,47 @@
+# TOR Metrics Catalog
+# Each metric_id maps to a TOR category and describes data sources, type (BI/DS), and action template
+
+metrics:
+  - metric_id: market_share_contracts
+    title: Market Share - Contracts & Share
+    category: Market Intelligence
+    level: BDE
+    data_sources: ["DoD Market Share", "Procurement Feeds", "AIE"]
+    type: BI
+    recency: quarterly
+    required_fields: ["FY","ZIP","CONTR","SHARE"]
+    target_table: fact_market_share_contracts
+    action_template: "Review top ZIPs with declining share; recommend targeted events and COI outreach."
+
+  - metric_id: sama_station_scores
+    title: SAMA - Station Scores
+    category: Market Intelligence
+    level: BN
+    data_sources: ["SAMA"]
+    type: DS
+    recency: monthly
+    required_fields: ["ZIP","STATION","SAMA_SCORE"]
+    target_table: sama_data
+    action_template: "Prioritize stations with low SAMA score for targeted outreach and productivity reviews."
+
+  - metric_id: zip_category
+    title: ZIP by Category
+    category: Market Intelligence
+    level: BN
+    data_sources: ["ZIP Category Loader"]
+    type: BI
+    recency: monthly
+    required_fields: ["ZIP","CATEGORY"]
+    target_table: fact_zip_category
+    action_template: "Use ZIP categories to tune local marketing campaigns and event targeting."
+
+  - metric_id: pipeline_health
+    title: Pipeline Health (Funnel)
+    category: Processing Indicators
+    level: BDE
+    data_sources: ["Recruiting Funnel","IPPS-A (analysis-only)"]
+    type: BI
+    recency: daily
+    required_fields: ["lead_id","stage","timestamp"]
+    target_table: fact_pipeline
+    action_template: "Investigate bottlenecks where flash-to-bang exceeds threshold; assign follow-up tasks."

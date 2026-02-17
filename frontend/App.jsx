@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react';
+import ProjectManagement from './ProjectManagement';
 import { Target, TrendingUp, Cpu, RefreshCw, AlertTriangle, CheckCircle } from 'lucide-react';
 
 // IMPORTANT: This component assumes Tailwind CSS is configured in your project.
@@ -40,6 +41,7 @@ const App = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [isApiReachable, setIsApiReachable] = useState(true); // New state for API check
+  const [currentPage, setCurrentPage] = useState('lead');
 
   // Check API status on load
   React.useEffect(() => {
@@ -145,7 +147,18 @@ const App = () => {
         <p className="text-gray-500 mt-2 text-sm">Targeting Intelligence for 420T Technicians.</p>
       </header>
 
+      <nav className="w-full max-w-4xl flex justify-end gap-2 mb-4">
+        <button onClick={() => setCurrentPage('lead')} className={`px-3 py-1 rounded ${currentPage==='lead'?'bg-blue-600 text-white':'bg-white border'}`}>Lead Scoring</button>
+        <button onClick={() => setCurrentPage('projects')} className={`px-3 py-1 rounded ${currentPage==='projects'?'bg-blue-600 text-white':'bg-white border'}`}>Projects</button>
+      </nav>
+
       <main className="w-full max-w-4xl grid md:grid-cols-2 gap-8">
+        {currentPage === 'projects' ? (
+          <div className="md:col-span-2">
+            <ProjectManagement />
+          </div>
+        ) : (
+          <>
         
         {/* API Status Indicator */}
         <div className="md:col-span-2 text-center">
@@ -257,7 +270,8 @@ const App = () => {
 
             </div>
           )}
-        </div>
+          </>
+        )}
       </main>
     </div>
   );
