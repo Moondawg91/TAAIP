@@ -724,6 +724,37 @@ def init_schema() -> None:
                     as_of TEXT
                 );
                 """)
+            else:
+                # add station_rsid if missing
+                if 'station_rsid' not in cols:
+                    try:
+                        cur.execute("ALTER TABLE zip_metrics ADD COLUMN station_rsid TEXT")
+                    except Exception:
+                        pass
+        except Exception:
+            pass
+        # Add legacy alias columns expected by older raw SQL routers
+        try:
+            cols = table_columns('events')
+            legacy_event_cols = ['type', 'team_size', 'targeting_principles', 'org_unit_id']
+            for c in legacy_event_cols:
+                if c not in cols:
+                    try:
+                        cur.execute(f"ALTER TABLE events ADD COLUMN {c} TEXT")
+                    except Exception:
+                        pass
+        except Exception:
+            pass
+
+        try:
+            cols = table_columns('marketing_activities')
+            legacy_marketing_cols = ['engagement_count', 'awareness_metric', 'activation_conversions', 'metadata']
+            for c in legacy_marketing_cols:
+                if c not in cols:
+                    try:
+                        cur.execute(f"ALTER TABLE marketing_activities ADD COLUMN {c} TEXT")
+                    except Exception:
+                        pass
         except Exception:
             pass
 
