@@ -691,6 +691,42 @@ def init_schema() -> None:
             except Exception:
                 pass
 
+        # Compatibility patches: some routers expect legacy column names in
+        # certain tables (events.event_id, marketing_activities.activity_id,
+        # zip_metrics.station_rsid). Add those columns when missing so raw
+        # SQL endpoints continue to work alongside SQLAlchemy models.
+        try:
+            cols = table_columns('events')
+            if 'event_id' not in cols:
+                cur.execute("ALTER TABLE events ADD COLUMN event_id TEXT")
+        except Exception:
+            pass
+
+        try:
+            cols = table_columns('marketing_activities')
+            if 'activity_id' not in cols:
+                cur.execute("ALTER TABLE marketing_activities ADD COLUMN activity_id TEXT")
+        except Exception:
+            pass
+
+        # Ensure zip_metrics exists with sensible columns used by compatibility routers
+        try:
+            cols = table_columns('zip_metrics')
+            if not cols:
+                cur.executescript("""
+                CREATE TABLE IF NOT EXISTS zip_metrics (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    zip TEXT,
+                    metric_key TEXT,
+                    metric_value REAL,
+                    station_rsid TEXT,
+                    scope TEXT,
+                    as_of TEXT
+                );
+                """)
+        except Exception:
+            pass
+
         conn.commit()
     finally:
         conn.close()
