@@ -148,7 +148,15 @@ def parse_job_v3(payload: Dict[str, Any] = Body(...), sheet: Optional[str] = Non
                 preview.append(rowobj)
             columns = list(preview[0].keys()) if preview else []
         else:
-            raise HTTPException(status_code=400, detail='unsupported_file_type')
+            if ext == '.sql':
+                # safe SQL parse: do NOT execute. Provide preview of first N non-empty lines and detect INSERT targets
+                with open(path, 'r', encoding='utf-8', errors='replace') as fh:
+                    lines = [l.strip() for l in fh.readlines() if l.strip()]
+                preview_lines = lines[:max_preview]
+                preview = [{'sql': l} for l in preview_lines]
+                columns = ['sql']
+            else:
+                raise HTTPException(status_code=400, detail='unsupported_file_type')
 
         # store preview in import_job_v3 notes (simple) and update row_count
         cur.execute('UPDATE import_job_v3 SET row_count=? , status=?, notes=? WHERE id=?', (len(preview), 'parsed', json.dumps({'columns': columns, 'preview_sample_count': len(preview)}), import_job_id))
@@ -307,6 +315,10 @@ def commit_v3(payload: Dict[str, Any] = Body(...), allowed_orgs: Optional[list] 
             # fetch v3 stored preview rows
             cur.execute('SELECT row_json FROM imported_rows WHERE import_job_id=?', (import_job_id,))
             rows = cur.fetchall()
+            # load mapping if present
+            cur.execute('SELECT mapping_json FROM import_column_map WHERE import_job_id=? ORDER BY created_at DESC LIMIT 1', (import_job_id,))
+            mrow = cur.fetchone()
+            mapping = json.loads(mrow['mapping_json']) if mrow and mrow['mapping_json'] else {}
         else:
             # fallback: support legacy numeric import_job id
             try:
@@ -332,22 +344,53 @@ def commit_v3(payload: Dict[str, Any] = Body(...), allowed_orgs: Optional[list] 
         for r in rows:
             row = json.loads(r['row_json']) if isinstance(r['row_json'], str) else r['row_json']
             if dataset == 'production':
-                # expect keys: org_unit_id, date_key, metric_key, metric_value
-                org = row.get('org_unit_id') or row.get('org_unit')
-                date = row.get('date') or row.get('date_key')
-                metric = row.get('metric_key')
-                val = row.get('metric_value')
+                # use mapping when provided
+                org = row.get(mapping.get('org_unit_id')) if mapping.get('org_unit_id') else (row.get('org_unit_id') or row.get('org_unit'))
+                date = row.get(mapping.get('date_key')) if mapping.get('date_key') else (row.get('date') or row.get('date_key'))
+                metric = row.get(mapping.get('metric_key')) if mapping.get('metric_key') else row.get('metric_key')
+                val = row.get(mapping.get('metric_value')) if mapping.get('metric_value') else row.get('metric_value')
                 if not org or not date or metric is None or val is None:
                     continue
                 fid = uuid.uuid4().hex
+                if mode and str(mode).startswith('replace'):
+                    # archive any existing active rows matching the business key
+                    try:
+                        cur.execute('UPDATE fact_production SET record_status=?, archived_at=? WHERE org_unit_id=? AND date_key=? AND metric_key=? AND (record_status IS NULL OR record_status="active")', ('archived', now_iso(), str(org), str(date)[:10], str(metric)))
+                    except Exception:
+                        pass
                 cur.execute('INSERT OR REPLACE INTO fact_production(id, org_unit_id, date_key, metric_key, metric_value, source_system, import_job_id, created_at) VALUES (?,?,?,?,?,?,?,?)', (fid, str(org), str(date)[:10], str(metric), float(val), source_system, import_job_id, now_iso()))
                 committed += 1
             elif dataset == 'marketing':
                 fid = uuid.uuid4().hex
-                org = row.get('org_unit_id') or row.get('org_unit')
-                date = row.get('date') or row.get('date_key')
+                org = row.get(mapping.get('org_unit_id')) if mapping.get('org_unit_id') else (row.get('org_unit_id') or row.get('org_unit'))
+                date = row.get(mapping.get('date_key')) if mapping.get('date_key') else (row.get('date') or row.get('date_key'))
+                if mode and str(mode).startswith('replace'):
+                    try:
+                        cur.execute('UPDATE fact_marketing SET record_status=?, archived_at=? WHERE org_unit_id=? AND date_key=? AND (record_status IS NULL OR record_status="active")', ('archived', now_iso(), str(org), str(date)[:10] if date else None))
+                    except Exception:
+                        pass
                 cur.execute('INSERT OR REPLACE INTO fact_marketing(id, org_unit_id, date_key, campaign, channel, impressions, engagements, clicks, conversions, cost, source_system, import_job_id, created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)', (
-                    fid, str(org), str(date)[:10] if date else None, row.get('campaign'), row.get('channel'), float(row.get('impressions') or 0), float(row.get('engagements') or 0), float(row.get('clicks') or 0), float(row.get('conversions') or 0), float(row.get('cost') or 0), source_system, import_job_id, now_iso()
+                    fid, str(org), str(date)[:10] if date else None, row.get(mapping.get('campaign') if mapping.get('campaign') else 'campaign') if mapping else row.get('campaign'), row.get(mapping.get('channel') if mapping.get('channel') else 'channel') if mapping else row.get('channel'), float(row.get(mapping.get('impressions') if mapping.get('impressions') else 'impressions') or 0), float(row.get(mapping.get('engagements') if mapping.get('engagements') else 'engagements') or 0), float(row.get(mapping.get('clicks') if mapping.get('clicks') else 'clicks') or 0), float(row.get(mapping.get('conversions') if mapping.get('conversions') else 'conversions') or 0), float(row.get(mapping.get('cost') if mapping.get('cost') else 'cost') or 0), source_system, import_job_id, now_iso()
+                ))
+                committed += 1
+            elif dataset == 'event_performance' or dataset == 'event_metrics':
+                # map into event_metrics table
+                fid = uuid.uuid4().hex
+                event_id = row.get(mapping.get('event_id')) if mapping.get('event_id') else row.get('event_id') or row.get('event')
+                try:
+                    impressions = int(row.get(mapping.get('impressions')) or row.get('impressions') or 0)
+                except Exception:
+                    impressions = 0
+                try:
+                    engagements = int(row.get(mapping.get('engagements')) or row.get('engagements') or 0)
+                except Exception:
+                    engagements = 0
+                try:
+                    captured_at = row.get(mapping.get('captured_at')) if mapping.get('captured_at') else row.get('captured_at') or row.get('date')
+                except Exception:
+                    captured_at = None
+                cur.execute('INSERT OR REPLACE INTO event_metrics(id, event_id, impressions, engagements, leads, appts_made, appts_conducted, contracts, accessions, other_json, captured_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)', (
+                    fid, event_id, impressions, engagements, int(row.get('leads') or 0), int(row.get('appts_made') or 0), int(row.get('appts_conducted') or 0), int(row.get('contracts') or 0), int(row.get('accessions') or 0), json.dumps(row), captured_at
                 ))
                 committed += 1
             else:

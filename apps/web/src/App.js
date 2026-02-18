@@ -38,10 +38,10 @@ import CommandPrioritiesPage from './pages/command/CommandPrioritiesPage'
 import MissionAssessmentPage from './pages/command/MissionAssessmentPage'
 import TWGPageNew from './pages/command/TWGPage'
 import FusionCellPage from './pages/command/FusionCellPage'
-import MissionAnalysisPage from './pages/command/MissionAnalysisPage'
-import MissionPlanningPage from './pages/command/MissionPlanningPage'
-import USARECTargetingPage from './pages/command/USARECTargetingPage'
-import TargetingDataPage from './pages/command/TargetingDataPage'
+import MissionAnalysisPage from './pages/operations/MissionAnalysisPage'
+import MissionPlanningPage from './pages/operations/MissionPlanningPage'
+import TargetingMethodologyPage from './pages/operations/TargetingMethodologyPage'
+import TargetingDataPage from './pages/operations/TargetingDataPage'
 
 import TargetingBoardPage from './pages/planning/TargetingBoardPage'
 
@@ -55,6 +55,22 @@ import SchoolLandingPage from './pages/school/SchoolLandingPage'
 
 import BudgetTrackerPage from './pages/budget/BudgetTrackerPage'
 import PlaceholderPage from './pages/PlaceholderPage'
+import AssetManagementPage from './pages/planning/AssetManagementPage'
+import CommunityEngagementPage from './pages/planning/CommunityEngagementPage'
+import EnvRecommendationPage from './pages/planning/EnvRecommendationPage'
+import PlanningCalendarPage from './pages/planning/PlanningCalendarPage'
+import ProductionDashboardPage from './pages/performance/ProductionDashboardPage'
+import PerformanceMarketSegmentationPage from './pages/performance/PerformanceMarketSegmentationPage'
+import FunnelMetricsPage from './pages/performance/FunnelMetricsPage'
+import AdminUsersPage from './pages/admin/AdminUsersPage'
+import AdminRolesPage from './pages/admin/AdminRolesPage'
+import RoleDetailPage from './pages/admin/RoleDetailPage'
+import AdminMaintenancePage from './pages/admin/AdminMaintenancePage'
+import DocLibraryPage from './pages/resources/DocLibraryPage'
+import ResourcesRegulationsPage from './pages/resources/ResourcesRegulationsPage'
+import SubmitTicketPage from './pages/help/SubmitTicketPage'
+import TicketStatusPage from './pages/help/TicketStatusPage'
+import SystemStatusPage from './pages/help/SystemStatusPage'
 
 export default function App() {
   return (
@@ -107,30 +123,32 @@ export default function App() {
           <Route path="/planning/targeting-board" element={<TargetingBoardPage />} />
 
           {/* Operations / Planning / Performance / Admin / Resources routes (placeholders) */}
-          <Route path="/operations/mission-analysis" element={<PlaceholderPage title="Mission Analysis" subtitle="Placeholder" />} />
-          <Route path="/operations/mission-planning" element={<PlaceholderPage title="Mission Planning" subtitle="Placeholder" />} />
-          <Route path="/operations/targeting-methodology" element={<PlaceholderPage title="USAREC Targeting Methodology" subtitle="Placeholder" />} />
-          <Route path="/operations/targeting-data" element={<PlaceholderPage title="Targeting Data" subtitle="Placeholder" />} />
+          <Route path="/operations/mission-analysis" element={<MissionAnalysisPage />} />
+          <Route path="/operations/mission-planning" element={<MissionPlanningPage />} />
+          <Route path="/operations/targeting-methodology" element={<TargetingMethodologyPage />} />
+          <Route path="/operations/targeting-data" element={<TargetingDataPage />} />
 
-          <Route path="/planning/projects-events" element={<PlaceholderPage title="Project & Event Management" subtitle="Placeholder" />} />
-          <Route path="/planning/asset-management" element={<PlaceholderPage title="Asset Management" subtitle="Placeholder" />} />
-          <Route path="/planning/community-engagement" element={<PlaceholderPage title="Community Engagement" subtitle="Placeholder" />} />
-          <Route path="/planning/env-recommendation" element={<PlaceholderPage title="Enabler Recommendations" subtitle="Placeholder" />} />
-          <Route path="/planning/calendar" element={<PlaceholderPage title="Calendar / Scheduling" subtitle="Placeholder" />} />
+          <Route path="/planning/projects-events" element={<ProjectsEventsPage />} />
+          <Route path="/planning/asset-management" element={<AssetManagementPage />} />
+          <Route path="/planning/community-engagement" element={<CommunityEngagementPage />} />
+          <Route path="/planning/env-recommendation" element={<EnvRecommendationPage />} />
+          <Route path="/planning/calendar" element={<PlanningCalendarPage />} />
 
-          <Route path="/performance/production-dashboard" element={<PlaceholderPage title="Production Dashboard" subtitle="Placeholder" />} />
-          <Route path="/performance/market-segmentation" element={<PlaceholderPage title="Market Segmentation" subtitle="Placeholder" />} />
-          <Route path="/performance/funnel-metrics" element={<PlaceholderPage title="Funnel Metrics" subtitle="Placeholder" />} />
+          <Route path="/performance/production-dashboard" element={<ProductionDashboardPage />} />
+          <Route path="/performance/market-segmentation" element={<PerformanceMarketSegmentationPage />} />
+          <Route path="/performance/funnel-metrics" element={<FunnelMetricsPage />} />
 
-          <Route path="/admin/users" element={<PlaceholderPage title="User Management" subtitle="Placeholder" />} />
-          <Route path="/admin/roles" element={<PlaceholderPage title="Role & Scope Control" subtitle="Placeholder" />} />
+          <Route path="/admin/users" element={<AdminUsersPage />} />
+          <Route path="/admin/roles" element={<AdminRolesPage />} />
+          <Route path="/admin/roles/:id" element={<RoleDetailPage />} />
+          <Route path="/admin/maintenance" element={<AdminMaintenancePage />} />
 
-          <Route path="/resources/doc-library" element={<PlaceholderPage title="Document Library" subtitle="Placeholder" />} />
-          <Route path="/resources/regulations" element={<PlaceholderPage title="Regulations" subtitle="Placeholder" />} />
+          <Route path="/resources/doc-library" element={<DocLibraryPage />} />
+          <Route path="/resources/regulations" element={<ResourcesRegulationsPage />} />
 
-          <Route path="/help/submit-ticket" element={<PlaceholderPage title="Submit Ticket" subtitle="Help Desk" />} />
-          <Route path="/help/ticket-status" element={<PlaceholderPage title="Ticket Status" subtitle="Help Desk" />} />
-          <Route path="/help/system-status" element={<PlaceholderPage title="System Status" subtitle="Help Desk" />} />
+          <Route path="/help/submit-ticket" element={<SubmitTicketPage />} />
+          <Route path="/help/ticket-status" element={<TicketStatusPage />} />
+          <Route path="/help/system-status" element={<SystemStatusPage />} />
 
           {/* performance */}
           <Route path="/performance/assessment" element={<PerformanceAssessment />} />

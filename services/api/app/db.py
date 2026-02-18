@@ -232,7 +232,10 @@ def init_schema() -> None:
                 activation_conversions INTEGER,
                 reporting_date TEXT,
                 metadata TEXT,
-                cost REAL DEFAULT 0
+                cost REAL DEFAULT 0,
+                created_at TEXT,
+                import_job_id TEXT,
+                record_status TEXT DEFAULT 'active'
             );
 
             CREATE TABLE IF NOT EXISTS leads (
@@ -257,7 +260,9 @@ def init_schema() -> None:
                 start_date TEXT,
                 end_date TEXT,
                 created_at TEXT,
-                updated_at TEXT
+                updated_at TEXT,
+                import_job_id TEXT,
+                record_status TEXT DEFAULT 'active'
             );
 
             -- Legacy/backwards-compatible tables used by older routers
@@ -281,7 +286,9 @@ def init_schema() -> None:
                 from_stage TEXT,
                 to_stage TEXT,
                 transition_reason TEXT,
-                created_at TEXT
+                created_at TEXT,
+                import_job_id TEXT,
+                record_status TEXT DEFAULT 'active'
             );
 
             CREATE TABLE IF NOT EXISTS surveys (
@@ -415,8 +422,10 @@ def init_schema() -> None:
                 metric_key TEXT NOT NULL,
                 metric_value REAL NOT NULL,
                 source_system TEXT,
-                import_job_id TEXT NOT NULL,
-                created_at TEXT
+                import_job_id TEXT,
+                created_at TEXT,
+                record_status TEXT DEFAULT 'active',
+                archived_at TEXT
             );
 
             CREATE TABLE IF NOT EXISTS fact_funnel (
@@ -428,8 +437,10 @@ def init_schema() -> None:
                 event_type TEXT,
                 count_value REAL NOT NULL,
                 source_system TEXT,
-                import_job_id TEXT NOT NULL,
-                created_at TEXT
+                import_job_id TEXT,
+                created_at TEXT,
+                record_status TEXT DEFAULT 'active',
+                archived_at TEXT
             );
 
             CREATE TABLE IF NOT EXISTS fact_marketing (
@@ -444,8 +455,85 @@ def init_schema() -> None:
                 conversions REAL DEFAULT 0,
                 cost REAL DEFAULT 0,
                 source_system TEXT,
-                import_job_id TEXT NOT NULL,
-                created_at TEXT
+                import_job_id TEXT,
+                created_at TEXT,
+                record_status TEXT DEFAULT 'active',
+                archived_at TEXT
+            );
+
+            -- Phase 4 domain tables: projects, tasks, meetings, calendar, documents
+            CREATE TABLE IF NOT EXISTS projects (
+                project_id TEXT PRIMARY KEY,
+                title TEXT,
+                description TEXT,
+                owner TEXT,
+                status TEXT,
+                percent_complete REAL DEFAULT 0,
+                created_at TEXT,
+                updated_at TEXT,
+                import_job_id TEXT,
+                record_status TEXT DEFAULT 'active'
+            );
+
+            CREATE TABLE IF NOT EXISTS tasks (
+                task_id TEXT PRIMARY KEY,
+                project_id TEXT,
+                title TEXT,
+                description TEXT,
+                owner TEXT,
+                status TEXT,
+                percent_complete REAL DEFAULT 0,
+                due_date TEXT,
+                created_at TEXT,
+                updated_at TEXT,
+                import_job_id TEXT,
+                record_status TEXT DEFAULT 'active'
+            );
+
+            CREATE TABLE IF NOT EXISTS meeting_minutes (
+                minute_id TEXT PRIMARY KEY,
+                project_id TEXT,
+                occurred_at TEXT,
+                summary TEXT,
+                created_by TEXT,
+                created_at TEXT,
+                import_job_id TEXT,
+                record_status TEXT DEFAULT 'active'
+            );
+
+            CREATE TABLE IF NOT EXISTS action_items (
+                action_id TEXT PRIMARY KEY,
+                minute_id TEXT,
+                title TEXT,
+                owner TEXT,
+                due_date TEXT,
+                status TEXT,
+                created_at TEXT,
+                import_job_id TEXT,
+                record_status TEXT DEFAULT 'active'
+            );
+
+            CREATE TABLE IF NOT EXISTS calendar_events (
+                event_id TEXT PRIMARY KEY,
+                org_unit_id TEXT,
+                title TEXT,
+                start_dt TEXT,
+                end_dt TEXT,
+                location TEXT,
+                created_at TEXT,
+                import_job_id TEXT,
+                record_status TEXT DEFAULT 'active'
+            );
+
+            CREATE TABLE IF NOT EXISTS doc_library (
+                doc_id TEXT PRIMARY KEY,
+                title TEXT,
+                description TEXT,
+                url TEXT,
+                uploaded_at TEXT,
+                created_by TEXT,
+                import_job_id TEXT,
+                record_status TEXT DEFAULT 'active'
             );
 
             -- indexes to speed up feed queries
@@ -472,6 +560,48 @@ def init_schema() -> None:
                 cur.execute(stmt)
             except Exception:
                 pass
+
+        # Create uniqueness indexes to support deterministic replace semantics (Phase-4)
+        unique_statements = [
+            "CREATE UNIQUE INDEX IF NOT EXISTS ux_fact_production_org_date_metric ON fact_production(org_unit_id, date_key, metric_key);",
+            "CREATE UNIQUE INDEX IF NOT EXISTS ux_fact_marketing_org_date_campaign_channel ON fact_marketing(org_unit_id, date_key, campaign, channel);",
+            "CREATE UNIQUE INDEX IF NOT EXISTS ux_event_metrics_event_captured ON event_metrics(event_id, captured_at);",
+            "CREATE UNIQUE INDEX IF NOT EXISTS ux_projects_project_id ON projects(project_id);",
+            "CREATE UNIQUE INDEX IF NOT EXISTS ux_tasks_task_id ON tasks(task_id);",
+            "CREATE UNIQUE INDEX IF NOT EXISTS ux_marketing_activities_activity ON marketing_activities(activity_id);",
+        ]
+        for stmt in unique_statements:
+            try:
+                cur.execute(stmt)
+            except Exception:
+                # If duplicates exist or DB doesn't support, skip — migrations should be safe
+                pass
+
+        # Maintenance schedule / run history tables
+        cur.executescript(
+            """
+            CREATE TABLE IF NOT EXISTS maintenance_schedules (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT,
+                enabled INTEGER DEFAULT 0,
+                interval_minutes INTEGER,
+                last_run_at TEXT,
+                next_run_at TEXT,
+                params_json TEXT,
+                created_at TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS maintenance_runs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                schedule_id INTEGER,
+                run_type TEXT,
+                params_json TEXT,
+                result_json TEXT,
+                started_at TEXT,
+                finished_at TEXT
+            );
+            """
+        )
 
         # Attempt lightweight migrations for new Phase-3 columns and legacy compatibility
         def table_columns(table_name: str):
@@ -518,6 +648,48 @@ def init_schema() -> None:
                 cur.execute("UPDATE import_job SET sha256_hash=file_hash WHERE sha256_hash IS NULL AND file_hash IS NOT NULL")
         except Exception:
             pass
+
+        # Phase-4: ensure domain tables have provenance & archival columns where needed
+        phase4_alter = [
+            ("fact_production", "record_status", "TEXT DEFAULT 'active'"),
+            ("fact_production", "archived_at", "TEXT"),
+            ("fact_marketing", "record_status", "TEXT DEFAULT 'active'"),
+            ("fact_marketing", "archived_at", "TEXT"),
+            ("fact_funnel", "record_status", "TEXT DEFAULT 'active'"),
+            ("fact_funnel", "archived_at", "TEXT"),
+            ("marketing_activities", "created_at", "TEXT"),
+            ("marketing_activities", "import_job_id", "TEXT"),
+            ("marketing_activities", "record_status", "TEXT DEFAULT 'active'"),
+            ("budgets", "import_job_id", "TEXT"),
+            ("budgets", "record_status", "TEXT DEFAULT 'active'"),
+            # retention metadata: allow per-row keep-until overrides
+            ("fact_production", "keep_until", "TEXT"),
+            ("fact_marketing", "keep_until", "TEXT"),
+            ("fact_funnel", "keep_until", "TEXT"),
+            ("marketing_activities", "keep_until", "TEXT"),
+            ("budgets", "keep_until", "TEXT"),
+            ("projects", "keep_until", "TEXT"),
+            ("tasks", "keep_until", "TEXT"),
+            ("meeting_minutes", "keep_until", "TEXT"),
+            ("action_items", "keep_until", "TEXT"),
+            ("calendar_events", "keep_until", "TEXT"),
+            ("doc_library", "keep_until", "TEXT"),
+            # ensure archived_at exists for domain tables used by maintenance
+            ("projects", "archived_at", "TEXT"),
+            ("tasks", "archived_at", "TEXT"),
+            ("meeting_minutes", "archived_at", "TEXT"),
+            ("action_items", "archived_at", "TEXT"),
+            ("doc_library", "archived_at", "TEXT"),
+            ("marketing_activities", "archived_at", "TEXT"),
+            ("budgets", "archived_at", "TEXT"),
+        ]
+        for tbl, col, typ in phase4_alter:
+            try:
+                cols = table_columns(tbl)
+                if col not in cols:
+                    cur.execute(f"ALTER TABLE {tbl} ADD COLUMN {col} {typ}")
+            except Exception:
+                pass
 
         conn.commit()
     finally:

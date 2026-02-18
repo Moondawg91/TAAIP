@@ -180,7 +180,7 @@ def list_roles(current_user: Dict = Depends(get_current_user)):
     conn = connect()
     try:
         cur = conn.cursor()
-        cur.execute("SELECT id, name, description FROM roles ORDER BY name")
+        cur.execute("SELECT r.id, r.name, r.description, (SELECT COUNT(*) FROM user_roles ur WHERE ur.role_id = r.id) AS user_count FROM roles r ORDER BY r.name")
         rows = cur.fetchall()
         return [dict(r) for r in rows]
     finally:
@@ -192,11 +192,66 @@ def create_role(payload: Dict[str, Any], current_user: Dict = Depends(get_curren
     conn = connect()
     try:
         cur = conn.cursor()
-        cur.execute("INSERT OR IGNORE INTO roles(name, description, created_at) VALUES (?,?,datetime('now'))", (payload.get('name'), payload.get('description')))
+        name = payload.get('name')
+        if not name:
+            raise HTTPException(status_code=400, detail='name required')
+        # prevent duplicate role names (case-insensitive)
+        cur.execute("SELECT id FROM roles WHERE lower(name)=lower(?)", (name,))
+        if cur.fetchone():
+            raise HTTPException(status_code=409, detail='role already exists')
+        cur.execute("INSERT INTO roles(name, description, created_at) VALUES (?,?,datetime('now'))", (name, payload.get('description')))
         conn.commit()
-        cur.execute("SELECT id, name, description FROM roles WHERE name=?", (payload.get('name'),))
+        cur.execute("SELECT id, name, description FROM roles WHERE name=?", (name,))
         row = cur.fetchone()
-        return dict(row) if row else {"name": payload.get('name')}
+        return dict(row) if row else {"name": name}
+    finally:
+        conn.close()
+
+
+@router.delete("/roles/{role_id}", summary="Delete role")
+def delete_role(role_id: int, force: bool = False, current_user: Dict = Depends(get_current_user)):
+    conn = connect()
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT COUNT(*) as c FROM user_roles WHERE role_id=?", (role_id,))
+        c = cur.fetchone()
+        count = c[0] if c else 0
+        if count > 0 and not force:
+            raise HTTPException(status_code=400, detail=f'role has {count} assigned users; use ?force=true to override')
+        # remove associations then delete role
+        cur.execute("DELETE FROM user_roles WHERE role_id=?", (role_id,))
+        cur.execute("DELETE FROM roles WHERE id=?", (role_id,))
+        conn.commit()
+        return {"ok": True}
+    finally:
+        conn.close()
+
+
+@router.put("/roles/{role_id}", summary="Update role")
+def update_role(role_id: int, payload: Dict[str, Any], current_user: Dict = Depends(get_current_user)):
+    conn = connect()
+    try:
+        cur = conn.cursor()
+        name = payload.get('name')
+        desc = payload.get('description')
+        if not name and desc is None:
+            raise HTTPException(status_code=400, detail='name or description required')
+        # if renaming, ensure no duplicate name
+        if name is not None:
+            cur.execute("SELECT id FROM roles WHERE lower(name)=lower(?) AND id!=?", (name, role_id))
+            if cur.fetchone():
+                raise HTTPException(status_code=409, detail='role name already in use')
+        # update only provided fields
+        if name is not None and desc is not None:
+            cur.execute("UPDATE roles SET name=?, description=? WHERE id=?", (name, desc, role_id))
+        elif name is not None:
+            cur.execute("UPDATE roles SET name=? WHERE id=?", (name, role_id))
+        else:
+            cur.execute("UPDATE roles SET description=? WHERE id=?", (desc, role_id))
+        conn.commit()
+        cur.execute("SELECT id, name, description FROM roles WHERE id=?", (role_id,))
+        row = cur.fetchone()
+        return dict(row) if row else {"ok": True}
     finally:
         conn.close()
 
@@ -219,6 +274,54 @@ def assign_role(payload: Dict[str, Any], current_user: Dict = Depends(get_curren
         if not r:
             raise HTTPException(status_code=404, detail="role not found")
         cur.execute("INSERT INTO user_roles(user_id, role_id, assigned_at) VALUES (?,?,datetime('now'))", (u[0], r[0]))
+        conn.commit()
+        return {"ok": True}
+    finally:
+        conn.close()
+
+
+@router.get("/users", summary="List users")
+def list_users(current_user: Dict = Depends(get_current_user)):
+    conn = connect()
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT id, username, display_name, email, created_at FROM users ORDER BY username")
+        rows = cur.fetchall()
+        return [dict(r) for r in rows]
+    finally:
+        conn.close()
+
+
+@router.get("/roles/{role_id}/users", summary="List users for role")
+def list_users_for_role(role_id: int, current_user: Dict = Depends(get_current_user)):
+    conn = connect()
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT u.id, u.username, u.display_name, u.email FROM users u JOIN user_roles ur ON ur.user_id = u.id WHERE ur.role_id=?", (role_id,))
+        rows = cur.fetchall()
+        return [dict(r) for r in rows]
+    finally:
+        conn.close()
+
+
+@router.post("/remove-role", summary="Remove role from user")
+def remove_role(payload: Dict[str, Any], current_user: Dict = Depends(get_current_user)):
+    username = payload.get('username')
+    role_name = payload.get('role')
+    if not username or not role_name:
+        raise HTTPException(status_code=400, detail="username and role required")
+    conn = connect()
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT id FROM users WHERE username=?", (username,))
+        u = cur.fetchone()
+        if not u:
+            raise HTTPException(status_code=404, detail="user not found")
+        cur.execute("SELECT id FROM roles WHERE name=?", (role_name,))
+        r = cur.fetchone()
+        if not r:
+            raise HTTPException(status_code=404, detail="role not found")
+        cur.execute("DELETE FROM user_roles WHERE user_id=? AND role_id=?", (u[0], r[0]))
         conn.commit()
         return {"ok": True}
     finally:

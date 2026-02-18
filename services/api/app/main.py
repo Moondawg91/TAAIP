@@ -86,6 +86,15 @@ api_router.include_router(health_router.router)
 from .routers import exports as exports_router
 api_router.include_router(exports_router.router)
 
+from .routers import maintenance as maintenance_router
+api_router.include_router(maintenance_router.router)
+# start the DB-driven maintenance scheduler
+try:
+    from . import maintenance_scheduler
+    maintenance_scheduler.start_scheduler(poll_interval=int(os.getenv('MAINT_POLL_SECONDS', '60')))
+except Exception:
+    pass
+
 # New v1/v2 compatibility routers for test-suite
 from .routers import v1 as v1_router
 from .routers import v2 as v2_router

@@ -184,6 +184,124 @@ export async function getFunnelStages(){
   return apiFetch('/api/funnel/stages')
 }
 
+// PowerBI / feeds
+export async function getFactProduction(qs = {}){
+  const params = new URLSearchParams(qs).toString()
+  return apiFetch(`/api/powerbi/fact_production?${params}`)
+}
+
+export async function getFactFunnel(qs = {}){
+  const params = new URLSearchParams(qs).toString()
+  return apiFetch(`/api/powerbi/fact_funnel?${params}`)
+}
+
+export async function getDimOrgUnit(){
+  return apiFetch('/api/powerbi/dim_org_unit')
+}
+
+export async function getDimTime(qs = {}){
+  const params = new URLSearchParams(qs).toString()
+  return apiFetch(`/api/powerbi/dim_time?${params}`)
+}
+
+export async function getImportJobsList(limit=100){
+  return apiFetch(`/api/powerbi/import_jobs?limit=${limit}`)
+}
+
+export async function exportFactProduction(qs = {}, format='json'){
+  const params = new URLSearchParams(qs)
+  if (format) params.set('format', format)
+  return apiFetch(`/api/powerbi/exports/fact_production?${params.toString()}`)
+}
+
+export async function exportFactMarketing(qs = {}, format='json'){
+  const params = new URLSearchParams(qs)
+  if (format) params.set('format', format)
+  return apiFetch(`/api/powerbi/exports/fact_marketing?${params.toString()}`)
+}
+
+// Maintenance admin endpoints
+export async function runDeduplicate(tables = null){
+  const body = tables ? { tables } : {}
+  return apiFetch(`/api/admin/deduplicate`, { method: 'POST', body: JSON.stringify(body), headers: {'Content-Type':'application/json'} })
+}
+
+export async function runPurge(days = 90, dry_run = false, tables = null){
+  const body = { days, tables, dry_run }
+  return apiFetch(`/api/admin/purge_archived`, { method: 'POST', body: JSON.stringify(body), headers: {'Content-Type':'application/json'} })
+}
+
+export async function listMaintenanceRuns(limit=100){
+  return apiFetch(`/api/admin/maintenance_runs?limit=${limit}`)
+}
+
+export async function listSchedules(){
+  return apiFetch('/api/admin/schedules')
+}
+
+export async function createSchedule(payload){
+  return apiFetch('/api/admin/schedules', { method: 'POST', body: JSON.stringify(payload), headers: {'Content-Type':'application/json'} })
+}
+
+export async function updateSchedule(id, payload){
+  return apiFetch(`/api/admin/schedules/${id}`, { method: 'PUT', body: JSON.stringify(payload), headers: {'Content-Type':'application/json'} })
+}
+
+export async function triggerSchedule(id){
+  return apiFetch(`/api/admin/schedules/${id}/trigger`, { method: 'POST', body: JSON.stringify({}) , headers: {'Content-Type':'application/json'} })
+}
+
+// RBAC / admin
+export async function listRoles(){
+  return apiFetch('/api/rbac/roles')
+}
+
+export async function createRole(payload){
+  return apiFetch('/api/rbac/roles', { method: 'POST', body: JSON.stringify(payload), headers: {'Content-Type':'application/json'} })
+}
+
+export async function updateRole(roleId, payload){
+  return apiFetch(`/api/rbac/roles/${roleId}`, { method: 'PUT', body: JSON.stringify(payload), headers: {'Content-Type':'application/json'} })
+}
+
+export async function createUser(payload){
+  return apiFetch('/api/rbac/users', { method: 'POST', body: JSON.stringify(payload), headers: {'Content-Type':'application/json'} })
+}
+
+export async function assignRole(payload){
+  return apiFetch('/api/rbac/assign-role', { method: 'POST', body: JSON.stringify(payload), headers: {'Content-Type':'application/json'} })
+}
+
+export async function listUsers(){
+  return apiFetch('/api/rbac/users')
+}
+export async function getRoleUsers(roleId){
+  return apiFetch(`/api/rbac/roles/${roleId}/users`)
+}
+
+export async function removeRole(payload){
+  return apiFetch('/api/rbac/remove-role', { method: 'POST', body: JSON.stringify(payload), headers: {'Content-Type':'application/json'} })
+}
+
+export async function getProject(projectId){
+  return apiFetch(`/api/projects/${projectId}`)
+}
+
+export async function deleteRole(roleId){
+  return apiFetch(`/api/rbac/roles/${roleId}`, { method: 'DELETE' })
+}
+export async function deleteRoleForce(roleId){
+  return apiFetch(`/api/rbac/roles/${roleId}?force=true`, { method: 'DELETE' })
+}
+
+export async function updateTask(taskId, payload){
+  return apiFetch(`/api/tasks/${taskId}`, { method: 'PATCH', body: JSON.stringify(payload), headers: {'Content-Type':'application/json'} })
+}
+
+export async function assignTask(taskId, payload){
+  return apiFetch(`/api/tasks/${taskId}/assign`, { method: 'POST', body: JSON.stringify(payload), headers: {'Content-Type':'application/json'} })
+}
+
 export async function listLOEs(){
   return apiFetch('/api/projects/loes')
 }

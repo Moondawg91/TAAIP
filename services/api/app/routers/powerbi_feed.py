@@ -402,6 +402,68 @@ def get_fact_production(org_unit_id: Optional[str] = None, start: Optional[str] 
         conn.close()
 
 
+@router.get('/exports/fact_production')
+def export_fact_production_csv(org_unit_id: Optional[str] = None, start: Optional[str] = None, end: Optional[str] = None, format: Optional[str] = 'csv'):
+    conn = connect()
+    try:
+        cur = conn.cursor()
+        sql = 'SELECT id, org_unit_id, date_key, metric_key, metric_value, source_system, import_job_id, created_at, record_status FROM fact_production WHERE 1=1'
+        params: List[Any] = []
+        if org_unit_id:
+            sql += ' AND org_unit_id=?'; params.append(org_unit_id)
+        if start:
+            sql += ' AND date_key>=?'; params.append(start)
+        if end:
+            sql += ' AND date_key<=?'; params.append(end)
+        sql += ' ORDER BY date_key'
+        cur.execute(sql, tuple(params))
+        rows = [dict(r) for r in cur.fetchall()]
+        if format == 'csv':
+            buf = io.StringIO(); writer = csv.writer(buf)
+            if not rows:
+                return StreamingResponse(iter(['']), media_type='text/csv')
+            writer.writerow(list(rows[0].keys()))
+            for r in rows:
+                writer.writerow([r.get(k) for k in rows[0].keys()])
+            buf.seek(0)
+            return StreamingResponse(iter([buf.getvalue()]), media_type='text/csv')
+        return rows
+    finally:
+        conn.close()
+
+
+@router.get('/exports/fact_marketing')
+def export_fact_marketing_csv(org_unit_id: Optional[str] = None, start: Optional[str] = None, end: Optional[str] = None, format: Optional[str] = 'csv'):
+    conn = connect()
+    try:
+        cur = conn.cursor()
+        sql = 'SELECT id, org_unit_id, date_key, campaign, channel, impressions, engagements, clicks, conversions, cost, source_system, import_job_id, created_at, record_status FROM fact_marketing WHERE 1=1'
+        params: List[Any] = []
+        if org_unit_id:
+            sql += ' AND org_unit_id=?'; params.append(org_unit_id)
+        if start:
+            sql += ' AND date_key>=?'; params.append(start)
+        if end:
+            sql += ' AND date_key<=?'; params.append(end)
+        sql += ' ORDER BY date_key'
+        cur.execute(sql, tuple(params))
+        rows = [dict(r) for r in cur.fetchall()]
+        if format == 'csv':
+            buf = io.StringIO(); writer = csv.writer(buf)
+            if not rows:
+                return StreamingResponse(iter(['']), media_type='text/csv')
+            writer.writerow(list(rows[0].keys()))
+            for r in rows:
+                writer.writerow([r.get(k) for k in rows[0].keys()])
+            buf.seek(0)
+            return StreamingResponse(iter([buf.getvalue()]), media_type='text/csv')
+        return rows
+    finally:
+        conn.close()
+    finally:
+        conn.close()
+
+
 @router.get('/fact_funnel')
 def get_fact_funnel(org_unit_id: Optional[str] = None, start: Optional[str] = None, end: Optional[str] = None, format: Optional[str] = 'json'):
     conn = connect()

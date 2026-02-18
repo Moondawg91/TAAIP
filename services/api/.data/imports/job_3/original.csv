@@ -1,2 +1,3 @@
-name,org_unit_id
-Smoke Test Event,1
+org_unit_id,date,metric_key,metric_value
+1,2026-02-01,registrations,5
+1,2026-02-02,registrations,3

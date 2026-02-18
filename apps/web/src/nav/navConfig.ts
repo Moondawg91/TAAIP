@@ -22,9 +22,9 @@ const NAV_CONFIG = [
     icon: 'TrackChanges',
     items: [
       { id: 'mission-analysis', label: 'Mission Analysis', path: '/operations/mission-analysis', icon: 'ManageSearch', disabled: true },
-      { id: 'mission-planning', label: 'Mission Planning', path: '/operations/mission-planning', icon: 'Map', disabled: true },
-      { id: 'targeting-method', label: 'USAREC Targeting Methodology', path: '/operations/targeting-methodology', icon: 'MilitaryTech', disabled: true },
-      { id: 'targeting-data', label: 'Targeting Data', path: '/operations/targeting-data', icon: 'Storage', disabled: true },
+      { id: 'mission-planning', label: 'Mission Planning', path: '/operations/mission-planning', icon: 'Map', disabled: false },
+      { id: 'targeting-method', label: 'USAREC Targeting Methodology', path: '/operations/targeting-methodology', icon: 'MilitaryTech', disabled: false },
+      { id: 'targeting-data', label: 'Targeting Data', path: '/operations/targeting-data', icon: 'Storage', disabled: false },
       { id: 'marketing-roi', label: 'Marketing & Advertisement ROI', path: '/operations/marketing-roi', icon: 'Campaign', disabled: true },
       { id: 'event-performance', label: 'Event Performance', path: '/operations/event-performance', icon: 'Event', disabled: true }
     ]
@@ -40,7 +40,7 @@ const NAV_CONFIG = [
       { id: 'asset-management', label: 'Asset Management', path: '/planning/asset-management', icon: 'Inventory', disabled: true },
       { id: 'community-engagement', label: 'Community Engagement', path: '/planning/community-engagement', icon: 'Handshake', disabled: true },
       { id: 'env-reco', label: 'Environmental Recommendation Engine', path: '/planning/env-recommendation', icon: 'AutoMode', disabled: true },
-      { id: 'targeting-board', label: 'Targeting Board', path: '/planning/targeting-board', icon: 'TableChart', disabled: true },
+      { id: 'targeting-board', label: 'Targeting Board', path: '/planning/targeting-board', icon: 'TableChart', disabled: false },
       { id: 'calendar', label: 'Calendar / Scheduling', path: '/planning/calendar', icon: 'CalendarMonth', disabled: false }
     ]
   },
