@@ -275,6 +275,43 @@ def remove_loe_from_priority(pid: int, loe_id: str, current_user: Dict = Depends
         conn.close()
 
 
+@router.get('/command/baseline', summary='Command baseline (priorities + loes + standards)')
+def command_baseline(scope: Optional[str] = None, limit: int = 100):
+    """
+    Return a minimal baseline payload containing priorities (max 3), LOEs, and standards.
+    Standards table may be empty; return empty list when not present.
+    """
+    conn = connect()
+    try:
+        cur = conn.cursor()
+        # priorities
+        sql = 'SELECT * FROM command_priorities WHERE 1=1'
+        params = []
+        if scope:
+            try:
+                sid = int(scope)
+                sql += ' AND org_unit_id=?'
+                params.append(sid)
+            except Exception:
+                pass
+        sql += ' ORDER BY rank ASC LIMIT ?'
+        params.append(3)
+        cur.execute(sql, tuple(params))
+        priorities = [dict(r) for r in cur.fetchall()]
+
+        # LOEs
+        sql2 = 'SELECT * FROM loe ORDER BY id DESC LIMIT ?'
+        cur.execute(sql2, (limit,))
+        loes = [dict(r) for r in cur.fetchall()]
+
+        # standards — not yet implemented, return empty
+        standards = []
+
+        return {'priorities': priorities, 'loes': loes, 'standards': standards}
+    finally:
+        conn.close()
+
+
 # Re-inserted: Get single project (moved so static routes match first)
 @router.get("/{project_id}", summary="Get project")
 def get_project(project_id: int, allowed_orgs: Optional[list] = Depends(require_scope('STATION'))):

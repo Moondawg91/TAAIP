@@ -21,19 +21,37 @@ def _ensure_db_dir(path: str) -> None:
 
 def connect() -> sqlite3.Connection:
     """Open a sqlite3 connection with reasonable pragmas for local dev."""
+    # Prefer SQLAlchemy engine's raw_connection when available to avoid
+    # mixing independent sqlite3 connections (which can hold locks)
     path = get_db_path()
     _ensure_db_dir(path)
-    conn = sqlite3.connect(path, check_same_thread=False, timeout=30)
-    conn.row_factory = sqlite3.Row
-    cur = conn.cursor()
-    cur.executescript("""
-    PRAGMA journal_mode=WAL;
-    PRAGMA synchronous=NORMAL;
-    PRAGMA foreign_keys=ON;
-    PRAGMA busy_timeout=10000;
-    """)
-    conn.commit()
-    return conn
+    try:
+        from services.api.app.database import engine
+        raw = engine.raw_connection()
+        # raw_connection() returns a DB-API connection (sqlite3.Connection)
+        raw.row_factory = sqlite3.Row
+        try:
+            cur = raw.cursor()
+            cur.executescript("""
+            PRAGMA foreign_keys=ON;
+            PRAGMA synchronous=NORMAL;
+            PRAGMA busy_timeout=10000;
+            """)
+            raw.commit()
+        except Exception:
+            pass
+        return raw
+    except Exception:
+        conn = sqlite3.connect(path, check_same_thread=False, timeout=30)
+        conn.row_factory = sqlite3.Row
+        cur = conn.cursor()
+        cur.executescript("""
+        PRAGMA foreign_keys=ON;
+        PRAGMA synchronous=NORMAL;
+        PRAGMA busy_timeout=10000;
+        """)
+        conn.commit()
+        return conn
 
 
 def get_db_conn() -> sqlite3.Connection:
@@ -48,9 +66,22 @@ def init_schema() -> None:
     and the application exist. It is safe to call multiple times and
     attempts minor migrations where necessary.
     """
-    conn = connect()
+    # Prefer using the SQLAlchemy engine's raw DB-API connection when
+    # available so DDL is executed through the same connection pool
+    # the tests/ORM use. This reduces file-lock conflicts caused by
+    # mixing direct sqlite3 connections with SQLAlchemy-managed ones.
     try:
+        from services.api.app.database import engine
+        raw_conn = engine.raw_connection()
+        cur = raw_conn.cursor()
+        conn = raw_conn
+        using_raw_engine = True
+    except Exception:
+        # Fallback for environments where SQLAlchemy isn't configured
+        conn = connect()
         cur = conn.cursor()
+        using_raw_engine = False
+    try:
 
         # Core organizational tree and core tables
         cur.executescript(
@@ -773,6 +804,47 @@ def init_schema() -> None:
         except Exception:
             pass
 
+        # Ensure `marketing_activities` has an integer `id` primary key for
+        # compatibility with some code paths that expect it. If missing,
+        # recreate the table with `id` as AUTOINCREMENT and copy existing rows.
+        try:
+            cols = table_columns('marketing_activities')
+            if cols and 'id' not in cols:
+                try:
+                    cur.executescript("""
+                    CREATE TABLE IF NOT EXISTS marketing_activities_new (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        activity_id TEXT,
+                        event_id TEXT,
+                        activity_type TEXT,
+                        campaign_name TEXT,
+                        channel TEXT,
+                        data_source TEXT,
+                        impressions INTEGER DEFAULT 0,
+                        engagement_count INTEGER DEFAULT 0,
+                        awareness_metric REAL,
+                        activation_conversions INTEGER,
+                        reporting_date TEXT,
+                        metadata TEXT,
+                        cost REAL DEFAULT 0,
+                        created_at TEXT,
+                        import_job_id TEXT,
+                        record_status TEXT DEFAULT 'active',
+                        keep_until TEXT,
+                        archived_at TEXT
+                    );
+                    """)
+                    copy_cols = [c for c in ['activity_id','event_id','activity_type','campaign_name','channel','data_source','impressions','engagement_count','awareness_metric','activation_conversions','reporting_date','metadata','cost','created_at','import_job_id','record_status','keep_until','archived_at'] if c in cols]
+                    if copy_cols:
+                        col_list = ','.join(copy_cols)
+                        cur.execute(f"INSERT OR IGNORE INTO marketing_activities_new({col_list}) SELECT {col_list} FROM marketing_activities")
+                    cur.execute("DROP TABLE IF EXISTS marketing_activities")
+                    cur.execute("ALTER TABLE marketing_activities_new RENAME TO marketing_activities")
+                except Exception:
+                    pass
+        except Exception:
+            pass
+
         # Ensure zip_metrics exists with sensible columns used by compatibility routers
         try:
             cols = table_columns('zip_metrics')
@@ -810,6 +882,44 @@ def init_schema() -> None:
         except Exception:
             pass
 
+        # Reconcile legacy `events` table to ensure it includes an integer
+        # `id` primary key and compatible columns. SQLite cannot alter a
+        # PRIMARY KEY in-place reliably, so recreate a safe table when
+        # necessary and copy existing data across. This keeps older raw-SQL
+        # routers and newer `event` table semantics working together.
+        try:
+            cols = table_columns('events')
+            if cols and 'id' not in cols:
+                try:
+                    cur.executescript("""
+                    CREATE TABLE IF NOT EXISTS events_new (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        event_id TEXT UNIQUE,
+                        name TEXT,
+                        type TEXT,
+                        location TEXT,
+                        start_date TEXT,
+                        end_date TEXT,
+                        budget REAL,
+                        team_size INTEGER,
+                        targeting_principles TEXT,
+                        org_unit_id TEXT,
+                        created_at TEXT
+                    );
+                    """)
+                    # Copy columns that actually exist from old table into new
+                    copy_cols = [c for c in ['event_id','name','type','location','start_date','end_date','budget','team_size','targeting_principles','org_unit_id','created_at'] if c in cols]
+                    if copy_cols:
+                        col_list = ','.join(copy_cols)
+                        cur.execute(f"INSERT OR IGNORE INTO events_new({col_list}) SELECT {col_list} FROM events")
+                    cur.execute("DROP TABLE IF EXISTS events")
+                    cur.execute("ALTER TABLE events_new RENAME TO events")
+                except Exception:
+                    # Non-fatal; best-effort migration to reduce surprises.
+                    pass
+        except Exception:
+            pass
+
         try:
             cols = table_columns('marketing_activities')
             legacy_marketing_cols = ['engagement_count', 'awareness_metric', 'activation_conversions', 'metadata']
@@ -824,7 +934,14 @@ def init_schema() -> None:
 
         conn.commit()
     finally:
-        conn.close()
+        try:
+            if using_raw_engine:
+                # raw_connection() returns a DB-API connection that must be closed
+                conn.close()
+            else:
+                conn.close()
+        except Exception:
+            pass
 
 
 def init_db() -> str:

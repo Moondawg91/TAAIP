@@ -5,6 +5,7 @@ import DeleteIcon from '@mui/icons-material/Delete'
 import AddIcon from '@mui/icons-material/Add'
 import { listCommandPriorities, createCommandPriority, updateCommandPriority, deleteCommandPriority, listLOEsForScope, listPriorityLOEs, assignLOEToPriority, unassignLOEFromPriority, getCurrentUserFromToken } from '../../api/client'
 import { useScope } from '../../contexts/ScopeContext'
+import EmptyState from '../../components/common/EmptyState'
 
 export default function CommandPrioritiesPage(){
   const [priorities, setPriorities] = useState([])
@@ -118,9 +119,14 @@ export default function CommandPrioritiesPage(){
       </Box>
 
       <Grid container spacing={2}>
-        {priorities.map((p:any)=> (
-          <Grid item xs={12} md={4} key={p.id}>
-            <Card sx={{ bgcolor:'background.paper', color:'text.primary' }}>
+        {(!loading && (!priorities || priorities.length===0)) ? (
+          <Grid item xs={12}>
+            <EmptyState title="No priorities" subtitle="No command priorities configured for your scope." actionLabel="Create Priority" onAction={()=>{ setEditOpen(true) }} />
+          </Grid>
+        ) : (
+          priorities.map((p:any)=> (
+            <Grid item xs={12} md={4} key={p.id}>
+              <Card sx={{ bgcolor:'background.paper', color:'text.primary' }}>
               <CardContent>
                 <Box sx={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
                   <Typography variant="h6">{p.title || 'Untitled'}</Typography>
@@ -144,7 +150,8 @@ export default function CommandPrioritiesPage(){
               </CardContent>
             </Card>
           </Grid>
-        ))}
+            ))
+        )}
       </Grid>
 
       <Dialog open={editOpen} onClose={()=>setEditOpen(false)}>

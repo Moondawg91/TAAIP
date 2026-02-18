@@ -1,11 +1,12 @@
 import React from 'react'
-import { Box, Typography, Chip } from '@mui/material'
+import { Box, Typography } from '@mui/material'
+import EmptyState from '../../components/common/EmptyState'
 
 export default function ProjectsEventsPage(){
   return (
-    <Box>
+    <Box sx={{ p:3, minHeight:'100vh', bgcolor:'background.default', color:'text.primary' }}>
       <Typography variant="h4">Event + Project Management</Typography>
-      <Chip label="Status: Coming soon" sx={{ mt:2 }} />
+      <EmptyState title="Coming soon" subtitle="Project & Event management features are in progress." />
     </Box>
   )
 }

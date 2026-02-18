@@ -3,6 +3,7 @@ RBAC helpers for scope normalization and authorization checks.
 """
 
 from typing import Dict
+import os
 from sqlalchemy.orm import Query
 from . import models
 from fastapi import HTTPException
@@ -101,6 +102,18 @@ def can_create_in_scope(user, scope_type: str, scope_value: str) -> bool:
 
 
 def authorize_create(user, scope_type: str = None, scope_value: str = None, station_rsid: str = None):
+    if os.getenv('DEBUG_RBAC', '0') == '1':
+        try:
+            role_name = getattr(user, 'role').name if hasattr(user, 'role') else str(getattr(user, 'role', None))
+        except Exception:
+            role_name = str(getattr(user, 'role', None))
+        msg = f"authorize_create called user={getattr(user,'username',None)} role={role_name} scope={getattr(user,'scope',None)} station_rsid={station_rsid} scope_type={scope_type} scope_value={scope_value}\n"
+        try:
+            with open('/tmp/rbac_debug.log', 'a') as f:
+                f.write(msg)
+        except Exception:
+            # best-effort file log
+            pass
     # station_rsid maps to STN
     if station_rsid:
         if not is_rsid_in_scope(user.scope, station_rsid):

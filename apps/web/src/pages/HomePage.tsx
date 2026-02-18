@@ -1,7 +1,10 @@
 import React from 'react'
 import { Box, Typography, Grid, Chip, List, ListItem, ListItemText, Button, Stack, Divider, MenuItem, Select, FormControl } from '@mui/material'
+import EmptyState from '../components/common/EmptyState'
 import { Link as RouterLink } from 'react-router-dom'
 import HomePanel from '../components/home/HomePanel'
+import api from '../api/client'
+import { useScope } from '../contexts/ScopeContext'
 import CircleIcon from '@mui/icons-material/Circle'
 import StorageIcon from '@mui/icons-material/Storage'
 import ApiIcon from '@mui/icons-material/Api'
@@ -46,6 +49,26 @@ const QUICK = [
 ]
 
 export default function HomePage(){
+  const { scope } = useScope()
+  const [news, setNews] = React.useState([])
+  const [updates, setUpdates] = React.useState([])
+  const [links, setLinks] = React.useState([])
+  const [loading, setLoading] = React.useState(true)
+
+  React.useEffect(()=>{
+    let mounted = true
+    setLoading(true)
+    Promise.all([api.getHomeNews(), api.getHomeUpdates(), api.getHomeQuickLinks()]).then(([n,u,l])=>{
+      if(!mounted) return
+      setNews(n || [])
+      setUpdates(u || [])
+      setLinks(l || [])
+    }).catch(()=>{
+      // ignore errors; keep empty
+    }).finally(()=> mounted && setLoading(false))
+    return ()=>{ mounted = false }
+  }, [scope])
+
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: COLORS.bg, color: COLORS.text, p:3 }}>
       <Box sx={{ maxWidth: 1400, mx: 'auto' }}>
@@ -61,17 +84,17 @@ export default function HomePage(){
                 <Button size="small" variant="text" sx={{ color: COLORS.text }} component={RouterLink} to="/import-center">View Imports</Button>
               </Box>
               <List sx={{ maxHeight: 160, overflow: 'auto', p:0 }}>
-                {NEWS.map((n,i)=> (
-                  <ListItem key={i} sx={{ py:1, px:0, alignItems:'flex-start' }}>
+                {loading ? <ListItem><ListItemText primary="Loading..." /></ListItem> : (news.length ? news.map((n)=> (
+                  <ListItem key={n.id} sx={{ py:1, px:0, alignItems:'flex-start' }}>
                     <Box sx={{ width:10, display:'flex', alignItems:'center', mr:1 }}>
-                      <CircleIcon sx={{ fontSize:10, color: n.cat==='Policy' ? COLORS.primary : n.cat==='Ops' ? COLORS.accent : '#9BD1FF' }} />
+                      <CircleIcon sx={{ fontSize:10, color: '#9BD1FF' }} />
                     </Box>
                     <Box>
                       <Typography variant="body2" sx={{ color: COLORS.text, fontWeight:600 }}>{n.title}</Typography>
-                      <Typography variant="caption" sx={{ color: COLORS.muted }}>{n.time} • {n.cat}</Typography>
+                      <Typography variant="caption" sx={{ color: COLORS.muted }}>{n.effective_dt || n.created_at}</Typography>
                     </Box>
                   </ListItem>
-                ))}
+                )) : <ListItem><EmptyState title="No news" subtitle="No news items for your scope." /></ListItem>)}
               </List>
             </HomePanel>
           </Grid>
@@ -98,15 +121,13 @@ export default function HomePage(){
               </Stack>
             </HomePanel>
             <Box sx={{ height:12 }} />
-            <HomePanel title="Updates" icon={<StorageIcon sx={{ color: COLORS.accent }} />}>
+            <HomePanel title="Updates" icon={<StorageIcon sx={{ color: COLORS.accent }} /> }>
               <List sx={{ p:0 }}>
-                <ListItem sx={{ py:0.5 }}>
-                  <ListItemText primary="v0.0.7" secondary="Minor fixes and dashboard polish" primaryTypographyProps={{ sx:{ color: COLORS.text, fontWeight:700 } }} secondaryTypographyProps={{ sx:{ color: COLORS.muted } }} />
-                </ListItem>
-                <Divider sx={{ my:1, borderColor: COLORS.border }} />
-                <ListItem sx={{ py:0.5 }}>
-                  <ListItemText primary="Maintenance window" secondary="Next scheduled: 2026-03-02" primaryTypographyProps={{ sx:{ color: COLORS.text } }} secondaryTypographyProps={{ sx:{ color: COLORS.muted } }} />
-                </ListItem>
+                {loading ? <ListItem><ListItemText primary="Loading..." /></ListItem> : (updates.length ? updates.map(u=> (
+                  <ListItem key={u.id} sx={{ py:0.5 }}>
+                    <ListItemText primary={u.component || u.title} secondary={u.message || ''} primaryTypographyProps={{ sx:{ color: COLORS.text } }} secondaryTypographyProps={{ sx:{ color: COLORS.muted } }} />
+                  </ListItem>
+                )) : <ListItem><EmptyState title="No updates" subtitle="No system updates available." /></ListItem>)}
               </List>
             </HomePanel>
           </Grid>

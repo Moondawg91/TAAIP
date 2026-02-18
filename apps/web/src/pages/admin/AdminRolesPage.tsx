@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react'
 import { Box, Typography, Card, CardContent, List, ListItem, ListItemText, IconButton, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material'
 import { Link } from 'react-router-dom'
 import { listRoles, createRole, deleteRole, updateRole, deleteRoleForce } from '../../api/client'
+import EmptyState from '../../components/common/EmptyState'
+import { getCurrentUserFromToken } from '../../api/client'
 import { assignRole } from '../../api/client'
 import { TextField, Button } from '@mui/material'
 import DeleteIcon from '@mui/icons-material/Delete'
@@ -22,6 +24,11 @@ export default function AdminRolesPage(){
   const [forceRole, setForceRole] = useState<any>(null)
   const [forceConfirm, setForceConfirm] = useState('')
   useEffect(()=>{ load() }, [])
+  const [userRoles, setUserRoles] = useState<string[]>([])
+
+  useEffect(()=>{
+    try{ const u = getCurrentUserFromToken(); setUserRoles((u && u.roles) ? (Array.isArray(u.roles)?u.roles:u.roles.split?.(',')||[]).map((r:any)=>String(r).toLowerCase()) : []) }catch(e){}
+  },[])
   async function load(){
     try{ const r = await listRoles(); setRoles(r || []) }catch(e){ console.error('load roles', e) }
   }
@@ -87,6 +94,14 @@ export default function AdminRolesPage(){
       setUsername('')
       setSelectedRole('')
     }catch(e){ console.error(e); alert('assign failed') }
+  }
+
+  if (!userRoles.includes('usarec_admin') && !userRoles.includes('sysadmin')){
+    return (
+      <Box sx={{ p:3 }}>
+        <EmptyState title="No access" subtitle="You do not have permission to manage roles." />
+      </Box>
+    )
   }
 
   return (

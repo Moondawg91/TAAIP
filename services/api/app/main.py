@@ -80,6 +80,10 @@ from .routers import automation as automation_router
 api_router.include_router(automation_router.router)
 from .routers import home as home_router
 api_router.include_router(home_router.router)
+from .routers import v2_home as v2_home_router
+api_router.include_router(v2_home_router.router)
+from .routers import v2_org as v2_org_router
+api_router.include_router(v2_org_router.router)
 from .routers import compat_helpers as compat_helpers_router
 api_router.include_router(compat_helpers_router.router)
 

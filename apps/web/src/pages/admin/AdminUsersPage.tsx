@@ -1,10 +1,17 @@
 import React, { useEffect, useState } from 'react'
 import { Box, Typography, Card, CardContent, List, ListItem, ListItemText, TextField, Button } from '@mui/material'
+import EmptyState from '../../components/common/EmptyState'
+import { getCurrentUserFromToken } from '../../api/client'
 import { createUser, listUsers } from '../../api/client'
 
 export default function AdminUsersPage(){
   const [users, setUsers] = useState([])
   const [newUser, setNewUser] = useState({ username:'', display_name:'', email:'' })
+  const [userRoles, setUserRoles] = useState<string[]>([])
+
+  useEffect(()=>{
+    try{ const u = getCurrentUserFromToken(); setUserRoles((u && u.roles) ? (Array.isArray(u.roles)?u.roles:u.roles.split?.(',')||[]).map((r:any)=>String(r).toLowerCase()) : []) }catch(e){}
+  },[])
 
   async function handleCreate(){
     if(!newUser.username) return alert('username required')
@@ -19,6 +26,14 @@ export default function AdminUsersPage(){
   useEffect(()=>{ loadUsers() }, [])
   async function loadUsers(){
     try{ const u = await listUsers(); setUsers(u || []) }catch(e){ console.error('list users', e) }
+  }
+
+  if (!userRoles.includes('usarec_admin') && !userRoles.includes('sysadmin')){
+    return (
+      <Box sx={{ p:3 }}>
+        <EmptyState title="No access" subtitle="You do not have permission to manage users." />
+      </Box>
+    )
   }
 
   return (

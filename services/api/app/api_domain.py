@@ -13,7 +13,7 @@ from . import models
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 
-router = APIRouter(prefix="/api/v2", tags=["domain"])
+router = APIRouter(prefix="/v2", tags=["domain"])
 
 
 def require_user(user=Depends(auth.get_current_user)):
@@ -50,6 +50,12 @@ def _format_datetimes(obj):
 
 @router.post('/events')
 def create_event(payload: schemas.EventCreate, db: Session = Depends(auth.get_db), user=Depends(require_user)):
+    # debug: record resolved user type and role for CI investigation
+    try:
+        with open('/tmp/api_domain_user_debug.log', 'a') as f:
+            f.write(f"create_event invoked user_type={type(user)} user_repr={repr(getattr(user,'username',user))} role_attr={getattr(getattr(user,'role',None),'name',getattr(user,'role',None))} scope={getattr(user,'scope',None)}\n")
+    except Exception:
+        pass
     if not payload.station_rsid:
         raise HTTPException(status_code=400, detail='station_rsid is required')
     try:

@@ -2,6 +2,7 @@ import React from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 
 import ShellLayout from './layout/ShellLayout'
+import { ScopeProvider } from './contexts/ScopeContext'
 
 import HomePage from './pages/HomePage'
 import DashboardPage from './pages/DashboardPage'
@@ -60,6 +61,9 @@ import AssetManagementPage from './pages/planning/AssetManagementPage'
 import CommunityEngagementPage from './pages/planning/CommunityEngagementPage'
 import EnvRecommendationPage from './pages/planning/EnvRecommendationPage'
 import PlanningCalendarPage from './pages/planning/PlanningCalendarPage'
+import RecommendationsPage from './pages/planning/RecommendationsPage'
+import EventPerformancePage from './pages/planning/EventPerformancePage'
+import MarketingROIPage from './pages/planning/MarketingROIPage'
 import ProductionDashboardPage from './pages/performance/ProductionDashboardPage'
 import PerformanceMarketSegmentationPage from './pages/performance/PerformanceMarketSegmentationPage'
 import FunnelMetricsPage from './pages/performance/FunnelMetricsPage'
@@ -80,8 +84,9 @@ import HelpDeskLandingPage from './pages/help/HelpDeskLandingPage'
 export default function App() {
   return (
     <Router>
-      <ShellLayout>
-        <Routes>
+      <ScopeProvider>
+        <ShellLayout>
+          <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/dashboard/:id" element={<DashboardDetailPage />} />
@@ -178,8 +183,9 @@ export default function App() {
 
           {/* budget */}
           <Route path="/budget/tracker" element={<BudgetTrackerPage />} />
-        </Routes>
-      </ShellLayout>
+          </Routes>
+        </ShellLayout>
+      </ScopeProvider>
     </Router>
   )
 }

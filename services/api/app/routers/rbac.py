@@ -39,19 +39,26 @@ def get_current_user(request: Request) -> Dict[str, Any]:
     - Otherwise raise 401.
     """
     auth = request.headers.get("authorization") or request.headers.get("Authorization")
-    local_bypass = os.environ.get("LOCAL_DEV_AUTH_BYPASS", "1").lower() in ("1", "true")
+    local_bypass = os.environ.get("LOCAL_DEV_AUTH_BYPASS", "0").lower() in ("1", "true")
     if auth and auth.lower().startswith("bearer "):
         token = auth.split(None, 1)[1]
         claims = _decode_jwt_payload(token)
         roles = claims.get("roles") or claims.get("role") or []
         scopes = claims.get("scopes") or claims.get("scope") or []
+        # Normalize roles into a list of lowercase strings for consistent checks
         if isinstance(roles, str):
             roles = [roles]
-        # normalize role names to uppercase for consistent comparisons
+        elif roles is None:
+            roles = []
+        elif not isinstance(roles, list):
+            try:
+                roles = list(roles)
+            except Exception:
+                roles = [roles]
         try:
-            roles = [r.upper() for r in roles]
+            roles = [r.lower() for r in roles if r is not None]
         except Exception:
-            pass
+            roles = [str(r).lower() for r in roles]
         return {"username": claims.get("username") or claims.get("sub") or str(claims), "roles": roles, "scopes": scopes}
     if local_bypass:
         return {"username": os.getenv("DEV_USER", "dev.user"), "roles": ["USAREC_ADMIN"], "scopes": [{"scope_type": "USAREC", "scope_value": "USAREC"}]}
@@ -60,9 +67,9 @@ def get_current_user(request: Request) -> Dict[str, Any]:
 
 def require_roles(*roles: str):
     def _dep(user: Dict = Depends(get_current_user)):
-        user_roles = user.get("roles") or []
+        user_roles = [u.lower() for u in (user.get("roles") or [])]
         for r in roles:
-            if r not in user_roles:
+            if r.lower() not in user_roles:
                 raise HTTPException(status_code=403, detail="Forbidden: missing role")
         return user
 
@@ -72,9 +79,9 @@ def require_roles(*roles: str):
 def require_any_role(*roles: str):
     """Dependency: allow if user has any one of the provided roles."""
     def _dep(user: Dict = Depends(get_current_user)):
-        user_roles = user.get("roles") or []
+        user_roles = [u.lower() for u in (user.get("roles") or [])]
         for r in roles:
-            if r in user_roles:
+            if r.lower() in user_roles:
                 return user
         raise HTTPException(status_code=403, detail="Forbidden: missing role")
 
@@ -83,7 +90,7 @@ def require_any_role(*roles: str):
 def get_allowed_org_units(username: Dict = Depends(get_current_user)) -> Optional[list]:
     """Return list of allowed org_unit ids for the current user; None means unrestricted."""
     # dev bypass => allow all
-    if os.getenv('LOCAL_DEV_AUTH_BYPASS'):
+    if os.getenv('LOCAL_DEV_AUTH_BYPASS', '0').lower() in ('1', 'true'):
         return None
     uname = username.get('username') if isinstance(username, dict) else username
     conn = connect()
@@ -111,7 +118,8 @@ def get_allowed_org_units(username: Dict = Depends(get_current_user)) -> Optiona
 
 def require_not_role(role_name: str):
     def _dep(user: Dict = Depends(get_current_user)):
-        if role_name in (user.get("roles") or []):
+        user_roles = [u.lower() for u in (user.get("roles") or [])]
+        if role_name.lower() in user_roles:
             raise HTTPException(status_code=403, detail="Forbidden: role not allowed")
         return user
 
@@ -120,7 +128,7 @@ def require_not_role(role_name: str):
 
 def require_station_scope(rsid: str):
     def _dep(user: Dict = Depends(get_current_user)):
-        if "usarec_admin" in (user.get("roles") or []):
+        if any((r.lower() == 'usarec_admin') for r in (user.get("roles") or [])):
             return user
         scopes = user.get("scopes") or []
         for s in scopes:
@@ -145,7 +153,7 @@ SCOPE_ORDER = {
 def require_scope(min_level: str = 'STATION'):
     def _dep(username: Dict = Depends(get_current_user)) -> Optional[list]:
         # dev bypass => unrestricted
-        if os.getenv('LOCAL_DEV_AUTH_BYPASS'):
+        if os.getenv('LOCAL_DEV_AUTH_BYPASS', '0').lower() in ('1', 'true'):
             return None
         uname = username.get('username') if isinstance(username, dict) else username
         conn = connect()

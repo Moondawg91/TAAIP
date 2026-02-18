@@ -226,7 +226,16 @@ def trigger_schedule(schedule_id: int, current_user: dict = Depends(require_role
         s = cur.fetchone()
         if not s:
             raise HTTPException(status_code=404, detail='schedule not found')
-        params = json.loads(s['params_json'] or '{}') if 'params_json' in s.keys() else {}
+        # Support both mapping-like rows (sqlite3.Row / dict) and simple tuples
+        try:
+            if hasattr(s, 'keys'):
+                raw_params = s.get('params_json')
+            else:
+                # selected columns: id, name, params_json -> index 2
+                raw_params = s[2] if len(s) > 2 else None
+            params = json.loads(raw_params or '{}')
+        except Exception:
+            params = {}
         # run tasks defined in params or default dedupe
         tasks = params.get('tasks') or ['dedupe']
         results = []

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import { Box, IconButton, Typography, List, ListItemButton, ListItemIcon, ListItemText, Tooltip, Divider } from '@mui/material'
 import * as Icons from '@mui/icons-material'
 import NAV_CONFIG from '../nav/navConfig'
+import { getCurrentUserFromToken } from '../api/client'
 import PushPinIcon from '@mui/icons-material/PushPin'
 import CloseIcon from '@mui/icons-material/Close'
 import MenuIcon from '@mui/icons-material/Menu'
@@ -25,6 +26,15 @@ export default function SectionSidebar(){
   const [activeSection, setActiveSection] = useState<string | null>(null)
   const navigate = useNavigate()
   const loc = useLocation()
+  const [userRoles, setUserRoles] = useState<string[]>([])
+
+  useEffect(()=>{
+    try{
+      const u = getCurrentUserFromToken()
+      const roles = (u && u.roles) ? (Array.isArray(u.roles)?u.roles:u.roles.split?.(',')||[]) : []
+      setUserRoles(roles.map((r:any)=>String(r).toLowerCase()))
+    }catch(e){ setUserRoles([]) }
+  },[])
 
   useEffect(()=>{
     try { localStorage.setItem('taaip_sidebar_pinned', pinned ? 'true' : 'false') } catch {}
@@ -62,14 +72,23 @@ export default function SectionSidebar(){
                 setActiveSection(prev => (prev === section.id ? null : section.id))
 
                 // navigate to first enabled item if available
-                try {
-                  const first = (section.items || []).find((i: NavItem) => !i.disabled && typeof i.path === 'string' && i.path.length > 1)
-                  if (first && typeof first.path === 'string') {
-                    navigate(first.path)
+                  try {
+                    // find first enabled item considering role gates
+                    const first = (section.items || []).find((i: NavItem) => {
+                      if (i.disabled) return false
+                      if (!i.path || typeof i.path !== 'string' || i.path.length<=1) return false
+                      // admin gate: disable admin routes for non-admins
+                      if (i.path.startsWith('/admin') && !userRoles.includes('usarec_admin') && !userRoles.includes('sysadmin')) return false
+                      // command priorities gate
+                      if (i.path === '/command-center/priorities' && !userRoles.includes('usarec_admin') && !userRoles.includes('commander')) return false
+                      return true
+                    })
+                    if (first && typeof first.path === 'string') {
+                      navigate(first.path)
+                    }
+                  } catch (e) {
+                    // noop
                   }
-                } catch (e) {
-                  // noop
-                }
 
                 // do not auto-collapse via timeout; collapse happens on mouse leave
               }} sx={{ color:'text.secondary' }}>
@@ -88,14 +107,21 @@ export default function SectionSidebar(){
               {open && <Typography variant="overline" sx={{ color:'text.secondary' }}>{section.label}</Typography>}
               {showItems ? (
                 <List>
-                  {section.items.map((it:NavItem)=> (
-                    <Tooltip key={it.path || it.id} title={!open ? it.label : ''} placement="right">
-                      <ListItemButton selected={loc.pathname===it.path} onClick={()=>!it.disabled && navigate(it.path)} disabled={it.disabled} sx={{ borderRadius:1, my:0.5, px: open ? 1.5 : 0.5 }}>
-                        <ListItemIcon sx={{ minWidth: open ? 40 : 0, justifyContent:'center', color: it.disabled ? 'text.secondary' : 'primary.main' }}>{ it.disabled ? <LockIcon fontSize="small" /> : IconByName(it.icon) }</ListItemIcon>
-                        {open && <ListItemText primary={it.label} primaryTypographyProps={{ variant:'body2' }} secondary={it.disabled ? 'Coming soon' : undefined} />}
-                      </ListItemButton>
-                    </Tooltip>
-                  ))}
+                  {section.items.map((it:NavItem)=> {
+                    const path = it.path || ''
+                    // apply frontend gating based on roles
+                    let roleDisabled = !!it.disabled
+                    if (!roleDisabled && path.startsWith('/admin') && !userRoles.includes('usarec_admin') && !userRoles.includes('sysadmin')) roleDisabled = true
+                    if (!roleDisabled && path === '/command-center/priorities' && !userRoles.includes('usarec_admin') && !userRoles.includes('commander')) roleDisabled = true
+                    return (
+                      <Tooltip key={it.path || it.id} title={!open ? it.label : ''} placement="right">
+                        <ListItemButton selected={loc.pathname===it.path} onClick={()=>{ if(!roleDisabled && path) navigate(path) }} disabled={roleDisabled} sx={{ borderRadius:1, my:0.5, px: open ? 1.5 : 0.5 }}>
+                          <ListItemIcon sx={{ minWidth: open ? 40 : 0, justifyContent:'center', color: roleDisabled ? 'text.secondary' : 'primary.main' }}>{ roleDisabled ? <LockIcon fontSize="small" /> : IconByName(it.icon) }</ListItemIcon>
+                          {open && <ListItemText primary={it.label} primaryTypographyProps={{ variant:'body2' }} secondary={roleDisabled ? 'No access' : undefined} />}
+                        </ListItemButton>
+                      </Tooltip>
+                    )
+                  })}
                 </List>
               ) : (
                 // show nothing (collapsed header only)

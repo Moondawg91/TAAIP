@@ -1,5 +1,6 @@
 import React from 'react'
 import { Box, Typography, Card, CardContent } from '@mui/material'
+import EmptyState from '../../components/common/EmptyState'
 
 export default function DocLibraryPage(){
   return (
@@ -9,7 +10,7 @@ export default function DocLibraryPage(){
       <Card sx={{ bgcolor:'background.paper' }}>
         <CardContent>
           <Typography variant="h6">Library</Typography>
-          <Typography variant="body2" sx={{ color:'text.secondary', mt:1 }}>Browse and search documents.</Typography>
+          <EmptyState title="No documents" subtitle="The document library is empty for your scope." />
         </CardContent>
       </Card>
     </Box>

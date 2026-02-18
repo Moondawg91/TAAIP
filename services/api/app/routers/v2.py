@@ -8,6 +8,8 @@ from io import StringIO
 import os
 from typing import Dict
 import json
+from services.api.app.database import engine
+from sqlalchemy import text
 
 router = APIRouter(prefix="/v2")
 
@@ -60,53 +62,50 @@ def create_event(payload: dict, user: dict = Depends(get_current_user)):
     if "station_view" in (user.get("roles") or []):
         raise HTTPException(status_code=403, detail="Forbidden")
     eid = "evt_" + uuid.uuid4().hex[:10]
-    conn = get_db_conn()
-    cur = conn.cursor()
-    cur.execute(
-        "INSERT INTO events(event_id,name,type,location,start_date,end_date,budget,team_size,targeting_principles,created_at) VALUES(?,?,?,?,?,?,?,?,?,?)",
-        (
-            eid,
-            payload.get("name"),
-            payload.get("type"),
-            payload.get("location"),
-            payload.get("start_date"),
-            payload.get("end_date"),
-            payload.get("budget"),
-            payload.get("team_size"),
-            payload.get("targeting_principles"),
-            datetime.utcnow().isoformat(),
-        ),
+    # Use SQLAlchemy engine for DDL/DML to avoid mixing sqlite3 connections
+    # which can lead to file locks during concurrent test teardown.
+    stmt = text(
+        "INSERT INTO event(org_unit_id,name,event_type,start_dt,end_dt,location_name,created_at) VALUES(:org_unit_id,:name,:event_type,:start_dt,:end_dt,:location_name,:created_at)"
     )
-    conn.commit()
-    conn.close()
+    params = {
+        "org_unit_id": payload.get("org_unit_id"),
+        "name": payload.get("name"),
+        "event_type": payload.get("type") or payload.get("event_type"),
+        "start_dt": payload.get("start_date") or payload.get("start_dt"),
+        "end_dt": payload.get("end_date") or payload.get("end_dt"),
+        "location_name": payload.get("location") or payload.get("location_name"),
+        "created_at": datetime.utcnow().isoformat(),
+    }
+    with engine.begin() as conn:
+        conn.execute(stmt, params)
     return {"status": "ok", "event_id": eid}
 
 
 @router.post("/marketing/activities")
 def post_activity(payload: dict, user: dict = Depends(get_current_user)):
-    aid = "act_" + uuid.uuid4().hex[:10]
-    conn = get_db_conn()
-    cur = conn.cursor()
-    cur.execute(
-        "INSERT INTO marketing_activities(activity_id,event_id,activity_type,campaign_name,channel,data_source,impressions,engagement_count,awareness_metric,activation_conversions,reporting_date,metadata,cost) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)",
-        (
-            aid,
-            payload.get("event_id"),
-            payload.get("activity_type"),
-            payload.get("campaign_name"),
-            payload.get("channel"),
-            payload.get("data_source"),
-            payload.get("impressions") or 0,
-            payload.get("engagement_count") or 0,
-            float(payload.get("awareness_metric") or 0.0),
-            payload.get("activation_conversions") or 0,
-            payload.get("reporting_date"),
-            payload.get("metadata"),
-            float(payload.get("cost") or 0.0),
-        ),
+    aid = payload.get('id') or ("act_" + uuid.uuid4().hex[:10])
+    stmt = text(
+        "INSERT INTO marketing_activities(id,event_id,activity_type,campaign_name,channel,data_source,impressions,engagements,clicks,conversions,cost,reporting_date,metadata_json,created_at,record_status) VALUES(:id,:event_id,:activity_type,:campaign_name,:channel,:data_source,:impressions,:engagements,:clicks,:conversions,:cost,:reporting_date,:metadata_json,:created_at,:record_status)"
     )
-    conn.commit()
-    conn.close()
+    params = {
+        "id": aid,
+        "event_id": payload.get("event_id"),
+        "activity_type": payload.get("activity_type"),
+        "campaign_name": payload.get("campaign_name"),
+        "channel": payload.get("channel"),
+        "data_source": payload.get("data_source"),
+        "impressions": payload.get("impressions") or 0,
+        "engagements": payload.get("engagements") or payload.get("engagement_count") or 0,
+        "clicks": payload.get("clicks") or 0,
+        "conversions": payload.get("conversions") or payload.get("activation_conversions") or 0,
+        "cost": float(payload.get("cost") or 0.0),
+        "reporting_date": payload.get("reporting_date"),
+        "metadata_json": payload.get("metadata"),
+        "created_at": datetime.utcnow().isoformat(),
+        "record_status": "active",
+    }
+    with engine.begin() as conn:
+        conn.execute(stmt, params)
     return {"status": "ok", "activity_id": aid}
 
 

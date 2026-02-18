@@ -40,10 +40,13 @@ export async function getHealth() {
 }
 
 function withScopeQs(scope, value){
+  // if scope isn't provided, fall back to persisted scope in localStorage
+  try { if (!scope) scope = localStorage.getItem('taaip_scope') } catch(e) { /* ignore */ }
   const qs = new URLSearchParams()
   if (scope) qs.set('scope', scope)
   if (value) qs.set('value', value)
-  return `?${qs.toString()}`
+  const s = qs.toString()
+  return s ? `?${s}` : ''
 }
 
 export async function getCommandSummary(scope, value){
@@ -73,6 +76,22 @@ export async function getKpis(scope){
   } catch(e){
     return []
   }
+}
+
+export async function getHomeNews(limit = 50){
+  return apiFetch(`/api/v2/home/news?limit=${limit}`)
+}
+
+export async function getHomeUpdates(limit = 50){
+  return apiFetch(`/api/v2/home/updates?limit=${limit}`)
+}
+
+export async function getHomeQuickLinks(limit = 50){
+  return apiFetch(`/api/v2/home/quick-links?limit=${limit}`)
+}
+
+export async function getOrgUnitsSummary(){
+  return apiFetch('/api/v2/org/units-summary')
 }
 
 export function getCurrentUserFromToken(){
@@ -327,6 +346,11 @@ export async function deleteLOE(id){
 export async function listCommandPriorities(scope){
   const qs = withScopeQs(scope)
   return apiFetch(`/api/projects/command_priorities${qs}`)
+}
+
+export async function getCommandBaseline(scope){
+  const qs = withScopeQs(scope)
+  return apiFetch(`/api/projects/command/baseline${qs}`)
 }
 
 export async function createCommandPriority(payload){
