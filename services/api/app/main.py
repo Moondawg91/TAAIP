@@ -78,6 +78,8 @@ from .routers import training as training_router
 api_router.include_router(training_router.router)
 from .routers import automation as automation_router
 api_router.include_router(automation_router.router)
+from .routers import home as home_router
+api_router.include_router(home_router.router)
 from .routers import compat_helpers as compat_helpers_router
 api_router.include_router(compat_helpers_router.router)
 

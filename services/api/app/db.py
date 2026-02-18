@@ -536,6 +536,70 @@ def init_schema() -> None:
                 record_status TEXT DEFAULT 'active'
             );
 
+            -- Home / Announcements / System updates / Resource links (Phase-5)
+            CREATE TABLE IF NOT EXISTS announcement (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                org_unit_id INTEGER,
+                category TEXT,
+                title TEXT,
+                body TEXT,
+                effective_dt TEXT,
+                expires_dt TEXT,
+                created_at TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS system_update (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                component TEXT,
+                status TEXT,
+                message TEXT,
+                created_at TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS resource_link (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                section TEXT,
+                title TEXT,
+                url TEXT,
+                created_at TEXT
+            );
+
+            -- Documents library items + blobs (Phase-5 storage)
+            CREATE TABLE IF NOT EXISTS doc_library_item (
+                id TEXT PRIMARY KEY,
+                org_unit_id INTEGER,
+                title TEXT,
+                doc_type TEXT,
+                tags_json TEXT,
+                version INTEGER DEFAULT 1,
+                effective_dt TEXT,
+                uploaded_by TEXT,
+                created_at TEXT,
+                record_status TEXT DEFAULT 'active'
+            );
+
+            CREATE TABLE IF NOT EXISTS doc_blob (
+                id TEXT PRIMARY KEY,
+                item_id TEXT,
+                filename TEXT,
+                content_type TEXT,
+                size_bytes INTEGER,
+                sha256 TEXT,
+                path TEXT,
+                created_at TEXT
+            );
+
+            -- Automation job skeleton
+            CREATE TABLE IF NOT EXISTS automation_job (
+                id TEXT PRIMARY KEY,
+                job_type TEXT,
+                status TEXT,
+                input_json TEXT,
+                output_json TEXT,
+                created_at TEXT,
+                updated_at TEXT
+            );
+
             -- indexes to speed up feed queries
             CREATE INDEX IF NOT EXISTS ix_fact_production_org_date ON fact_production(org_unit_id, date_key);
             CREATE INDEX IF NOT EXISTS ix_fact_production_metric ON fact_production(metric_key);

@@ -1,3 +1,35 @@
+from fastapi import APIRouter, HTTPException, Depends
+from ..db import connect
+from datetime import datetime
+import json
+from .rbac import require_roles, get_current_user
+import uuid
+
+router = APIRouter(prefix="/automation", tags=["automation"])
+
+
+def now_iso():
+    return datetime.utcnow().isoformat()
+
+
+@router.post("/run", summary="Create automation job")
+def run_job(payload: dict, current_user: dict = Depends(get_current_user)):
+    # admin-only in production; local dev bypass allowed by get_current_user
+    roles = (current_user.get('roles') or [])
+    if not any(r in roles for r in ('USAREC_ADMIN', 'CO_CMD', 'BDE_CMD', 'BN_CMD')):
+        raise HTTPException(status_code=403, detail='forbidden')
+    job_id = str(uuid.uuid4())
+    conn = connect()
+    try:
+        cur = conn.cursor()
+        now = now_iso()
+        cur.execute('INSERT INTO automation_job(id, job_type, status, input_json, output_json, created_at, updated_at) VALUES (?,?,?,?,?,?,?)', (
+            job_id, payload.get('job_type') or 'unknown', 'queued', json.dumps(payload.get('input') or {}), json.dumps({}), now, now
+        ))
+        conn.commit()
+        return {"status":"ok", "job_id": job_id}
+    finally:
+        conn.close()
 from fastapi import APIRouter, HTTPException
 from typing import Optional
 from ..automation.engine import run_automation_for

@@ -42,6 +42,7 @@ import MissionAnalysisPage from './pages/operations/MissionAnalysisPage'
 import MissionPlanningPage from './pages/operations/MissionPlanningPage'
 import TargetingMethodologyPage from './pages/operations/TargetingMethodologyPage'
 import TargetingDataPage from './pages/operations/TargetingDataPage'
+import USARECTargetingPage from './pages/operations/USARECTargetingPage'
 
 import TargetingBoardPage from './pages/planning/TargetingBoardPage'
 
@@ -62,15 +63,19 @@ import PlanningCalendarPage from './pages/planning/PlanningCalendarPage'
 import ProductionDashboardPage from './pages/performance/ProductionDashboardPage'
 import PerformanceMarketSegmentationPage from './pages/performance/PerformanceMarketSegmentationPage'
 import FunnelMetricsPage from './pages/performance/FunnelMetricsPage'
+import PerformanceTrackingPage from './pages/performance/PerformanceTrackingPage'
 import AdminUsersPage from './pages/admin/AdminUsersPage'
 import AdminRolesPage from './pages/admin/AdminRolesPage'
 import RoleDetailPage from './pages/admin/RoleDetailPage'
 import AdminMaintenancePage from './pages/admin/AdminMaintenancePage'
+import AdminRbacPage from './pages/admin/AdminRbacPage'
 import DocLibraryPage from './pages/resources/DocLibraryPage'
 import ResourcesRegulationsPage from './pages/resources/ResourcesRegulationsPage'
+import TrainingPage from './pages/resources/TrainingPage'
 import SubmitTicketPage from './pages/help/SubmitTicketPage'
 import TicketStatusPage from './pages/help/TicketStatusPage'
 import SystemStatusPage from './pages/help/SystemStatusPage'
+import HelpDeskLandingPage from './pages/help/HelpDeskLandingPage'
 
 export default function App() {
   return (
@@ -134,6 +139,10 @@ export default function App() {
           <Route path="/planning/env-recommendation" element={<EnvRecommendationPage />} />
           <Route path="/planning/calendar" element={<PlanningCalendarPage />} />
 
+          <Route path="/planning/recommendations" element={<RecommendationsPage />} />
+          <Route path="/planning/event-performance" element={<EventPerformancePage />} />
+          <Route path="/planning/marketing-roi" element={<MarketingROIPage />} />
+
           <Route path="/performance/production-dashboard" element={<ProductionDashboardPage />} />
           <Route path="/performance/market-segmentation" element={<PerformanceMarketSegmentationPage />} />
           <Route path="/performance/funnel-metrics" element={<FunnelMetricsPage />} />
@@ -142,16 +151,21 @@ export default function App() {
           <Route path="/admin/roles" element={<AdminRolesPage />} />
           <Route path="/admin/roles/:id" element={<RoleDetailPage />} />
           <Route path="/admin/maintenance" element={<AdminMaintenancePage />} />
+          <Route path="/admin/rbac" element={<AdminRbacPage />} />
 
           <Route path="/resources/doc-library" element={<DocLibraryPage />} />
           <Route path="/resources/regulations" element={<ResourcesRegulationsPage />} />
+          <Route path="/resources-training/documents" element={<DocLibraryPage />} />
+          <Route path="/resources-training/training" element={<TrainingPage />} />
 
           <Route path="/help/submit-ticket" element={<SubmitTicketPage />} />
           <Route path="/help/ticket-status" element={<TicketStatusPage />} />
           <Route path="/help/system-status" element={<SystemStatusPage />} />
+          <Route path="/help-desk" element={<HelpDeskLandingPage />} />
 
           {/* performance */}
           <Route path="/performance/assessment" element={<PerformanceAssessment />} />
+          <Route path="/performance-tracking" element={<PerformanceTrackingPage />} />
 
           {/* projects & events */}
           <Route path="/projects-events/manage" element={<ProjectsEventsPage />} />

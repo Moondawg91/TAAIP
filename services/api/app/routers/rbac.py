@@ -54,7 +54,7 @@ def get_current_user(request: Request) -> Dict[str, Any]:
             pass
         return {"username": claims.get("username") or claims.get("sub") or str(claims), "roles": roles, "scopes": scopes}
     if local_bypass:
-        return {"username": os.getenv("DEV_USER", "dev.user"), "roles": ["usarec_admin"], "scopes": [{"scope_type": "USAREC", "scope_value": "USAREC"}]}
+        return {"username": os.getenv("DEV_USER", "dev.user"), "roles": ["USAREC_ADMIN"], "scopes": [{"scope_type": "USAREC", "scope_value": "USAREC"}]}
     raise HTTPException(status_code=401, detail="Unauthorized")
 
 
@@ -65,6 +65,18 @@ def require_roles(*roles: str):
             if r not in user_roles:
                 raise HTTPException(status_code=403, detail="Forbidden: missing role")
         return user
+
+    return _dep
+
+
+def require_any_role(*roles: str):
+    """Dependency: allow if user has any one of the provided roles."""
+    def _dep(user: Dict = Depends(get_current_user)):
+        user_roles = user.get("roles") or []
+        for r in roles:
+            if r in user_roles:
+                return user
+        raise HTTPException(status_code=403, detail="Forbidden: missing role")
 
     return _dep
 

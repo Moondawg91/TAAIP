@@ -3,7 +3,7 @@ from typing import Optional, List, Dict, Any
 from ..db import connect
 from datetime import datetime
 import json
-from .rbac import require_scope
+from .rbac import require_scope, require_roles, require_any_role, get_current_user
 
 router = APIRouter(prefix="/projects", tags=["projects"])
 
@@ -72,7 +72,7 @@ def list_projects(org_unit_id: Optional[int] = None, status: Optional[str] = Non
 
 # Compatibility: LOE endpoints integrated into the main `projects` router.
 @router.post('/loes', summary='Create LOE')
-def create_loe(payload: Dict[str, Any]):
+def create_loe(payload: Dict[str, Any], current_user: Dict = Depends(require_any_role('USAREC_ADMIN','CO_CMD','BDE_CMD','BN_CMD'))):
     conn = connect()
     try:
         cur = conn.cursor()
@@ -113,7 +113,7 @@ def list_loes(limit: int = 100, scope: Optional[str] = None):
 
 
 @router.put('/loes/{loe_id}', summary='Update LOE')
-def update_loe(loe_id: int, payload: Dict[str, Any]):
+def update_loe(loe_id: int, payload: Dict[str, Any], current_user: Dict = Depends(require_any_role('USAREC_ADMIN','CO_CMD','BDE_CMD','BN_CMD'))):
     conn = connect()
     try:
         cur = conn.cursor()
@@ -132,7 +132,7 @@ def update_loe(loe_id: int, payload: Dict[str, Any]):
 
 
 @router.delete('/loes/{loe_id}', summary='Delete LOE')
-def delete_loe(loe_id: int):
+def delete_loe(loe_id: int, current_user: Dict = Depends(require_any_role('USAREC_ADMIN','CO_CMD','BDE_CMD','BN_CMD'))):
     conn = connect()
     try:
         cur = conn.cursor()
@@ -171,7 +171,7 @@ def list_command_priorities(limit: int = 100, scope: Optional[str] = None):
 
 
 @router.post('/command_priorities', summary='Create command priority')
-def create_command_priority(payload: Dict[str, Any]):
+def create_command_priority(payload: Dict[str, Any], current_user: Dict = Depends(require_any_role('USAREC_ADMIN','CO_CMD','BDE_CMD','BN_CMD'))):
     conn = connect()
     try:
         cur = conn.cursor()
@@ -188,7 +188,7 @@ def create_command_priority(payload: Dict[str, Any]):
 
 
 @router.put('/command_priorities/{pid}', summary='Update command priority')
-def update_command_priority(pid: int, payload: Dict[str, Any]):
+def update_command_priority(pid: int, payload: Dict[str, Any], current_user: Dict = Depends(require_any_role('USAREC_ADMIN','CO_CMD','BDE_CMD','BN_CMD'))):
     conn = connect()
     try:
         cur = conn.cursor()
@@ -207,7 +207,7 @@ def update_command_priority(pid: int, payload: Dict[str, Any]):
 
 
 @router.delete('/command_priorities/{pid}', summary='Delete command priority')
-def delete_command_priority(pid: int):
+def delete_command_priority(pid: int, current_user: Dict = Depends(require_any_role('USAREC_ADMIN','CO_CMD','BDE_CMD','BN_CMD'))):
     conn = connect()
     try:
         cur = conn.cursor()
@@ -243,7 +243,7 @@ def list_priority_loes(pid: int, scope: Optional[str] = None):
 
 
 @router.post('/command_priorities/{pid}/loes', summary='Assign LOE to priority')
-def assign_loe_to_priority(pid: int, payload: Dict[str, Any]):
+def assign_loe_to_priority(pid: int, payload: Dict[str, Any], current_user: Dict = Depends(require_any_role('USAREC_ADMIN','CO_CMD','BDE_CMD','BN_CMD'))):
     loe_id = payload.get('loe_id')
     if not loe_id:
         raise HTTPException(status_code=400, detail='missing loe_id')
@@ -264,7 +264,7 @@ def assign_loe_to_priority(pid: int, payload: Dict[str, Any]):
 
 
 @router.delete('/command_priorities/{pid}/loes/{loe_id}', summary='Remove LOE from priority')
-def remove_loe_from_priority(pid: int, loe_id: str):
+def remove_loe_from_priority(pid: int, loe_id: str, current_user: Dict = Depends(require_any_role('USAREC_ADMIN','CO_CMD','BDE_CMD','BN_CMD'))):
     conn = connect()
     try:
         cur = conn.cursor()
