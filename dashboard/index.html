@@ -27,6 +27,35 @@
       <div id="analytics"></div>
     </div>
 
+    <div style="margin-top:20px">
+      <strong>Manual CSV Upload (metrics)</strong>
+      <div>
+        <input id="csvFile" type="file" accept=".csv" />
+        <button id="csvUploadBtn">Upload CSV</button>
+      </div>
+      <div id="uploadStatus" style="margin-top:8px;color:#333"></div>
+      <div style="font-size:12px;color:#666;margin-top:6px">Expected CSV headers: <em>event_id,date,leads_generated,conversion_count,roi</em></div>
+    </div>
+
+    <div style="margin-top:20px">
+      <strong>Ingest File Upload</strong>
+      <div>
+        <input id="ingestFile" type="file" />
+        <select id="sourceSystem">
+          <option value="USAREC">USAREC</option>
+          <option value="DoD">DoD</option>
+          <option value="OTHER">OTHER</option>
+        </select>
+        <input id="datasetKey" placeholder="optional dataset_key override" style="margin-left:8px" />
+        <button id="ingestUploadBtn">Upload & Process</button>
+      </div>
+      <div id="ingestStatus" style="margin-top:8px;color:#333"></div>
+      <div id="ingestPreview" style="margin-top:10px;white-space:pre-wrap;font-family:monospace"></div>
+    </div>
+
+    <div style="margin-top:20px">
+      <a href="task_requests.html">Create / View Task Requests →</a>
+    </div>
     <script src="app.js"></script>
   </body>
 </html>

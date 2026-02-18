@@ -1,0 +1,183 @@
+#!/bin/bash
+# TAAIP Manual Remote Deployment Script (Ubuntu 24.04)
+# Usage: curl -fsSL https://raw.githubusercontent.com/Moondawg91/TAAIP/feat/optimize-app/remote-deploy-manual.sh -o remote-deploy-manual.sh && bash remote-deploy-manual.sh
+# Or: scp this file to droplet and run: bash remote-deploy-manual.sh
+
+set -euo pipefail
+BLUE='\033[0;34m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; RED='\033[0;31m'; NC='\033[0m'
+
+log(){ echo -e "${BLUE}[*]${NC} $1"; }
+ok(){ echo -e "${GREEN}[✓]${NC} $1"; }
+warn(){ echo -e "${YELLOW}[!]${NC} $1"; }
+fail(){ echo -e "${RED}[✗]${NC} $1"; exit 1; }
+
+[ "$(id -u)" -eq 0 ] || fail "Run as root (sudo -i)."
+
+DROPLET_IP=$(curl -s ifconfig.me || hostname -I | awk '{print $1}')
+FRONTEND_URL="http://${DROPLET_IP}"
+BACKEND_URL="http://${DROPLET_IP}:8000"
+INSTALL_DIR="/opt/TAAIP"
+
+log "Updating system packages"; apt update -y >/dev/null; apt upgrade -y >/dev/null || warn "Upgrade had non-critical issues"
+ok "System updated"
+
+if ! command -v docker >/dev/null; then
+  log "Installing Docker"; curl -fsSL https://get.docker.com -o get-docker.sh; sh get-docker.sh >/dev/null; rm get-docker.sh; systemctl enable docker; systemctl start docker; ok "Docker installed"
+else ok "Docker already installed"; fi
+
+log "Installing Docker Compose plugin"
+if ! docker compose version >/dev/null 2>&1; then
+  apt install -y docker-compose-plugin >/dev/null || {
+    warn "APT plugin install failed, using manual binary";
+    mkdir -p /usr/lib/docker/cli-plugins;
+    curl -SL "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/lib/docker/cli-plugins/docker-compose;
+    chmod +x /usr/lib/docker/cli-plugins/docker-compose;
+  }
+fi
+ok "Docker Compose ready"
+
+# Install auxiliary tooling (git, firewall, curl, jq for JSON health parsing)
+apt install -y git ufw curl jq >/dev/null || warn "Minor tool install issue"
+
+log "Cloning repository"
+if [ -d "$INSTALL_DIR/.git" ]; then
+  cd "$INSTALL_DIR"; git pull --ff-only || warn "Could not fast-forward"; ok "Repo updated"
+else
+  git clone https://github.com/Moondawg91/TAAIP.git "$INSTALL_DIR" || fail "Clone failed"; cd "$INSTALL_DIR"; ok "Repo cloned"
+fi
+
+log "Creating data + logs directories"; mkdir -p data logs backups; ok "Directories ready"
+
+log "Running repository migration scripts (if any) against local DB"
+for m in migrate_*.py; do
+  if [ -f "$m" ]; then
+    log "Running $m" || true
+    python3 "$m" || warn "Migration $m exited with non-zero code"
+  fi
+done
+
+log "Writing .env file"
+cat > .env <<EOF
+DATABASE_URL=sqlite:///./data/recruiting.db
+BACKEND_PORT=8000
+CORS_ORIGINS=${FRONTEND_URL}
+VITE_API_URL=${BACKEND_URL}
+JWT_SECRET=$(openssl rand -hex 24)
+ADMIN_PASSWORD=$(openssl rand -hex 12)
+EOF
+ok ".env configured"
+
+log "Firewall configuration"
+ufw --force enable >/dev/null || warn "UFW enable issue"
+for p in 22 80 443 8000; do ufw allow ${p}/tcp >/dev/null || warn "Port ${p} rule issue"; done
+ok "Firewall rules set"
+
+log "Building and starting containers (may take several minutes)"
+if [ ! -f docker-compose.yml ]; then warn "docker-compose.yml missing, using basic inline definition"; cat > docker-compose.yml <<'COMPOSE'
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=sqlite:///./data/recruiting.db
+      - CORS_ORIGINS=*
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
+  frontend:
+    build:
+      context: ./taaip-dashboard
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=http://localhost:8000
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+COMPOSE
+fi
+
+docker compose build --no-cache || fail "Compose build failed"
+docker compose up -d || fail "Compose up failed"
+ok "Containers started"
+
+log "Waiting for backend health"
+for i in $(seq 1 30); do
+  if curl -fsS http://localhost:8000/health | jq '.status' 2>/dev/null | grep -q ok; then ok "Backend healthy"; break; fi; sleep 2;
+  [ $i -eq 30 ] && warn "Backend health not confirmed; check logs: docker compose logs backend"
+done
+
+log "Setting up daily backup cron"
+cat > /usr/local/bin/taaip-backup.sh <<'BKS'
+#!/bin/bash
+TS=$(date +%Y%m%d_%H%M%S)
+cd /opt/TAAIP || exit 0
+mkdir -p backups
+if docker ps --format '{{.Names}}' | grep -q taaip-backend; then
+  docker exec $(docker ps --format '{{.Names}}' | grep taaip-backend) sqlite3 /app/data/recruiting.db ".backup /app/data/backup_${TS}.db" 2>/dev/null
+  docker cp $(docker ps --format '{{.Names}}' | grep taaip-backend):/app/data/backup_${TS}.db backups/backup_${TS}.db
+  find backups -type f -mtime +7 -name 'backup_*.db' -delete
+fi
+BKS
+chmod +x /usr/local/bin/taaip-backup.sh
+(crontab -l 2>/dev/null; echo "15 2 * * * /usr/local/bin/taaip-backup.sh") | crontab -
+ok "Backup cron installed"
+
+log "Summary"
+echo -e "${GREEN}Frontend: ${FRONTEND_URL}${NC}"
+echo -e "${GREEN}Backend Health: ${BACKEND_URL}/health${NC}"
+echo -e "${GREEN}Repo: ${INSTALL_DIR}${NC}"
+
+cat <<NEXTSTEPS
+
+Next Steps:
+  1. On your local machine: open ${FRONTEND_URL}
+  2. Health check: curl ${BACKEND_URL}/health
+  3. Logs: docker compose logs -f
+  4. Restart: docker compose restart
+  5. Update: cd ${INSTALL_DIR} && git pull && docker compose up -d --build
+
+Domain + HTTPS Setup (after DNS A record points yourdomain.com -> ${DROPLET_IP}):
+  1. Verify DNS propagation:
+    dig +short yourdomain.com
+    dig +trace yourdomain.com | grep -m1 ${DROPLET_IP} || echo "Still propagating"
+  2. Install Nginx + Certbot (if not already):
+    apt install -y nginx certbot python3-certbot-nginx
+  3. Create Nginx server block /etc/nginx/sites-available/taaip.conf:
+    server {
+      listen 80;
+      server_name yourdomain.com www.yourdomain.com;
+      location / { proxy_pass http://127.0.0.1:80; }
+      location /api/ { proxy_pass http://127.0.0.1:8000/; }
+    }
+    ln -s /etc/nginx/sites-available/taaip.conf /etc/nginx/sites-enabled/taaip.conf || true
+    nginx -t && systemctl reload nginx
+  4. Issue SSL certificate:
+    certbot --nginx -d yourdomain.com -d www.yourdomain.com --redirect --agree-tos -m admin@yourdomain.com
+  5. Confirm renewal cron:
+    systemctl list-timers | grep certbot || echo "Certbot timer missing"
+  6. Update .env:
+    CORS_ORIGINS=https://yourdomain.com
+    VITE_API_URL=https://yourdomain.com/api
+    (Rebuild frontend with new VITE_API_URL)
+  7. Rebuild containers:
+    docker compose down
+    docker compose build --no-cache
+    docker compose up -d
+  8. Test:
+    curl -I https://yourdomain.com
+    curl -I http://yourdomain.com  # should 301 to https
+    curl -fsSL https://yourdomain.com/api/health
+
+Security Hardening (later):
+  - Replace sqlite with managed Postgres
+  - Enable HTTPS via Nginx + Certbot
+  - Disable root SSH password (use key auth)
+
+NEXTSTEPS
+
+ok "TAAIP deployment script finished"

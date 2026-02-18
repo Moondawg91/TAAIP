@@ -9,9 +9,12 @@
     "dev": "node --watch api-gateway.js"
   },
   "dependencies": {
-    "express": "^4.18.2",
+    "@azure/msal-node": "^2.6.4",
+    "axios": "^1.6.2",
     "cors": "^2.8.5",
-    "axios": "^1.6.2"
+    "express": "^4.18.2",
+    "http-proxy-middleware": "^2.0.9",
+    "puppeteer": "^24.33.0"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"

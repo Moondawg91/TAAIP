@@ -1,0 +1,531 @@
+version: 1
+generated_at: '2026-02-13T01:34:44.676224Z'
+datasets:
+- dataset_key: USAREC_SAMA_ZIP
+  source_files:
+  - Act+Res SAMA Data for All ZIP codes of STNs in USAREC.xlsx
+  description: ZIP-level potential + SAMA and related propensity metrics for stations.
+  format: xlsx
+  default_sheet: Sheet1
+  header_row: 2
+  columns:
+  - raw: STN / ZIP Code
+    norm: STN_ZIP_CODE
+  - raw: ZIP
+    norm: ZIP
+  - raw: Category
+    norm: CATEGORY
+  - raw: Army Potential
+    norm: ARMY_POTENTIAL
+  - raw: DoD(-) Wtd Avg
+    norm: DOD_WTD_AVG
+  - raw: DoD Potential
+    norm: DOD_POTENTIAL
+  - raw: Army Share of Potential
+    norm: ARMY_SHARE_OF_POTENTIAL
+  - raw: Army GA Ach
+    norm: ARMY_GA_ACH
+  - raw: Army SA Ach
+    norm: ARMY_SA_ACH
+  - raw: Army VOL Ach
+    norm: ARMY_VOL_ACH
+  - raw: Army Potential Rem
+    norm: ARMY_POTENTIAL_REM
+  required_columns_norm:
+  - ZIPCODE
+  - STATION
+  - SAMA
+  primary_key_norm:
+  - ZIPCODE
+  - STATION
+  loader: backend.ingestion.loaders.sama_loader:load_sama
+  target_tables:
+  - fact_zip_potential_sama
+  preview:
+    enabled: true
+    default_limit: 50
+  raw_storage:
+    store_all_rows: true
+    table: raw_import_rows
+- dataset_key: usarec_vol_contracts_by_service
+  source_system: USAREC
+  description: Volume contracts by service (FY,RQ,SERVICE,SUM OF CONTRACTS,ZIP,STATION)
+  format: csv
+  file_types: [csv, xlsx]
+  loader: backend.ingestion.loaders.market_share_loader:load_market_share
+  target_tables:
+  - fact_market_share_contracts
+  required_columns_norm:
+  - fy
+  - rq
+  - service
+  - sum_of_contracts
+  - zip
+  - station
+  preview:
+    enabled: true
+    default_limit: 50
+  raw_storage:
+    store_all_rows: true
+    table: raw_import_rows
+- dataset_key: USAREC_ZIP_CATEGORY
+  source_files:
+  - Act+Res ZIP Code by Category Report for All ZIP codes of STNs in USAREC thru 30JAN2026.xlsx
+  description: ZIP code category report (Act/Res) with categories and counts by station.
+  format: xlsx
+  default_sheet: Sheet1
+  header_row: 2
+  columns:
+  - raw: Recruiting STN
+    norm: RECRUITING_STN
+  - raw: Category
+    norm: CATEGORY
+  - raw: ZIP
+    norm: ZIP
+  - raw: Army Potential
+    norm: ARMY_POTENTIAL
+  - raw: DoD(-) Wtd Avg
+    norm: DOD_WTD_AVG
+  - raw: DoD Potential
+    norm: DOD_POTENTIAL
+  - raw: Army Share of Potential
+    norm: ARMY_SHARE_OF_POTENTIAL
+  - raw: Army Mkt Contracts (GA)
+    norm: ARMY_MKT_CONTRACTS_GA
+  - raw: Army Mkt Contracts (SA)
+    norm: ARMY_MKT_CONTRACTS_SA
+  - raw: Army Mkt Contracts (VOL)
+    norm: ARMY_MKT_CONTRACTS_VOL
+  required_columns_norm:
+  - ZIPCODE
+  primary_key_norm:
+  - ZIPCODE
+  loader: null
+  target_tables:
+  - dim_zip_category
+  preview:
+    enabled: true
+    default_limit: 50
+  raw_storage:
+    store_all_rows: true
+    table: raw_import_rows
+- dataset_key: USAREC_MARKET_CONTRACTS_SHARE
+  source_files:
+  - DoD  Market Share Contracts and Share FY 25.xlsx
+  description: DoD/USAREC market share contracts and share by geography and service.
+  format: xlsx
+  default_sheet: Sheet1
+  header_row: 2
+  columns:
+  - raw: CMD
+    norm: CMD
+  - raw: BDE
+    norm: BDE
+  - raw: BN
+    norm: BN
+  - raw: CO
+    norm: CO
+  - raw: STN
+    norm: STN
+  required_columns_norm:
+  - FY
+  - PER
+  - MKT
+  - SERVICE
+  - CONTRACTS
+  primary_key_norm:
+  - FY
+  - PER
+  - MKT
+  - BDE
+  - BN
+  - CO
+  - RSID
+  - ZIP
+  - SERVICE
+  loader: backend.ingestion.loaders.market_share_loader:load_market_share
+  target_tables:
+  - fact_market_share_contracts
+  preview:
+    enabled: true
+    default_limit: 50
+  raw_storage:
+    store_all_rows: true
+    table: raw_import_rows
+- dataset_key: USAREC_ENLISTMENTS_BDE
+  source_files:
+  - Enlistments by BDE.xlsx
+  description: Enlistments aggregated by Brigade and time period.
+  format: xlsx
+  default_sheet: Sheet1
+  header_row: 2
+  columns:
+  - raw: BDE
+    norm: BDE
+  - raw: Enlistments
+    norm: ENLISTMENTS
+  required_columns_norm:
+  - FY
+  - PER
+  - BDE
+  primary_key_norm:
+  - FY
+  - PER
+  - BDE
+  loader: null
+  target_tables:
+  - fact_enlistments_bde
+  preview:
+    enabled: true
+    default_limit: 50
+  raw_storage:
+    store_all_rows: true
+    table: raw_import_rows
+- dataset_key: USAREC_ENLISTMENTS_BN
+  source_files:
+  - Enlistments by BN.xlsx
+  description: Enlistments aggregated by Battalion and time period.
+  format: xlsx
+  default_sheet: Sheet1
+  header_row: 2
+  columns:
+  - raw: '''Demographic Data''[LU_BATTALION_NAME]'
+    norm: DEMOGRAPHIC_DATALU_BATTALION_NAME
+  - raw: rsid
+    norm: RSID
+  - raw: '''Measure Table''[Enlistments]'
+    norm: MEASURE_TABLEENLISTMENTS
+  required_columns_norm:
+  - FY
+  - PER
+  - BN
+  primary_key_norm:
+  - FY
+  - PER
+  - BN
+  loader: null
+  target_tables:
+  - fact_enlistments_bn
+  preview:
+    enabled: true
+    default_limit: 50
+  raw_storage:
+    store_all_rows: true
+    table: raw_import_rows
+- dataset_key: USAREC_ENLISTMENTS_CBSA
+  source_files:
+  - Enlistments by CBSA.xlsx
+  description: Enlistments aggregated by CBSA and time period.
+  format: xlsx
+  default_sheet: Sheet1
+  header_row: 2
+  columns:
+  - raw: CBSA
+    norm: CBSA
+  - raw: Enlistments
+    norm: ENLISTMENTS
+  - raw: Percent
+    norm: PERCENT
+  required_columns_norm:
+  - FY
+  - PER
+  - CBSA
+  primary_key_norm:
+  - FY
+  - PER
+  - CBSA
+  loader: null
+  target_tables:
+  - fact_enlistments_cbsa
+  preview:
+    enabled: true
+    default_limit: 50
+  raw_storage:
+    store_all_rows: true
+    table: raw_import_rows
+- dataset_key: USAREC_MISSION_CATEGORY_V1
+  source_files:
+  - Mission Category 2.xlsx
+  description: Mission category reference/mapping.
+  format: xlsx
+  default_sheet: Sheet1
+  header_row: 2
+  columns:
+  - raw: Mission_Category
+    norm: MISSION_CATEGORY
+  - raw: education_tier
+    norm: EDUCATION_TIER
+  - raw: '%GT Enlistments'
+    norm: GT_ENLISTMENTS
+  - raw: '%Enlistments'
+    norm: ENLISTMENTS
+  required_columns_norm: []
+  primary_key_norm: []
+  loader: null
+  target_tables:
+  - dim_mission_category
+  preview:
+    enabled: true
+    default_limit: 50
+  raw_storage:
+    store_all_rows: true
+    table: raw_import_rows
+- dataset_key: USAREC_MISSION_CATEGORY_V2
+  source_files:
+  - Mission Category.xlsx
+  description: Mission category reference/mapping.
+  format: xlsx
+  default_sheet: Sheet1
+  header_row: 2
+  columns:
+  - raw: Mission_Category
+    norm: MISSION_CATEGORY
+  - raw: education_tier
+    norm: EDUCATION_TIER
+  - raw: '%GT Enlistments'
+    norm: GT_ENLISTMENTS
+  - raw: '%Enlistments'
+    norm: ENLISTMENTS
+  required_columns_norm: []
+  primary_key_norm: []
+  loader: null
+  target_tables:
+  - dim_mission_category
+  preview:
+    enabled: true
+    default_limit: 50
+  raw_storage:
+    store_all_rows: true
+    table: raw_import_rows
+- dataset_key: USAREC_RSID_REFERENCE
+  source_files:
+  - RSID USAREC.xlsx
+  description: Reference mapping for RSID to unit hierarchy and geography.
+  format: xlsx
+  default_sheet: Sheet1
+  header_row: 2
+  columns:
+  - raw: CMD
+    norm: CMD
+  - raw: BDE
+    norm: BDE
+  - raw: BN
+    norm: BN
+  - raw: CO
+    norm: CO
+  - raw: STN
+    norm: STN
+  required_columns_norm:
+  - RSID
+  primary_key_norm:
+  - RSID
+  loader: null
+  target_tables:
+  - dim_rsid
+  preview:
+    enabled: true
+    default_limit: 50
+  raw_storage:
+    store_all_rows: true
+    table: raw_import_rows
+- dataset_key: USAREC_TEST_SCORE_AVERAGES
+  source_files:
+  - TEst Score avarages.xlsx
+  description: Test score averages report (exported report).
+  format: xlsx
+  default_sheet: Sheet1
+  header_row: 0
+  columns:
+  - raw: 'Applied filters:
+
+      Year is 2026
+
+      BDE is 1st, 2nd, 3rd, 5th, or 6th'
+    norm: APPLIED_FILTERS_YEAR_IS_2026_BDE_IS_1ST_2ND_3RD_5TH_OR_6TH
+  required_columns_norm: []
+  primary_key_norm: []
+  loader: null
+  target_tables:
+  - fact_test_score_averages
+  preview:
+    enabled: true
+    default_limit: 50
+  raw_storage:
+    store_all_rows: true
+    table: raw_import_rows
+- dataset_key: USAREC_PRODUCTIVITY_RATES_V1
+  source_files:
+  - USAREC Productivity Rates & Foxhole Recruiters, 2019-Present 2.xlsx
+  description: USAREC productivity rates and Foxhole Recruiters dataset (2019-present).
+  format: xlsx
+  default_sheet: Sheet1
+  header_row: 2
+  columns:
+  - raw: Month
+    norm: MONTH
+  - raw: Normed PR
+    norm: NORMED_PR
+  - raw: Normed PR 3mo
+    norm: NORMED_PR_3MO
+  - raw: Normed PR 12mo
+    norm: NORMED_PR_12MO
+  - raw: RRF
+    norm: RRF
+  - raw: Foxhole Recruiters
+    norm: FOXHOLE_RECRUITERS
+  - raw: Actual RRF
+    norm: ACTUAL_RRF
+  required_columns_norm: []
+  primary_key_norm: []
+  loader: null
+  target_tables:
+  - fact_productivity_rates
+  preview:
+    enabled: true
+    default_limit: 50
+  raw_storage:
+    store_all_rows: true
+    table: raw_import_rows
+- dataset_key: USAREC_PRODUCTIVITY_RATES_V2
+  source_files:
+  - USAREC Productivity Rates & Foxhole Recruiters, 2019-Present.xlsx
+  description: USAREC productivity rates and Foxhole Recruiters dataset (2019-present).
+  format: xlsx
+  default_sheet: Sheet1
+  header_row: 2
+  columns:
+  - raw: Month
+    norm: MONTH
+  - raw: Normed PR
+    norm: NORMED_PR
+  - raw: Normed PR 3mo
+    norm: NORMED_PR_3MO
+  - raw: Normed PR 12mo
+    norm: NORMED_PR_12MO
+  - raw: RRF
+    norm: RRF
+  - raw: Foxhole Recruiters
+    norm: FOXHOLE_RECRUITERS
+  - raw: Actual RRF
+    norm: ACTUAL_RRF
+  required_columns_norm: []
+  primary_key_norm: []
+  loader: null
+  target_tables:
+  - fact_productivity_rates
+  preview:
+    enabled: true
+    default_limit: 50
+  raw_storage:
+    store_all_rows: true
+    table: raw_import_rows
+- dataset_key: USAREC_URBANICITY_CBSA
+  source_files:
+  - Urbanicity % by CBSA.xlsx
+  description: Urbanicity percentage by CBSA.
+  format: xlsx
+  default_sheet: Sheet1
+  header_row: 2
+  columns:
+  - raw: CBSA
+    norm: CBSA
+  - raw: Enlistments
+    norm: ENLISTMENTS
+  - raw: First Definition
+    norm: FIRST_DEFINITION
+  - raw: Urbanicity
+    norm: URBANICITY
+  required_columns_norm:
+  - CBSA
+  primary_key_norm: []
+  loader: null
+  target_tables:
+  - dim_cbsa_urbanicity
+  preview:
+    enabled: true
+    default_limit: 50
+  raw_storage:
+    store_all_rows: true
+    table: raw_import_rows
+- dataset_key: USAREC_SCHOOL_CONTACTS
+  source_files:
+  - school contacts.xlsx
+  description: School contacts reference dataset.
+  format: xlsx
+  default_sheet: Sheet1
+  header_row: 2
+  columns:
+  - raw: RSID
+    norm: RSID
+  - raw: School Name (School RSID)
+    norm: SCHOOL_NAME_SCHOOL_RSID
+  - raw: Population
+    norm: POPULATION
+  - raw: Available Students
+    norm: AVAILABLE_STUDENTS
+  - raw: Attempted Students
+    norm: ATTEMPTED_STUDENTS
+  - raw: Attempted   Students %
+    norm: ATTEMPTED_STUDENTS
+  - raw: Contacted Students
+    norm: CONTACTED_STUDENTS
+  - raw: Contacted Students %
+    norm: CONTACTED_STUDENTS
+  - raw: Attempt365
+    norm: ATTEMPT365
+  - raw: Attempted Students w/ in 365 %
+    norm: ATTEMPTED_STUDENTS_W_IN_365
+  - raw: Contacted Students w/ in 365
+    norm: CONTACTED_STUDENTS_W_IN_365
+  - raw: Contacted Students w/ in 365 %
+    norm: CONTACTED_STUDENTS_W_IN_365
+  required_columns_norm: []
+  primary_key_norm: []
+  loader: null
+  target_tables:
+  - dim_school_contacts
+  preview:
+    enabled: true
+    default_limit: 50
+  raw_storage:
+    store_all_rows: true
+    table: raw_import_rows
+- dataset_key: USAREC_SCHOOL_CONTRACTS
+  source_files:
+  - school contracts.xlsx
+  description: School contracts dataset.
+  format: xlsx
+  default_sheet: Sheet1
+  header_row: 2
+  columns:
+  - raw: BDE
+    norm: BDE
+  - raw: BN
+    norm: BN
+  - raw: CO
+    norm: CO
+  - raw: RSID
+    norm: RSID
+  - raw: Population
+    norm: POPULATION
+  - raw: Available
+    norm: AVAILABLE
+  - raw: Attempted Students
+    norm: ATTEMPTED_STUDENTS
+  - raw: Attempted Students %
+    norm: ATTEMPTED_STUDENTS
+  - raw: Contacted Students
+    norm: CONTACTED_STUDENTS
+  - raw: Contacted Students %
+    norm: CONTACTED_STUDENTS
+  required_columns_norm: []
+  primary_key_norm: []
+  loader: null
+  target_tables:
+  - fact_school_contracts
+  preview:
+    enabled: true
+    default_limit: 50
+  raw_storage:
+    store_all_rows: true
+    table: raw_import_rows
