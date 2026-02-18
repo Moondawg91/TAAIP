@@ -22,7 +22,7 @@ from .routers import compat_org
 from fastapi.middleware.cors import CORSMiddleware
 from . import api_ingest
 from . import api_domain
-from .db import init_schema, get_db_path
+from .db import init_db, get_db_path
 
 
 
@@ -81,6 +81,17 @@ api_router.include_router(automation_router.router)
 from .routers import compat_helpers as compat_helpers_router
 api_router.include_router(compat_helpers_router.router)
 
+from .routers import health as health_router
+api_router.include_router(health_router.router)
+from .routers import exports as exports_router
+api_router.include_router(exports_router.router)
+
+# New v1/v2 compatibility routers for test-suite
+from .routers import v1 as v1_router
+from .routers import v2 as v2_router
+api_router.include_router(v1_router.router)
+api_router.include_router(v2_router.router)
+
 # additional operational endpoints
 from .routers import event_ops as event_ops_router
 api_router.include_router(event_ops_router.router)
@@ -105,7 +116,7 @@ def health():
 def _on_startup():
     # initialize DB schema and optionally seed deterministic dev data
     try:
-        init_schema()
+        init_db()
         _log.info(f"DB path: {get_db_path()}")
     except Exception as e:
         _log.error(f"DB init/seed failed: {e}")

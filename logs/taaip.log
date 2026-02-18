@@ -846,3 +846,9 @@ sqlite3.OperationalError: unable to open database file
 2026-02-13 18:41:58,270 INFO root ML Model initialized. Status: simulated
 2026-02-13 18:50:40,999 INFO root Loading Lead Scoring Model from storage...
 2026-02-13 18:50:40,999 INFO root ML Model initialized. Status: simulated
+2026-02-17 08:56:45,446 INFO root Applied backend migrations
+2026-02-17 08:56:45,509 INFO root Loading Lead Scoring Model from storage...
+2026-02-17 08:56:45,509 INFO root ML Model initialized. Status: simulated
+2026-02-17 08:59:56,171 WARNING root LOCAL_DEV_AUTH_BYPASS enabled: JWT validation will be bypassed for local development
+2026-02-17 09:00:29,841 WARNING root LOCAL_DEV_AUTH_BYPASS enabled: JWT validation will be bypassed for local development
+2026-02-17 09:00:30,127 WARNING taaip_ai_pipeline scikit-learn not installed; using mock model

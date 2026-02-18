@@ -327,3 +327,143 @@ def get_geo_cbsa(scope: Optional[str] = "USAREC", as_of: Optional[str] = None, a
         return {"rows": [], "schema": ["cbsa","value","label"]}
     finally:
         conn.close()
+
+
+@router.get('/dim_org_unit')
+def get_dim_org_unit(format: Optional[str] = 'json'):
+    conn = connect()
+    try:
+        cur = conn.cursor()
+        cur.execute('SELECT id, name, type, parent_id, rsid, uic, state, city, zip FROM dim_org_unit')
+        rows = [dict(r) for r in cur.fetchall()]
+        if format == 'csv':
+            buf = io.StringIO()
+            writer = csv.writer(buf)
+            writer.writerow(['id','name','type','parent_id','rsid','uic','state','city','zip'])
+            for r in rows:
+                writer.writerow([r.get('id'), r.get('name'), r.get('type'), r.get('parent_id'), r.get('rsid'), r.get('uic'), r.get('state'), r.get('city'), r.get('zip')])
+            buf.seek(0)
+            return StreamingResponse(iter([buf.getvalue()]), media_type='text/csv')
+        return rows
+    finally:
+        conn.close()
+
+
+@router.get('/dim_time')
+def get_dim_time(start: Optional[str] = None, end: Optional[str] = None, format: Optional[str] = 'json'):
+    conn = connect()
+    try:
+        cur = conn.cursor()
+        if start and end:
+            cur.execute('SELECT * FROM dim_time WHERE date_key>=? AND date_key<=? ORDER BY date_key', (start, end))
+        else:
+            cur.execute('SELECT * FROM dim_time ORDER BY date_key')
+        rows = [dict(r) for r in cur.fetchall()]
+        if format == 'csv':
+            if not rows:
+                return StreamingResponse(iter(['']), media_type='text/csv')
+            buf = io.StringIO()
+            writer = csv.writer(buf)
+            writer.writerow(list(rows[0].keys()))
+            for r in rows:
+                writer.writerow([r.get(k) for k in rows[0].keys()])
+            buf.seek(0)
+            return StreamingResponse(iter([buf.getvalue()]), media_type='text/csv')
+        return rows
+    finally:
+        conn.close()
+
+
+@router.get('/fact_production')
+def get_fact_production(org_unit_id: Optional[str] = None, start: Optional[str] = None, end: Optional[str] = None, format: Optional[str] = 'json'):
+    conn = connect()
+    try:
+        cur = conn.cursor()
+        sql = 'SELECT * FROM fact_production WHERE 1=1'
+        params: List[Any] = []
+        if org_unit_id:
+            sql += ' AND org_unit_id=?'; params.append(org_unit_id)
+        if start:
+            sql += ' AND date_key>=?'; params.append(start)
+        if end:
+            sql += ' AND date_key<=?'; params.append(end)
+        sql += ' ORDER BY date_key'
+        cur.execute(sql, tuple(params))
+        rows = [dict(r) for r in cur.fetchall()]
+        if format == 'csv':
+            if not rows: return StreamingResponse(iter(['']), media_type='text/csv')
+            buf = io.StringIO(); writer = csv.writer(buf)
+            writer.writerow(list(rows[0].keys()))
+            for r in rows: writer.writerow([r.get(k) for k in rows[0].keys()])
+            buf.seek(0)
+            return StreamingResponse(iter([buf.getvalue()]), media_type='text/csv')
+        return rows
+    finally:
+        conn.close()
+
+
+@router.get('/fact_funnel')
+def get_fact_funnel(org_unit_id: Optional[str] = None, start: Optional[str] = None, end: Optional[str] = None, format: Optional[str] = 'json'):
+    conn = connect()
+    try:
+        cur = conn.cursor()
+        sql = 'SELECT * FROM fact_funnel WHERE 1=1'
+        params: List[Any] = []
+        if org_unit_id:
+            sql += ' AND org_unit_id=?'; params.append(org_unit_id)
+        if start:
+            sql += ' AND date_key>=?'; params.append(start)
+        if end:
+            sql += ' AND date_key<=?'; params.append(end)
+        sql += ' ORDER BY date_key'
+        cur.execute(sql, tuple(params))
+        rows = [dict(r) for r in cur.fetchall()]
+        if format == 'csv':
+            if not rows: return StreamingResponse(iter(['']), media_type='text/csv')
+            buf = io.StringIO(); writer = csv.writer(buf)
+            writer.writerow(list(rows[0].keys()))
+            for r in rows: writer.writerow([r.get(k) for k in rows[0].keys()])
+            buf.seek(0)
+            return StreamingResponse(iter([buf.getvalue()]), media_type='text/csv')
+        return rows
+    finally:
+        conn.close()
+
+
+@router.get('/fact_marketing')
+def get_fact_marketing(org_unit_id: Optional[str] = None, start: Optional[str] = None, end: Optional[str] = None, format: Optional[str] = 'json'):
+    conn = connect()
+    try:
+        cur = conn.cursor()
+        sql = 'SELECT * FROM fact_marketing WHERE 1=1'
+        params: List[Any] = []
+        if org_unit_id:
+            sql += ' AND org_unit_id=?'; params.append(org_unit_id)
+        if start:
+            sql += ' AND date_key>=?'; params.append(start)
+        if end:
+            sql += ' AND date_key<=?'; params.append(end)
+        sql += ' ORDER BY date_key'
+        cur.execute(sql, tuple(params))
+        rows = [dict(r) for r in cur.fetchall()]
+        if format == 'csv':
+            if not rows: return StreamingResponse(iter(['']), media_type='text/csv')
+            buf = io.StringIO(); writer = csv.writer(buf)
+            writer.writerow(list(rows[0].keys()))
+            for r in rows: writer.writerow([r.get(k) for k in rows[0].keys()])
+            buf.seek(0)
+            return StreamingResponse(iter([buf.getvalue()]), media_type='text/csv')
+        return rows
+    finally:
+        conn.close()
+
+
+@router.get('/import_jobs')
+def get_import_jobs(limit: int = 100):
+    conn = connect()
+    try:
+        cur = conn.cursor()
+        cur.execute('SELECT id, created_at, dataset_key, source_system, filename, status, row_count, error_count FROM import_job_v3 ORDER BY created_at DESC LIMIT ?', (limit,))
+        return [dict(r) for r in cur.fetchall()]
+    finally:
+        conn.close()

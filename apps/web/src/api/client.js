@@ -75,6 +75,17 @@ export async function getKpis(scope){
   }
 }
 
+export function getCurrentUserFromToken(){
+  try{
+    const token = localStorage.getItem('taaip_jwt')
+    if(!token) return null
+    const parts = token.split('.')
+    if(parts.length<2) return null
+    const payload = JSON.parse(atob(parts[1].replace(/-/g,'+').replace(/_/g,'/')))
+    return { username: payload.username || payload.sub, roles: payload.roles || payload.role || [], scopes: payload.scopes || payload.scope || [] }
+  }catch(e){ return null }
+}
+
 export async function uploadImport(fd){
   const url = `/api/import/upload`
   const token = localStorage.getItem('taaip_jwt')
@@ -83,6 +94,43 @@ export async function uploadImport(fd){
   const res = await fetch(`${API_BASE}${url}`, { method: 'POST', body: fd, headers })
   if (!res.ok) throw new Error('upload failed')
   return res.json()
+}
+
+export async function importUpload(fd){
+  const token = localStorage.getItem('taaip_jwt')
+  const headers = {}
+  if (token) headers['Authorization'] = `Bearer ${token}`
+  const res = await fetch(`${API_BASE}/api/import/upload`, { method: 'POST', body: fd, headers })
+  if (!res.ok) throw new Error('upload failed')
+  return res.json()
+}
+
+export async function importParse(import_job_id){
+  return apiFetch('/api/import/parse', { method: 'POST', body: JSON.stringify({ import_job_id }), headers: {'Content-Type':'application/json'} })
+}
+
+export async function importMap(import_job_id, mapping, dataset_key, source_system, scope_org_unit_id){
+  return apiFetch('/api/import/map', { method: 'POST', body: JSON.stringify({ import_job_id, mapping, dataset_key, source_system, scope_org_unit_id }), headers: {'Content-Type':'application/json'} })
+}
+
+export async function importValidate(import_job_id){
+  return apiFetch('/api/import/validate', { method: 'POST', body: JSON.stringify({ import_job_id }), headers: {'Content-Type':'application/json'} })
+}
+
+export async function importCommit(import_job_id, mode='append'){
+  return apiFetch('/api/import/commit', { method: 'POST', body: JSON.stringify({ import_job_id, mode }), headers: {'Content-Type':'application/json'} })
+}
+
+export async function importJobs(){
+  return apiFetch('/api/import/jobs')
+}
+
+export async function importJobDetail(import_job_id){
+  return apiFetch(`/api/import/jobs/${import_job_id}`)
+}
+
+export async function importTemplate(dataset_key){
+  return apiFetch(`/api/import/templates/${dataset_key}`)
 }
 
 export async function parseImport(jobId, opts = {}){
@@ -138,6 +186,54 @@ export async function getFunnelStages(){
 
 export async function listLOEs(){
   return apiFetch('/api/projects/loes')
+}
+
+export async function listLOEsForScope(scope){
+  const qs = withScopeQs(scope)
+  return apiFetch(`/api/projects/loes${qs}`)
+}
+
+export async function createLOE(payload){
+  return apiFetch('/api/projects/loes', { method: 'POST', body: JSON.stringify(payload), headers: {'Content-Type':'application/json'} })
+}
+
+export async function updateLOE(id, payload){
+  return apiFetch(`/api/projects/loes/${id}`, { method: 'PUT', body: JSON.stringify(payload), headers: {'Content-Type':'application/json'} })
+}
+
+export async function deleteLOE(id){
+  return apiFetch(`/api/projects/loes/${id}`, { method: 'DELETE' })
+}
+
+// Command priorities client
+export async function listCommandPriorities(scope){
+  const qs = withScopeQs(scope)
+  return apiFetch(`/api/projects/command_priorities${qs}`)
+}
+
+export async function createCommandPriority(payload){
+  return apiFetch('/api/projects/command_priorities', { method: 'POST', body: JSON.stringify(payload), headers: {'Content-Type':'application/json'} })
+}
+
+export async function updateCommandPriority(id, payload){
+  return apiFetch(`/api/projects/command_priorities/${id}`, { method: 'PUT', body: JSON.stringify(payload), headers: {'Content-Type':'application/json'} })
+}
+
+export async function deleteCommandPriority(id){
+  return apiFetch(`/api/projects/command_priorities/${id}`, { method: 'DELETE' })
+}
+
+export async function listPriorityLOEs(priorityId, scope){
+  const qs = withScopeQs(scope)
+  return apiFetch(`/api/projects/command_priorities/${priorityId}/loes${qs}`)
+}
+
+export async function assignLOEToPriority(priorityId, loeId){
+  return apiFetch(`/api/projects/command_priorities/${priorityId}/loes`, { method: 'POST', body: JSON.stringify({ loe_id: loeId }), headers: {'Content-Type':'application/json'} })
+}
+
+export async function unassignLOEFromPriority(priorityId, loeId){
+  return apiFetch(`/api/projects/command_priorities/${priorityId}/loes/${loeId}`, { method: 'DELETE' })
 }
 
 export async function listProjects(){

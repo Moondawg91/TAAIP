@@ -1,11 +1,10 @@
 import React, {useEffect, useState, useRef} from 'react'
 import SidebarFilters from '../components/SidebarFilters'
-import KpiTile from '../components/KpiTile'
 import CoverageCharts from '../components/CoverageCharts'
 import CoverageTable from '../components/CoverageTable'
 import DashboardLayout from '../components/DashboardLayout'
 import api from '../api/client'
-import {Box, Typography, Container} from '@mui/material'
+import {Box, Typography, Container, Grid, Paper} from '@mui/material'
 
 const POLL_INTERVAL_MS = 15000
 
@@ -75,63 +74,50 @@ export default function CommandCenterPage(){
       setTimeWindow={setTimeWindow}
     />
   )
-
-  const kpiTiles = (kpis && kpis.length > 0) ? (
-    <>
-      {kpis.map((row, idx) => {
-        const key = row.metric_key || row.key || `kpi_${idx}`
-        const value = row.metric_value ?? row.value ?? null
-        const titleMap = { total_zips: 'Total ZIP Coverage', leads_total: 'Leads Total' }
-        const title = titleMap[key] || (row.title || key)
-        return <KpiTile key={key+idx} title={title} value={value !== null && value !== undefined ? value : 'N/A'} sub={''} />
-      })}
-    </>
-  ) : (
-    <>
-      <KpiTile title="Total ZIP Coverage" value={totalCoverage} sub={''} />
-      <KpiTile title="MK" value={mk} sub={''} />
-      <KpiTile title="MW" value={mw} sub={''} />
-      <KpiTile title="Market Potential" value={mpScore} sub={''} />
-      <KpiTile title="Burden Ratio" value={burdenRatio !== undefined ? burdenRatio : 'N/A'} sub={''} />
-      <KpiTile title="LOE Status" value={loeStatus ? (loeStatus.met || 'N/A') : 'N/A'} sub={''} />
-    </>
-  )
-
   return (
-    <DashboardLayout filters={filters} kpis={kpiTiles}>
+    <DashboardLayout filters={filters}>
       <Container maxWidth={false} disableGutters>
         <Box sx={{display:'flex', justifyContent:'space-between', alignItems:'center', mb:2}}>
           <Typography variant="h5">Command Center</Typography>
           <Typography variant="body2" color="text.secondary">API: <strong>{status}</strong> • Data as of: {dataAsOf || 'N/A'} • Last refresh: {lastRefresh || 'N/A'}</Typography>
         </Box>
 
-        <div className="charts-row">
-          <div>
-            <CoverageCharts counts={counts || {}} onDrilldown={handleDrilldown} />
-          </div>
-          <div>
-            <Box sx={{mb:2}}>
-              <Box sx={{p:2, border:'1px solid #e6e9ef', borderRadius:1, background:'#fff'}}>
-                <Typography variant="subtitle1">Command Summary</Typography>
-                {!commandSummary ? (
-                  status !== 'online' ? (
-                    <Typography variant="body2" color="text.secondary">API offline.</Typography>
-                  ) : (
-                    <Typography variant="body2" color="text.secondary">No summary available for this scope/time window.</Typography>
-                  )
+        <Grid container spacing={2}>
+          <Grid item xs={12} md={8}>
+            <Paper sx={{p:2}}>
+              <Typography variant="subtitle1" sx={{mb:1}}>Primary: Coverage Overview</Typography>
+              <CoverageCharts counts={counts || {}} onDrilldown={handleDrilldown} />
+            </Paper>
+            <Paper sx={{p:2, mt:2}}>
+              <Typography variant="subtitle1" sx={{mb:1}}>Coverage Table</Typography>
+              <CoverageTable rows={rows} />
+            </Paper>
+          </Grid>
+
+          <Grid item xs={12} md={4}>
+            <Paper sx={{p:2}}>
+              <Typography variant="subtitle1">Command Summary</Typography>
+              {!commandSummary ? (
+                status !== 'online' ? (
+                  <Typography variant="body2" color="text.secondary">API offline.</Typography>
                 ) : (
-                  <pre style={{whiteSpace:'pre-wrap'}}>{JSON.stringify(commandSummary, null, 2)}</pre>
-                )}
-              </Box>
-            </Box>
-          </div>
-        </div>
+                  <Typography variant="body2" color="text.secondary">No summary available for this scope/time window.</Typography>
+                )
+              ) : (
+                <pre style={{whiteSpace:'pre-wrap'}}>{JSON.stringify(commandSummary, null, 2)}</pre>
+              )}
+            </Paper>
 
-        <div className="table-row">
-          <CoverageTable rows={rows} />
-        </div>
+            <Paper sx={{p:2, mt:2}}>
+              <Typography variant="subtitle1">Market Potential</Typography>
+              <pre style={{whiteSpace:'pre-wrap'}}>{JSON.stringify(marketPotential || {}, null, 2)}</pre>
+            </Paper>
+          </Grid>
+        </Grid>
 
-        <footer className="footer">© 2026 TAAIP. Copyright pending.</footer>
+        <Box sx={{mt:2}}>
+          <footer className="footer">© 2026 TAAIP. Copyright pending.</footer>
+        </Box>
       </Container>
     </DashboardLayout>
   )

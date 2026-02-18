@@ -473,11 +473,21 @@ def init_schema() -> None:
             except Exception:
                 pass
 
-        # Attempt lightweight migrations for new Phase-3 columns
-        try:
-            cur.execute("ALTER TABLE import_job_v3 ADD COLUMN updated_at TEXT")
-        except Exception:
-            pass
+        # Attempt lightweight migrations for new Phase-3 columns and legacy compatibility
+        def table_columns(table_name: str):
+            try:
+                cur.execute(f"PRAGMA table_info({table_name})")
+                return [r[1] for r in cur.fetchall()]
+            except Exception:
+                return []
+
+        cols = table_columns('import_job_v3')
+        if 'updated_at' not in cols:
+            try:
+                cur.execute("ALTER TABLE import_job_v3 ADD COLUMN updated_at TEXT")
+            except Exception:
+                pass
+
         # Ensure legacy import_job columns exist for older code paths
         legacy_cols = [
             ("filename_original", "TEXT"),
@@ -489,18 +499,23 @@ def init_schema() -> None:
             ("target_domain", "TEXT"),
             ("updated_at", "TEXT")
         ]
+        existing = table_columns('import_job')
         for col, typ in legacy_cols:
-            try:
-                cur.execute(f"ALTER TABLE import_job ADD COLUMN {col} {typ}")
-            except Exception:
-                pass
+            if col not in existing:
+                try:
+                    cur.execute(f"ALTER TABLE import_job ADD COLUMN {col} {typ}")
+                except Exception:
+                    pass
+
         # When possible, copy values from newer/older columns into legacy names
         try:
-            cur.execute("UPDATE import_job SET filename_original=filename WHERE filename_original IS NULL AND filename IS NOT NULL")
+            if 'filename_original' in existing and 'filename' in existing:
+                cur.execute("UPDATE import_job SET filename_original=filename WHERE filename_original IS NULL AND filename IS NOT NULL")
         except Exception:
             pass
         try:
-            cur.execute("UPDATE import_job SET sha256_hash=file_hash WHERE sha256_hash IS NULL AND file_hash IS NOT NULL")
+            if 'sha256_hash' in existing and 'file_hash' in existing:
+                cur.execute("UPDATE import_job SET sha256_hash=file_hash WHERE sha256_hash IS NULL AND file_hash IS NOT NULL")
         except Exception:
             pass
 

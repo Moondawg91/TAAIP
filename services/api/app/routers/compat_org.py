@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 from .. import db
 
-router = APIRouter(prefix="/api/org", tags=["compat_org"])
+router = APIRouter(prefix="/org", tags=["compat_org"])
 
 
 def _rows_to_counts(rows):

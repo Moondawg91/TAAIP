@@ -20,8 +20,6 @@ export default function DashboardLayout({filters, kpis, children}: Props){
 
   const mainStyle: React.CSSProperties = { padding: 16, background: '#f7fafc', minHeight: '100vh' }
 
-  const kpiRowStyle: React.CSSProperties = { display: 'flex', gap: 12, alignItems: 'stretch', marginBottom: 12 }
-
   const contentGridStyle: React.CSSProperties = {
     display: 'grid',
     gridTemplateColumns: 'repeat(12, 1fr)',
@@ -45,14 +43,6 @@ export default function DashboardLayout({filters, kpis, children}: Props){
       </aside>
 
       <main style={mainStyle} className="main-pane">
-        <div style={kpiRowStyle}>
-          <div style={{flex:1}}>
-            <div style={{display:'flex', gap:8, alignItems:'center'}}>
-              {kpis}
-            </div>
-          </div>
-        </div>
-
         <div style={contentGridStyle}>
           <div style={{gridColumn:'1 / -1'}}>
             <div style={cardStyle}>{children}</div>
