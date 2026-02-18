@@ -460,8 +460,6 @@ def export_fact_marketing_csv(org_unit_id: Optional[str] = None, start: Optional
         return rows
     finally:
         conn.close()
-    finally:
-        conn.close()
 
 
 @router.get('/fact_funnel')

@@ -15,6 +15,8 @@ def setup_module(module):
     # ensure a clean schema for tests
     Base.metadata.drop_all(bind=engine)
     Base.metadata.create_all(bind=engine)
+    from services.api.app.db import init_db
+    init_db()
 
 
 def teardown_module(module):
