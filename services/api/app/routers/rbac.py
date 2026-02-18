@@ -47,6 +47,11 @@ def get_current_user(request: Request) -> Dict[str, Any]:
         scopes = claims.get("scopes") or claims.get("scope") or []
         if isinstance(roles, str):
             roles = [roles]
+        # normalize role names to uppercase for consistent comparisons
+        try:
+            roles = [r.upper() for r in roles]
+        except Exception:
+            pass
         return {"username": claims.get("username") or claims.get("sub") or str(claims), "roles": roles, "scopes": scopes}
     if local_bypass:
         return {"username": os.getenv("DEV_USER", "dev.user"), "roles": ["usarec_admin"], "scopes": [{"scope_type": "USAREC", "scope_value": "USAREC"}]}
