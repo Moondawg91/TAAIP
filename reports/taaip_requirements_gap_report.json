@@ -1,0 +1,970 @@
+{
+  "summary": {
+    "total": 50,
+    "missing": 24,
+    "ok": 26
+  },
+  "items": [
+    {
+      "id": "R001",
+      "title": "Sidebar - Dashboard",
+      "checks": [
+        {
+          "check": {
+            "kind": "frontend_route",
+            "path": "/dashboard"
+          },
+          "ok": false,
+          "where": null
+        },
+        {
+          "check": {
+            "kind": "nav_path",
+            "path": "/dashboard"
+          },
+          "ok": false,
+          "where": null
+        }
+      ],
+      "status": "MISSING"
+    },
+    {
+      "id": "R002",
+      "title": "Sidebar - Command Center",
+      "checks": [
+        {
+          "check": {
+            "kind": "frontend_route",
+            "path": "/command-center"
+          },
+          "ok": true,
+          "where": "/Users/ambermooney/Desktop/TAAIP/apps/web/src/nav/navConfig.ts"
+        },
+        {
+          "check": {
+            "kind": "nav_path",
+            "path": "/command-center"
+          },
+          "ok": false,
+          "where": null
+        }
+      ],
+      "status": "MISSING"
+    },
+    {
+      "id": "R003",
+      "title": "Sidebar - Projects & Events",
+      "checks": [
+        {
+          "check": {
+            "kind": "frontend_route",
+            "path": "/planning/projects-events"
+          },
+          "ok": true,
+          "where": "/Users/ambermooney/Desktop/TAAIP/apps/web/src/nav/navConfig.ts"
+        },
+        {
+          "check": {
+            "kind": "nav_path",
+            "path": "/planning/projects-events"
+          },
+          "ok": false,
+          "where": null
+        }
+      ],
+      "status": "MISSING"
+    },
+    {
+      "id": "R004",
+      "title": "Budget Tracker",
+      "checks": [
+        {
+          "check": {
+            "kind": "frontend_route",
+            "path": "/budget/tracker"
+          },
+          "ok": true,
+          "where": "/Users/ambermooney/Desktop/TAAIP/apps/web/src/nav/navConfig.ts"
+        },
+        {
+          "check": {
+            "kind": "backend_route",
+            "path": "/api/budget/dashboard"
+          },
+          "ok": false,
+          "where": null
+        }
+      ],
+      "status": "MISSING"
+    },
+    {
+      "id": "R005",
+      "title": "Events ROI rollup",
+      "checks": [
+        {
+          "check": {
+            "kind": "backend_route",
+            "path": "/api/rollups/events"
+          },
+          "ok": false,
+          "where": null
+        }
+      ],
+      "status": "MISSING"
+    },
+    {
+      "id": "R006",
+      "title": "Marketing rollup",
+      "checks": [
+        {
+          "check": {
+            "kind": "backend_route",
+            "path": "/api/rollups/marketing"
+          },
+          "ok": false,
+          "where": null
+        }
+      ],
+      "status": "MISSING"
+    },
+    {
+      "id": "R007",
+      "title": "Funnel rollup",
+      "checks": [
+        {
+          "check": {
+            "kind": "backend_route",
+            "path": "/api/rollups/funnel"
+          },
+          "ok": false,
+          "where": null
+        }
+      ],
+      "status": "MISSING"
+    },
+    {
+      "id": "R008",
+      "title": "Mission Assessment",
+      "checks": [
+        {
+          "check": {
+            "kind": "backend_route",
+            "path": "/api/command-center/mission-assessment"
+          },
+          "ok": false,
+          "where": null
+        },
+        {
+          "check": {
+            "kind": "frontend_route",
+            "path": "/command-center/mission-assessment"
+          },
+          "ok": true,
+          "where": "/Users/ambermooney/Desktop/TAAIP/apps/web/src/nav/navConfig.ts"
+        }
+      ],
+      "status": "MISSING"
+    },
+    {
+      "id": "R009",
+      "title": "Command Priorities API",
+      "checks": [
+        {
+          "check": {
+            "kind": "backend_route",
+            "path": "/api/command-center/priorities"
+          },
+          "ok": false,
+          "where": null
+        }
+      ],
+      "status": "MISSING"
+    },
+    {
+      "id": "R010",
+      "title": "LOEs API",
+      "checks": [
+        {
+          "check": {
+            "kind": "backend_route",
+            "path": "/api/command-center/loes"
+          },
+          "ok": false,
+          "where": null
+        }
+      ],
+      "status": "MISSING"
+    },
+    {
+      "id": "R011",
+      "title": "Imports - upload endpoint",
+      "checks": [
+        {
+          "check": {
+            "kind": "backend_route",
+            "path": "/api/import/upload"
+          },
+          "ok": true,
+          "where": "/Users/ambermooney/Desktop/TAAIP/services/api/app/routers/imports.py"
+        }
+      ],
+      "status": "OK"
+    },
+    {
+      "id": "R012",
+      "title": "Imports - parse & map & validate & commit",
+      "checks": [
+        {
+          "check": {
+            "kind": "backend_route",
+            "path": "/api/import/parse"
+          },
+          "ok": true,
+          "where": "/Users/ambermooney/Desktop/TAAIP/services/api/app/routers/imports.py"
+        },
+        {
+          "check": {
+            "kind": "backend_route",
+            "path": "/api/import/map"
+          },
+          "ok": true,
+          "where": "/Users/ambermooney/Desktop/TAAIP/services/api/app/routers/imports.py"
+        },
+        {
+          "check": {
+            "kind": "backend_route",
+            "path": "/api/import/validate"
+          },
+          "ok": true,
+          "where": "/Users/ambermooney/Desktop/TAAIP/services/api/app/routers/imports.py"
+        },
+        {
+          "check": {
+            "kind": "backend_route",
+            "path": "/api/import/commit"
+          },
+          "ok": true,
+          "where": "/Users/ambermooney/Desktop/TAAIP/services/api/app/routers/imports.py"
+        }
+      ],
+      "status": "OK"
+    },
+    {
+      "id": "R013",
+      "title": "RBAC helpers present",
+      "checks": [
+        {
+          "check": {
+            "kind": "file_glob",
+            "glob": "services/api/app/routers/rbac.py"
+          },
+          "ok": true,
+          "where": [
+            "/Users/ambermooney/Desktop/TAAIP/services/api/app/routers/rbac.py"
+          ]
+        },
+        {
+          "check": {
+            "kind": "regex",
+            "glob": "services/api/app/routers/rbac.py",
+            "pattern": "LOCAL_DEV_AUTH_BYPASS"
+          },
+          "ok": true,
+          "where": "/Users/ambermooney/Desktop/TAAIP/services/api/app/routers/rbac.py"
+        }
+      ],
+      "status": "OK"
+    },
+    {
+      "id": "R014",
+      "title": "Audit logging utility",
+      "checks": [
+        {
+          "check": {
+            "kind": "regex",
+            "glob": "services/api/app/routers/rbac.py",
+            "pattern": "audit_log"
+          },
+          "ok": true,
+          "where": "/Users/ambermooney/Desktop/TAAIP/services/api/app/routers/rbac.py"
+        }
+      ],
+      "status": "OK"
+    },
+    {
+      "id": "R015",
+      "title": "Exports - CSV endpoint",
+      "checks": [
+        {
+          "check": {
+            "kind": "backend_route",
+            "path": "/api/budget/dashboard/export.csv"
+          },
+          "ok": false,
+          "where": null
+        },
+        {
+          "check": {
+            "kind": "regex",
+            "glob": "apps/web/src/**",
+            "pattern": "export"
+          },
+          "ok": true,
+          "where": "/Users/ambermooney/Desktop/TAAIP/apps/web/src/contexts/ScopeContext.tsx"
+        }
+      ],
+      "status": "MISSING"
+    },
+    {
+      "id": "R016",
+      "title": "Exports - JSON endpoint",
+      "checks": [
+        {
+          "check": {
+            "kind": "backend_route",
+            "path": "/api/budget/dashboard"
+          },
+          "ok": false,
+          "where": null
+        }
+      ],
+      "status": "MISSING"
+    },
+    {
+      "id": "R017",
+      "title": "Home - news/updates/quick links",
+      "checks": [
+        {
+          "check": {
+            "kind": "frontend_route",
+            "path": "/"
+          },
+          "ok": true,
+          "where": "/Users/ambermooney/Desktop/TAAIP/apps/web/src/nav/navConfig.ts"
+        },
+        {
+          "check": {
+            "kind": "regex",
+            "glob": "apps/web/src/pages/HomePage.tsx",
+            "pattern": "getHomeNews"
+          },
+          "ok": true,
+          "where": "/Users/ambermooney/Desktop/TAAIP/apps/web/src/pages/HomePage.tsx"
+        }
+      ],
+      "status": "OK"
+    },
+    {
+      "id": "R018",
+      "title": "No visible \"Scope\" wording",
+      "checks": [
+        {
+          "check": {
+            "kind": "forbidden_word",
+            "word": "Scope",
+            "glob": "apps/web/src/**"
+          },
+          "ok": false,
+          "where": [
+            "/Users/ambermooney/Desktop/TAAIP/apps/web/src/contexts/ScopeContext.tsx",
+            "/Users/ambermooney/Desktop/TAAIP/apps/web/src/components/ScopePicker.js",
+            "/Users/ambermooney/Desktop/TAAIP/apps/web/src/components/SidebarFilters.js",
+            "/Users/ambermooney/Desktop/TAAIP/apps/web/src/api/client.js",
+            "/Users/ambermooney/Desktop/TAAIP/apps/web/src/pages/command/LinesOfEffortPage.tsx"
+          ]
+        }
+      ],
+      "status": "MISSING"
+    },
+    {
+      "id": "R019",
+      "title": "Dark theme present",
+      "checks": [
+        {
+          "check": {
+            "kind": "file_glob",
+            "glob": "apps/web/src/theme/muiTheme.ts"
+          },
+          "ok": true,
+          "where": [
+            "/Users/ambermooney/Desktop/TAAIP/apps/web/src/theme/muiTheme.ts"
+          ]
+        },
+        {
+          "check": {
+            "kind": "regex",
+            "glob": "apps/web/src/theme/muiTheme.ts",
+            "pattern": "palette.*mode.*dark"
+          },
+          "ok": false,
+          "where": null
+        }
+      ],
+      "status": "MISSING"
+    },
+    {
+      "id": "R020",
+      "title": "Funding source taxonomy",
+      "checks": [
+        {
+          "check": {
+            "kind": "regex",
+            "glob": "apps/web/src/**",
+            "pattern": "ADVERTISING_FUNDS_NATIONAL|USAREC|BDE|BN"
+          },
+          "ok": true,
+          "where": "/Users/ambermooney/Desktop/TAAIP/apps/web/src/constants/funding.ts"
+        }
+      ],
+      "status": "OK"
+    },
+    {
+      "id": "R021",
+      "title": "No demo operational data seeded",
+      "checks": [
+        {
+          "check": {
+            "kind": "forbidden_word",
+            "word": "demo",
+            "glob": "populate_*.py"
+          },
+          "ok": false,
+          "where": [
+            "/Users/ambermooney/Desktop/TAAIP/populate_twg_data.py"
+          ]
+        }
+      ],
+      "status": "MISSING"
+    },
+    {
+      "id": "R022",
+      "title": "Drilldown dropdown filters present",
+      "checks": [
+        {
+          "check": {
+            "kind": "regex",
+            "glob": "apps/web/src/components/**",
+            "pattern": "Select|DashboardFilterBar|FilterSidebar"
+          },
+          "ok": true,
+          "where": "/Users/ambermooney/Desktop/TAAIP/apps/web/src/components/DashboardFilterBar.tsx"
+        }
+      ],
+      "status": "OK"
+    },
+    {
+      "id": "R023",
+      "title": "Nav items route without runtime error",
+      "checks": [
+        {
+          "check": {
+            "kind": "nav_routes_match",
+            "nav": "apps/web/src/nav/navConfig.ts",
+            "routes": "apps/web/src/App.js"
+          },
+          "ok": true,
+          "where": [
+            "/Users/ambermooney/Desktop/TAAIP/apps/web/src/nav/navConfig.ts",
+            "/Users/ambermooney/Desktop/TAAIP/apps/web/src/App.js"
+          ]
+        }
+      ],
+      "status": "OK"
+    },
+    {
+      "id": "R024",
+      "title": "System self-check endpoint",
+      "checks": [
+        {
+          "check": {
+            "kind": "backend_route",
+            "path": "/api/system/self-check"
+          },
+          "ok": true,
+          "where": "/Users/ambermooney/Desktop/TAAIP/services/api/app/routers/system.py"
+        }
+      ],
+      "status": "OK"
+    },
+    {
+      "id": "R025",
+      "title": "Maintenance endpoints",
+      "checks": [
+        {
+          "check": {
+            "kind": "backend_route",
+            "path": "/api/system/status"
+          },
+          "ok": false,
+          "where": null
+        },
+        {
+          "check": {
+            "kind": "backend_route",
+            "path": "/api/system/observations"
+          },
+          "ok": false,
+          "where": null
+        },
+        {
+          "check": {
+            "kind": "backend_route",
+            "path": "/api/system/proposals"
+          },
+          "ok": false,
+          "where": null
+        }
+      ],
+      "status": "MISSING"
+    },
+    {
+      "id": "R026",
+      "title": "Command Center pages wired",
+      "checks": [
+        {
+          "check": {
+            "kind": "frontend_route",
+            "path": "/command-center/priorities"
+          },
+          "ok": true,
+          "where": "/Users/ambermooney/Desktop/TAAIP/apps/web/src/nav/navConfig.ts"
+        },
+        {
+          "check": {
+            "kind": "frontend_route",
+            "path": "/command-center/lines-of-effort"
+          },
+          "ok": false,
+          "where": null
+        }
+      ],
+      "status": "MISSING"
+    },
+    {
+      "id": "R027",
+      "title": "Export buttons/pages present",
+      "checks": [
+        {
+          "check": {
+            "kind": "regex",
+            "glob": "apps/web/src/components/**",
+            "pattern": "ExportMenu"
+          },
+          "ok": true,
+          "where": "/Users/ambermooney/Desktop/TAAIP/apps/web/src/components/dashboard/DashboardToolbar.tsx"
+        }
+      ],
+      "status": "OK"
+    },
+    {
+      "id": "R028",
+      "title": "Budget API empty-safe",
+      "checks": [
+        {
+          "check": {
+            "kind": "backend_route",
+            "path": "/api/budget/dashboard"
+          },
+          "ok": false,
+          "where": null
+        },
+        {
+          "check": {
+            "kind": "regex",
+            "glob": "services/api/app/routers/budget_dashboard.py",
+            "pattern": "missing_data"
+          },
+          "ok": true,
+          "where": "/Users/ambermooney/Desktop/TAAIP/services/api/app/routers/budget_dashboard.py"
+        }
+      ],
+      "status": "MISSING"
+    },
+    {
+      "id": "R029",
+      "title": "Maintenance guard implemented in frontend",
+      "checks": [
+        {
+          "check": {
+            "kind": "regex",
+            "glob": "apps/web/src/App.js",
+            "pattern": "MaintenanceGuard"
+          },
+          "ok": true,
+          "where": "/Users/ambermooney/Desktop/TAAIP/apps/web/src/App.js"
+        },
+        {
+          "check": {
+            "kind": "frontend_route",
+            "path": "/maintenance"
+          },
+          "ok": false,
+          "where": null
+        }
+      ],
+      "status": "MISSING"
+    },
+    {
+      "id": "R030",
+      "title": "API import check command present in docs",
+      "checks": [
+        {
+          "check": {
+            "kind": "regex",
+            "glob": "**/DEPLOYMENT_*.md",
+            "pattern": "from services.api.app.main import app"
+          },
+          "ok": false,
+          "where": null
+        }
+      ],
+      "status": "MISSING"
+    },
+    {
+      "id": "R031",
+      "title": "Tactical rollups linked to budget",
+      "checks": [
+        {
+          "check": {
+            "kind": "regex",
+            "glob": "services/api/app/routers/**",
+            "pattern": "budget_line_item|budget"
+          },
+          "ok": true,
+          "where": "/Users/ambermooney/Desktop/TAAIP/services/api/app/routers/exports.py"
+        }
+      ],
+      "status": "OK"
+    },
+    {
+      "id": "R032",
+      "title": "Home status strip endpoint used",
+      "checks": [
+        {
+          "check": {
+            "kind": "regex",
+            "glob": "apps/web/src/pages/HomePage.tsx",
+            "pattern": "getHomeStatusStrip"
+          },
+          "ok": false,
+          "where": null
+        }
+      ],
+      "status": "MISSING"
+    },
+    {
+      "id": "R033",
+      "title": "RBAC enforcement in routers",
+      "checks": [
+        {
+          "check": {
+            "kind": "regex",
+            "glob": "services/api/app/routers/**/*.py",
+            "pattern": "require_any_role|require_scope"
+          },
+          "ok": true,
+          "where": "/Users/ambermooney/Desktop/TAAIP/services/api/app/routers/system.py"
+        }
+      ],
+      "status": "OK"
+    },
+    {
+      "id": "R034",
+      "title": "Audit log table creation in codebase",
+      "checks": [
+        {
+          "check": {
+            "kind": "regex",
+            "glob": "services/api/app/routers/rbac.py",
+            "pattern": "CREATE TABLE IF NOT EXISTS audit_log"
+          },
+          "ok": true,
+          "where": "/Users/ambermooney/Desktop/TAAIP/services/api/app/routers/rbac.py"
+        }
+      ],
+      "status": "OK"
+    },
+    {
+      "id": "R035",
+      "title": "Exports placeholders for ppt/pdf/xlsx",
+      "checks": [
+        {
+          "check": {
+            "kind": "regex",
+            "glob": "services/api/app/routers/**",
+            "pattern": "export|export.csv|export.xlsx|export.pdf|export.ppt"
+          },
+          "ok": true,
+          "where": "/Users/ambermooney/Desktop/TAAIP/services/api/app/routers/exports.py"
+        }
+      ],
+      "status": "OK"
+    },
+    {
+      "id": "R036",
+      "title": "Navigation config exists",
+      "checks": [
+        {
+          "check": {
+            "kind": "file_glob",
+            "glob": "apps/web/src/nav/navConfig.ts"
+          },
+          "ok": true,
+          "where": [
+            "/Users/ambermooney/Desktop/TAAIP/apps/web/src/nav/navConfig.ts"
+          ]
+        }
+      ],
+      "status": "OK"
+    },
+    {
+      "id": "R037",
+      "title": "No improper rounded UI styles",
+      "checks": [
+        {
+          "check": {
+            "kind": "regex",
+            "glob": "apps/web/src/**",
+            "pattern": "borderRadius|border-radius"
+          },
+          "ok": true,
+          "where": "/Users/ambermooney/Desktop/TAAIP/apps/web/src/index.css"
+        }
+      ],
+      "status": "OK"
+    },
+    {
+      "id": "R038",
+      "title": "Help / system status page exists",
+      "checks": [
+        {
+          "check": {
+            "kind": "frontend_route",
+            "path": "/help/system-status"
+          },
+          "ok": true,
+          "where": "/Users/ambermooney/Desktop/TAAIP/apps/web/src/nav/navConfig.ts"
+        }
+      ],
+      "status": "OK"
+    },
+    {
+      "id": "R039",
+      "title": "System self-check UI exists (admin)",
+      "checks": [
+        {
+          "check": {
+            "kind": "frontend_route",
+            "path": "/admin/system-self-check"
+          },
+          "ok": true,
+          "where": "/Users/ambermooney/Desktop/TAAIP/apps/web/src/nav/navConfig.ts"
+        }
+      ],
+      "status": "OK"
+    },
+    {
+      "id": "R040",
+      "title": "Role management UI",
+      "checks": [
+        {
+          "check": {
+            "kind": "frontend_route",
+            "path": "/admin/roles"
+          },
+          "ok": true,
+          "where": "/Users/ambermooney/Desktop/TAAIP/apps/web/src/nav/navConfig.ts"
+        }
+      ],
+      "status": "OK"
+    },
+    {
+      "id": "R041",
+      "title": "Events page exists",
+      "checks": [
+        {
+          "check": {
+            "kind": "frontend_route",
+            "path": "/ops/events"
+          },
+          "ok": false,
+          "where": null
+        }
+      ],
+      "status": "MISSING"
+    },
+    {
+      "id": "R042",
+      "title": "Command Priorities UI export",
+      "checks": [
+        {
+          "check": {
+            "kind": "regex",
+            "glob": "apps/web/src/pages/**",
+            "pattern": "ExportMenu|export"
+          },
+          "ok": true,
+          "where": "/Users/ambermooney/Desktop/TAAIP/apps/web/src/pages/insights/AnalyticsPage.tsx"
+        }
+      ],
+      "status": "OK"
+    },
+    {
+      "id": "R043",
+      "title": "Mission assessment payload shape",
+      "checks": [
+        {
+          "check": {
+            "kind": "regex",
+            "glob": "services/api/app/routers/command_center.py",
+            "pattern": "\"tactical_rollup\"|marketing|funnel"
+          },
+          "ok": true,
+          "where": "/Users/ambermooney/Desktop/TAAIP/services/api/app/routers/command_center.py"
+        }
+      ],
+      "status": "OK"
+    },
+    {
+      "id": "R044",
+      "title": "Budget breakdown endpoints",
+      "checks": [
+        {
+          "check": {
+            "kind": "regex",
+            "glob": "services/api/app/routers/budget_dashboard.py",
+            "pattern": "breakdown_by_category|breakdown_by_project"
+          },
+          "ok": true,
+          "where": "/Users/ambermooney/Desktop/TAAIP/services/api/app/routers/budget_dashboard.py"
+        }
+      ],
+      "status": "OK"
+    },
+    {
+      "id": "R045",
+      "title": "Maintenance scheduler off by default",
+      "checks": [
+        {
+          "check": {
+            "kind": "regex",
+            "glob": "services/api/app/main.py",
+            "pattern": "RUN_MAINT_SCHED"
+          },
+          "ok": true,
+          "where": "/Users/ambermooney/Desktop/TAAIP/services/api/app/main.py"
+        }
+      ],
+      "status": "OK"
+    },
+    {
+      "id": "R046",
+      "title": "Route health meta endpoint",
+      "checks": [
+        {
+          "check": {
+            "kind": "backend_route",
+            "path": "/api/meta/routes"
+          },
+          "ok": false,
+          "where": null
+        }
+      ],
+      "status": "MISSING"
+    },
+    {
+      "id": "R047",
+      "title": "Top header component exists",
+      "checks": [
+        {
+          "check": {
+            "kind": "file_glob",
+            "glob": "apps/web/src/components/TopHeader.tsx"
+          },
+          "ok": true,
+          "where": [
+            "/Users/ambermooney/Desktop/TAAIP/apps/web/src/components/TopHeader.tsx"
+          ]
+        }
+      ],
+      "status": "OK"
+    },
+    {
+      "id": "R048",
+      "title": "Empty state components used",
+      "checks": [
+        {
+          "check": {
+            "kind": "file_glob",
+            "glob": "apps/web/src/components/common/EmptyState.tsx"
+          },
+          "ok": true,
+          "where": [
+            "/Users/ambermooney/Desktop/TAAIP/apps/web/src/components/common/EmptyState.tsx"
+          ]
+        },
+        {
+          "check": {
+            "kind": "regex",
+            "glob": "apps/web/src/**",
+            "pattern": "EmptyState"
+          },
+          "ok": true,
+          "where": "/Users/ambermooney/Desktop/TAAIP/apps/web/src/components/common/EmptyState.tsx"
+        }
+      ],
+      "status": "OK"
+    },
+    {
+      "id": "R049",
+      "title": "Tests or conftest exist for imports",
+      "checks": [
+        {
+          "check": {
+            "kind": "file_glob",
+            "glob": "services/api/tests/test_commit_fallback.py"
+          },
+          "ok": true,
+          "where": [
+            "/Users/ambermooney/Desktop/TAAIP/services/api/tests/test_commit_fallback.py"
+          ]
+        }
+      ],
+      "status": "OK"
+    },
+    {
+      "id": "R050",
+      "title": "Documentation: How to run build + import checks",
+      "checks": [
+        {
+          "check": {
+            "kind": "regex",
+            "glob": "**/GETTING_STARTED*.md",
+            "pattern": "CI=true npm --prefix apps/web run build"
+          },
+          "ok": false,
+          "where": null
+        },
+        {
+          "check": {
+            "kind": "regex",
+            "glob": "**/DEPLOYMENT_*.md",
+            "pattern": "from services.api.app.main import app"
+          },
+          "ok": false,
+          "where": null
+        },
+        {
+          "check": {
+            "kind": "regex",
+            "glob": "**/LOCAL_SETUP.md",
+            "pattern": "CI=true npm --prefix apps/web run build|from services.api.app.main import app"
+          },
+          "ok": false,
+          "where": null
+        }
+      ],
+      "status": "MISSING"
+    }
+  ]
+}
