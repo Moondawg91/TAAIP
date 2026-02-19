@@ -1320,8 +1320,14 @@ def init_schema() -> None:
         conn.commit()
         # If SQLAlchemy models are present, try to ensure their tables exist
         try:
-            from services.api.app import database, models
+            # Import all model modules that register tables on the shared Base
             try:
+                from services.api.app import models, models_domain, models_ingest
+            except Exception:
+                # best-effort: import what we can
+                from services.api.app import models
+            try:
+                from services.api.app import database
                 models.Base.metadata.create_all(bind=database.engine)
             except Exception:
                 pass
