@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Request, HTTPException
 from typing import Dict, Any, List
 from ..db import connect, row_to_dict
 from fastapi.responses import Response
@@ -20,7 +20,7 @@ def _safe_sum(cur, sql, params=()):
 
 
 @router.get('/dashboard')
-def budget_dashboard(fy: int = None, qtr: int = None, org_unit_id: int = None, station_id: str = None, funding_line: str = None, funding_source: str = None, eor_code: str = None) -> Dict[str, Any]:
+def budget_dashboard(request: Request, fy: int = None, qtr: int = None, org_unit_id: int = None, station_id: str = None, funding_line: str = None, funding_source: str = None, eor_code: str = None) -> Dict[str, Any]:
     conn = connect()
     try:
         cur = conn.cursor()
@@ -47,6 +47,11 @@ def budget_dashboard(fy: int = None, qtr: int = None, org_unit_id: int = None, s
             filters['funding_line'] = funding_line
         if funding_source is not None:
             filters['funding_source'] = funding_source
+        # permission gate optional national advertising funding
+        if funding_source == 'ADVERTISING_FUNDS_NATIONAL':
+            # simple header-based permission for now; production should use RBAC
+            if request.headers.get('x-advertising-access') != '1':
+                raise HTTPException(status_code=403, detail='forbidden_funding_source')
         if eor_code is not None:
             filters['eor_code'] = eor_code
 
@@ -356,10 +361,10 @@ def budget_dashboard(fy: int = None, qtr: int = None, org_unit_id: int = None, s
 
 
 @router.get('/dashboard/export.csv')
-def budget_dashboard_export(fy: int = None, qtr: int = None, org_unit_id: int = None, station_id: str = None, funding_line: str = None, funding_source: str = None, eor_code: str = None):
+def budget_dashboard_export(request: Request, fy: int = None, qtr: int = None, org_unit_id: int = None, station_id: str = None, funding_line: str = None, funding_source: str = None, eor_code: str = None):
     # produce a simple CSV with KPI and breakdown rows
     import csv, io
-    data = budget_dashboard(fy=fy, qtr=qtr, org_unit_id=org_unit_id, station_id=station_id, funding_line=funding_line, funding_source=funding_source, eor_code=eor_code)
+    data = budget_dashboard(request, fy=fy, qtr=qtr, org_unit_id=org_unit_id, station_id=station_id, funding_line=funding_line, funding_source=funding_source, eor_code=eor_code)
     # normalize KPI shape
     kpis = {
         'total_planned': data.get('total_planned'),
