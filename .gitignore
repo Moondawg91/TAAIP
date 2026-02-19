@@ -40,3 +40,4 @@ tmp/
 ._*
 .DS_Store
 *.zip
+*.db
