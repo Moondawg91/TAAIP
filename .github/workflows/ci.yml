@@ -13,6 +13,11 @@ jobs:
       FULL_INSTALL: 'true'
     steps:
       - uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
       - name: Set up Python 3.11
         uses: actions/setup-python@v4
         with:
@@ -79,6 +84,19 @@ jobs:
           path: |
             report.xml
             coverage.xml
+            apps/web/build/**
+      - name: Install frontend deps and run unit tests
+        working-directory: apps/web
+        run: |
+          set -euxo pipefail
+          npm ci
+          npm test -- --watchAll=false --silent
+      - name: Build frontend
+        working-directory: apps/web
+        run: |
+          set -euxo pipefail
+          npm ci
+          npm run build
       - name: Optionally send coverage to Codecov
         uses: codecov/codecov-action@v4
         with:
