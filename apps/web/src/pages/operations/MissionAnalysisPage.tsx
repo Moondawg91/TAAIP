@@ -1,12 +1,22 @@
 import React from 'react'
 import { Box, Typography, Card, CardContent } from '@mui/material'
 import DashboardToolbar from '../../components/dashboard/DashboardToolbar'
+import DualModeTabs from '../../components/DualModeTabs'
+import DashboardFilterBar from '../../components/DashboardFilterBar'
+import ExportMenu from '../../components/ExportMenu'
 
 export default function MissionAnalysisPage(){
   return (
     <Box sx={{ p:3, minHeight:'100vh', bgcolor:'background.default', color:'text.primary' }}>
       <DashboardToolbar title="Mission Analysis" subtitle="Operational mission analysis & diagnostics" filters={{}} onFiltersChange={()=>{}} onExport={(t)=>{ alert(`Export ${t} coming soon`) }} />
-      <Typography variant="h5">Mission Analysis</Typography>
+      <Box sx={{display:'flex', alignItems:'center'}}>
+        <Typography variant="h5">Mission Analysis</Typography>
+        <Box sx={{ml:'auto'}}>
+          <ExportMenu data={[]} filename="mission_analysis" />
+        </Box>
+      </Box>
+      <DualModeTabs />
+      <DashboardFilterBar />
       <Typography variant="body2" sx={{ color:'text.secondary', mb:2 }}>Operational mission analysis and diagnostics.</Typography>
 
       <Card sx={{ bgcolor:'background.paper' }}>

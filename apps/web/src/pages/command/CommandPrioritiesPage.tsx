@@ -6,6 +6,9 @@ import AddIcon from '@mui/icons-material/Add'
 import { listCommandPriorities, createCommandPriority, updateCommandPriority, deleteCommandPriority, listLOEsForScope, listPriorityLOEs, assignLOEToPriority, unassignLOEFromPriority, getCurrentUserFromToken } from '../../api/client'
 import { useScope } from '../../contexts/ScopeContext'
 import EmptyState from '../../components/common/EmptyState'
+import DualModeTabs from '../../components/DualModeTabs'
+import DashboardFilterBar from '../../components/DashboardFilterBar'
+import ExportMenu from '../../components/ExportMenu'
 
 export default function CommandPrioritiesPage(){
   const [priorities, setPriorities] = useState([])
@@ -117,6 +120,13 @@ export default function CommandPrioritiesPage(){
           <Button startIcon={<AddIcon />} variant="contained" color="primary" onClick={()=>{ setEditing(null); setForm({ title:'', description:'', rank:0 }); setEditOpen(true) }} disabled={!userRoles.includes('usarec_admin') && !userRoles.includes('commander')}>New Priority</Button>
         </div>
       </Box>
+      <Box sx={{display:'flex', alignItems:'center', gap:2, mb:2}}>
+        <Box sx={{ml:'auto'}}>
+          <ExportMenu data={priorities} filename="command_priorities" />
+        </Box>
+      </Box>
+      <DualModeTabs roles={userRoles} />
+      <DashboardFilterBar />
 
       <Grid container spacing={2}>
         {(!loading && (!priorities || priorities.length===0)) ? (
