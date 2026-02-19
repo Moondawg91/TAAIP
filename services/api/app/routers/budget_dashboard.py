@@ -329,6 +329,24 @@ def budget_dashboard(fy: int = None, qtr: int = None, org_unit_id: int = None, s
             'missing_data': missing
         }
 
+        # Backwards-compatible top-level KPI keys expected by older callers/tests
+        payload['total_planned'] = round(planned, 2)
+        payload['total_spent'] = round(executed, 2)
+        payload['total_pending'] = round(obligated, 2)
+        payload['total_remaining'] = round(remaining, 2)
+
+        # New Phase-10 shaped `kpis` object for dashboard callers
+        payload['kpis'] = {
+            'allocated': round(allocated, 2),
+            'planned': round(planned, 2),
+            'actual': round(executed, 2),
+            'remaining': round((allocated - planned - executed), 2)
+        }
+
+        # Backwards-compatible breakdown keys
+        payload['breakdown_by_category'] = by_category
+        payload['breakdown_by_funding_line'] = by_funding_line
+
         return payload
     finally:
         try:

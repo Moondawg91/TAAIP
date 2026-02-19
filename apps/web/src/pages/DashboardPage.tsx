@@ -1,6 +1,8 @@
 import React, {useEffect, useState} from 'react'
 import { Box, Typography, Grid, Paper, Button, Select, MenuItem, FormControl, InputLabel } from '@mui/material'
 import { getAnalyticsSummary, getAnalyticsFunnel } from '../api/client'
+import DashboardFilterBar from '../components/DashboardFilterBar'
+import ExportMenu from '../components/ExportMenu'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, Cell } from 'recharts'
 import { useNavigate } from 'react-router-dom'
 
@@ -25,7 +27,13 @@ export default function DashboardPage(){
 
   return (
     <Box sx={{p:3}}>
-      <Typography variant="h4">Dashboard</Typography>
+      <Box sx={{display:'flex', alignItems:'center', gap:2}}>
+        <Typography variant="h4">Dashboard</Typography>
+        <Box sx={{ml:'auto'}}>
+          <ExportMenu data={funnel} filename="dashboard_export" />
+        </Box>
+      </Box>
+      <DashboardFilterBar />
       <Grid container spacing={2} sx={{mt:2}}>
         <Grid item xs={3}>
           <Paper sx={{p:2}}>

@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from 'react'
 import { Box, Typography, Grid, Paper, List, ListItem, ListItemText } from '@mui/material'
 import api from '../../api/client'
+import DualModeTabs from '../../components/DualModeTabs'
+import DashboardFilterBar from '../../components/DashboardFilterBar'
+import ExportMenu from '../../components/ExportMenu'
 
 export default function EventsDashboardPage(){
   const [data, setData] = useState<any>(null)
@@ -10,7 +13,14 @@ export default function EventsDashboardPage(){
 
   return (
     <Box sx={{ p:3 }}>
-      <Typography variant="h5" sx={{ mb:2 }}>Events Dashboard</Typography>
+      <Box sx={{display:'flex', alignItems:'center', gap:2}}>
+        <Typography variant="h5" sx={{ mb:2 }}>Events Dashboard</Typography>
+        <Box sx={{ml:'auto'}}>
+          <ExportMenu data={data && data.recent ? data.recent : []} filename="events_dashboard" />
+        </Box>
+      </Box>
+      <DualModeTabs />
+      <DashboardFilterBar />
       {loading ? <Typography>Loading...</Typography> : (
         <Grid container spacing={2}>
           <Grid item xs={12} md={4}>

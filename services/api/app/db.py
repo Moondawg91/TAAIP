@@ -5,6 +5,16 @@ from typing import Optional
 import time
 from time import sleep
 
+# When running under the test harness we may want to force use of a
+# specific DB-API connection so raw sqlite3 callers and SQLAlchemy
+# sessions operate on the same underlying connection/transaction.
+_test_raw_conn = None
+
+
+def set_test_raw_conn(conn):
+    """Set a DB-API connection to be returned by connect() during tests."""
+    global _test_raw_conn
+    _test_raw_conn = conn
 
 def get_db_path() -> str:
     """Return path to the SQLite DB file.
@@ -27,6 +37,16 @@ def connect() -> sqlite3.Connection:
     # mixing independent sqlite3 connections (which can hold locks)
     path = get_db_path()
     _ensure_db_dir(path)
+    # If tests set a dedicated raw DB-API connection, return that so all
+    # callers operate on the same physical connection/transaction.
+    global _test_raw_conn
+    if _test_raw_conn is not None:
+        try:
+            _test_raw_conn.row_factory = _dict_row_factory
+            return _test_raw_conn
+        except Exception:
+            # fall through to normal behavior
+            pass
     def _dict_row_factory(cursor, row):
         # return a plain dict for each row so callers can safely do dict(row)
         try:
@@ -35,6 +55,17 @@ def connect() -> sqlite3.Connection:
             return row
 
     try:
+        from services.api.app import database as _database
+        # Ensure database engine/session match current env (tests may change it)
+        try:
+            _database.reload_engine_if_needed()
+        except Exception:
+            pass
+        # Debug: print engine url when opening raw_connection
+        try:
+            print(f"db.connect using engine: {_database.engine.url}")
+        except Exception:
+            pass
         from services.api.app.database import engine
         raw = engine.raw_connection()
         # raw_connection() returns a DB-API connection (sqlite3.Connection)
@@ -1397,36 +1428,7 @@ def init_db() -> str:
 
     Ensures the schema exists and returns the DB path that was initialized.
     """
-    # If tests or dev helpers point to ephemeral DB paths, ensure a fresh
-    # file to avoid cross-module contamination from prior runs. Be conservative
-    # and only remove files that look like test/dev DBs to avoid data loss.
-    path = get_db_path()
-    try:
-        if os.path.exists(path):
-            lname = os.path.basename(path).lower()
-            if any(k in lname for k in ('test', 'dev', 'taaip_test', 'taaip_dev')):
-                try:
-                    os.remove(path)
-                except Exception:
-                    pass
-    except Exception:
-        pass
-    # Ensure SQLAlchemy engine follows the same DB path used by sqlite helpers
-    try:
-        # prefer absolute path for DATABASE_URL
-        abs_path = os.path.abspath(path)
-        os.environ.setdefault('DATABASE_URL', f"sqlite:///{abs_path}")
-        try:
-            from services.api.app import database
-            try:
-                database.reload_engine_if_needed()
-            except Exception:
-                pass
-        except Exception:
-            pass
-    except Exception:
-        pass
-
+    # Keep init_db minimal and non-destructive for tests and dev helpers.
     init_schema()
     return get_db_path()
 

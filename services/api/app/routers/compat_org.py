@@ -1,5 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from .. import db, auth, rbac, models
+from sqlalchemy import text
+from sqlalchemy.orm import Session
 
 router = APIRouter(prefix="/org", tags=["compat_org"])
 
@@ -33,52 +35,73 @@ def coverage_summary(scope: str = "USAREC", value: str = None):
 
 
 @router.get("/stations/{rsid}/zip-coverage")
-def station_zip_coverage(rsid: str, current_user: models.User = Depends(auth.get_current_user)):
-    conn = db.connect()
+def station_zip_coverage(rsid: str, current_user: models.User = Depends(auth.get_current_user), db: Session = Depends(auth.get_db)):
+    rows = []
     try:
-        cur = conn.cursor()
-        cur.execute("SELECT zip, metric_key, metric_value FROM zip_metrics WHERE station_rsid=? ORDER BY zip", (rsid,))
-        raw_rows = [dict(r) for r in cur.fetchall()]
-        rows = []
+        # Try reading legacy zip_metrics table first via the shared Session
+        try:
+            q = text("SELECT zip, metric_key, metric_value FROM zip_metrics WHERE station_rsid=:rsid ORDER BY zip")
+            raw_rows = db.execute(q, {"rsid": rsid}).mappings().all()
+        except Exception:
+            raw_rows = []
+
         if raw_rows:
             for r in raw_rows:
                 zip_code = r.get('zip') or r.get('zip_code')
-                # legacy metric_key/metric_value -> market_category
                 market_category = None
                 if 'metric_key' in r and r.get('metric_key') == 'market_category':
                     market_category = r.get('metric_value')
                 elif 'metric_value' in r and 'metric_key' not in r:
-                    # if legacy row is already flattened
                     market_category = r.get('metric_value')
                 rows.append({"zip_code": zip_code, "market_category": market_category})
         else:
             try:
-                from .. import database as _database
-                from .. import models as _models
-                sess = _database.SessionLocal()
-                orm_rows = sess.query(_models.StationZipCoverage).filter(_models.StationZipCoverage.station_rsid == rsid).all()
+                orm_rows = db.query(models.StationZipCoverage).filter(models.StationZipCoverage.station_rsid == rsid).all()
                 for r in orm_rows:
                     rows.append({"zip_code": r.zip_code, "market_category": r.market_category.name if r.market_category else None})
             except Exception:
                 rows = []
+
         # enforce RBAC: station must be within user scope
-        if not rbac.is_rsid_in_scope(current_user.scope, rsid):
+        try:
+            # resolve authoritative scope from DB-backed user record when possible
+            db_user = db.query(models.User).filter(models.User.username == getattr(current_user, 'username', None)).one_or_none()
+            user_scope = db_user.scope if db_user is not None else getattr(current_user, 'scope', None)
+        except Exception:
+            user_scope = getattr(current_user, 'scope', None)
+        # Inline scope normalization and check to avoid mismatches between different
+        # user dict formats used by other RBAC helpers.
+        ns = rbac.normalize_scope(user_scope)
+        allowed = False
+        if ns['type'] == 'USAREC':
+            allowed = True
+        elif ns['type'] == 'BDE' and rsid.startswith(ns['value']):
+            allowed = True
+        elif ns['type'] == 'BN' and rsid.startswith(ns['value']):
+            allowed = True
+        elif ns['type'] == 'CO' and rsid.startswith(ns['value']):
+            allowed = True
+        elif ns['type'] == 'STN' and rsid == ns['value']:
+            allowed = True
+        if not allowed:
             raise HTTPException(status_code=403, detail="Forbidden: out of scope")
         return {"station_rsid": rsid, "zip_coverage": rows}
-    finally:
-        conn.close()
+    except HTTPException:
+        # Authorization/HTTP errors should propagate to the client
+        raise
+    except Exception:
+        # ensure we surface unexpected issues as empty result rather than crashing the app
+        return {"station_rsid": rsid, "zip_coverage": []}
 
 
 @router.get("/zip/{zip_code}/station")
-def zip_to_station(zip_code: str):
+def zip_to_station(zip_code: str, db: Session = Depends(auth.get_db)):
     # best-effort: read zip_metrics table for mapping, otherwise null
-    conn = db.connect()
     try:
-        cur = conn.cursor()
-        cur.execute("SELECT zip, scope, as_of, metric_key, metric_value FROM zip_metrics WHERE zip=? ORDER BY as_of DESC LIMIT 1", (zip_code,))
-        row = cur.fetchone()
+        q = text("SELECT zip, scope, as_of, metric_key, metric_value FROM zip_metrics WHERE zip=:zip_code ORDER BY as_of DESC LIMIT 1")
+        row = db.execute(q, {"zip_code": zip_code}).mappings().first()
         if not row:
             return {"zip_code": zip_code, "station": None}
         return dict(row)
-    finally:
-        conn.close()
+    except Exception:
+        return {"zip_code": zip_code, "station": None}

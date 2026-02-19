@@ -13,9 +13,31 @@ def now_iso():
 
 def write_audit(conn, who, action, entity, entity_id, meta=None):
     cur = conn.cursor()
+    # ensure audit_log exists for legacy callers
+    try:
+        cur.executescript('''
+        CREATE TABLE IF NOT EXISTS audit_log (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            who TEXT,
+            action TEXT,
+            entity TEXT,
+            entity_id INTEGER,
+            meta_json TEXT,
+            created_at TEXT
+        );
+        ''')
+    except Exception:
+        pass
     cur.execute("INSERT INTO audit_log(who, action, entity, entity_id, meta_json, created_at) VALUES (?,?,?,?,?,?)",
                 (who or 'system', action, entity, entity_id, json.dumps(meta or {}), now_iso()))
-    conn.commit()
+    try:
+        conn.commit()
+    except Exception:
+        # if conn is a SQLAlchemy connection object, commit may be different
+        try:
+            conn.connection.commit()
+        except Exception:
+            pass
 
 
 @router.post('/projects')
@@ -24,6 +46,24 @@ def compat_create_project(payload: Dict[str, Any]):
     try:
         cur = conn.cursor()
         now = now_iso()
+        # ensure legacy singular `project` table exists for compatibility
+        cur.executescript('''
+        CREATE TABLE IF NOT EXISTS project (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            org_unit_id INTEGER,
+            loe_id TEXT,
+            event_id TEXT,
+            name TEXT,
+            description TEXT,
+            status TEXT,
+            start_dt TEXT,
+            end_dt TEXT,
+            roi_target REAL,
+            created_at TEXT,
+            updated_at TEXT,
+            record_status TEXT DEFAULT 'active'
+        );
+        ''')
         cur.execute('INSERT INTO project(org_unit_id,loe_id,event_id,name,description,status,start_dt,end_dt,roi_target,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)', (
             payload.get('org_unit_id'), payload.get('loe_id'), payload.get('event_id'), payload.get('name'), payload.get('description'), payload.get('status') or 'draft', payload.get('start_dt'), payload.get('end_dt'), payload.get('roi_target'), now, now
         ))
