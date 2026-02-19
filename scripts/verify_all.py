@@ -120,7 +120,9 @@ def start_checks():
         cur.execute("SELECT id FROM fy_budget WHERE org_unit_id=? AND fy=?", (org_id, 2026))
         fy_row = cur.fetchone()
         fy_id = fy_row[0] if fy_row else None
-        cur.execute("INSERT OR IGNORE INTO budget_line_item(fy_budget_id,qtr,event_id,category,amount,status,created_at) VALUES (?,?,?,?,?,?,?)", (fy_id, 1, event_id, 'venue', 1500.0, 'committed', now))
+        # Seed two budget line items with different funding sources for Phase-10 verification
+        cur.execute("INSERT OR IGNORE INTO budget_line_item(fy_budget_id,qtr,event_id,category,amount,appropriation_type,funding_source,eor_code,is_under_cr,status,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)", (fy_id, 1, event_id, 'venue', 1500.0, 'OMA', 'BDE_LAMP', 'EOR-001', 0, 'committed', now))
+        cur.execute("INSERT OR IGNORE INTO budget_line_item(fy_budget_id,qtr,event_id,category,amount,appropriation_type,funding_source,eor_code,is_under_cr,status,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)", (fy_id, 1, event_id, 'travel', 500.0, 'OMA', 'BN_LAMP', 'EOR-002', 0, 'planned', now))
 
         # seed home page content: announcements, system updates, quick links (idempotent)
         try:

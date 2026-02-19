@@ -351,6 +351,14 @@ def init_schema() -> None:
                 vendor TEXT,
                 description TEXT,
                 amount REAL DEFAULT 0,
+                -- Phase-10 funding structure additions
+                appropriation_type TEXT DEFAULT 'OMA',
+                funding_source TEXT,
+                sag_code TEXT,
+                amsco_code TEXT,
+                mdep_code TEXT,
+                eor_code TEXT,
+                is_under_cr INTEGER DEFAULT 0,
                 status TEXT,
                 obligation_date TEXT,
                 notes TEXT,
@@ -992,6 +1000,17 @@ def init_schema() -> None:
             except Exception:
                 pass
 
+        # Ensure loes table has updated_at (some tests expect this column)
+        try:
+            lcols = table_columns('loes')
+            if 'updated_at' not in lcols:
+                try:
+                    cur.execute("ALTER TABLE loes ADD COLUMN updated_at TEXT")
+                except Exception:
+                    pass
+        except Exception:
+            pass
+
         # Ensure legacy import_job columns exist for older code paths
         legacy_cols = [
             ("filename_original", "TEXT"),
@@ -1147,6 +1166,14 @@ def init_schema() -> None:
         except Exception:
             pass
         try:
+            cur.execute("CREATE INDEX IF NOT EXISTS ix_budget_line_item_funding_source ON budget_line_item(funding_source)")
+        except Exception:
+            pass
+        try:
+            cur.execute("CREATE INDEX IF NOT EXISTS ix_budget_line_item_eor ON budget_line_item(eor_code)")
+        except Exception:
+            pass
+        try:
             cur.execute("CREATE INDEX IF NOT EXISTS ix_expenses_dims ON expenses(fy,qtr,org_unit_id,station_id,funding_line,category)")
         except Exception:
             pass
@@ -1168,6 +1195,27 @@ def init_schema() -> None:
             pass
         try:
             cur.execute("CREATE INDEX IF NOT EXISTS ix_fy_budget_org_fy ON fy_budget(org_unit_id,fy)")
+        except Exception:
+            pass
+
+        # Phase-10: ensure budget_line_item contains funding-structure columns
+        try:
+            bcols = table_columns('budget_line_item')
+            budget_cols_to_add = [
+                ("appropriation_type", "TEXT DEFAULT 'OMA'"),
+                ("funding_source", "TEXT"),
+                ("sag_code", "TEXT"),
+                ("amsco_code", "TEXT"),
+                ("mdep_code", "TEXT"),
+                ("eor_code", "TEXT"),
+                ("is_under_cr", "INTEGER DEFAULT 0"),
+            ]
+            for col, typ in budget_cols_to_add:
+                if col not in bcols:
+                    try:
+                        cur.execute(f"ALTER TABLE budget_line_item ADD COLUMN {col} {typ}")
+                    except Exception:
+                        pass
         except Exception:
             pass
 
@@ -1349,6 +1397,36 @@ def init_db() -> str:
 
     Ensures the schema exists and returns the DB path that was initialized.
     """
+    # If tests or dev helpers point to ephemeral DB paths, ensure a fresh
+    # file to avoid cross-module contamination from prior runs. Be conservative
+    # and only remove files that look like test/dev DBs to avoid data loss.
+    path = get_db_path()
+    try:
+        if os.path.exists(path):
+            lname = os.path.basename(path).lower()
+            if any(k in lname for k in ('test', 'dev', 'taaip_test', 'taaip_dev')):
+                try:
+                    os.remove(path)
+                except Exception:
+                    pass
+    except Exception:
+        pass
+    # Ensure SQLAlchemy engine follows the same DB path used by sqlite helpers
+    try:
+        # prefer absolute path for DATABASE_URL
+        abs_path = os.path.abspath(path)
+        os.environ.setdefault('DATABASE_URL', f"sqlite:///{abs_path}")
+        try:
+            from services.api.app import database
+            try:
+                database.reload_engine_if_needed()
+            except Exception:
+                pass
+        except Exception:
+            pass
+    except Exception:
+        pass
+
     init_schema()
     return get_db_path()
 

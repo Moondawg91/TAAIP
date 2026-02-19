@@ -26,4 +26,6 @@ jobs:
         env:
           TAAIP_DB_PATH: ${{ github.workspace }}/taaip_test.db
         run: |
-          PYTHONPATH=. pytest -q services/api/tests -q
+          # ensure a fresh sqlite file for tests to avoid UNIQUE constraint issues
+          rm -f ${{ github.workspace }}/taaip_test.db || true
+          PYTHONPATH=. TAAIP_DB_PATH=${{ github.workspace }}/taaip_test.db pytest -q services/api/tests -q

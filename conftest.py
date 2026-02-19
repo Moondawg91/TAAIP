@@ -2,9 +2,10 @@ import os
 import pathlib
 
 # Ensure tests run with a deterministic test DB set before any imports
-TEST_DB = os.environ.get('TAAIP_DB_PATH', './taaip_test.db')
-os.environ.setdefault('TAAIP_DB_PATH', TEST_DB)
-os.environ.setdefault('DATABASE_URL', f"sqlite:///{TEST_DB}")
+TEST_DB = './taaip_test.db'
+# Force override so modules import the correct DB path
+os.environ['TAAIP_DB_PATH'] = TEST_DB
+os.environ['DATABASE_URL'] = f"sqlite:///{TEST_DB}"
 
 # Remove an old test DB if present to ensure a clean slate
 try:
@@ -14,22 +15,24 @@ try:
 except Exception:
     pass
 
+import importlib
+
 # Initialize DB schema early so modules that import engines/sessions
 # see the correct schema during test collection.
 try:
-    from services.api.app.db import init_db
-
-    init_db()
-except Exception:
-    # If init fails, let pytest surface the error in test runs.
-    pass
-
-# Ensure SQLAlchemy model tables exist for tests that use SessionLocal/engine
-try:
-    from services.api.app import database, models
-
-    # Create tables defined by SQLAlchemy models on the same engine used in tests
+    # If the database module was already imported, reload it so it picks up
+    # the overridden DATABASE_URL above and recreates the engine.
+    if 'services.api.app.database' in globals() or 'services.api.app.database' in __import__('sys').modules:
+        importlib.reload(__import__('services.api.app.database', fromlist=['*']))
+    from services.api.app import database, db
+    # call init_schema/init_db to create raw tables
     try:
+        db.init_db()
+    except Exception:
+        pass
+    # ensure SQLAlchemy model tables exist on the engine used by the app
+    try:
+        from services.api.app import models
         models.Base.metadata.create_all(bind=database.engine)
     except Exception:
         pass
