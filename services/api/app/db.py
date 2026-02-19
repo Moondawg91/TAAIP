@@ -75,21 +75,30 @@ def init_schema() -> None:
     and the application exist. It is safe to call multiple times and
     attempts minor migrations where necessary.
     """
-    # Prefer using the SQLAlchemy engine's raw DB-API connection when
-    # available so DDL is executed through the same connection pool
-    # the tests/ORM use. This reduces file-lock conflicts caused by
-    # mixing direct sqlite3 connections with SQLAlchemy-managed ones.
+    # Ensure the schema exists for the DB path returned by `get_db_path()`
+    # first. Tests and some modules change `TAAIP_DB_PATH` at runtime which
+    # can cause the SQLAlchemy `engine` (created at import-time) to point
+    # at a different file. To avoid missing-table races, always initialize
+    # the file referenced by `TAAIP_DB_PATH` first using the local sqlite3
+    # connection, then attempt to run the same DDL through SQLAlchemy's
+    # raw connection when available.
     try:
-        from services.api.app.database import engine
-        raw_conn = engine.raw_connection()
-        cur = raw_conn.cursor()
-        conn = raw_conn
-        using_raw_engine = True
-    except Exception:
-        # Fallback for environments where SQLAlchemy isn't configured
         conn = connect()
         cur = conn.cursor()
         using_raw_engine = False
+    except Exception:
+        # As a fallback, attempt to use SQLAlchemy engine if connect fails
+        try:
+            from services.api.app.database import engine
+            raw_conn = engine.raw_connection()
+            cur = raw_conn.cursor()
+            conn = raw_conn
+            using_raw_engine = True
+        except Exception:
+            # Last-resort: open a plain sqlite3 connection to the default path
+            conn = connect()
+            cur = conn.cursor()
+            using_raw_engine = False
     try:
 
         # Core organizational tree and core tables
@@ -134,6 +143,14 @@ def init_schema() -> None:
                 user_id INTEGER,
                 role_id INTEGER,
                 assigned_at TEXT
+            );
+
+            -- Ensure 'commands' table exists for legacy SQLAlchemy models
+            CREATE TABLE IF NOT EXISTS commands (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                command TEXT NOT NULL,
+                display TEXT,
+                created_at TEXT
             );
 
             CREATE TABLE IF NOT EXISTS import_job (
@@ -1285,6 +1302,15 @@ def init_schema() -> None:
             pass
 
         conn.commit()
+        # If SQLAlchemy models are present, try to ensure their tables exist
+        try:
+            from services.api.app import database, models
+            try:
+                models.Base.metadata.create_all(bind=database.engine)
+            except Exception:
+                pass
+        except Exception:
+            pass
     finally:
         try:
             if using_raw_engine:

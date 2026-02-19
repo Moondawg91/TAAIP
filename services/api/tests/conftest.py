@@ -17,9 +17,9 @@ def init_test_db():
     schema regardless of collection order.
     """
     db_path = _test_db_path()
-    # ensure DATABASE_URL env is consistent for SQLAlchemy engine
-    os.environ.setdefault('DATABASE_URL', f"sqlite:///{db_path}")
-    os.environ.setdefault('TAAIP_DB_PATH', db_path)
+    # force the test DB path so imports use this DB
+    os.environ['DATABASE_URL'] = f"sqlite:///{db_path}"
+    os.environ['TAAIP_DB_PATH'] = db_path
 
     # remove any leftover test DB for a fresh start
     try:
@@ -30,12 +30,21 @@ def init_test_db():
         pass
 
     # Import and initialize schema
+    # Re-import/reload DB modules so they honor the overridden DATABASE_URL
     try:
+        import importlib, sys
+        if 'services.api.app.db' in sys.modules:
+            importlib.reload(sys.modules['services.api.app.db'])
         from services.api.app.db import init_db
-
         init_db()
+        # Ensure SQLAlchemy model tables are created on the engine used by the app
+        try:
+            from services.api.app import database, models
+            models.Base.metadata.create_all(bind=database.engine)
+        except Exception:
+            pass
     except Exception:
-        # Let tests run; if init fails they'll fail with clear errors
+        # Let tests run; failures will be surfaced
         pass
 
     yield
