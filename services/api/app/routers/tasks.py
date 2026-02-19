@@ -352,7 +352,14 @@ def assign_task(task_id: int, payload: dict, allowed_orgs: Optional[list] = Depe
             table_name = trow[0] if trow else 'task'
         except Exception:
             table_name = 'task'
-        cur.execute(f'SELECT project_id FROM {table_name} WHERE id=?', (task_id,))
+        # determine whether table exposes an `id` column or we must use `rowid`
+        try:
+            cur.execute(f"PRAGMA table_info({table_name})")
+            task_cols = [r[1] for r in cur.fetchall()]
+        except Exception:
+            task_cols = []
+        where_col = 'id' if 'id' in task_cols else 'rowid'
+        cur.execute(f'SELECT project_id FROM {table_name} WHERE {where_col}=?', (task_id,))
         t = cur.fetchone()
         if not t:
             raise HTTPException(status_code=404, detail='task_not_found')

@@ -1,7 +1,9 @@
 from fastapi import APIRouter, Request, HTTPException
+from fastapi import Depends
 from typing import Dict, Any, List
 from ..db import connect, row_to_dict
 from fastapi.responses import Response
+from .rbac import get_current_user, require_any_role
 
 router = APIRouter(prefix="/budget", tags=["budget"])
 
@@ -49,8 +51,17 @@ def budget_dashboard(request: Request, fy: int = None, qtr: int = None, org_unit
             filters['funding_source'] = funding_source
         # permission gate optional national advertising funding
         if funding_source == 'ADVERTISING_FUNDS_NATIONAL':
-            # simple header-based permission for now; production should use RBAC
-            if request.headers.get('x-advertising-access') != '1':
+            # Require RBAC role/permission rather than a custom header.
+            # We call the RBAC helpers directly for a best-effort check in-process.
+            try:
+                user = get_current_user(request)
+                dep = require_any_role('advertising_access')
+                # call dependency function directly with resolved user
+                dep(user)
+            except HTTPException:
+                raise
+            except Exception:
+                # any unexpected error -> forbid
                 raise HTTPException(status_code=403, detail='forbidden_funding_source')
         if eor_code is not None:
             filters['eor_code'] = eor_code
