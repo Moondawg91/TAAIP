@@ -45,6 +45,10 @@ export default function BudgetTrackerPage(){
     remaining: data.total_remaining || 0
   } : { allocated:0, planned:0, actual:0, remaining:0 }
 
+  // support dual-mode view via query param `view` (executive/comptroller)
+  const params = new URLSearchParams(window.location.search)
+  const view = params.get('view') || 'executive'
+
   return (
     <Box sx={{ color: '#EAEAF2' }}>
       <Box sx={{display:'flex', alignItems:'center', gap:2}}>
@@ -77,7 +81,13 @@ export default function BudgetTrackerPage(){
           }
         }catch(e){ console.error('export error', e); alert('Export failed') }
       }} />
-      <Grid container spacing={2}>
+      {view === 'comptroller' ? (
+        <Box sx={{ mt:2 }}>
+          <Typography variant="h6">Comptroller Ledger</Typography>
+          <ComptrollerPanel filters={filters} />
+        </Box>
+      ) : (
+        <Grid container spacing={2}>
         <Grid item xs={12} md={3}>
           <Paper sx={{ p:2, bgcolor: '#12121A' }} elevation={0}>
             <Typography variant="caption">Allocated</Typography>
@@ -239,7 +249,48 @@ export default function BudgetTrackerPage(){
             </React.Fragment>
           )}
         </Grid>
-      </Grid>
+        </Grid>
+      )}
+    </Box>
+  )
+}
+
+
+function ComptrollerPanel({filters}:{filters:any}){
+  const [data, setData] = React.useState<any>(null)
+  const [loading, setLoading] = React.useState(true)
+  React.useEffect(()=>{
+    let mounted = true
+    setLoading(true)
+    const qs = new URLSearchParams()
+    Object.entries(filters||{}).forEach(([k,v])=>{ if(v!==undefined && v!=='') qs.set(k, String(v)) })
+    fetch(`/api/budget/comptroller/ledger${qs.toString()?('?'+qs.toString()):''}`).then(r=>r.json()).then(d=>{ if(!mounted) return; setData(d) }).catch(()=>{ if(mounted) setData(null) }).finally(()=> mounted && setLoading(false))
+    return ()=>{ mounted=false }
+  }, [JSON.stringify(filters)])
+
+  if(loading) return <Typography>Loading...</Typography>
+  if(!data) return <Typography>No data</Typography>
+  return (
+    <Box>
+      <Typography sx={{ mt:1 }}>Totals: Allocated ${data.totals.allocated} / Obligated ${data.totals.obligated} / Executed ${data.totals.executed} / Remaining ${data.totals.remaining}</Typography>
+      <Box sx={{ mt:1 }}>
+        <Table size="small" sx={{ bgcolor: '#0B0B10', mt:1 }}>
+          <TableHead>
+            <TableRow>
+              <TableCell>Account</TableCell>
+              <TableCell>Allocated</TableCell>
+              <TableCell>Obligated</TableCell>
+              <TableCell>Executed</TableCell>
+              <TableCell>Remaining</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {data.rows && data.rows.length ? data.rows.map((r:any,i:number)=>(
+              <TableRow key={i}><TableCell>{r.account}</TableCell><TableCell>{r.allocated}</TableCell><TableCell>{r.obligated}</TableCell><TableCell>{r.executed}</TableCell><TableCell>{r.remaining}</TableCell></TableRow>
+            )) : <TableRow><TableCell colSpan={5}>No ledger rows</TableCell></TableRow>}
+          </TableBody>
+        </Table>
+      </Box>
     </Box>
   )
 }
