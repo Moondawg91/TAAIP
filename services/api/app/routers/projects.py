@@ -4,6 +4,7 @@ from ..db import connect
 from datetime import datetime
 import json
 from .rbac import require_scope, require_roles, require_any_role, get_current_user
+from uuid import uuid4
 
 router = APIRouter(prefix="/projects", tags=["projects"])
 
@@ -66,6 +67,90 @@ def list_projects(org_unit_id: Optional[int] = None, status: Optional[str] = Non
         sql += ' ORDER BY created_at DESC LIMIT ?'; params.append(limit)
         cur.execute(sql, tuple(params))
         return [dict(r) for r in cur.fetchall()]
+    finally:
+        conn.close()
+
+
+# New Phase-7 endpoints to support frontend `/projects/projects` and `/projects/tasks`
+@router.get('/projects', summary='List domain projects (Phase-7)')
+def list_domain_projects(limit: int = 100, owner: Optional[str] = None):
+    conn = connect()
+    try:
+        cur = conn.cursor()
+        sql = 'SELECT project_id as id, title as name, description, owner, status, percent_complete, created_at, updated_at FROM projects WHERE 1=1'
+        params = []
+        if owner:
+            sql += ' AND owner=?'; params.append(owner)
+        sql += ' ORDER BY created_at DESC LIMIT ?'; params.append(limit)
+        cur.execute(sql, tuple(params))
+        return [dict(r) for r in cur.fetchall()]
+    finally:
+        conn.close()
+
+
+@router.post('/projects', summary='Create domain project (Phase-7)')
+def create_domain_project(payload: Dict[str, Any], current_user: Dict = Depends(get_current_user)):
+    conn = connect()
+    try:
+        cur = conn.cursor()
+        now = now_iso()
+        pid = str(uuid4())
+        cur.execute('INSERT INTO projects(project_id, title, description, owner, status, percent_complete, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?)', (
+            pid, payload.get('name') or payload.get('title'), payload.get('description'), payload.get('owner') or (current_user and current_user.get('username')) or 'system', payload.get('status') or 'draft', payload.get('percent_complete') or 0, now, now
+        ))
+        conn.commit()
+        cur.execute('SELECT project_id as id, title as name, description, owner, status, percent_complete, created_at, updated_at FROM projects WHERE project_id=?', (pid,))
+        return dict(cur.fetchone())
+    finally:
+        conn.close()
+
+
+@router.post('/tasks', summary='Create domain task (Phase-7)')
+def create_domain_task(payload: Dict[str, Any], current_user: Dict = Depends(get_current_user)):
+    conn = connect()
+    try:
+        cur = conn.cursor()
+        tid = str(uuid4())
+        now = now_iso()
+        cur.execute('INSERT INTO tasks(task_id, project_id, title, description, owner, status, percent_complete, due_date, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?)', (
+            tid, payload.get('project_id'), payload.get('title'), payload.get('description'), payload.get('owner') or (current_user and current_user.get('username')) or 'system', payload.get('status') or 'open', payload.get('percent_complete') or 0, payload.get('due_date'), now, now
+        ))
+        conn.commit()
+        cur.execute('SELECT task_id as id, project_id, title, description, owner, status, percent_complete, due_date, created_at, updated_at FROM tasks WHERE task_id=?', (tid,))
+        return dict(cur.fetchone())
+    finally:
+        conn.close()
+
+
+@router.get('/events', summary='List events (by project) (Phase-7)')
+def list_domain_events(project_id: Optional[str] = None, limit: int = 200):
+    conn = connect()
+    try:
+        cur = conn.cursor()
+        sql = 'SELECT event_id as id, project_id, title as name, location, start_dt as start_date, end_dt as end_date, status FROM calendar_events WHERE 1=1'
+        params = []
+        if project_id:
+            sql += ' AND project_id=?'; params.append(project_id)
+        sql += ' ORDER BY start_dt DESC LIMIT ?'; params.append(limit)
+        cur.execute(sql, tuple(params))
+        return [dict(r) for r in cur.fetchall()]
+    finally:
+        conn.close()
+
+
+@router.post('/events', summary='Create calendar event (Phase-7)')
+def create_domain_event(payload: Dict[str, Any], current_user: Dict = Depends(get_current_user)):
+    conn = connect()
+    try:
+        cur = conn.cursor()
+        eid = str(uuid4())
+        now = now_iso()
+        cur.execute('INSERT INTO calendar_events(event_id, org_unit_id, title, start_dt, end_dt, location, created_at) VALUES (?,?,?,?,?,?,?)', (
+            eid, payload.get('org_unit_id') or payload.get('owner'), payload.get('name') or payload.get('title'), payload.get('start_date') or payload.get('start_dt'), payload.get('end_date') or payload.get('end_dt'), payload.get('location'), now
+        ))
+        conn.commit()
+        cur.execute('SELECT event_id as id, org_unit_id, title as name, start_dt as start_date, end_dt as end_date, location, created_at FROM calendar_events WHERE event_id=?', (eid,))
+        return dict(cur.fetchone())
     finally:
         conn.close()
 

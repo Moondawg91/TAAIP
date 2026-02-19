@@ -223,6 +223,18 @@ export async function getDimTime(qs = {}){
   return apiFetch(`/api/powerbi/dim_time?${params}`)
 }
 
+// Mission Assessment client
+export async function getLatestMissionAssessment(period_type, scope){
+  const qs = new URLSearchParams()
+  if (period_type) qs.set('period_type', period_type)
+  if (scope) qs.set('scope', scope)
+  return apiFetch(`/api/mission_assessments/latest?${qs.toString()}`)
+}
+
+export async function saveMissionAssessment(payload){
+  return apiFetch('/api/mission_assessments/', { method: 'POST', body: JSON.stringify(payload), headers: {'Content-Type':'application/json'} })
+}
+
 export async function getImportJobsList(limit=100){
   return apiFetch(`/api/powerbi/import_jobs?limit=${limit}`)
 }
@@ -400,6 +412,19 @@ export async function createMeeting(payload){
 
 export async function createCalendarEvent(payload){
   return apiFetch('/api/calendar/', { method: 'POST', body: JSON.stringify(payload), headers: {'Content-Type':'application/json'} })
+}
+
+export async function listCalendarEvents(qs = {}){
+  const params = new URLSearchParams(qs).toString()
+  return apiFetch(`/api/calendar/events?${params}`)
+}
+
+export async function updateCalendarEvent(id, payload){
+  return apiFetch(`/api/calendar/events/${id}`, { method: 'PUT', body: JSON.stringify(payload), headers: {'Content-Type':'application/json'} })
+}
+
+export async function deleteCalendarEvent(id){
+  return apiFetch(`/api/calendar/events/${id}`, { method: 'DELETE' })
 }
 
 export async function getMarketPotential(scope, value){

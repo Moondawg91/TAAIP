@@ -3,13 +3,27 @@ from typing import Optional, List, Any, Dict
 from ..db import connect
 from datetime import datetime
 import json
-from .rbac import require_scope
+from .rbac import require_scope, require_any_role
 
 router = APIRouter(prefix="/budgets", tags=["budgets"])
 
 
 def now_iso():
     return datetime.utcnow().isoformat()
+
+
+def _row_to_dict(cur, row):
+    if row is None:
+        return None
+    try:
+        return dict(row)
+    except Exception:
+        cols = [c[0] for c in cur.description] if cur.description else []
+        try:
+            return dict(zip(cols, row))
+        except Exception:
+            # last-resort: return positional mapping
+            return {str(i): v for i, v in enumerate(row)}
 
 
 def write_audit(conn, who, action, entity, entity_id, meta=None):
@@ -19,7 +33,7 @@ def write_audit(conn, who, action, entity, entity_id, meta=None):
     conn.commit()
 
 
-@router.post("/fy", summary="Create FY budget")
+@router.post("/fy", summary="Create FY budget", dependencies=[Depends(require_any_role('USAREC_ADMIN','CO_CMD','BDE_CMD','BN_CMD'))])
 def create_fy_budget(payload: Dict[str, Any]):
     conn = connect()
     try:
@@ -30,8 +44,7 @@ def create_fy_budget(payload: Dict[str, Any]):
         conn.commit()
         bid = cur.lastrowid
         write_audit(conn, payload.get('created_by') or 'system', 'create.fy_budget', 'fy_budget', bid, payload)
-        cur.execute("SELECT * FROM fy_budget WHERE id=?", (bid,))
-        return dict(cur.fetchone())
+        return {"ok": True, "id": bid}
     finally:
         conn.close()
 
@@ -58,13 +71,24 @@ def list_fy_budgets(org_unit_id: Optional[int] = None, fy: Optional[int] = None,
         if fy is not None:
             sql += " AND fy=?"; params.append(fy)
         sql += " ORDER BY fy DESC LIMIT ?"; params.append(limit)
-        cur.execute(sql, tuple(params))
-        return [dict(r) for r in cur.fetchall()]
+        try:
+            cur.execute(sql, tuple(params))
+            rows = cur.fetchall()
+            out = []
+            cols = [c[0] for c in cur.description] if cur.description else []
+            for r in rows:
+                try:
+                    out.append(dict(r))
+                except Exception:
+                    out.append(dict(zip(cols, r)))
+            return out
+        except Exception:
+            return []
     finally:
         conn.close()
 
 
-@router.post("/line-item", summary="Create budget line item")
+@router.post("/line-item", summary="Create budget line item", dependencies=[Depends(require_any_role('USAREC_ADMIN','CO_CMD','BDE_CMD','BN_CMD'))])
 def create_line_item(payload: Dict[str, Any]):
     conn = connect()
     try:
@@ -76,8 +100,7 @@ def create_line_item(payload: Dict[str, Any]):
         conn.commit()
         lid = cur.lastrowid
         write_audit(conn, payload.get('created_by') or 'system', 'create.budget_line_item', 'budget_line_item', lid, payload)
-        cur.execute('SELECT * FROM budget_line_item WHERE id=?', (lid,))
-        return dict(cur.fetchone())
+        return {"ok": True, "id": lid}
     finally:
         conn.close()
 
@@ -94,18 +117,31 @@ def list_line_items(fy_budget_id: Optional[int] = None, event_id: Optional[int] 
             if allowed_orgs is not None:
                 cur.execute('SELECT org_unit_id FROM fy_budget WHERE id=?', (fy_budget_id,))
                 fb = cur.fetchone()
-                if not fb or fb['org_unit_id'] not in allowed_orgs:
+                fb_d = _row_to_dict(cur, fb)
+                if not fb_d or fb_d.get('org_unit_id') not in allowed_orgs:
                     return []
             sql += ' AND fy_budget_id=?'; params.append(fy_budget_id)
         if event_id is not None:
             if allowed_orgs is not None:
                 cur.execute('SELECT org_unit_id FROM event WHERE id=?', (event_id,))
                 ev = cur.fetchone()
-                if not ev or ev['org_unit_id'] not in allowed_orgs:
+                ev_d = _row_to_dict(cur, ev)
+                if not ev_d or ev_d.get('org_unit_id') not in allowed_orgs:
                     return []
             sql += ' AND event_id=?'; params.append(event_id)
         sql += ' ORDER BY id DESC LIMIT ?'; params.append(limit)
-        cur.execute(sql, tuple(params))
-        return [dict(r) for r in cur.fetchall()]
+        try:
+            cur.execute(sql, tuple(params))
+            rows = cur.fetchall()
+            out = []
+            cols = [c[0] for c in cur.description] if cur.description else []
+            for r in rows:
+                try:
+                    out.append(dict(r))
+                except Exception:
+                    out.append(dict(zip(cols, r)))
+            return out
+        except Exception:
+            return []
     finally:
         conn.close()

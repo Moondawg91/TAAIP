@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends
 from typing import Optional, List
-from ..db import connect
+from ..db import connect, row_to_dict
 from .rbac import require_scope
 
 router = APIRouter(prefix="/tasks", tags=["tasks"])
@@ -22,7 +22,8 @@ def create_task(payload: dict, allowed_orgs: Optional[list] = Depends(require_sc
         p = cur.fetchone()
         if not p:
             raise HTTPException(status_code=404, detail='project_not_found')
-        if allowed_orgs is not None and p['org_unit_id'] not in allowed_orgs:
+        p = row_to_dict(cur, p)
+        if allowed_orgs is not None and p.get('org_unit_id') not in allowed_orgs:
             raise HTTPException(status_code=403, detail='forbidden')
 
         now = __import__('datetime').datetime.utcnow().isoformat()
@@ -51,7 +52,7 @@ def create_task(payload: dict, allowed_orgs: Optional[list] = Depends(require_sc
         conn.commit()
         tid = cur.lastrowid
         cur.execute('SELECT * FROM task WHERE id=?', (tid,))
-        return dict(cur.fetchone())
+        return row_to_dict(cur, cur.fetchone())
     finally:
         conn.close()
 
@@ -69,7 +70,8 @@ def list_tasks(project_id: Optional[int] = None, owner: Optional[str] = None, li
             p = cur.fetchone()
             if not p:
                 return []
-            if allowed_orgs is not None and p['org_unit_id'] not in allowed_orgs:
+            p = row_to_dict(cur, p)
+            if allowed_orgs is not None and p.get('org_unit_id') not in allowed_orgs:
                 return []
             sql += ' AND project_id=?'; params.append(project_id)
         else:
@@ -83,7 +85,7 @@ def list_tasks(project_id: Optional[int] = None, owner: Optional[str] = None, li
         sql += ' ORDER BY id DESC LIMIT ?'; params.append(limit)
         cur.execute(sql, tuple(params))
         rows = cur.fetchall()
-        return [dict(r) for r in rows]
+        return [row_to_dict(cur, r) for r in rows]
     finally:
         conn.close()
 
@@ -98,9 +100,12 @@ def update_task(task_id: int, payload: dict, allowed_orgs: Optional[list] = Depe
         t = cur.fetchone()
         if not t:
             raise HTTPException(status_code=404, detail='task_not_found')
-        cur.execute('SELECT org_unit_id FROM project WHERE id=?', (t['project_id'],))
+        t = row_to_dict(cur, t)
+        cur.execute('SELECT org_unit_id FROM project WHERE id=?', (t.get('project_id'),))
         p = cur.fetchone()
-        if allowed_orgs is not None and p and p['org_unit_id'] not in allowed_orgs:
+        if p:
+            p = row_to_dict(cur, p)
+        if allowed_orgs is not None and p and p.get('org_unit_id') not in allowed_orgs:
             raise HTTPException(status_code=403, detail='forbidden')
 
         title = payload.get('title') if isinstance(payload, dict) else None
@@ -131,7 +136,7 @@ def update_task(task_id: int, payload: dict, allowed_orgs: Optional[list] = Depe
         cur.execute(sql, tuple(params))
         conn.commit()
         cur.execute('SELECT * FROM task WHERE id=?', (task_id,))
-        return dict(cur.fetchone())
+        return row_to_dict(cur, cur.fetchone())
     finally:
         conn.close()
 
@@ -145,9 +150,12 @@ def delete_task(task_id: int, allowed_orgs: Optional[list] = Depends(require_sco
         t = cur.fetchone()
         if not t:
             raise HTTPException(status_code=404, detail='task_not_found')
-        cur.execute('SELECT org_unit_id FROM project WHERE id=?', (t['project_id'],))
+        t = row_to_dict(cur, t)
+        cur.execute('SELECT org_unit_id FROM project WHERE id=?', (t.get('project_id'),))
         p = cur.fetchone()
-        if allowed_orgs is not None and p and p['org_unit_id'] not in allowed_orgs:
+        if p:
+            p = row_to_dict(cur, p)
+        if allowed_orgs is not None and p and p.get('org_unit_id') not in allowed_orgs:
             raise HTTPException(status_code=403, detail='forbidden')
         cur.execute('DELETE FROM task WHERE id=?', (task_id,))
         conn.commit()
@@ -165,9 +173,12 @@ def add_task_comment(task_id: int, payload: dict, allowed_orgs: Optional[list] =
         t = cur.fetchone()
         if not t:
             raise HTTPException(status_code=404, detail='task_not_found')
-        cur.execute('SELECT org_unit_id FROM project WHERE id=?', (t['project_id'],))
+        t = row_to_dict(cur, t)
+        cur.execute('SELECT org_unit_id FROM project WHERE id=?', (t.get('project_id'),))
         p = cur.fetchone()
-        if allowed_orgs is not None and p and p['org_unit_id'] not in allowed_orgs:
+        if p:
+            p = row_to_dict(cur, p)
+        if allowed_orgs is not None and p and p.get('org_unit_id') not in allowed_orgs:
             raise HTTPException(status_code=403, detail='forbidden')
         commenter = payload.get('commenter') if isinstance(payload, dict) else None
         comment = payload.get('comment') if isinstance(payload, dict) else None
@@ -176,7 +187,7 @@ def add_task_comment(task_id: int, payload: dict, allowed_orgs: Optional[list] =
         conn.commit()
         cid = cur.lastrowid
         cur.execute('SELECT * FROM task_comment WHERE id=?', (cid,))
-        return dict(cur.fetchone())
+        return row_to_dict(cur, cur.fetchone())
     finally:
         conn.close()
 
@@ -190,9 +201,12 @@ def assign_task(task_id: int, payload: dict, allowed_orgs: Optional[list] = Depe
         t = cur.fetchone()
         if not t:
             raise HTTPException(status_code=404, detail='task_not_found')
-        cur.execute('SELECT org_unit_id FROM project WHERE id=?', (t['project_id'],))
+        t = row_to_dict(cur, t)
+        cur.execute('SELECT org_unit_id FROM project WHERE id=?', (t.get('project_id'),))
         p = cur.fetchone()
-        if allowed_orgs is not None and p and p['org_unit_id'] not in allowed_orgs:
+        if p:
+            p = row_to_dict(cur, p)
+        if allowed_orgs is not None and p and p.get('org_unit_id') not in allowed_orgs:
             raise HTTPException(status_code=403, detail='forbidden')
         assignee = payload.get('assignee') if isinstance(payload, dict) else None
         percent_expected = payload.get('percent_expected') if isinstance(payload, dict) else None
@@ -201,6 +215,6 @@ def assign_task(task_id: int, payload: dict, allowed_orgs: Optional[list] = Depe
         conn.commit()
         aid = cur.lastrowid
         cur.execute('SELECT * FROM task_assignment WHERE id=?', (aid,))
-        return dict(cur.fetchone())
+        return row_to_dict(cur, cur.fetchone())
     finally:
         conn.close()

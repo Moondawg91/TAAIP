@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from typing import Optional, Dict, Any
-from ..db import connect
+from ..db import connect, row_to_dict
 from datetime import datetime
 import json
 
@@ -31,7 +31,7 @@ def compat_create_project(payload: Dict[str, Any]):
         pid = cur.lastrowid
         write_audit(conn, payload.get('created_by') or 'system', 'create.project', 'project', pid, payload)
         cur.execute('SELECT * FROM project WHERE id=?', (pid,))
-        return dict(cur.fetchone())
+        return row_to_dict(cur, cur.fetchone())
     finally:
         conn.close()
 
@@ -50,3 +50,22 @@ def compat_powerbi_events(org_unit_id: Optional[int] = None, limit: int = 1000):
         return [dict(r) for r in cur.fetchall()]
     finally:
         conn.close()
+
+
+@router.get('/targeting/metrics')
+def targeting_metrics():
+    """Return lightweight demo metrics used by the frontend demo."""
+    # Minimal sample metrics for the UI
+    return {
+        'impressions': 12345,
+        'clicks': 123,
+        'conversions': 12,
+        'cpl': 8.33,
+    }
+
+
+@router.post('/targeting/startPilot')
+def targeting_start_pilot(payload: Dict[str, Any]):
+    """Accept a pilot configuration and return a mocked acceptance response."""
+    run_id = f"pilot_{int(datetime.utcnow().timestamp())}"
+    return {'status': 'ok', 'run_id': run_id, 'config': payload}

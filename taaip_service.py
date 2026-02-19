@@ -5,7 +5,7 @@ minimal and delegated to the canonical implementation under
 `services.api.app`.
 """
 from services.api.app.main import app  # type: ignore
-from services.api.app.db import init_schema as _init_schema, init_db as _legacy_init_db  # type: ignore
+from services.api.app.db import init_schema as _init_schema, init_db as _legacy_init_db, get_db_conn  # type: ignore
 import os
 import pathlib
 
@@ -33,4 +33,4 @@ def init_db():
 		pass
 
 
-__all__ = ["app", "init_db"]
+__all__ = ["app", "init_db", "get_db_conn"]

@@ -2,6 +2,8 @@ import os
 import sqlite3
 from datetime import datetime
 from typing import Optional
+import time
+from time import sleep
 
 
 def get_db_path() -> str:
@@ -25,11 +27,18 @@ def connect() -> sqlite3.Connection:
     # mixing independent sqlite3 connections (which can hold locks)
     path = get_db_path()
     _ensure_db_dir(path)
+    def _dict_row_factory(cursor, row):
+        # return a plain dict for each row so callers can safely do dict(row)
+        try:
+            return {d[0]: row[i] for i, d in enumerate(cursor.description)}
+        except Exception:
+            return row
+
     try:
         from services.api.app.database import engine
         raw = engine.raw_connection()
         # raw_connection() returns a DB-API connection (sqlite3.Connection)
-        raw.row_factory = sqlite3.Row
+        raw.row_factory = _dict_row_factory
         try:
             cur = raw.cursor()
             cur.executescript("""
@@ -43,7 +52,7 @@ def connect() -> sqlite3.Connection:
         return raw
     except Exception:
         conn = sqlite3.connect(path, check_same_thread=False, timeout=30)
-        conn.row_factory = sqlite3.Row
+        conn.row_factory = _dict_row_factory
         cur = conn.cursor()
         cur.executescript("""
         PRAGMA foreign_keys=ON;
@@ -296,6 +305,32 @@ def init_schema() -> None:
                 record_status TEXT DEFAULT 'active'
             );
 
+            -- Fiscal year budgets and budget line items (Phase-7)
+            CREATE TABLE IF NOT EXISTS fy_budget (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                org_unit_id INTEGER,
+                fy INTEGER,
+                total_allocated REAL DEFAULT 0,
+                created_at TEXT,
+                updated_at TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS budget_line_item (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                fy_budget_id INTEGER,
+                qtr INTEGER,
+                event_id INTEGER,
+                category TEXT,
+                vendor TEXT,
+                description TEXT,
+                amount REAL DEFAULT 0,
+                status TEXT,
+                obligation_date TEXT,
+                notes TEXT,
+                created_at TEXT,
+                updated_at TEXT
+            );
+
             -- Legacy/backwards-compatible tables used by older routers
             CREATE TABLE IF NOT EXISTS events (
                 event_id TEXT PRIMARY KEY,
@@ -492,6 +527,18 @@ def init_schema() -> None:
                 archived_at TEXT
             );
 
+            -- Mission assessment snapshots (Phase 7)
+            CREATE TABLE IF NOT EXISTS mission_assessments (
+                id TEXT PRIMARY KEY,
+                period_type TEXT,
+                period_value TEXT,
+                scope TEXT,
+                metrics_json TEXT,
+                narrative TEXT,
+                created_at TEXT,
+                updated_at TEXT
+            );
+
             -- Phase 4 domain tables: projects, tasks, meetings, calendar, documents
             CREATE TABLE IF NOT EXISTS projects (
                 project_id TEXT PRIMARY KEY,
@@ -503,6 +550,23 @@ def init_schema() -> None:
                 created_at TEXT,
                 updated_at TEXT,
                 import_job_id TEXT,
+                record_status TEXT DEFAULT 'active'
+            );
+
+            -- Backwards-compatible singular 'project' table used by older compat routers
+            CREATE TABLE IF NOT EXISTS project (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                org_unit_id INTEGER,
+                loe_id TEXT,
+                event_id TEXT,
+                name TEXT,
+                description TEXT,
+                status TEXT,
+                start_dt TEXT,
+                end_dt TEXT,
+                roi_target REAL,
+                created_at TEXT,
+                updated_at TEXT,
                 record_status TEXT DEFAULT 'active'
             );
 
@@ -544,6 +608,34 @@ def init_schema() -> None:
                 record_status TEXT DEFAULT 'active'
             );
 
+            -- Backwards-compatible singular 'task' table and related comment/assignment tables
+            CREATE TABLE IF NOT EXISTS task (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                project_id INTEGER,
+                title TEXT,
+                owner TEXT,
+                status TEXT,
+                percent_complete INTEGER DEFAULT 0,
+                created_at TEXT,
+                updated_at TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS task_comment (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                task_id INTEGER,
+                commenter TEXT,
+                comment TEXT,
+                created_at TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS task_assignment (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                task_id INTEGER,
+                assignee TEXT,
+                assigned_at TEXT,
+                percent_expected INTEGER
+            );
+
             CREATE TABLE IF NOT EXISTS calendar_events (
                 event_id TEXT PRIMARY KEY,
                 org_unit_id TEXT,
@@ -556,6 +648,54 @@ def init_schema() -> None:
                 record_status TEXT DEFAULT 'active'
             );
 
+            -- Boards / QBRs
+            CREATE TABLE IF NOT EXISTS board (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT,
+                org_unit_id INTEGER,
+                description TEXT,
+                created_at TEXT,
+                record_status TEXT DEFAULT 'active'
+            );
+
+            CREATE TABLE IF NOT EXISTS board_session (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                board_id INTEGER,
+                fy INTEGER,
+                qtr INTEGER,
+                session_dt TEXT,
+                notes TEXT,
+                created_at TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS board_metric_snapshot (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                board_session_id INTEGER,
+                metric_key TEXT,
+                metric_value REAL,
+                captured_at TEXT
+            );
+
+            -- Legacy single-table calendar schema for older import paths and routers
+            CREATE TABLE IF NOT EXISTS calendar_event (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                linked_type TEXT,
+                linked_id TEXT,
+                org_unit_id TEXT,
+                title TEXT,
+                start_dt TEXT,
+                end_dt TEXT,
+                location TEXT,
+                notes TEXT,
+                status TEXT,
+                created_by TEXT,
+                created_at TEXT,
+                updated_at TEXT,
+                import_job_id TEXT,
+                tags TEXT,
+                record_status TEXT DEFAULT 'active'
+            );
+
             CREATE TABLE IF NOT EXISTS doc_library (
                 doc_id TEXT PRIMARY KEY,
                 title TEXT,
@@ -565,6 +705,22 @@ def init_schema() -> None:
                 created_by TEXT,
                 import_job_id TEXT,
                 record_status TEXT DEFAULT 'active'
+            );
+
+            -- Simple LMS courses table used by v2 lms endpoints/tests
+            CREATE TABLE IF NOT EXISTS lms_courses (
+                course_id TEXT PRIMARY KEY,
+                title TEXT,
+                description TEXT,
+                created_at TEXT
+            );
+            CREATE TABLE IF NOT EXISTS lms_enrollments (
+                enrollment_id TEXT PRIMARY KEY,
+                user_id TEXT,
+                course_id TEXT,
+                progress_percent INTEGER DEFAULT 0,
+                enrolled_at TEXT,
+                updated_at TEXT
             );
 
             -- Home / Announcements / System updates / Resource links (Phase-5)
@@ -592,6 +748,16 @@ def init_schema() -> None:
                 section TEXT,
                 title TEXT,
                 url TEXT,
+                created_at TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS burden_inputs (
+                id TEXT PRIMARY KEY,
+                scope_type TEXT,
+                scope_value TEXT,
+                mission_requirement TEXT,
+                recruiter_strength INTEGER,
+                reporting_date TEXT,
                 created_at TEXT
             );
 
@@ -634,14 +800,67 @@ def init_schema() -> None:
             -- indexes to speed up feed queries
             CREATE INDEX IF NOT EXISTS ix_fact_production_org_date ON fact_production(org_unit_id, date_key);
             CREATE INDEX IF NOT EXISTS ix_fact_production_metric ON fact_production(metric_key);
-            CREATE INDEX IF NOT EXISTS ix_fact_production_import ON fact_production(import_job_id);
-            CREATE INDEX IF NOT EXISTS ix_fact_funnel_org_date ON fact_funnel(org_unit_id, date_key);
-            CREATE INDEX IF NOT EXISTS ix_fact_funnel_import ON fact_funnel(import_job_id);
-            CREATE INDEX IF NOT EXISTS ix_fact_marketing_org_date ON fact_marketing(org_unit_id, date_key);
-            CREATE INDEX IF NOT EXISTS ix_fact_marketing_import ON fact_marketing(import_job_id);
 
+            -- Migration helpers: canonicalize marketing_activities schema and ensure funnel_transitions has lead_id
+            -- This attempts a safe, idempotent migration so older DB variants don't cause runtime failures.
+            
             """
         )
+        # run lightweight schema migrations
+        try:
+            # inspect marketing_activities columns
+            cur.execute("PRAGMA table_info(marketing_activities)")
+            cols = [r[1] for r in cur.fetchall()]
+            if 'activity_id' not in cols or cols[0] != 'activity_id':
+                try:
+                    cur.executescript("""
+                    PRAGMA foreign_keys=OFF;
+                    CREATE TABLE IF NOT EXISTS marketing_activities_new (
+                        activity_id TEXT PRIMARY KEY,
+                        event_id TEXT,
+                        activity_type TEXT,
+                        campaign_name TEXT,
+                        channel TEXT,
+                        data_source TEXT,
+                        impressions INTEGER DEFAULT 0,
+                        engagement_count INTEGER DEFAULT 0,
+                        awareness_metric REAL,
+                        activation_conversions INTEGER DEFAULT 0,
+                        reporting_date TEXT,
+                        metadata TEXT,
+                        cost REAL DEFAULT 0,
+                        created_at TEXT,
+                        import_job_id TEXT,
+                        record_status TEXT DEFAULT 'active'
+                    );
+                    INSERT OR IGNORE INTO marketing_activities_new(activity_id,event_id,activity_type,campaign_name,channel,data_source,impressions,engagement_count,awareness_metric,activation_conversions,reporting_date,metadata,cost,created_at,import_job_id,record_status)
+                        SELECT COALESCE(activity_id, CAST(id AS TEXT)), event_id, activity_type, campaign_name, channel, data_source, impressions, engagement_count, awareness_metric, activation_conversions, reporting_date, metadata, cost, created_at, import_job_id, record_status FROM marketing_activities;
+                    DROP TABLE IF EXISTS marketing_activities;
+                    ALTER TABLE marketing_activities_new RENAME TO marketing_activities;
+                    PRAGMA foreign_keys=ON;
+                    """)
+                except Exception:
+                    # if migration fails, continue — runtime handlers will try fallbacks
+                    pass
+
+            # ensure funnel_transitions has lead_id column (older schemas may omit it)
+            cur.execute("PRAGMA table_info(funnel_transitions)")
+            fcols = [r[1] for r in cur.fetchall()]
+            if 'lead_id' not in fcols:
+                try:
+                    cur.execute("ALTER TABLE funnel_transitions ADD COLUMN lead_id TEXT")
+                except Exception:
+                    pass
+            if 'lead_key' not in fcols:
+                try:
+                    cur.execute("ALTER TABLE funnel_transitions ADD COLUMN lead_key TEXT")
+                except Exception:
+                    pass
+        except Exception:
+            # best-effort migrations; do not block startup on errors
+            pass
+
+        
 
         index_statements = [
             "CREATE INDEX IF NOT EXISTS ix_org_unit_parent_id ON org_unit(parent_id);",
@@ -671,6 +890,28 @@ def init_schema() -> None:
             except Exception:
                 # If duplicates exist or DB doesn't support, skip — migrations should be safe
                 pass
+
+        # Ensure funnel_stages table exists and seed default stages if empty
+        try:
+            cur.execute('CREATE TABLE IF NOT EXISTS funnel_stages (id TEXT PRIMARY KEY, name TEXT, rank INTEGER, created_at TEXT)')
+            cur.execute('SELECT COUNT(1) FROM funnel_stages')
+            cnt = cur.fetchone()
+            if not cnt or (isinstance(cnt, (list, tuple)) and cnt[0] == 0) or (cnt[0] == 0):
+                now = datetime.utcnow().isoformat()
+                defaults = [
+                    ('lead', 'Lead', 1),
+                    ('prospect', 'Prospect', 2),
+                    ('applicant', 'Applicant', 3),
+                    ('contract', 'Contract', 4),
+                    ('accession', 'Accession', 5),
+                ]
+                for sid, sname, srank in defaults:
+                    try:
+                        cur.execute('INSERT OR IGNORE INTO funnel_stages(id,name,rank,created_at) VALUES(?,?,?,?)', (sid, sname, srank, now))
+                    except Exception:
+                        pass
+        except Exception:
+            pass
 
         # Maintenance schedule / run history tables
         cur.executescript(
@@ -953,5 +1194,63 @@ def init_db() -> str:
     return get_db_path()
 
 
+def row_to_dict(cur, row):
+    """Normalize a DB row into a plain dict.
+
+    Works with sqlite3.Row, mapping-like objects, tuples (using cursor.description),
+    and returns None for falsy rows.
+    """
+    if not row:
+        return None
+    # If it's already a dict-like mapping
+    try:
+        if isinstance(row, dict):
+            return row
+        # sqlite3.Row supports keys() and mapping protocol
+        if hasattr(row, 'keys'):
+            return dict(row)
+    except Exception:
+        pass
+    # If it's a sequence (tuple/list), derive column names from cursor
+    try:
+        desc = getattr(cur, 'description', None)
+        if desc:
+            return {desc[i][0]: row[i] for i in range(len(desc))}
+    except Exception:
+        pass
+    # Fallback: attempt to coerce to dict
+    try:
+        return dict(row)
+    except Exception:
+        return {"value": row}
+
+
+def execute_with_retry(cur, sql, params=(), retries: int = 5, backoff: float = 0.05):
+    """Execute a SQL statement with retries on transient 'database is locked' errors.
+
+    Args:
+        cur: sqlite3 cursor-like object with an `execute` method.
+        sql: SQL string or prepared statement.
+        params: tuple or dict of parameters for the execute call.
+        retries: number of attempts before re-raising the exception.
+        backoff: initial backoff in seconds; will double on each retry.
+    """
+    attempt = 0
+    delay = backoff
+    while True:
+        try:
+            if params is None:
+                return cur.execute(sql)
+            return cur.execute(sql, params)
+        except Exception as exc:
+            msg = str(exc).lower()
+            attempt += 1
+            # retry only for sqlite locked errors
+            if attempt > retries or 'locked' not in msg:
+                raise
+            sleep(delay)
+            delay = min(delay * 2, 2.0)
+
+
 # Backwards compatibility: expose names expected elsewhere in the codebase
-__all__ = ["get_db_path", "connect", "get_db_conn", "init_schema", "init_db"]
+__all__ = ["get_db_path", "connect", "get_db_conn", "init_schema", "init_db", "execute_with_retry"]

@@ -31,3 +31,38 @@ async def ingest_lead(payload: dict, user: dict = Depends(get_current_user)):
     conn.commit()
     conn.close()
     return {"status": "ok", "lead_id": lid}
+
+
+@router.post("/scoreLead")
+async def score_lead(payload: dict):
+    """Lightweight scoring endpoint used by the lightweight frontend demo.
+
+    Returns a mocked score and recommendation derived from simple heuristics.
+    """
+    # Basic heuristics for demo purposes
+    age = int(payload.get('age') or 30)
+    education = (payload.get('education_level') or '').lower()
+    campaign = payload.get('campaign_source') or ''
+    base = 50
+    # age influence
+    if age < 25:
+        base += 10
+    elif age >= 45:
+        base -= 5
+    # education
+    if 'masters' in education or 'phd' in education:
+        base += 10
+    elif 'high' in education:
+        base -= 5
+    # campaign boost
+    if campaign:
+        base += 5
+    score = max(0, min(100, base))
+    prob = round(score / 100.0, 3)
+    rec = 'Recommend contact' if score >= 60 else 'Monitor and nurture'
+    return {
+        'lead_id': payload.get('lead_id') or f"lead-{int(datetime.utcnow().timestamp())}",
+        'score': score,
+        'predicted_probability': prob,
+        'recommendation': rec,
+    }

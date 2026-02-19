@@ -73,6 +73,7 @@ import AdminRolesPage from './pages/admin/AdminRolesPage'
 import RoleDetailPage from './pages/admin/RoleDetailPage'
 import AdminMaintenancePage from './pages/admin/AdminMaintenancePage'
 import AdminRbacPage from './pages/admin/AdminRbacPage'
+import SystemSelfCheckPage from './pages/admin/SystemSelfCheckPage'
 import DocLibraryPage from './pages/resources/DocLibraryPage'
 import ResourcesRegulationsPage from './pages/resources/ResourcesRegulationsPage'
 import TrainingPage from './pages/resources/TrainingPage'
@@ -157,6 +158,7 @@ export default function App() {
           <Route path="/admin/roles/:id" element={<RoleDetailPage />} />
           <Route path="/admin/maintenance" element={<AdminMaintenancePage />} />
           <Route path="/admin/rbac" element={<AdminRbacPage />} />
+          <Route path="/admin/system-self-check" element={<SystemSelfCheckPage />} />
 
           <Route path="/resources/doc-library" element={<DocLibraryPage />} />
           <Route path="/resources/regulations" element={<ResourcesRegulationsPage />} />

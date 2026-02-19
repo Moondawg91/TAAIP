@@ -4,7 +4,7 @@ from .. import db
 from datetime import datetime
 from .rbac import require_scope
 
-router = APIRouter(prefix='/api/analytics', tags=['analytics'])
+router = APIRouter(prefix='/analytics', tags=['analytics'])
 
 def safe_div(a, b):
     try:

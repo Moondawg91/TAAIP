@@ -5,7 +5,7 @@ import { Target, TrendingUp, Cpu, RefreshCw, AlertTriangle, CheckCircle } from '
 // IMPORTANT: This component assumes Tailwind CSS is configured in your project.
 // Load the Lucide icons library for a modern look (npm install lucide-react)
 
-const API_GATEWAY_URL = 'http://127.0.0.1:3000/api/targeting/scoreLead';
+const API_GATEWAY_URL = 'http://127.0.0.1:3000/api/v1/scoreLead';
 
 // Utility function for exponential backoff (for robust API calls)
 const fetchWithRetry = async (url, options, retries = 3) => {

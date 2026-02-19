@@ -4,7 +4,7 @@ from .. import db
 from datetime import datetime
 from .rbac import require_scope
 
-router = APIRouter(prefix="/api/funnel", tags=["funnel"])
+router = APIRouter(prefix="/funnel", tags=["funnel"])
 
 def now_iso():
     return datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')

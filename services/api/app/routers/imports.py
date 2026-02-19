@@ -169,6 +169,13 @@ def parse_job_v3(payload: Dict[str, Any] = Body(...), sheet: Optional[str] = Non
         conn.close()
 
 
+@router.post('/api/import/preview')
+def preview_v3(payload: Dict[str, Any] = Body(...)):
+    """Compatibility alias: POST /api/import/preview { import_job_id: '<uuid>' }
+    Delegates to v3 parse logic (`/api/import/parse`)."""
+    return parse_job_v3(payload)
+
+
 @router.post('/api/import/map')
 def map_v3(payload: Dict[str, Any] = Body(...), allowed_orgs: Optional[list] = Depends(require_scope('STATION'))):
     import_job_id = payload.get('import_job_id')

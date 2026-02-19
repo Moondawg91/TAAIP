@@ -89,7 +89,8 @@ const NAV_CONFIG = [
       { id: 'user-management', label: 'User Management', path: '/admin/users', icon: 'People', disabled: true },
       { id: 'roles', label: 'Role & Scope Control', path: '/admin/roles', icon: 'Security', disabled: true },
       { id: 'system-config', label: 'System Configuration', path: '/admin/config', icon: 'Settings', disabled: true },
-      { id: 'data-imports', label: 'Data Imports', path: '/admin/data-imports', icon: 'UploadFile', disabled: true }
+      { id: 'data-imports', label: 'Data Imports', path: '/admin/data-imports', icon: 'UploadFile', disabled: true },
+      { id: 'system-self-check', label: 'System Self-Check', path: '/admin/system-self-check', icon: 'HealthAndSafety', disabled: false }
     ]
   },
 

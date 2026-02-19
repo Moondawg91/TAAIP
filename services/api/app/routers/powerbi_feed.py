@@ -9,6 +9,21 @@ import io
 router = APIRouter(prefix="/powerbi", tags=["powerbi"])
 
 
+def _fetch_as_dicts(cur):
+    rows = cur.fetchall()
+    if not rows:
+        return []
+    first = rows[0]
+    # sqlite3.Row supports mapping access via keys(); otherwise use description
+    if hasattr(first, 'keys'):
+        return [dict(r) for r in rows]
+    cols = [d[0] for d in cur.description] if getattr(cur, 'description', None) else []
+    if cols:
+        return [dict(zip(cols, r)) for r in rows]
+    # fallback: enumerate values
+    return [{str(i): v for i, v in enumerate(r)} for r in rows]
+
+
 @router.get("/events")
 def export_events(org_unit_id: Optional[int] = None, fy: Optional[int] = None, qtr: Optional[int] = None, limit: int = 1000, allowed_orgs: Optional[list] = Depends(get_allowed_org_units)):
     conn = connect()
@@ -32,8 +47,7 @@ def export_events(org_unit_id: Optional[int] = None, fy: Optional[int] = None, q
                 sql += ' AND org_unit_id=?'; params.append(org_unit_id)
         sql += ' ORDER BY start_dt DESC LIMIT ?'; params.append(limit)
         cur.execute(sql, tuple(params))
-        rows = cur.fetchall()
-        return [dict(r) for r in rows]
+        return _fetch_as_dicts(cur)
     finally:
         conn.close()
 
@@ -63,14 +77,14 @@ def export_table_csv(table: str = 'event', limit: int = 1000, allowed_orgs: Opti
         base_sql += ' ORDER BY id DESC LIMIT ?'
         params.append(limit)
         cur.execute(base_sql, tuple(params))
-        rows = cur.fetchall()
+        rows = _fetch_as_dicts(cur)
 
         # stream CSV
         buf = io.StringIO()
         writer = csv.writer(buf)
         writer.writerow(cols)
         for r in rows:
-            writer.writerow([r[c] for c in cols])
+            writer.writerow([r.get(c) for c in cols])
         buf.seek(0)
         return StreamingResponse(iter([buf.getvalue()]), media_type='text/csv')
     finally:
@@ -100,7 +114,7 @@ def export_budgets(org_unit_id: Optional[int] = None, fy: Optional[int] = None, 
             sql += ' AND fb.fy=?'; params.append(fy)
         sql += ' LIMIT ?'; params.append(limit)
         cur.execute(sql, tuple(params))
-        return [dict(r) for r in cur.fetchall()]
+        return _fetch_as_dicts(cur)
     finally:
         conn.close()
 
@@ -130,7 +144,7 @@ def export_facts(metric_key: Optional[str] = None, org_unit_id: Optional[int] = 
             sql += ' AND recorded_at>=?'; params.append(since)
         sql += ' ORDER BY recorded_at DESC LIMIT ?'; params.append(limit)
         cur.execute(sql, tuple(params))
-        return [dict(r) for r in cur.fetchall()]
+        return _fetch_as_dicts(cur)
     finally:
         conn.close()
 from typing import List, Dict, Optional
@@ -157,8 +171,8 @@ def get_kpis(scope: Optional[str] = "USAREC", as_of: Optional[str] = None, allow
                 return []
             latest = row[0]
             cur.execute("SELECT * FROM kpi_snapshot WHERE scope=? AND as_of=? ORDER BY id", (scope, latest))
-        rows = cur.fetchall()
-        out = [row_to_dict(r) for r in rows]
+        rows = _fetch_as_dicts(cur)
+        out = rows
         if out:
             return out
         # empty DB: return empty rows + schema metadata
@@ -181,8 +195,8 @@ def get_coverage_summary(scope: Optional[str] = "USAREC", as_of: Optional[str] =
                 return []
             latest = row[0]
             cur.execute("SELECT * FROM coverage_summary WHERE scope=? AND as_of=? ORDER BY category", (scope, latest))
-        rows = cur.fetchall()
-        out = [row_to_dict(r) for r in rows]
+        rows = _fetch_as_dicts(cur)
+        out = rows
         if out:
             return out
         return {"rows": [], "schema": ["id","scope","as_of","category","count","source","notes"]}
@@ -210,8 +224,8 @@ def get_zip_metrics(zip: Optional[str] = None, scope: Optional[str] = "USAREC", 
                 cur.execute("SELECT * FROM zip_metrics WHERE scope=? AND as_of=? AND zip=? ORDER BY id", (scope, latest, zip))
             else:
                 cur.execute("SELECT * FROM zip_metrics WHERE scope=? AND as_of=? ORDER BY zip", (scope, latest))
-        rows = cur.fetchall()
-        out = [row_to_dict(r) for r in rows]
+        rows = _fetch_as_dicts(cur)
+        out = rows
         if out:
             return out
         return {"rows": [], "schema": ["id","zip","scope","as_of","metric_key","metric_value","source","notes"]}
@@ -335,7 +349,7 @@ def get_dim_org_unit(format: Optional[str] = 'json'):
     try:
         cur = conn.cursor()
         cur.execute('SELECT id, name, type, parent_id, rsid, uic, state, city, zip FROM dim_org_unit')
-        rows = [dict(r) for r in cur.fetchall()]
+        rows = _fetch_as_dicts(cur)
         if format == 'csv':
             buf = io.StringIO()
             writer = csv.writer(buf)
@@ -358,7 +372,7 @@ def get_dim_time(start: Optional[str] = None, end: Optional[str] = None, format:
             cur.execute('SELECT * FROM dim_time WHERE date_key>=? AND date_key<=? ORDER BY date_key', (start, end))
         else:
             cur.execute('SELECT * FROM dim_time ORDER BY date_key')
-        rows = [dict(r) for r in cur.fetchall()]
+        rows = _fetch_as_dicts(cur)
         if format == 'csv':
             if not rows:
                 return StreamingResponse(iter(['']), media_type='text/csv')
@@ -389,7 +403,7 @@ def get_fact_production(org_unit_id: Optional[str] = None, start: Optional[str] 
             sql += ' AND date_key<=?'; params.append(end)
         sql += ' ORDER BY date_key'
         cur.execute(sql, tuple(params))
-        rows = [dict(r) for r in cur.fetchall()]
+        rows = _fetch_as_dicts(cur)
         if format == 'csv':
             if not rows: return StreamingResponse(iter(['']), media_type='text/csv')
             buf = io.StringIO(); writer = csv.writer(buf)

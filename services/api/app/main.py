@@ -45,7 +45,8 @@ api_router.include_router(compat_org.router)
 api_router.include_router(api_auth.router)
 api_router.include_router(api_org.router)
 api_router.include_router(api_ingest.router)
-api_router.include_router(api_domain.router)
+# v1/v2 routers will be included later after domain routers to ensure
+# domain (SQLAlchemy) endpoints take precedence over older compatibility routes.
 from .routers import powerbi_feed
 api_router.include_router(powerbi_feed.router)
 from .routers import imports as imports_router
@@ -58,6 +59,8 @@ from .routers import benchmarks as benchmarks_router
 api_router.include_router(benchmarks_router.router)
 from .routers import projects as projects_router
 api_router.include_router(projects_router.router)
+from .routers import command_priorities as command_priorities_router
+api_router.include_router(command_priorities_router.router)
 from .routers import meetings as meetings_router
 api_router.include_router(meetings_router.router)
 from .routers import calendar as calendar_router
@@ -66,6 +69,8 @@ from .routers import analytics as analytics_router
 api_router.include_router(analytics_router.router)
 from .routers import events as events_router
 api_router.include_router(events_router.router)
+from .routers import mission_assessments as mission_assessments_router
+api_router.include_router(mission_assessments_router.router)
 from .routers import budgets as budgets_router
 api_router.include_router(budgets_router.router)
 from .routers import projects as projects_router
@@ -74,6 +79,8 @@ from .routers import working_groups as wg_router
 api_router.include_router(wg_router.router)
 from .routers import docs as docs_router
 api_router.include_router(docs_router.router)
+from .routers import resources as resources_router
+api_router.include_router(resources_router.router)
 from .routers import training as training_router
 api_router.include_router(training_router.router)
 from .routers import automation as automation_router
@@ -92,6 +99,22 @@ api_router.include_router(health_router.router)
 from .routers import exports as exports_router
 api_router.include_router(exports_router.router)
 
+# System/self-check router
+from .routers import system as system_router
+api_router.include_router(system_router.router)
+from .routers import budget_summary as budget_summary_router
+api_router.include_router(budget_summary_router.router)
+from .routers import performance_summary as performance_summary_router
+api_router.include_router(performance_summary_router.router)
+from .routers import planning_summary as planning_summary_router
+api_router.include_router(planning_summary_router.router)
+from .routers import operations_summary as operations_summary_router
+api_router.include_router(operations_summary_router.router)
+from .routers import imports_compat as imports_compat_router
+api_router.include_router(imports_compat_router.router)
+from .routers import meta as meta_router
+api_router.include_router(meta_router.router)
+
 from .routers import maintenance as maintenance_router
 api_router.include_router(maintenance_router.router)
 # start the DB-driven maintenance scheduler (disabled by default in test/dev)
@@ -107,6 +130,10 @@ from .routers import v1 as v1_router
 from .routers import v2 as v2_router
 api_router.include_router(v1_router.router)
 api_router.include_router(v2_router.router)
+
+# include domain router after compatibility routers so legacy /api/v2 compatibility
+# endpoints (used by tests) take precedence over SQLAlchemy domain routes
+api_router.include_router(api_domain.router)
 
 # additional operational endpoints
 from .routers import event_ops as event_ops_router
