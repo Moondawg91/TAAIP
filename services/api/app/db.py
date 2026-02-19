@@ -190,6 +190,16 @@ def init_schema() -> None:
                 record_status TEXT DEFAULT 'active'
             );
 
+            -- Many-to-many linkage between projects and events (relational link)
+            CREATE TABLE IF NOT EXISTS project_event_link (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                project_id TEXT NOT NULL,
+                event_id INTEGER NOT NULL,
+                org_unit_id INTEGER,
+                created_at TEXT,
+                UNIQUE(project_id, event_id)
+            );
+
             CREATE TABLE IF NOT EXISTS event_metrics (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 event_id INTEGER NOT NULL,
@@ -551,6 +561,17 @@ def init_schema() -> None:
                 updated_at TEXT,
                 import_job_id TEXT,
                 record_status TEXT DEFAULT 'active'
+            );
+
+            -- User preferences for multi-user experience (Phase-11)
+            CREATE TABLE IF NOT EXISTS user_preferences (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                default_scope TEXT,
+                sidebar_pinned INTEGER DEFAULT 0,
+                saved_filters TEXT,
+                created_at TEXT,
+                UNIQUE(user_id)
             );
 
             -- Backwards-compatible singular 'project' table used by older compat routers
@@ -1026,6 +1047,96 @@ def init_schema() -> None:
                     cur.execute(f"ALTER TABLE {tbl} ADD COLUMN {col} {typ}")
             except Exception:
                 pass
+
+        # Ensure projects and event domain tables include financial dimensions
+        try:
+            # projects (domain 'projects') may need fy,qtr,org_unit_id,station_id,funding_line,category,planned_cost,start_date,end_date
+            proj_cols = table_columns('projects')
+            proj_add = [
+                ('fy', 'INTEGER'), ('qtr', 'INTEGER'), ('org_unit_id', 'INTEGER'), ('station_id', 'TEXT'),
+                ('funding_line', 'TEXT'), ('category', 'TEXT'), ('planned_cost', 'REAL'), ('start_date', 'TEXT'), ('end_date', 'TEXT')
+            ]
+            for col, typ in proj_add:
+                if col not in proj_cols:
+                    try:
+                        cur.execute(f"ALTER TABLE projects ADD COLUMN {col} {typ}")
+                    except Exception:
+                        pass
+        except Exception:
+            pass
+
+        try:
+            # event table: add project_id, fy, qtr, station_id, funding_line, category, planned_cost
+            ev_cols = table_columns('event')
+            ev_add = [
+                ('project_id', 'INTEGER'), ('fy', 'INTEGER'), ('qtr', 'INTEGER'), ('station_id', 'TEXT'),
+                ('funding_line', 'TEXT'), ('category', 'TEXT'), ('planned_cost', 'REAL')
+            ]
+            for col, typ in ev_add:
+                if col not in ev_cols:
+                    try:
+                        cur.execute(f"ALTER TABLE event ADD COLUMN {col} {typ}")
+                    except Exception:
+                        pass
+        except Exception:
+            pass
+
+        # Create expenses table (idempotent)
+        try:
+            cur.executescript('''
+            CREATE TABLE IF NOT EXISTS expenses (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                project_id TEXT,
+                event_id INTEGER,
+                fy INTEGER,
+                qtr INTEGER,
+                org_unit_id INTEGER,
+                station_id TEXT,
+                funding_line TEXT,
+                category TEXT,
+                amount REAL DEFAULT 0,
+                spent_at TEXT,
+                vendor TEXT,
+                notes TEXT,
+                created_at TEXT
+            );
+            ''')
+        except Exception:
+            pass
+
+        # Ensure indexes for fast rollups
+        try:
+            cur.execute("CREATE INDEX IF NOT EXISTS ix_budget_line_item_fy_org ON budget_line_item(fy_budget_id, qtr)")
+        except Exception:
+            pass
+        try:
+            cur.execute("CREATE INDEX IF NOT EXISTS ix_budget_line_item_dims ON budget_line_item(qtr,event_id,category,amount)")
+        except Exception:
+            pass
+        try:
+            cur.execute("CREATE INDEX IF NOT EXISTS ix_expenses_dims ON expenses(fy,qtr,org_unit_id,station_id,funding_line,category)")
+        except Exception:
+            pass
+        try:
+            cur.execute("CREATE INDEX IF NOT EXISTS ix_projects_dims ON projects(fy,qtr,org_unit_id,station_id,funding_line,category)")
+        except Exception:
+            pass
+        try:
+            cur.execute("CREATE INDEX IF NOT EXISTS ix_event_dims ON event(fy,qtr,org_unit_id,station_id,funding_line,category)")
+        except Exception:
+            pass
+        try:
+            cur.execute("CREATE INDEX IF NOT EXISTS ix_project_event_link_proj ON project_event_link(project_id)")
+        except Exception:
+            pass
+        try:
+            cur.execute("CREATE INDEX IF NOT EXISTS ix_project_event_link_event ON project_event_link(event_id)")
+        except Exception:
+            pass
+        try:
+            cur.execute("CREATE INDEX IF NOT EXISTS ix_fy_budget_org_fy ON fy_budget(org_unit_id,fy)")
+        except Exception:
+            pass
 
         # Compatibility patches: some routers expect legacy column names in
         # certain tables (events.event_id, marketing_activities.activity_id,

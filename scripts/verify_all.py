@@ -91,28 +91,53 @@ def start_checks():
         cur = conn.cursor()
         now = time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
 
-        # create org_unit
-        cur.execute("INSERT INTO org_unit(name,type,created_at) VALUES (?,?,?)", ('Test Unit','Station', now))
-        org_id = cur.lastrowid
+        # create org_unit (idempotent)
+        cur.execute("INSERT OR IGNORE INTO org_unit(name,type,created_at) VALUES (?,?,?)", ('Test Unit','Station', now))
+        cur.execute("SELECT id FROM org_unit WHERE name=?", ('Test Unit',))
+        org_row = cur.fetchone()
+        org_id = org_row[0] if org_row else None
 
-        # create user
-        cur.execute("INSERT INTO users(username,display_name,email,created_at) VALUES (?,?,?,?)", ('test.user','Test User','test@example.com', now))
-        user_id = cur.lastrowid
+        # create user (idempotent)
+        cur.execute("INSERT OR IGNORE INTO users(username,display_name,email,created_at) VALUES (?,?,?,?)", ('test.user','Test User','test@example.com', now))
+        cur.execute("SELECT id FROM users WHERE username=?", ('test.user',))
+        user_row = cur.fetchone()
+        user_id = user_row[0] if user_row else None
 
-        # create event
-        cur.execute("INSERT INTO event(org_unit_id,name,start_dt,end_dt,created_at,loe) VALUES (?,?,?,?,?,?)", (org_id, 'Verification Event', now, now, now, 1.0))
-        event_id = cur.lastrowid
+        # create event (idempotent by name)
+        cur.execute("INSERT OR IGNORE INTO event(org_unit_id,name,start_dt,end_dt,created_at,loe) VALUES (?,?,?,?,?,?)", (org_id, 'Verification Event', now, now, now, 1.0))
+        cur.execute("SELECT id FROM event WHERE name=?", ('Verification Event',))
+        event_row = cur.fetchone()
+        event_id = event_row[0] if event_row else None
 
-        # create project
-        cur.execute("INSERT INTO projects(project_id,title,created_at) VALUES (?,?,?)", ('proj-verify', 'Verification Project', now))
+        # create project (idempotent)
+        cur.execute("INSERT OR IGNORE INTO projects(project_id,title,created_at) VALUES (?,?,?)", ('proj-verify', 'Verification Project', now))
 
-        # create marketing activity with cost
-        cur.execute("INSERT INTO marketing_activities(activity_id,event_id,cost,created_at) VALUES (?,?,?,?)", ('mkt-1', str(event_id), 2500.0, now))
+        # create marketing activity with cost (idempotent)
+        cur.execute("INSERT OR IGNORE INTO marketing_activities(activity_id,event_id,cost,created_at) VALUES (?,?,?,?)", ('mkt-1', str(event_id or ''), 2500.0, now))
 
-        # create fy_budget and budget_line_item
-        cur.execute("INSERT INTO fy_budget(org_unit_id,fy,total_allocated,created_at) VALUES (?,?,?,?)", (org_id, 2026, 5000.0, now))
-        fy_id = cur.lastrowid
-        cur.execute("INSERT INTO budget_line_item(fy_budget_id,qtr,event_id,category,amount,status,created_at) VALUES (?,?,?,?,?,?,?)", (fy_id, 1, event_id, 'venue', 1500.0, 'committed', now))
+        # create fy_budget and budget_line_item (idempotent)
+        cur.execute("INSERT OR IGNORE INTO fy_budget(org_unit_id,fy,total_allocated,created_at) VALUES (?,?,?,?)", (org_id, 2026, 5000.0, now))
+        cur.execute("SELECT id FROM fy_budget WHERE org_unit_id=? AND fy=?", (org_id, 2026))
+        fy_row = cur.fetchone()
+        fy_id = fy_row[0] if fy_row else None
+        cur.execute("INSERT OR IGNORE INTO budget_line_item(fy_budget_id,qtr,event_id,category,amount,status,created_at) VALUES (?,?,?,?,?,?,?)", (fy_id, 1, event_id, 'venue', 1500.0, 'committed', now))
+
+        # seed home page content: announcements, system updates, quick links (idempotent)
+        try:
+            cur.execute("SELECT id FROM announcement WHERE title=?", ('Verification Announcement',))
+            if not cur.fetchone():
+                cur.execute("INSERT INTO announcement(org_unit_id,category,title,body,effective_dt,expires_dt,created_at) VALUES (?,?,?,?,?,?,?)", (org_id, 'Message', 'Verification Announcement', 'This is a seeded announcement for verification runs.', now, None, now))
+
+            cur.execute("SELECT id FROM system_update WHERE component=? AND message=?", ('ingest', 'Verification: ingest queue seeded'))
+            if not cur.fetchone():
+                cur.execute("INSERT INTO system_update(component,status,message,created_at) VALUES (?,?,?,?)", ('ingest', 'ok', 'Verification: ingest queue seeded', now))
+
+            cur.execute("SELECT id FROM resource_link WHERE title=?", ('Verification Quick Link',))
+            if not cur.fetchone():
+                cur.execute("INSERT INTO resource_link(section,title,url,created_at) VALUES (?,?,?,?)", ('home', 'Verification Quick Link', '/command-center', now))
+        except Exception:
+            # best-effort seeding; ignore if tables don't exist in minimal schemas
+            pass
 
         conn.commit()
         conn.close()
@@ -135,6 +160,26 @@ def start_checks():
         if planned is None or actual is None:
             failures.append('budget_summary_values_missing')
 
+    # New: verify detailed budget dashboard rollup
+    print('5b) Budget dashboard rollup')
+    bd = http_get('/api/budget/dashboard')
+    try:
+        if not bd or 'kpis' not in bd:
+            failures.append('budget_dashboard_missing')
+        else:
+            k = bd['kpis']
+            allocated = float(k.get('allocated') or 0)
+            planned = float(k.get('planned') or 0)
+            actual = float(k.get('actual') or 0)
+            remaining = float(k.get('remaining') or 0)
+            # tolerance for floating math
+            if abs(remaining - (allocated - planned - actual)) > 0.01:
+                failures.append('budget_rollup_mismatch')
+            else:
+                print(f'  dashboard rollup OK: allocated={allocated} planned={planned} actual={actual} remaining={remaining}')
+    except Exception as e:
+        failures.append('budget_dashboard_error')
+
     # Verify performance mission assessment API
     print('6) Mission assessment')
     m = http_get('/api/performance/mission-assessment')
@@ -142,6 +187,28 @@ def start_checks():
         failures.append('mission_assessment_missing')
     else:
         print('  mission assessment and kpis present')
+
+    # Verify new dashboards: projects, events, performance
+    print('6b) Projects dashboard')
+    pd = http_get('/api/dash/projects/dashboard')
+    if not pd or 'totals' not in pd:
+        failures.append('projects_dashboard_missing')
+    else:
+        print('  projects dashboard present')
+
+    print('6c) Events dashboard')
+    ed = http_get('/api/dash/events/dashboard')
+    if not ed or 'totals' not in ed:
+        failures.append('events_dashboard_missing')
+    else:
+        print('  events dashboard present')
+
+    print('6d) Performance dashboard')
+    perf = http_get('/api/dash/performance/dashboard')
+    if not perf or 'top_metrics' not in perf:
+        failures.append('performance_dashboard_missing')
+    else:
+        print('  performance dashboard present')
 
     # Final route-check: ensure no navConfig client paths return 404 via meta routes
     print('7) Final route verification from meta')

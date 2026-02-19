@@ -180,6 +180,26 @@ export async function getAnalyticsSummary(qs = {}){
   return apiFetch(`/api/analytics/summary?${params}`)
 }
 
+export async function getBudgetDashboard(qs = {}){
+  const params = new URLSearchParams(qs).toString()
+  return apiFetch(`/api/budget/dashboard?${params}`)
+}
+
+export async function getProjectsDashboard(qs = {}){
+  const params = new URLSearchParams(qs).toString()
+  return apiFetch(`/api/dash/projects/dashboard?${params}`)
+}
+
+export async function getEventsDashboard(qs = {}){
+  const params = new URLSearchParams(qs).toString()
+  return apiFetch(`/api/dash/events/dashboard?${params}`)
+}
+
+export async function getPerformanceDashboard(qs = {}){
+  const params = new URLSearchParams(qs).toString()
+  return apiFetch(`/api/dash/performance/dashboard?${params}`)
+}
+
 export async function getAnalyticsFunnel(qs = {}){
   const params = new URLSearchParams(qs).toString()
   return apiFetch(`/api/analytics/funnel?${params}`)
@@ -436,6 +456,37 @@ export async function getMarketPotential(scope, value){
   }
 }
 
-export default {
-  getHealth, getCommandSummary, getCoverageSummary, getMarketPotential, getKpis
+const apiClient = {
+  // home
+  getHomeNews, getHomeUpdates, getHomeQuickLinks,
+  // health / summary
+  getHealth, getCommandSummary, getCoverageSummary, getMarketPotential, getKpis, getOrgUnitsSummary,
+  // auth / user
+  getCurrentUserFromToken,
+  // import helpers
+  uploadImport, importUpload, importParse, importMap, importValidate, importCommit, importJobs, importJobDetail, importTemplate, parseImport, getImport, mapImport, validateImport, commitImport,
+  // analytics
+  getAnalyticsSummary, getAnalyticsFunnel, getAnalyticsQBR, getFunnelEvents, postFunnelEvent, getFunnelStages,
+  // budget
+  getBudgetDashboard, getProjectsDashboard, getEventsDashboard, getPerformanceDashboard,
+  // powerbi
+  getFactProduction, getFactFunnel, getDimOrgUnit, getDimTime,
+  // mission assessment
+  getLatestMissionAssessment, saveMissionAssessment,
+  // imports/exports
+  getImportJobsList, exportFactProduction, exportFactMarketing,
+  // maintenance
+  runDeduplicate, runPurge, listMaintenanceRuns, listSchedules, createSchedule, updateSchedule, triggerSchedule,
+  // rbac
+  listRoles, createRole, updateRole, createUser, assignRole, listUsers, getRoleUsers, removeRole, deleteRole, deleteRoleForce,
+  // projects / tasks / loes
+  getProject, updateTask, assignTask, listLOEs, listLOEsForScope, createLOE, updateLOE, deleteLOE,
+  listCommandPriorities, getCommandBaseline, createCommandPriority, updateCommandPriority, deleteCommandPriority, listPriorityLOEs, assignLOEToPriority, unassignLOEFromPriority,
+  listProjects, listTasks, createProject, createTask, createMeeting,
+  // calendar
+  createCalendarEvent, listCalendarEvents, updateCalendarEvent, deleteCalendarEvent,
+  // market
+  getMarketPotential
 }
+
+export default apiClient

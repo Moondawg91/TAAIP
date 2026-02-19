@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { Box, Typography, Card, CardContent, List, ListItem, ListItemText, Divider } from '@mui/material'
 import { importJobs } from '../../api/client'
+import DashboardToolbar from '../../components/dashboard/DashboardToolbar'
 
 export default function TargetingDataPage(){
   const [jobs, setJobs] = useState([])
@@ -19,6 +20,7 @@ export default function TargetingDataPage(){
 
   return (
     <Box sx={{ p:3, minHeight:'100vh', bgcolor:'background.default', color:'text.primary' }}>
+      <DashboardToolbar title="Targeting Data" subtitle="Import jobs & datasets" filters={{}} onFiltersChange={()=>{}} onExport={(t)=>{ alert(`Export ${t} coming soon`) }} />
       <Typography variant="h5">Targeting Data</Typography>
       <Typography variant="body2" sx={{ color:'text.secondary', mb:2 }}>Recent import jobs and datasets.</Typography>
 

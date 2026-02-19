@@ -16,7 +16,7 @@ const palette = {
 
 const muiTheme = createTheme({
   palette,
-  shape: { borderRadius: 10 },
+  shape: { borderRadius: 6 },
   typography: { h6: { fontWeight: 700 }, button: { textTransform: 'none' } },
   components: {
     MuiCssBaseline: {
@@ -44,16 +44,19 @@ const muiTheme = createTheme({
         root: {
           backgroundColor: palette.background.paper,
           color: palette.text.primary,
-          border: `1px solid ${palette.divider}`
+          border: `1px solid ${palette.divider}`,
+          borderRadius: 6
         }
       }
     },
-    MuiCard: { styleOverrides: { root: { backgroundColor: palette.background.paper, boxShadow: '0 4px 18px rgba(7,5,15,0.6)' } } },
+    MuiCard: { styleOverrides: { root: { backgroundColor: palette.background.paper, boxShadow: '0 4px 18px rgba(7,5,15,0.45)', borderRadius: 6 } } },
     MuiDrawer: { styleOverrides: { paper: { backgroundColor: palette.background.paper } } },
     MuiMenu: { styleOverrides: { paper: { backgroundColor: palette.background.paper } } },
-    MuiListItemButton: { styleOverrides: { root: { borderRadius: 8, '&.Mui-selected': { background: alpha('#7C4DFF', 0.12), boxShadow: `0 6px 18px ${alpha('#7C4DFF',0.12)}`, border: `1px solid ${alpha('#7C4DFF',0.18)}` } } } },
+    MuiListItemButton: { styleOverrides: { root: { borderRadius: 6, '&.Mui-selected': { background: alpha('#7C4DFF', 0.12), boxShadow: `0 6px 18px ${alpha('#7C4DFF',0.12)}`, border: `1px solid ${alpha('#7C4DFF',0.18)}` } } } },
     MuiTooltip: { styleOverrides: { tooltip: { backgroundColor: '#1b122f', color: '#EDEDF7', fontSize: 12 } } },
-    MuiButton: { styleOverrides: { root: { borderRadius: 8 } } }
+    MuiButton: { styleOverrides: { root: { borderRadius: 6 } } },
+    MuiSelect: { styleOverrides: { root: { borderRadius: 6 } } },
+    MuiTextField: { styleOverrides: { root: { borderRadius: 6 } } }
   }
 })
 

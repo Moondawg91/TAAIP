@@ -56,7 +56,20 @@ import MarketSegmentationPage from './pages/operations/MarketSegmentationPage'
 import SchoolLandingPage from './pages/school/SchoolLandingPage'
 
 import BudgetTrackerPage from './pages/budget/BudgetTrackerPage'
+import ProjectsDashboardPage from './pages/dash/ProjectsDashboardPage'
+import EventsDashboardPage from './pages/dash/EventsDashboardPage'
 import PlaceholderPage from './pages/PlaceholderPage'
+import CommandIntelPage from './pages/command/IntelPage'
+import RecruitingOpsPage from './pages/command/RecruitingOpsPage'
+import RecruitingAnalyticsPage from './pages/performance/RecruitingAnalyticsPage'
+import RoiOverviewPage from './pages/budget/RoiOverviewPage'
+import FundingAllocationsPage from './pages/budget/FundingAllocationsPage'
+import SystemConfigPage from './pages/admin/SystemConfigPage'
+import DataImportsPage from './pages/admin/DataImportsPage'
+import ManualsPage from './pages/resources/ManualsPage'
+import SopsPage from './pages/resources/SopsPage'
+import TrainingModulesPage from './pages/resources/TrainingModulesPage'
+import UserManualPage from './pages/resources/UserManualPage'
 import AssetManagementPage from './pages/planning/AssetManagementPage'
 import CommunityEngagementPage from './pages/planning/CommunityEngagementPage'
 import EnvRecommendationPage from './pages/planning/EnvRecommendationPage'
@@ -77,6 +90,8 @@ import SystemSelfCheckPage from './pages/admin/SystemSelfCheckPage'
 import DocLibraryPage from './pages/resources/DocLibraryPage'
 import ResourcesRegulationsPage from './pages/resources/ResourcesRegulationsPage'
 import TrainingPage from './pages/resources/TrainingPage'
+import UploadsPage from './pages/resources/UploadsPage'
+import HistoricalDataPage from './pages/resources/HistoricalDataPage'
 import SubmitTicketPage from './pages/help/SubmitTicketPage'
 import TicketStatusPage from './pages/help/TicketStatusPage'
 import SystemStatusPage from './pages/help/SystemStatusPage'
@@ -123,6 +138,8 @@ export default function App() {
           <Route path="/command-center/lines-of-effort" element={<LinesOfEffortPage />} />
           <Route path="/command-center/priorities" element={<CommandPrioritiesPage />} />
           <Route path="/command-center/mission-assessment" element={<MissionAssessmentPage />} />
+          <Route path="/command-center/intel" element={<CommandIntelPage />} />
+          <Route path="/command-center/recruiting-ops" element={<RecruitingOpsPage />} />
           <Route path="/command-center/mission-analysis" element={<MissionAnalysisPage />} />
           <Route path="/command-center/mission-planning" element={<MissionPlanningPage />} />
           <Route path="/command-center/usarec-targeting" element={<USARECTargetingPage />} />
@@ -138,6 +155,8 @@ export default function App() {
           <Route path="/operations/mission-planning" element={<MissionPlanningPage />} />
           <Route path="/operations/targeting-methodology" element={<TargetingMethodologyPage />} />
           <Route path="/operations/targeting-data" element={<TargetingDataPage />} />
+          <Route path="/operations/marketing-roi" element={<MarketingROIPage />} />
+          <Route path="/operations/event-performance" element={<EventPerformancePage />} />
 
           <Route path="/planning/projects-events" element={<ProjectsEventsPage />} />
           <Route path="/planning/asset-management" element={<AssetManagementPage />} />
@@ -152,6 +171,8 @@ export default function App() {
           <Route path="/performance/production-dashboard" element={<ProductionDashboardPage />} />
           <Route path="/performance/market-segmentation" element={<PerformanceMarketSegmentationPage />} />
           <Route path="/performance/funnel-metrics" element={<FunnelMetricsPage />} />
+          <Route path="/performance/recruiting-analytics" element={<RecruitingAnalyticsPage />} />
+          <Route path="/performance/mission-assessment" element={<MissionAssessmentPage />} />
 
           <Route path="/admin/users" element={<AdminUsersPage />} />
           <Route path="/admin/roles" element={<AdminRolesPage />} />
@@ -159,9 +180,28 @@ export default function App() {
           <Route path="/admin/maintenance" element={<AdminMaintenancePage />} />
           <Route path="/admin/rbac" element={<AdminRbacPage />} />
           <Route path="/admin/system-self-check" element={<SystemSelfCheckPage />} />
+          <Route path="/admin/config" element={<SystemConfigPage />} />
+          <Route path="/admin/data-imports" element={<DataImportsPage />} />
 
           <Route path="/resources/doc-library" element={<DocLibraryPage />} />
           <Route path="/resources/regulations" element={<ResourcesRegulationsPage />} />
+          <Route path="/resources/manuals" element={<ManualsPage />} />
+          <Route path="/resources/sops" element={<SopsPage />} />
+          <Route path="/resources/training" element={<TrainingModulesPage />} />
+          <Route path="/resources/user-manual" element={<UserManualPage />} />
+          <Route path="/resources/documents" element={<DocLibraryPage />} />
+          <Route path="/resources/uploads" element={<UploadsPage />} />
+          <Route path="/resources/historical-data" element={<HistoricalDataPage />} />
+
+          {/* aliases for planning */}
+          <Route path="/planning/project-events" element={<ProjectsEventsPage />} />
+
+          {/* aliases for operations */}
+          <Route path="/operations/usarec-targeting-methodology" element={<TargetingMethodologyPage />} />
+
+          {/* budget aliases */}
+          <Route path="/budget/roi-overview" element={<RoiOverviewPage />} />
+          <Route path="/budget/funding-allocations" element={<FundingAllocationsPage />} />
           <Route path="/resources-training/documents" element={<DocLibraryPage />} />
           <Route path="/resources-training/training" element={<TrainingPage />} />
 
@@ -185,6 +225,8 @@ export default function App() {
 
           {/* budget */}
           <Route path="/budget/tracker" element={<BudgetTrackerPage />} />
+          <Route path="/dash/projects" element={<ProjectsDashboardPage />} />
+          <Route path="/dash/events" element={<EventsDashboardPage />} />
           </Routes>
         </ShellLayout>
       </ScopeProvider>

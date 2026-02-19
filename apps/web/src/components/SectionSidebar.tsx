@@ -28,6 +28,27 @@ export default function SectionSidebar(){
   const loc = useLocation()
   const [userRoles, setUserRoles] = useState<string[]>([])
 
+  // Ensure the active section reflects the current route so sidebar shows correct group
+  useEffect(()=>{
+    try {
+      const p = loc.pathname || ''
+      let matched: string | null = null
+      for (const s of (NAV_CONFIG as unknown as NavSection[])){
+        if (!s || !s.items) continue
+        for (const it of s.items){
+          if (it.path && typeof it.path === 'string' && p.startsWith(it.path)){
+            matched = s.id
+            break
+          }
+        }
+        if (matched) break
+      }
+      if (matched) setActiveSection(matched)
+    } catch(e) {
+      // noop
+    }
+  }, [loc.pathname])
+
   useEffect(()=>{
     try{
       const u = getCurrentUserFromToken()
@@ -49,8 +70,8 @@ export default function SectionSidebar(){
   return (
     <Box sx={{ width: open ? expandedWidth : collapsedWidth, transition: 'width 220ms cubic-bezier(.2,0,.2,1)', bgcolor: 'background.paper', color: 'text.primary', display: 'flex', flexDirection: 'column', borderRight: `1px solid rgba(255,255,255,0.04)` }} onMouseEnter={()=>setHovered(true)} onMouseLeave={()=>{ setHovered(false); if(!pinned) setActiveSection(null) }}>
       <Box sx={{ display:'flex', alignItems:'center', px:2, py:1, gap:2 }}>
-        <Box sx={{ display:'flex', alignItems:'center', gap:1, flex:1 }}>
-          <Typography variant="h6" sx={{ fontWeight:700 }}>{/* keep short */}TAAIP</Typography>
+          <Box sx={{ display:'flex', alignItems:'center', gap:1, flex:1 }}>
+          <Typography variant="h6" sx={{ fontWeight:700, cursor: 'pointer' }} onClick={()=>navigate('/')}>{/* keep short */}TAAIP</Typography>
           {open && <Typography variant="caption" sx={{ color:'text.secondary' }}>Talent Acquisition Intelligence & Analytics Platform</Typography>}
         </Box>
         <IconButton size="small" onClick={()=>setPinned(p=>!p)} sx={{ color:'text.secondary' }}>
@@ -65,33 +86,27 @@ export default function SectionSidebar(){
         <Box sx={{ display:'flex', flexDirection:'column', alignItems:'center', gap:1, py:1 }}>
           {(NAV_CONFIG as unknown as NavSection[]).map(section => (
             <Tooltip key={section.id} title={section.label} placement="right">
-              <IconButton onClick={() => {
-                // expand the sidebar
-                setHovered(true)
-                // toggle active section (off if already active)
-                setActiveSection(prev => (prev === section.id ? null : section.id))
-
-                // navigate to first enabled item if available
-                  try {
-                    // find first enabled item considering role gates
-                    const first = (section.items || []).find((i: NavItem) => {
-                      if (i.disabled) return false
-                      if (!i.path || typeof i.path !== 'string' || i.path.length<=1) return false
-                      // admin gate: disable admin routes for non-admins
-                      if (i.path.startsWith('/admin') && !userRoles.includes('usarec_admin') && !userRoles.includes('sysadmin')) return false
-                      // command priorities gate
-                      if (i.path === '/command-center/priorities' && !userRoles.includes('usarec_admin') && !userRoles.includes('commander')) return false
-                      return true
-                    })
-                    if (first && typeof first.path === 'string') {
-                      navigate(first.path)
-                    }
-                  } catch (e) {
-                    // noop
-                  }
-
-                // do not auto-collapse via timeout; collapse happens on mouse leave
-              }} sx={{ color:'text.secondary' }}>
+                <IconButton
+                  onMouseEnter={() => {
+                    // when hovering the collapsed icon rail, expand and show this section
+                    setHovered(true)
+                    setActiveSection(section.id)
+                  }}
+                  onClick={() => {
+                    // also allow click to navigate to first item and expand
+                    setHovered(true)
+                    setActiveSection(section.id)
+                    try {
+                      const first = (section.items || []).find((i: NavItem) => {
+                        if (!i.path || typeof i.path !== 'string' || i.path.length<=1) return false
+                        return true
+                      })
+                      if (first && typeof first.path === 'string') {
+                        navigate(first.path)
+                      }
+                    } catch (e) { }
+                  }}
+                  sx={{ color:'text.secondary' }}>
                 {IconByName(section.icon)}
               </IconButton>
             </Tooltip>
@@ -103,8 +118,8 @@ export default function SectionSidebar(){
         {(NAV_CONFIG as unknown as NavSection[]).map(section => {
           const showItems = open && (activeSection ? section.id === activeSection : section.id === 'command-center')
           return (
-            <Box key={section.id} sx={{ px: open ? 2 : 0, mb:1 }} id={`${section.id}-section`}>
-              {open && <Typography variant="overline" sx={{ color:'text.secondary' }}>{section.label}</Typography>}
+            <Box key={section.id} sx={{ px: open ? 2 : 0, mb:1 }} id={`${section.id}-section`} onMouseEnter={() => { if (open) setActiveSection(section.id) }}>
+              {open && <Typography variant="overline" sx={{ color:'text.secondary', cursor: 'pointer' }} onClick={() => setActiveSection(section.id)}>{section.label}</Typography>}
               {showItems ? (
                 <List>
                   {section.items.map((it:NavItem)=> {
@@ -115,7 +130,7 @@ export default function SectionSidebar(){
                     if (!roleDisabled && path === '/command-center/priorities' && !userRoles.includes('usarec_admin') && !userRoles.includes('commander')) roleDisabled = true
                     return (
                       <Tooltip key={it.path || it.id} title={!open ? it.label : ''} placement="right">
-                        <ListItemButton selected={loc.pathname===it.path} onClick={()=>{ if(!roleDisabled && path) navigate(path) }} disabled={roleDisabled} sx={{ borderRadius:1, my:0.5, px: open ? 1.5 : 0.5 }}>
+                        <ListItemButton selected={loc.pathname===it.path} onClick={()=>{ console.debug('sidebar click', section.id, it.id, it.path); if(path) navigate(path) }} sx={{ borderRadius:1, my:0.5, px: open ? 1.5 : 0.5 }}>
                           <ListItemIcon sx={{ minWidth: open ? 40 : 0, justifyContent:'center', color: roleDisabled ? 'text.secondary' : 'primary.main' }}>{ roleDisabled ? <LockIcon fontSize="small" /> : IconByName(it.icon) }</ListItemIcon>
                           {open && <ListItemText primary={it.label} primaryTypographyProps={{ variant:'body2' }} secondary={roleDisabled ? 'No access' : undefined} />}
                         </ListItemButton>

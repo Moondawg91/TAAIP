@@ -287,6 +287,50 @@ def validate_v3(payload: Dict[str, Any] = Body(...), allowed_orgs: Optional[list
                     errors += 1
                     cur.execute('INSERT INTO import_error(id, import_job_id, row_index, field, message, created_at) VALUES (?,?,?,?,?,?)', (uuid.uuid4().hex, import_job_id, i+1, None, 'missing id or type', now_iso()))
                     sample_errors.append({'row': i+1, 'message':'missing id or type'})
+            elif dataset in ('expenses', 'expense'):
+                # require amount numeric and at least one of project_id/event_id/org_unit_id
+                amt = row.get(mapping.get('amount')) if mapping.get('amount') else row.get('amount')
+                pid = row.get(mapping.get('project_id')) if mapping.get('project_id') else row.get('project_id')
+                eid = row.get(mapping.get('event_id')) if mapping.get('event_id') else row.get('event_id')
+                org = row.get(mapping.get('org_unit_id')) if mapping.get('org_unit_id') else row.get('org_unit_id')
+                try:
+                    float(amt)
+                except Exception:
+                    errors += 1
+                    cur.execute('INSERT INTO import_error(id, import_job_id, row_index, field, message, created_at) VALUES (?,?,?,?,?,?)', (uuid.uuid4().hex, import_job_id, i+1, 'amount', 'invalid amount', now_iso()))
+                    sample_errors.append({'row': i+1, 'field':'amount', 'message':'invalid amount'})
+                if not (pid or eid or org):
+                    errors += 1
+                    cur.execute('INSERT INTO import_error(id, import_job_id, row_index, field, message, created_at) VALUES (?,?,?,?,?,?)', (uuid.uuid4().hex, import_job_id, i+1, None, 'missing project_id/event_id/org_unit', now_iso()))
+                    sample_errors.append({'row': i+1, 'message':'missing project_id/event_id/org_unit'})
+            elif dataset in ('budget_line_item', 'budget'):
+                fyv = row.get(mapping.get('fy')) if mapping.get('fy') else row.get('fy')
+                org = row.get(mapping.get('org_unit_id')) if mapping.get('org_unit_id') else row.get('org_unit_id')
+                amt = row.get(mapping.get('amount')) if mapping.get('amount') else row.get('amount')
+                if fyv is None or org is None:
+                    errors += 1
+                    cur.execute('INSERT INTO import_error(id, import_job_id, row_index, field, message, created_at) VALUES (?,?,?,?,?,?)', (uuid.uuid4().hex, import_job_id, i+1, None, 'missing fy or org_unit_id', now_iso()))
+                    sample_errors.append({'row': i+1, 'message':'missing fy or org_unit_id'})
+                try:
+                    float(amt)
+                except Exception:
+                    errors += 1
+                    cur.execute('INSERT INTO import_error(id, import_job_id, row_index, field, message, created_at) VALUES (?,?,?,?,?,?)', (uuid.uuid4().hex, import_job_id, i+1, 'amount', 'invalid amount', now_iso()))
+                    sample_errors.append({'row': i+1, 'field':'amount', 'message':'invalid amount'})
+            elif dataset == 'projects':
+                pid = row.get(mapping.get('project_id')) if mapping.get('project_id') else row.get('project_id')
+                title = row.get(mapping.get('title')) if mapping.get('title') else row.get('title')
+                if not pid or not title:
+                    errors += 1
+                    cur.execute('INSERT INTO import_error(id, import_job_id, row_index, field, message, created_at) VALUES (?,?,?,?,?,?)', (uuid.uuid4().hex, import_job_id, i+1, None, 'missing project_id or title', now_iso()))
+                    sample_errors.append({'row': i+1, 'message':'missing project_id or title'})
+            elif dataset == 'events':
+                eid = row.get(mapping.get('event_id')) if mapping.get('event_id') else row.get('event_id')
+                name = row.get(mapping.get('name')) if mapping.get('name') else row.get('name')
+                if not eid or not name:
+                    errors += 1
+                    cur.execute('INSERT INTO import_error(id, import_job_id, row_index, field, message, created_at) VALUES (?,?,?,?,?,?)', (uuid.uuid4().hex, import_job_id, i+1, None, 'missing event_id or name', now_iso()))
+                    sample_errors.append({'row': i+1, 'message':'missing event_id or name'})
             else:
                 # generic checks: non-empty row
                 if not any(row.values()):
@@ -468,6 +512,23 @@ def get_template(dataset_key: str):
         'funnel': {
             'csv_header': 'org_unit_id,date,stage,count_value',
             'fields': ['org_unit_id','date','stage','count_value']
+        }
+        ,
+        'expenses': {
+            'csv_header': 'project_id,event_id,fy,qtr,org_unit_id,station_id,funding_line,category,amount,spent_at,vendor,notes',
+            'fields': ['project_id','event_id','fy','qtr','org_unit_id','station_id','funding_line','category','amount','spent_at','vendor','notes']
+        },
+        'budget_line_item': {
+            'csv_header': 'org_unit_id,fy,qtr,event_id,category,description,amount,obligation_date,notes',
+            'fields': ['org_unit_id','fy','qtr','event_id','category','description','amount','obligation_date','notes']
+        },
+        'projects': {
+            'csv_header': 'project_id,title,org_unit_id,fy,qtr,funding_line,category,planned_cost,percent_complete,updated_at',
+            'fields': ['project_id','title','org_unit_id','fy','qtr','funding_line','category','planned_cost','percent_complete','updated_at']
+        },
+        'events': {
+            'csv_header': 'event_id,name,org_unit_id,fy,qtr,project_id,planned_cost,loe,start_dt,end_dt',
+            'fields': ['event_id','name','org_unit_id','fy','qtr','project_id','planned_cost','loe','start_dt','end_dt']
         }
     }
     return templates.get(dataset_key, {'csv_header':'','fields':[]})
@@ -663,7 +724,7 @@ def commit_job(job_id: int, allowed_orgs: Optional[list] = Depends(require_scope
         mapping_json = p['mapping_json'] if 'mapping_json' in p.keys() else None
         target_domain = p['target_domain'] if 'target_domain' in p.keys() else None
 
-        allowed = set(['funnel_event','cost_benchmark','roi_result','loe','project','task','meeting','agenda_item','minutes','action_item','decision','calendar_event'])
+        allowed = set(['funnel_event','cost_benchmark','roi_result','loe','project','projects','task','tasks','meeting','agenda_item','minutes','action_item','decision','calendar_event','event','events','expenses','expense','budget_line_item','fy_budget'])
 
         row_count = 0
         if mapping_json:
@@ -700,13 +761,53 @@ def commit_job(job_id: int, allowed_orgs: Optional[list] = Depends(require_scope
                 for tfield, sfield in field_map.items():
                     cols.append(tfield)
                     vals.append(r.get(sfield))
+
+                # special-case: budget_line_item may reference fy/org_unit; create/find fy_budget when mapping provides fy/org_unit
+                if target == 'budget_line_item':
+                    # if mapping provides fy and org_unit_id fields, try to find/create fy_budget and set fy_budget_id
+                    fy_val = None
+                    org_val = None
+                    if 'fy' in field_map:
+                        fy_val = r.get(field_map.get('fy'))
+                    if 'org_unit_id' in field_map:
+                        org_val = r.get(field_map.get('org_unit_id'))
+                    try:
+                        if fy_val is not None and org_val is not None:
+                            cur.execute('SELECT id FROM fy_budget WHERE org_unit_id=? AND fy=?', (int(org_val), int(fy_val)))
+                            frow = cur.fetchone()
+                            if frow:
+                                fy_budget_id = frow['id'] if 'id' in frow.keys() else frow[0]
+                            else:
+                                cur.execute('INSERT INTO fy_budget(org_unit_id,fy,total_allocated,created_at) VALUES (?,?,?,?)', (int(org_val), int(fy_val), 0.0, now_iso()))
+                                fy_budget_id = cur.lastrowid
+                            # ensure fy_budget_id inserted as first column if not present
+                            cols.insert(0, 'fy_budget_id')
+                            vals.insert(0, fy_budget_id)
+                    except Exception:
+                        pass
+
                 # add provenance fields if present in table
                 cols.extend(['created_at','updated_at','import_job_id'])
                 vals.extend([now_iso(), now_iso(), job_id])
                 placeholders = ','.join(['?'] * len(vals))
                 sql = f"INSERT INTO {target}({','.join(cols)}) VALUES ({placeholders})"
-                cur.execute(sql, tuple(vals))
-                row_count += 1
+                try:
+                    cur.execute(sql, tuple(vals))
+                    row_count += 1
+                except Exception:
+                    # try a permissive insert: only insert fields that actually exist in the table
+                    try:
+                        cur.execute(f"PRAGMA table_info({target})")
+                        existing_cols = [c[1] for c in cur.fetchall()]
+                        insert_cols = [c for c in cols if c in existing_cols]
+                        insert_vals = [vals[i] for i, c in enumerate(cols) if c in existing_cols]
+                        if insert_cols:
+                            placeholders = ','.join(['?'] * len(insert_vals))
+                            sql = f"INSERT INTO {target}({','.join(insert_cols)}) VALUES ({placeholders})"
+                            cur.execute(sql, tuple(insert_vals))
+                            row_count += 1
+                    except Exception:
+                        pass
             cur.execute('UPDATE import_job SET row_count_imported=?, status=?, updated_at=? WHERE id=?', (row_count, 'completed', now_iso(), job_id))
             conn.commit()
             try:

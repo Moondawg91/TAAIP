@@ -104,6 +104,14 @@ from .routers import system as system_router
 api_router.include_router(system_router.router)
 from .routers import budget_summary as budget_summary_router
 api_router.include_router(budget_summary_router.router)
+from .routers import budget_dashboard as budget_dashboard_router
+api_router.include_router(budget_dashboard_router.router)
+from .routers import projects_dashboard as projects_dashboard_router
+api_router.include_router(projects_dashboard_router.router)
+from .routers import events_dashboard as events_dashboard_router
+api_router.include_router(events_dashboard_router.router)
+from .routers import performance_dashboard as performance_dashboard_router
+api_router.include_router(performance_dashboard_router.router)
 from .routers import performance_summary as performance_summary_router
 api_router.include_router(performance_summary_router.router)
 from .routers import planning_summary as planning_summary_router

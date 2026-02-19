@@ -54,6 +54,10 @@ export default function HomePage(){
   const [updates, setUpdates] = React.useState([])
   const [links, setLinks] = React.useState([])
   const [loading, setLoading] = React.useState(true)
+  const [apiOnline, setApiOnline] = React.useState(null)
+  const [dbConnected, setDbConnected] = React.useState(null)
+  const [budgetKpis, setBudgetKpis] = React.useState(null)
+  const [projectsTotals, setProjectsTotals] = React.useState(null)
 
   React.useEffect(()=>{
     let mounted = true
@@ -63,9 +67,18 @@ export default function HomePage(){
       setNews(n || [])
       setUpdates(u || [])
       setLinks(l || [])
+      // infer DB connectivity if we received rows
+      setDbConnected((n && n.length>0) || (u && u.length>0) || (l && l.length>0))
     }).catch(()=>{
       // ignore errors; keep empty
+      setDbConnected(false)
     }).finally(()=> mounted && setLoading(false))
+
+    // check simple API health
+    api.getHealth().then(h=>{ if(!mounted) return; setApiOnline(!!(h && h.status && h.status==='ok')) }).catch(()=>{ if(mounted) setApiOnline(false) })
+    // fetch dashboard summaries for quick snapshot
+    api.getBudgetDashboard({ fy: new Date().getFullYear() }).then(d=>{ if(mounted) setBudgetKpis(d ? { total_planned: d.total_planned, total_spent: d.total_spent, total_remaining: d.total_remaining } : null) }).catch(()=>{ if(mounted) setBudgetKpis(null) })
+    api.getProjectsDashboard({}).then(d=>{ if(mounted) setProjectsTotals(d && d.totals ? d.totals : null) }).catch(()=>{ if(mounted) setProjectsTotals(null) })
     return ()=>{ mounted = false }
   }, [scope])
 
@@ -104,11 +117,11 @@ export default function HomePage(){
               <Stack spacing={1}>
                 <Box sx={{ display:'flex', justifyContent:'space-between' }}>
                   <Typography variant="body2">API</Typography>
-                  <Typography variant="body2" sx={{ color: '#22C55E' }}>Online</Typography>
+                  <Typography variant="body2" sx={{ color: apiOnline ? '#22C55E' : '#FF6B6B' }}>{apiOnline ? 'Online' : (apiOnline===false ? 'Offline' : 'Checking')}</Typography>
                 </Box>
                 <Box sx={{ display:'flex', justifyContent:'space-between' }}>
                   <Typography variant="body2">DB</Typography>
-                  <Typography variant="body2" sx={{ color: COLORS.text }}>Connected</Typography>
+                  <Typography variant="body2" sx={{ color: dbConnected ? COLORS.text : COLORS.muted }}>{dbConnected ? 'Connected' : (dbConnected===false ? 'Disconnected' : 'Unknown')}</Typography>
                 </Box>
                 <Box sx={{ display:'flex', justifyContent:'space-between' }}>
                   <Typography variant="body2">Last Import</Typography>
@@ -212,9 +225,41 @@ export default function HomePage(){
             </HomePanel>
           </Grid>
 
-          <Grid item xs={12} md={6}>
+            <Grid item xs={12} md={6}>
             <HomePanel title="What Changed / Release Notes" icon={<StorageIcon sx={{ color: COLORS.primary }} />}>
               <Typography variant="body2" sx={{ color: COLORS.text, fontWeight:700 }}>Latest build: v0.0.7</Typography>
+              {/* Budget snapshot */}
+              {budgetKpis ? (
+                <Box sx={{ display:'flex', gap:1, my:1 }}>
+                  <Box sx={{ p:1, bgcolor: '#0F1724', borderRadius:1, flex:1 }}>
+                    <Typography variant="caption" sx={{ color: COLORS.muted }}>Planned</Typography>
+                    <Typography variant="h6" sx={{ color: COLORS.text }}>{budgetKpis.total_planned}</Typography>
+                  </Box>
+                  <Box sx={{ p:1, bgcolor: '#0F1724', borderRadius:1, flex:1 }}>
+                    <Typography variant="caption" sx={{ color: COLORS.muted }}>Spent</Typography>
+                    <Typography variant="h6" sx={{ color: COLORS.text }}>{budgetKpis.total_spent}</Typography>
+                  </Box>
+                  <Box sx={{ p:1, bgcolor: '#0F1724', borderRadius:1, flex:1 }}>
+                    <Typography variant="caption" sx={{ color: COLORS.muted }}>Remaining</Typography>
+                    <Typography variant="h6" sx={{ color: COLORS.text }}>{budgetKpis.total_remaining}</Typography>
+                  </Box>
+                </Box>
+              ) : (
+                <EmptyState title="No budget data" subtitle="No budget rollups available. Import data to populate dashboards." actionLabel="Go to Import Center" onAction={()=>{ window.location.href='/import-center' }} />
+              )}
+              {/* Projects snapshot */}
+              {projectsTotals ? (
+                <Box sx={{ display:'flex', gap:1, my:1 }}>
+                  <Box sx={{ p:1, bgcolor: '#0F1724', borderRadius:1, flex:1 }}>
+                    <Typography variant="caption" sx={{ color: COLORS.muted }}>Projects</Typography>
+                    <Typography variant="h6" sx={{ color: COLORS.text }}>{projectsTotals.count || 0}</Typography>
+                  </Box>
+                  <Box sx={{ p:1, bgcolor: '#0F1724', borderRadius:1, flex:1 }}>
+                    <Typography variant="caption" sx={{ color: COLORS.muted }}>Planned Cost</Typography>
+                    <Typography variant="h6" sx={{ color: COLORS.text }}>{projectsTotals.planned_cost || 0}</Typography>
+                  </Box>
+                </Box>
+              ) : null}
               <List sx={{ p:0 }}>
                 <ListItem sx={{ py:0.5 }}>
                   <ListItemText primary="Added" secondary="Command Priorities editor (UI placeholder)" primaryTypographyProps={{ sx:{ color: COLORS.text } }} secondaryTypographyProps={{ sx:{ color: COLORS.muted } }} />
