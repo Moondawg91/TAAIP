@@ -1011,6 +1011,22 @@ def init_schema() -> None:
                 except Exception:
                     pass
 
+        # Ensure `users` table has `role` and `scope` columns expected by ORM
+        try:
+            ucols = table_columns('users')
+            if 'role' not in ucols:
+                try:
+                    cur.execute("ALTER TABLE users ADD COLUMN role TEXT")
+                except Exception:
+                    pass
+            if 'scope' not in ucols:
+                try:
+                    cur.execute("ALTER TABLE users ADD COLUMN scope TEXT")
+                except Exception:
+                    pass
+        except Exception:
+            pass
+
         # When possible, copy values from newer/older columns into legacy names
         try:
             if 'filename_original' in existing and 'filename' in existing:
