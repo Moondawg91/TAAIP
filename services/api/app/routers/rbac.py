@@ -131,6 +131,62 @@ def get_allowed_org_units(username: Dict = Depends(get_current_user)) -> Optiona
     finally:
         conn.close()
 
+
+def _normalize_scope_val(val: str) -> str:
+    # Normalize RSID-like values to uppercase and colon-separated
+    if not val or not isinstance(val, str):
+        return ''
+    return val.strip().upper()
+
+
+def _scope_allows(user_scope: str, required_scope: str) -> bool:
+    """Return True if user_scope covers required_scope based on prefix hierarchy.
+
+    e.g. user_scope 'USAREC' allows 'USAREC:BDE1:BN2', and 'USAREC:BDE1' allows 'USAREC:BDE1:BN2'.
+    """
+    us = _normalize_scope_val(user_scope)
+    rs = _normalize_scope_val(required_scope)
+    if not us or not rs:
+        return False
+    # exact match
+    if us == rs:
+        return True
+    # prefix match by colon separator
+    if rs.startswith(us + ':'):
+        return True
+    # also allow global USAREC to match any if us == 'USAREC'
+    if us == 'USAREC':
+        return True
+    return False
+
+
+def _log_audit(username: str, action: str, resource: str, detail: str, outcome: str = 'denied'):
+    """Insert an audit log row (best-effort)."""
+    try:
+        conn = connect()
+        cur = conn.cursor()
+        cur.executescript('''
+        CREATE TABLE IF NOT EXISTS audit_log (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT,
+            action TEXT,
+            resource TEXT,
+            detail TEXT,
+            outcome TEXT,
+            created_at TEXT
+        );
+        ''')
+        now = __import__('datetime').datetime.utcnow().isoformat()
+        cur.execute('INSERT INTO audit_log(username, action, resource, detail, outcome, created_at) VALUES (?,?,?,?,?,?)', (username, action, resource, detail, outcome, now))
+        conn.commit()
+    except Exception:
+        pass
+    finally:
+        try:
+            conn.close()
+        except Exception:
+            pass
+
 def require_not_role(role_name: str):
     def _dep(user: Dict = Depends(get_current_user)):
         if not isinstance(user, dict):
@@ -155,10 +211,19 @@ def require_station_scope(rsid: str):
             return user
         scopes = user.get("scopes") or []
         for s in scopes:
-            if isinstance(s, dict) and (s.get("scope_value") == rsid or s.get("scope_value") == rsid.upper()):
+            sv = None
+            if isinstance(s, dict):
+                sv = s.get('scope_value')
+            elif isinstance(s, str):
+                sv = s
+            if sv and _scope_allows(sv, rsid):
                 return user
-            if isinstance(s, str) and s.endswith(rsid):
-                return user
+        # log denied access
+        try:
+            uname = user.get('username') if isinstance(user, dict) else str(user)
+            _log_audit(uname, 'require_station_scope', rsid, 'missing station scope', 'denied')
+        except Exception:
+            pass
         raise HTTPException(status_code=403, detail="Forbidden: no station scope")
 
     return _dep
@@ -199,6 +264,14 @@ def require_scope(min_level: str = 'STATION'):
                             allowed.add(s[0])
                 except Exception:
                     allowed.add(oid)
+        # prefix/hierarchy RBAC: also check user's scopes for prefix coverage and log denials
+            # collect user scopes from user_scope table if available
+            cur.execute('SELECT scope_value FROM user_scope WHERE user_id=?', (uid,))
+            user_scope_vals = [r[0] for r in cur.fetchall() if r and r[0]]
+            # if at least one user_scope covers the min_level required, allow unrestricted (None)
+            for usv in user_scope_vals:
+                if _scope_allows(usv, min_level) or _scope_allows(usv, 'USAREC'):
+                    return None
             return list(allowed)
         finally:
             conn.close()
