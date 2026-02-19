@@ -1,0 +1,3 @@
+name,owner_id,start_date,target_date,objectives,event_id,funding_amount,status
+Test Project A,owner123,2026-02-01,2026-03-01,"Objective A",EVT-1,1000,planning
+Test Project B,owner456,2026-02-02,2026-04-01,"Objective B",,2000,planning

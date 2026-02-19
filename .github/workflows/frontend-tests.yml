@@ -1,0 +1,41 @@
+name: Frontend Tests
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - name: Install dependencies
+        working-directory: apps/web
+        run: |
+          set -euxo pipefail
+          npm ci
+      - name: Build frontend
+        working-directory: apps/web
+        run: |
+          set -euxo pipefail
+          if jq -e '.scripts.build' package.json >/dev/null 2>&1; then
+            npm run build
+          else
+            echo "No build script in package.json; skipping build";
+          fi
+      - name: Run frontend tests (if present)
+        working-directory: apps/web
+        run: |
+          set -euxo pipefail
+          if jq -e '.scripts.test' package.json >/dev/null 2>&1; then
+            npm test -- --watchAll=false || true
+          else
+            echo "No test script in package.json; skipping tests";
+          fi

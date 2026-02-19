@@ -1,0 +1,106 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model RawFile {
+  id           String           @id @default(cuid())
+  originalName String
+  mimeType     String
+  sizeBytes    Int
+  storagePath  String
+  uploadedById String
+  uploadedAt   DateTime         @default(now())
+
+  batches       RawImportBatch[]
+}
+
+model RawImportBatch {
+  id          String       @id @default(cuid())
+  datasetKey  String?
+  status      ImportStatus @default(RECEIVED)
+
+  rawFileId   String
+  rawFile     RawFile @relation(fields: [rawFileId], references: [id])
+
+  headerRow    Int?
+  mappingJson  Json?
+  summaryJson  Json?
+  errorJson    Json?
+
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}
+
+enum ImportStatus {
+  RECEIVED
+  VALIDATING
+  VALIDATED
+  LOADING
+  LOADED
+  ERROR
+}
+
+model OrgDim {
+  id        String   @id @default(cuid())
+  orgKey    String   @unique
+  name      String
+  type      OrgType
+
+  parentId  String?
+  parent    OrgDim?  @relation("OrgParent", fields: [parentId], references: [id])
+  children  OrgDim[] @relation("OrgParent")
+
+  createdAt DateTime @default(now())
+
+  @@index([type])
+  @@index([parentId])
+}
+
+model FactLead {
+  id          String   @id @default(cuid())
+  orgDimId    String
+  orgDim      OrgDim   @relation(fields: [orgDimId], references: [id])
+
+  batchId     String?
+  batch       RawImportBatch? @relation(fields: [batchId], references: [id])
+
+  leadDate    DateTime?
+  source      String?
+  priority    String?
+  status      String?
+
+  createdAt   DateTime @default(now())
+  data        Json?
+
+  @@index([orgDimId])
+  @@index([batchId])
+  @@index([leadDate])
+}
+
+model ImportRowError {
+  id        String @id @default(cuid())
+  batchId   String
+  batch     RawImportBatch @relation(fields: [batchId], references: [id])
+
+  rowNumber Int
+  field     String?
+  message   String
+  rawValue  String?
+
+  createdAt DateTime @default(now())
+
+  @@index([batchId])
+}
+
+enum OrgType {
+  CMD
+  BDE
+  BN
+  CO
+  STN
+}
