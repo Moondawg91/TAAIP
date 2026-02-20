@@ -198,6 +198,16 @@ docker-compose up -d --build
 
 ---
 
+## Quick import-check (CI-friendly)
+
+You can validate the backend imports (useful in CI) with:
+
+```bash
+# run in the project root virtualenv
+python -c "from services.api.app.main import app; print('api import ok')"
+```
+
+
 ## ✅ Current Status
 
 Your TAAIP installation is ready for:

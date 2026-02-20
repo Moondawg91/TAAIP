@@ -272,6 +272,12 @@ def require_scope(min_level: str = 'STATION'):
             for usv in user_scope_vals:
                 if _scope_allows(usv, min_level) or _scope_allows(usv, 'USAREC'):
                     return None
+            # if no allowed org_units and no prefix coverage, log denied access for audit
+            if not allowed:
+                try:
+                    _log_audit(uname, 'require_scope', min_level, 'insufficient scope', 'denied')
+                except Exception:
+                    pass
             return list(allowed)
         finally:
             conn.close()
@@ -390,8 +396,15 @@ def assign_role(payload: Dict[str, Any], current_user: Dict = Depends(get_curren
         u = cur.fetchone()
         if not u:
             raise HTTPException(status_code=404, detail="user not found")
-        cur.execute("SELECT id FROM roles WHERE name=?", (role_name,))
-        r = cur.fetchone()
+        # allow role to be specified by id or by name (case-insensitive)
+        r = None
+        try:
+            rid = int(role_name)
+            cur.execute("SELECT id FROM roles WHERE id=?", (rid,))
+            r = cur.fetchone()
+        except Exception:
+            cur.execute("SELECT id FROM roles WHERE lower(name)=lower(?)", (role_name,))
+            r = cur.fetchone()
         if not r:
             raise HTTPException(status_code=404, detail="role not found")
         cur.execute("INSERT INTO user_roles(user_id, role_id, assigned_at) VALUES (?,?,datetime('now'))", (u[0], r[0]))
@@ -438,8 +451,15 @@ def remove_role(payload: Dict[str, Any], current_user: Dict = Depends(get_curren
         u = cur.fetchone()
         if not u:
             raise HTTPException(status_code=404, detail="user not found")
-        cur.execute("SELECT id FROM roles WHERE name=?", (role_name,))
-        r = cur.fetchone()
+        # allow role specified by id or name
+        r = None
+        try:
+            rid = int(role_name)
+            cur.execute("SELECT id FROM roles WHERE id=?", (rid,))
+            r = cur.fetchone()
+        except Exception:
+            cur.execute("SELECT id FROM roles WHERE lower(name)=lower(?)", (role_name,))
+            r = cur.fetchone()
         if not r:
             raise HTTPException(status_code=404, detail="role not found")
         cur.execute("DELETE FROM user_roles WHERE user_id=? AND role_id=?", (u[0], r[0]))

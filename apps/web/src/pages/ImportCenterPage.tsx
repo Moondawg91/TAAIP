@@ -28,9 +28,10 @@ export default function ImportCenterPage(){
   const mapFn = api.mapImport || api.importMap
   const validateFn = api.validateImport || api.importValidate
   const commitFn = api.commitImport || api.importCommit
+  const importJobsFn = api.importJobs || api.getImportJobsList || (()=>Promise.resolve([]))
 
   async function loadJobs(){
-    try{ const list = await api.importJobs(); setJobs(list || []) }catch(e){ console.error(e) }
+    try{ const list = await importJobsFn(); setJobs(list || []) }catch(e){ console.error(e) }
   }
 
   async function onFileChange(e){
@@ -247,7 +248,7 @@ export default function ImportCenterPage(){
                 <Button variant="contained" color="primary" sx={{ ml:2 }} onClick={()=>doCommit('append')}>Commit</Button>
                 <Button variant="contained" color="secondary" sx={{ ml:2 }} onClick={()=>doCommit('append')}>Append</Button>
                 <Button variant="contained" color="error" sx={{ ml:2 }} onClick={()=>doCommit('replace')}>Replace</Button>
-                <Button variant="contained" color="warning" sx={{ ml:2 }} onClick={()=>doCommit('replace-scope')}>Replace Scope</Button>
+                <Button variant="contained" color="warning" sx={{ ml:2 }} onClick={()=>doCommit('replace-scope')}>Replace Echelon</Button>
               </Box>
               <Box sx={{ mt:2 }}>
                 <Typography>Errors</Typography>

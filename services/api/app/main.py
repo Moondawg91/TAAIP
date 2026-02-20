@@ -67,6 +67,8 @@ from .routers import calendar as calendar_router
 api_router.include_router(calendar_router.router)
 from .routers import analytics as analytics_router
 api_router.include_router(analytics_router.router)
+from .routers import rollups as rollups_router
+api_router.include_router(rollups_router.router)
 from .routers import events as events_router
 api_router.include_router(events_router.router)
 from .routers import mission_assessments as mission_assessments_router
@@ -124,6 +126,24 @@ from .routers import imports_compat as imports_compat_router
 api_router.include_router(imports_compat_router.router)
 from .routers import meta as meta_router
 api_router.include_router(meta_router.router)
+
+from .routers import tactical_rollups as tactical_rollups_router
+api_router.include_router(tactical_rollups_router.router)
+
+from .routers import tactical_dashboards as tactical_dashboards_router
+api_router.include_router(tactical_dashboards_router.router)
+
+# New lightweight dashboards router for empty-safe dashboard endpoints
+from .routers import dashboards as dashboards_router
+api_router.include_router(dashboards_router.router)
+
+# Dashboard exports for CSV/JSON
+from .routers import exports_dashboards as exports_dashboards_router
+api_router.include_router(exports_dashboards_router.router)
+
+# Command center router (mission-assessment + priorities)
+from .routers import command_center as command_center_router
+api_router.include_router(command_center_router.router)
 
 from .routers import maintenance as maintenance_router
 api_router.include_router(maintenance_router.router)

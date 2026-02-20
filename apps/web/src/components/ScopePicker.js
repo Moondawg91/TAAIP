@@ -8,12 +8,13 @@ export default function ScopePicker({onApply, initialScope='USAREC', initialValu
   const [value, setValue] = useState(initialValue);
 
   return (
-    <div className="scope-picker">
+    <div className="echelon-picker">
+      <label style={{marginRight:8, color:'#EDEDF7'}}>Echelon</label>
       <select value={scope} onChange={e=>setScope(e.target.value)}>
         {SCOPES.map(s=> <option key={s} value={s}>{s}</option>)}
       </select>
-      <input placeholder="value (prefix or rsid)" value={value} onChange={e=>setValue(e.target.value)} />
-      <button onClick={()=>onApply(scope, value)}>Apply</button>
+      <input placeholder="unit (prefix or rsid)" value={value} onChange={e=>setValue(e.target.value)} style={{marginLeft:8}} />
+      <button onClick={()=>onApply(scope, value)} style={{marginLeft:8}}>Apply</button>
     </div>
   );
 }

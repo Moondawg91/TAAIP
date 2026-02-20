@@ -39,7 +39,7 @@ export default function AdminUsersPage(){
   return (
     <Box sx={{ p:3, minHeight:'100vh', bgcolor:'background.default', color:'text.primary' }}>
       <Typography variant="h5">User Management</Typography>
-      <Typography variant="body2" sx={{ color:'text.secondary', mb:2 }}>Manage users, roles, and access scopes.</Typography>
+      <Typography variant="body2" sx={{ color:'text.secondary', mb:2 }}>Manage users, roles, and echelon access.</Typography>
       <Card sx={{ bgcolor:'background.paper', mb:2 }}>
         <CardContent>
           <Typography variant="h6">Create User</Typography>

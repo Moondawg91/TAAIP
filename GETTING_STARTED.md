@@ -34,9 +34,15 @@ python test_taaip_api.py
 # Output: Tests Passed: 18/18 ✓
 ```
 
+## Quick API import check (CI-friendly)
+
+You can validate the backend imports with:
+
+```bash
+python -c "from services.api.app.main import app; print('api import ok')"
+```
 **That's it! You're running TAAIP.** ✅
 
----
 
 ## 📖 Next Steps by Role
 

@@ -5,7 +5,7 @@ import SaveIcon from '@mui/icons-material/Save'
 import AddIcon from '@mui/icons-material/Add'
 import DeleteIcon from '@mui/icons-material/Delete'
 import * as api from '../../api/client'
-import { useScope } from '../../contexts/ScopeContext'
+import { useEchelon } from '../../contexts/ScopeContext'
 
 type Loe = {
   id: number | string
@@ -17,7 +17,7 @@ type Loe = {
 }
 
 export default function LinesOfEffortPage(){
-  const { scope } = useScope()
+  const { echelon } = useEchelon()
   const [loes, setLoes] = useState<Loe[]>([])
   const [loading, setLoading] = useState(false)
   const [creating, setCreating] = useState(false)
@@ -36,7 +36,7 @@ export default function LinesOfEffortPage(){
   async function load(){
     setLoading(true)
     try{
-      const items = await api.listLOEsForScope(scope)
+      const items = await api.listLOEsForScope(echelon)
       setLoes(items || [])
     }catch(e){
       console.error('load loes', e)
@@ -45,7 +45,7 @@ export default function LinesOfEffortPage(){
     }
   }
 
-  useEffect(()=>{ load() }, [scope])
+  useEffect(()=>{ load() }, [echelon])
 
   async function handleCreate(){
     if(!newTitle) return
@@ -114,7 +114,7 @@ export default function LinesOfEffortPage(){
                 <MenuItem value="Q4">Q4</MenuItem>
               </Select>
             </FormControl>
-            <TextField label="Scope ID" size="small" value={newScope} onChange={e=>setNewScope(e.target.value)} />
+            <TextField label="Unit ID" size="small" value={newScope} onChange={e=>setNewScope(e.target.value)} />
             <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreate}>Create</Button>
             <Button variant="text" onClick={()=>setCreating(false)}>Cancel</Button>
           </Box>
@@ -152,13 +152,13 @@ export default function LinesOfEffortPage(){
                       <MenuItem value="Q4">Q4</MenuItem>
                     </Select>
                   </FormControl>
-                  <TextField size="small" label="Scope ID" value={editScope} onChange={e=>setEditScope(e.target.value)} />
+                  <TextField size="small" label="Unit ID" value={editScope} onChange={e=>setEditScope(e.target.value)} />
                 </Box>
               </Box>
             ) : (
               <Box>
                 <Typography variant="body2" color="text.secondary">{l.description}</Typography>
-                <Typography variant="caption" sx={{ color:'text.secondary' }}>FY: {l.fy || 'N/A'} • QTR: {l.qtr || 'N/A'} • Scope: {l.org_unit_id || '—'}</Typography>
+                <Typography variant="caption" sx={{ color:'text.secondary' }}>FY: {l.fy || 'N/A'} • QTR: {l.qtr || 'N/A'} • Unit: {l.org_unit_id || '—'}</Typography>
               </Box>
             )} />
             <ListItemSecondaryAction>

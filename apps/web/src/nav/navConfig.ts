@@ -1,4 +1,5 @@
 const NAV_CONFIG = [
+  // NOTE: top-level Dashboard entry removed to avoid duplicate Home/dashboard link
   // 1. Command Center
   {
     id: 'command-center',
@@ -87,7 +88,7 @@ const NAV_CONFIG = [
     icon: 'AdminPanelSettings',
     items: [
       { id: 'user-management', label: 'User Management', path: '/admin/users', icon: 'People', disabled: true },
-      { id: 'roles', label: 'Role & Scope Control', path: '/admin/roles', icon: 'Security', disabled: true },
+      { id: 'roles', label: 'Role & Echelon Control', path: '/admin/roles', icon: 'Security', disabled: true },
       { id: 'system-config', label: 'System Configuration', path: '/admin/config', icon: 'Settings', disabled: true },
       { id: 'data-imports', label: 'Data Imports', path: '/admin/data-imports', icon: 'UploadFile', disabled: true },
       { id: 'system-self-check', label: 'System Self-Check', path: '/admin/system-self-check', icon: 'HealthAndSafety', disabled: false }

@@ -1,10 +1,10 @@
 import React from 'react'
 import { Box, Typography, Button, List, ListItem, ListItemText, Dialog, DialogTitle, DialogContent, DialogActions, TextField } from '@mui/material'
 import api from '../../api/client'
-import { useScope } from '../../contexts/ScopeContext'
+import { useEchelon } from '../../contexts/ScopeContext'
 
 export default function CommandPrioritiesPage(){
-  const { scope } = useScope()
+  const { echelon } = useEchelon()
   const [loading, setLoading] = React.useState(true)
   const [priorities, setPriorities] = React.useState([])
   const [open, setOpen] = React.useState(false)
@@ -14,7 +14,7 @@ export default function CommandPrioritiesPage(){
   React.useEffect(()=>{
     let mounted = true
     setLoading(true)
-    api.listCommandPriorities(scope).then(r=>{
+    api.listCommandPriorities(echelon).then(r=>{
       if(!mounted) return
       setPriorities(r || [])
     }).catch(()=>{}).finally(()=> mounted && setLoading(false))
@@ -30,7 +30,7 @@ export default function CommandPrioritiesPage(){
       } else {
         await api.createCommandPriority({ title })
       }
-      const refreshed = await api.listCommandPriorities(scope)
+      const refreshed = await api.listCommandPriorities(echelon)
       setPriorities(refreshed||[])
     }catch(e){}
     setOpen(false)

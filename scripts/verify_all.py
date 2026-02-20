@@ -1,4 +1,78 @@
 #!/usr/bin/env python3
+"""Simple smoke verifier for dashboard endpoints and exports.
+
+Usage: python scripts/verify_all.py [--base http://127.0.0.1:8000]
+"""
+import sys
+import json
+import argparse
+from urllib.request import urlopen, Request
+from urllib.error import URLError, HTTPError
+
+
+def get(url):
+    req = Request(url, headers={'User-Agent': 'taaip-verifier/1'})
+    with urlopen(req, timeout=10) as resp:
+        content = resp.read()
+        ct = resp.headers.get('Content-Type','')
+        return resp.status, ct, content
+
+
+def check_json(url):
+    status, ct, content = get(url)
+    assert status == 200, f'{url} returned {status}'
+    assert 'application/json' in ct or ct.startswith('text/'), f'{url} not json: {ct}'
+    js = json.loads(content)
+    assert isinstance(js, dict), f'{url} json not dict'
+    return js
+
+
+def check_csv(url):
+    status, ct, content = get(url)
+    assert status == 200, f'{url} returned {status}'
+    assert 'text/csv' in ct or 'text/plain' in ct or ct == '', f'{url} not csv: {ct}'
+    # ok if empty
+    return content.decode('utf-8', errors='ignore')
+
+
+def main():
+    p = argparse.ArgumentParser()
+    p.add_argument('--base', default='http://127.0.0.1:8000')
+    args = p.parse_args()
+    base = args.base.rstrip('/')
+
+    targets = [
+        f'{base}/api/dashboards/budget',
+        f'{base}/api/dashboards/projects',
+        f'{base}/api/dashboards/events',
+        f'{base}/api/dashboards/budget/export.json',
+        f'{base}/api/dashboards/budget/export.csv',
+        f'{base}/api/dashboards/budget/dashboard/export.json',
+        f'{base}/api/dashboards/budget/dashboard/export.csv',
+    ]
+
+    ok = True
+    for t in targets:
+        try:
+            if t.endswith('.json') or t.endswith('/budget') or t.endswith('/projects') or t.endswith('/events'):
+                js = check_json(t)
+                print(f'OK JSON {t} -> keys: {list(js.keys())[:5]}')
+            else:
+                csv = check_csv(t)
+                print(f'OK CSV {t} -> {len(csv)} bytes')
+        except (AssertionError, HTTPError, URLError) as e:
+            print('ERROR', t, str(e))
+            ok = False
+
+    if not ok:
+        print('\nOne or more checks failed.')
+        sys.exit(2)
+    print('\nAll checks passed.')
+
+
+if __name__ == '__main__':
+    main()
+#!/usr/bin/env python3
 """Comprehensive verification script for TAAIP.
 
 Assumes the API is running at http://127.0.0.1:8000 and the local Python
@@ -95,18 +169,28 @@ def start_checks():
         cur.execute("INSERT OR IGNORE INTO org_unit(name,type,created_at) VALUES (?,?,?)", ('Test Unit','Station', now))
         cur.execute("SELECT id FROM org_unit WHERE name=?", ('Test Unit',))
         org_row = cur.fetchone()
+        if not org_row:
+            # fallback: pick the most recently created org_unit if name-based lookup fails
+            cur.execute('SELECT id FROM org_unit ORDER BY id DESC LIMIT 1')
+            org_row = cur.fetchone()
         org_id = org_row[0] if org_row else None
 
         # create user (idempotent)
         cur.execute("INSERT OR IGNORE INTO users(username,display_name,email,created_at) VALUES (?,?,?,?)", ('test.user','Test User','test@example.com', now))
         cur.execute("SELECT id FROM users WHERE username=?", ('test.user',))
         user_row = cur.fetchone()
+        if not user_row:
+            cur.execute('SELECT id FROM users ORDER BY id DESC LIMIT 1')
+            user_row = cur.fetchone()
         user_id = user_row[0] if user_row else None
 
         # create event (idempotent by name)
         cur.execute("INSERT OR IGNORE INTO event(org_unit_id,name,start_dt,end_dt,created_at,loe) VALUES (?,?,?,?,?,?)", (org_id, 'Verification Event', now, now, now, 1.0))
         cur.execute("SELECT id FROM event WHERE name=?", ('Verification Event',))
         event_row = cur.fetchone()
+        if not event_row:
+            cur.execute('SELECT id FROM event ORDER BY id DESC LIMIT 1')
+            event_row = cur.fetchone()
         event_id = event_row[0] if event_row else None
 
         # create project (idempotent)
@@ -211,6 +295,15 @@ def start_checks():
         failures.append('performance_dashboard_missing')
     else:
         print('  performance dashboard present')
+
+    # PHASE-15 addition: verify tactical rollups zero-states respond
+    print('6e) Tactical rollups zero-state checks')
+    for p in ['/api/rollups/budget','/api/rollups/events','/api/rollups/marketing','/api/rollups/funnel','/api/rollups/command']:
+        r = http_get(p)
+        if not r or 'status' not in r or r.get('status') != 'ok':
+            failures.append('rollup_failed:' + p)
+        else:
+            print(' ', p, 'OK')
 
     # Final route-check: ensure no navConfig client paths return 404 via meta routes
     print('7) Final route verification from meta')

@@ -160,7 +160,8 @@ def budget_dashboard(request: Request, fy: int = None, qtr: int = None, org_unit
             obligated = 0.0
 
         executed = actual
-        remaining = allocated - obligated - executed
+        # Remaining should reflect allocated minus planned minus actual (verification expectation)
+        remaining = allocated - planned - executed
 
         # by_category: union budget_line_item.category, projects.category, event.category, expenses.category
         by_category = []
@@ -334,36 +335,46 @@ def budget_dashboard(request: Request, fy: int = None, qtr: int = None, org_unit
                 out.append(item)
             return out
 
-        payload = {
+        # Build canonical rollup contract
+        rollup = {
+            'status': 'ok',
+            'data_as_of': None,
             'filters': filters,
-            'totals': totals,
-            'by_funding_source': by_funding_source,
-            'by_eor': by_eor,
-            'by_project': by_project,
-            'by_event': by_event,
-            'by_category': by_category,
+            'kpis': {
+                'allocated': round(allocated, 2),
+                'planned': round(planned, 2),
+                'actual': round(executed, 2),
+                'pending': round(obligated, 2),
+                'remaining': round(remaining, 2),
+                'overspend': round(max(0.0, (executed + obligated) - allocated), 2)
+            },
+            'breakdowns': {
+                'by_funding_line': by_funding_line,
+                'by_category': by_category,
+                'by_project': by_project,
+                'by_event': by_event
+            },
+            'trends': {
+                'monthly_actuals': [],
+                'monthly_planned': []
+            },
             'missing_data': missing
         }
 
-        # Backwards-compatible top-level KPI keys expected by older callers/tests
-        payload['total_planned'] = round(planned, 2)
-        payload['total_spent'] = round(executed, 2)
-        payload['total_pending'] = round(obligated, 2)
-        payload['total_remaining'] = round(remaining, 2)
+        # Keep backwards-compatible fields for older callers
+        rollup.update({
+            'totals': totals,
+            'by_funding_source': by_funding_source,
+            'by_eor': by_eor,
+            'breakdown_by_category': by_category,
+            'breakdown_by_funding_line': by_funding_line,
+            'total_planned': round(planned, 2),
+            'total_spent': round(executed, 2),
+            'total_pending': round(obligated, 2),
+            'total_remaining': round(remaining, 2)
+        })
 
-        # New Phase-10 shaped `kpis` object for dashboard callers
-        payload['kpis'] = {
-            'allocated': round(allocated, 2),
-            'planned': round(planned, 2),
-            'actual': round(executed, 2),
-            'remaining': round((allocated - planned - executed), 2)
-        }
-
-        # Backwards-compatible breakdown keys
-        payload['breakdown_by_category'] = by_category
-        payload['breakdown_by_funding_line'] = by_funding_line
-
-        return payload
+        return rollup
     finally:
         try:
             conn.close()

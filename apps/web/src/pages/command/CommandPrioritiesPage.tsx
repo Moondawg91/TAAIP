@@ -4,7 +4,7 @@ import EditIcon from '@mui/icons-material/Edit'
 import DeleteIcon from '@mui/icons-material/Delete'
 import AddIcon from '@mui/icons-material/Add'
 import { listCommandPriorities, createCommandPriority, updateCommandPriority, deleteCommandPriority, listLOEsForScope, listPriorityLOEs, assignLOEToPriority, unassignLOEFromPriority, getCurrentUserFromToken } from '../../api/client'
-import { useScope } from '../../contexts/ScopeContext'
+import { useEchelon } from '../../contexts/ScopeContext'
 import EmptyState from '../../components/common/EmptyState'
 import DualModeTabs from '../../components/DualModeTabs'
 import DashboardFilterBar from '../../components/DashboardFilterBar'
@@ -23,8 +23,8 @@ export default function CommandPrioritiesPage(){
   const [editing, setEditing] = useState(null)
   const [form, setForm] = useState({ title:'', description:'', rank:0 })
 
-  useEffect(()=>{ refresh() }, [])
-  const { scope } = useScope()
+    useEffect(()=>{ refresh() }, [])
+    const { echelon } = useEchelon()
 
   useEffect(()=>{
     const u = getCurrentUserFromToken()
@@ -34,12 +34,12 @@ export default function CommandPrioritiesPage(){
   async function refresh(){
     setLoading(true)
     try{
-      const p = await listCommandPriorities(scope) || []
-      const allLoes = await listLOEsForScope(scope) || []
+      const p = await listCommandPriorities(echelon) || []
+      const allLoes = await listLOEsForScope(echelon) || []
       // load assigned LOEs for each priority
       const withLoes = await Promise.all((p || []).slice(0,10).map(async (pr:any) => {
         try{
-          const assigned = await listPriorityLOEs(pr.id, scope) || []
+          const assigned = await listPriorityLOEs(pr.id, echelon) || []
           pr.loes = assigned
         }catch(e){ pr.loes = [] }
         return pr
@@ -82,7 +82,7 @@ export default function CommandPrioritiesPage(){
   }
 
   async function handleAssign(priority){
-    const assigned = await listPriorityLOEs(priority.id, scope) || []
+    const assigned = await listPriorityLOEs(priority.id, echelon) || []
     const assignedIds = (assigned || []).map(a=>a.id)
     const available = loes.filter(l=>!assignedIds.includes(l.id)).slice(0,50)
     if(assigned.length >= 5) return alert('Priority already has 5 LOEs')
@@ -131,7 +131,7 @@ export default function CommandPrioritiesPage(){
       <Grid container spacing={2}>
         {(!loading && (!priorities || priorities.length===0)) ? (
           <Grid item xs={12}>
-            <EmptyState title="No priorities" subtitle="No command priorities configured for your scope." actionLabel="Create Priority" onAction={()=>{ setEditOpen(true) }} />
+            <EmptyState title="No priorities" subtitle="No command priorities configured for your echelon." actionLabel="Create Priority" onAction={()=>{ setEditOpen(true) }} />
           </Grid>
         ) : (
           priorities.map((p:any)=> (

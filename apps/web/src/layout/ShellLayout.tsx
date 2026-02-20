@@ -2,6 +2,7 @@ import React from 'react'
 import { Box, Typography } from '@mui/material'
 import SectionSidebar from '../components/SectionSidebar'
 import TopHeader from '../components/TopHeader'
+import SystemStrip from '../components/SystemStrip'
 
 export default function ShellLayout({ children }: { children?: React.ReactNode }) {
   return (
@@ -9,6 +10,7 @@ export default function ShellLayout({ children }: { children?: React.ReactNode }
       <SectionSidebar />
       <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'auto' }}>
         <TopHeader />
+        <SystemStrip />
         <Box component="main" sx={{ p: 2, flex: 1 }}>
           <Box sx={{ display:'flex', flexDirection:'column', gap:2 }}>
             {children}

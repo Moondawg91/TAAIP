@@ -828,6 +828,109 @@ def init_schema() -> None:
                 created_at TEXT
             );
 
+            -- Home portal tables (Phase 12 UI wiring)
+            CREATE TABLE IF NOT EXISTS home_alerts (
+                id TEXT PRIMARY KEY,
+                category TEXT,
+                title TEXT,
+                body TEXT,
+                severity TEXT,
+                source TEXT,
+                effective_at TEXT,
+                created_at TEXT,
+                acked_at TEXT,
+                acked_by TEXT,
+                record_status TEXT DEFAULT 'active'
+            );
+
+            CREATE TABLE IF NOT EXISTS home_flashes (
+                id TEXT PRIMARY KEY,
+                tab TEXT,
+                source TEXT,
+                title TEXT,
+                summary TEXT,
+                effective_at TEXT,
+                url TEXT,
+                created_at TEXT,
+                record_status TEXT DEFAULT 'active'
+            );
+
+            CREATE TABLE IF NOT EXISTS home_upcoming (
+                id TEXT PRIMARY KEY,
+                category TEXT,
+                title TEXT,
+                start_at TEXT,
+                end_at TEXT,
+                location TEXT,
+                url TEXT,
+                created_at TEXT,
+                record_status TEXT DEFAULT 'active'
+            );
+
+            CREATE TABLE IF NOT EXISTS home_recognition (
+                id TEXT PRIMARY KEY,
+                title TEXT,
+                name TEXT,
+                unit TEXT,
+                citation TEXT,
+                month INTEGER,
+                year INTEGER,
+                created_at TEXT,
+                record_status TEXT DEFAULT 'active'
+            );
+
+            CREATE TABLE IF NOT EXISTS home_references (
+                id TEXT PRIMARY KEY,
+                key TEXT,
+                label TEXT,
+                type TEXT,
+                path_or_url TEXT,
+                available INTEGER DEFAULT 0,
+                created_at TEXT
+            );
+
+            -- Command Center tables
+            CREATE TABLE IF NOT EXISTS loe_metrics (
+                id TEXT PRIMARY KEY,
+                loe_id TEXT,
+                metric_key TEXT,
+                metric_label TEXT,
+                target_value REAL,
+                actual_value REAL,
+                status TEXT,
+                reported_at TEXT,
+                created_at TEXT
+            );
+
+            -- legacy/older burden_inputs schema handled by later idempotent definition
+
+            CREATE TABLE IF NOT EXISTS burden_snapshots (
+                id TEXT PRIMARY KEY,
+                fy INTEGER,
+                qtr INTEGER,
+                month INTEGER,
+                scope_type TEXT,
+                scope_value TEXT,
+                burden_ratio REAL,
+                risk_band TEXT,
+                computed_at TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS processing_metrics (
+                id TEXT PRIMARY KEY,
+                fy INTEGER,
+                qtr INTEGER,
+                month INTEGER,
+                scope_type TEXT,
+                scope_value TEXT,
+                metric_key TEXT,
+                metric_label TEXT,
+                value REAL,
+                unit TEXT,
+                reported_at TEXT,
+                created_at TEXT
+            );
+
             CREATE TABLE IF NOT EXISTS burden_inputs (
                 id TEXT PRIMARY KEY,
                 scope_type TEXT,
@@ -1042,6 +1145,106 @@ def init_schema() -> None:
         except Exception:
             pass
 
+        # Ensure burden_inputs contains reporting_date column (idempotent)
+        try:
+            bcols = table_columns('burden_inputs')
+            if 'reporting_date' not in bcols:
+                try:
+                    cur.execute("ALTER TABLE burden_inputs ADD COLUMN reporting_date TEXT")
+                except Exception:
+                    # Fallback: perform safe table rewrite to add missing column
+                    try:
+                        cur.executescript('''
+                        PRAGMA foreign_keys=OFF;
+                        CREATE TABLE IF NOT EXISTS burden_inputs_new (
+                            id TEXT PRIMARY KEY,
+                            scope_type TEXT,
+                            scope_value TEXT,
+                            mission_requirement TEXT,
+                            recruiter_strength INTEGER,
+                            reporting_date TEXT,
+                            created_at TEXT
+                        );
+                        INSERT INTO burden_inputs_new (id, scope_type, scope_value, mission_requirement, recruiter_strength, reporting_date, created_at)
+                            SELECT id, scope_type, scope_value, mission_requirement, recruiter_strength, NULL AS reporting_date, created_at FROM burden_inputs;
+                        DROP TABLE IF EXISTS burden_inputs;
+                        ALTER TABLE burden_inputs_new RENAME TO burden_inputs;
+                        PRAGMA foreign_keys=ON;
+                        ''')
+                    except Exception:
+                        pass
+        except Exception:
+            pass
+
+        # Idempotent additions for tactical dashboards schema compatibility
+        try:
+            def ensure_col(tbl, col_def):
+                try:
+                    cur.execute(f"PRAGMA table_info({tbl})")
+                    existing = [r[1] for r in cur.fetchall()]
+                    col_name = col_def.split()[0]
+                    if col_name not in existing:
+                        cur.execute(f"ALTER TABLE {tbl} ADD COLUMN {col_def}")
+                except Exception:
+                    pass
+
+            # event table: planned/actual costs and time/echelon metadata
+            ensure_col('event', 'planned_cost REAL DEFAULT 0')
+            ensure_col('event', 'actual_cost REAL DEFAULT 0')
+            ensure_col('event', 'fy INTEGER')
+            ensure_col('event', 'qtr INTEGER')
+            ensure_col('event', 'month INTEGER')
+            ensure_col('event', 'echelon_type TEXT')
+            ensure_col('event', 'unit_value TEXT')
+            ensure_col('event', 'funding_line TEXT')
+
+            # legacy events table
+            ensure_col('events', 'planned_cost REAL DEFAULT 0')
+            ensure_col('events', 'actual_cost REAL DEFAULT 0')
+            ensure_col('events', 'fy INTEGER')
+            ensure_col('events', 'qtr INTEGER')
+            ensure_col('events', 'month INTEGER')
+            ensure_col('events', 'echelon_type TEXT')
+            ensure_col('events', 'unit_value TEXT')
+            ensure_col('events', 'funding_line TEXT')
+
+            # marketing_activities: fiscal/time/echelon/funding metadata
+            ensure_col('marketing_activities', 'fy INTEGER')
+            ensure_col('marketing_activities', 'qtr INTEGER')
+            ensure_col('marketing_activities', 'month INTEGER')
+            ensure_col('marketing_activities', 'echelon_type TEXT')
+            ensure_col('marketing_activities', 'unit_value TEXT')
+            ensure_col('marketing_activities', 'funding_line TEXT')
+
+            # funnel_transitions: time/echelon metadata
+            ensure_col('funnel_transitions', 'fy INTEGER')
+            ensure_col('funnel_transitions', 'qtr INTEGER')
+            ensure_col('funnel_transitions', 'month INTEGER')
+            ensure_col('funnel_transitions', 'echelon_type TEXT')
+            ensure_col('funnel_transitions', 'unit_value TEXT')
+
+            # projects: planned/actual + metadata
+            ensure_col('projects', 'planned_cost REAL DEFAULT 0')
+            ensure_col('projects', 'actual_cost REAL DEFAULT 0')
+            ensure_col('projects', 'fy INTEGER')
+            ensure_col('projects', 'qtr INTEGER')
+            ensure_col('projects', 'month INTEGER')
+            ensure_col('projects', 'echelon_type TEXT')
+            ensure_col('projects', 'unit_value TEXT')
+            ensure_col('projects', 'funding_line TEXT')
+
+            # budget_line_item: ensure canonical fields used by dashboards
+            ensure_col('budget_line_item', 'fy INTEGER')
+            ensure_col('budget_line_item', 'qtr INTEGER')
+            ensure_col('budget_line_item', 'month INTEGER')
+            ensure_col('budget_line_item', 'echelon_type TEXT')
+            ensure_col('budget_line_item', 'unit_value TEXT')
+            ensure_col('budget_line_item', 'funding_line TEXT')
+            ensure_col('budget_line_item', 'allocated_amount REAL DEFAULT 0')
+        except Exception:
+            # best-effort; don't block startup on migration errors
+            pass
+
         # Ensure legacy import_job columns exist for older code paths
         legacy_cols = [
             ("filename_original", "TEXT"),
@@ -1250,6 +1453,170 @@ def init_schema() -> None:
         except Exception:
             pass
 
+        # PHASE-12: Ensure canonical join keys and minimal fact columns exist
+        try:
+            # Helper to ensure a list of columns exist on a table
+            def ensure_columns(table, cols_with_types):
+                existing = table_columns(table)
+                for col, typ in cols_with_types:
+                    if col not in existing:
+                        try:
+                            cur.execute(f"ALTER TABLE {table} ADD COLUMN {col} {typ}")
+                        except Exception:
+                            pass
+
+            # Canonical columns applied to fact tables and domain tables
+            canonical_cols = [
+                ("fy", "INTEGER"),
+                ("qtr", "INTEGER"),
+                ("scope_type", "TEXT"),
+                ("scope_value", "TEXT"),
+                ("station_rsid", "TEXT"),
+                ("reported_at", "TEXT"),
+                ("reporting_date", "TEXT"),
+                ("created_at", "TEXT"),
+                ("updated_at", "TEXT"),
+                ("ingested_at", "TEXT")
+            ]
+
+            for tbl in ['fact_production', 'fact_marketing', 'fact_funnel', 'event', 'projects', 'expenses', 'budget_line_item', 'events']:
+                try:
+                    ensure_columns(tbl, canonical_cols)
+                except Exception:
+                    pass
+
+            # Ensure marketing_activities has canonical metrics/ids requested
+            try:
+                mcols = table_columns('marketing_activities')
+                extra = [
+                    ('activity_id', 'TEXT'), ('event_id', 'TEXT'), ('campaign_id', 'TEXT'),
+                    ('channel', 'TEXT'), ('cost', 'REAL DEFAULT 0'), ('impressions', 'INTEGER DEFAULT 0'),
+                    ('engagements', 'INTEGER DEFAULT 0'), ('clicks', 'INTEGER DEFAULT 0'), ('conversions', 'INTEGER DEFAULT 0'),
+                    ('awareness_metric', 'REAL'), ('reported_at', 'TEXT')
+                ]
+                for col, typ in extra:
+                    if col not in mcols:
+                        try:
+                            cur.execute(f"ALTER TABLE marketing_activities ADD COLUMN {col} {typ}")
+                        except Exception:
+                            pass
+            except Exception:
+                pass
+
+            # Ensure funnel_transitions minimal columns
+            try:
+                fcols = table_columns('funnel_transitions')
+                f_extra = [('lead_id', 'TEXT'), ('from_stage', 'TEXT'), ('to_stage', 'TEXT'), ('transitioned_at', 'TEXT')]
+                for col, typ in f_extra:
+                    if col not in fcols:
+                        try:
+                            cur.execute(f"ALTER TABLE funnel_transitions ADD COLUMN {col} {typ}")
+                        except Exception:
+                            pass
+            except Exception:
+                pass
+
+            # Create outcomes table (minimal) if missing
+            try:
+                if 'outcomes' not in [t.lower() for t in cur.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()]:
+                    # Use CREATE TABLE IF NOT EXISTS to be idempotent
+                    cur.executescript('''
+                    CREATE TABLE IF NOT EXISTS outcomes (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        lead_id TEXT,
+                        contract_date TEXT,
+                        ship_date TEXT,
+                        status TEXT,
+                        created_at TEXT,
+                        updated_at TEXT
+                    );
+                    ''')
+            except Exception:
+                # Fallback: always try create table
+                try:
+                    cur.executescript('''
+                    CREATE TABLE IF NOT EXISTS outcomes (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        lead_id TEXT,
+                        contract_date TEXT,
+                        ship_date TEXT,
+                        status TEXT,
+                        created_at TEXT,
+                        updated_at TEXT
+                    );
+                    ''')
+                except Exception:
+                    pass
+
+            # Ensure budget_line_item has requested canonical keys and station/project/event ids
+            try:
+                bli_cols = table_columns('budget_line_item')
+                bli_extra = [('fy', 'INTEGER'), ('qtr', 'INTEGER'), ('scope_type', 'TEXT'), ('scope_value', 'TEXT'), ('station_rsid', 'TEXT'), ('project_id', 'TEXT'), ('event_id', 'TEXT'), ('allocated_amount', 'REAL DEFAULT 0'), ('obligated_amount', 'REAL DEFAULT 0'), ('expended_amount', 'REAL DEFAULT 0'), ('category', 'TEXT'), ('reported_at', 'TEXT')]
+                for col, typ in bli_extra:
+                    if col not in bli_cols:
+                        try:
+                            cur.execute(f"ALTER TABLE budget_line_item ADD COLUMN {col} {typ}")
+                        except Exception:
+                            pass
+            except Exception:
+                pass
+
+            # Create/fill funding_sources lookup (allowed values)
+            try:
+                cur.executescript('''
+                CREATE TABLE IF NOT EXISTS funding_sources (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    key TEXT UNIQUE,
+                    label TEXT,
+                    created_at TEXT
+                );
+                ''')
+                now = datetime.utcnow().isoformat()
+                allowed = ['USAREC', 'BDE', 'BN', 'LOCAL_AMP', 'DIRECT_AMP']
+                for a in allowed:
+                    try:
+                        cur.execute('INSERT OR IGNORE INTO funding_sources(key,label,created_at) VALUES(?,?,?)', (a, a, now))
+                    except Exception:
+                        pass
+            except Exception:
+                pass
+
+                # LOE metric mapping table used by tactical rollups to evaluate LOE status
+                try:
+                    cur.executescript('''
+                    CREATE TABLE IF NOT EXISTS loe_metric_map (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        loe_id TEXT,
+                        metric_key TEXT,
+                        metric_type TEXT,
+                        threshold REAL,
+                        comparator TEXT,
+                        created_at TEXT
+                    );
+                    ''')
+                except Exception:
+                    pass
+
+            # Create indexes recommended for rollups
+            idxs = [
+                "CREATE INDEX IF NOT EXISTS ix_fact_dims ON fact_production(fy,qtr,scope_type,scope_value);",
+                "CREATE INDEX IF NOT EXISTS ix_fact_marketing_dims ON fact_marketing(fy,qtr,scope_type,scope_value);",
+                "CREATE INDEX IF NOT EXISTS ix_fact_funnel_dims ON fact_funnel(fy,qtr,scope_type,scope_value);",
+                "CREATE INDEX IF NOT EXISTS ix_events_event_id ON events(event_id);",
+                "CREATE INDEX IF NOT EXISTS ix_budget_line_item_project_id ON budget_line_item(project_id);",
+                "CREATE INDEX IF NOT EXISTS ix_budget_line_item_event_id ON budget_line_item(event_id);",
+                "CREATE INDEX IF NOT EXISTS ix_outcomes_lead_id ON outcomes(lead_id);",
+                "CREATE INDEX IF NOT EXISTS ix_marketing_activity_event_id ON marketing_activities(event_id);",
+                "CREATE INDEX IF NOT EXISTS ix_station_rsid ON budget_line_item(station_rsid);",
+            ]
+            for s in idxs:
+                try:
+                    cur.execute(s)
+                except Exception:
+                    pass
+        except Exception:
+            pass
+
         # Compatibility patches: some routers expect legacy column names in
         # certain tables (events.event_id, marketing_activities.activity_id,
         # zip_metrics.station_rsid). Add those columns when missing so raw
@@ -1410,6 +1777,146 @@ def init_schema() -> None:
                 models.Base.metadata.create_all(bind=database.engine)
             except Exception:
                 pass
+        except Exception:
+            pass
+
+        # PHASE-12: Ensure system tables for change proposals and api errors
+        try:
+            cur.executescript('''
+            CREATE TABLE IF NOT EXISTS change_proposals (
+                id TEXT PRIMARY KEY,
+                title TEXT NOT NULL,
+                description TEXT NOT NULL,
+                rationale TEXT,
+                impact_area TEXT,
+                risk_level TEXT,
+                status TEXT NOT NULL,
+                created_by TEXT,
+                created_at TEXT NOT NULL,
+                reviewed_by TEXT,
+                reviewed_at TEXT,
+                decision_note TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS api_error_log (
+                id TEXT PRIMARY KEY,
+                endpoint TEXT,
+                message TEXT,
+                created_at TEXT NOT NULL
+            );
+            ''')
+        except Exception:
+            pass
+        # Ensure maintenance_flags table exists (idempotent)
+        try:
+            cur.executescript('''
+            CREATE TABLE IF NOT EXISTS maintenance_flags (
+                id TEXT PRIMARY KEY,
+                active INTEGER NOT NULL DEFAULT 0,
+                message TEXT,
+                starts_at TEXT,
+                ends_at TEXT,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            );
+            ''')
+        except Exception:
+            pass
+
+        # Backfill/compat: ensure import_job_v3 contains completion and summary fields
+        try:
+            cols = table_columns('import_job_v3')
+            if 'completed_at' not in cols:
+                try:
+                    cur.execute("ALTER TABLE import_job_v3 ADD COLUMN completed_at TEXT")
+                except Exception:
+                    pass
+            if 'summary_json' not in cols:
+                try:
+                    cur.execute("ALTER TABLE import_job_v3 ADD COLUMN summary_json TEXT")
+                except Exception:
+                    pass
+        except Exception:
+            pass
+
+        # Create plural audit_logs table (SQLAlchemy models expect this name)
+        try:
+            cur.executescript('''
+            CREATE TABLE IF NOT EXISTS audit_logs (
+                id TEXT PRIMARY KEY,
+                actor TEXT NOT NULL,
+                action TEXT NOT NULL,
+                entity_type TEXT NOT NULL,
+                entity_id TEXT,
+                scope_type TEXT,
+                scope_value TEXT,
+                before_json TEXT,
+                after_json TEXT,
+                created_at TEXT,
+                updated_at TEXT
+            );
+            ''')
+        except Exception:
+            pass
+
+        # Minimal security/role mapping tables to support RBAC extensions
+        try:
+            cur.executescript('''
+            CREATE TABLE IF NOT EXISTS security_roles (
+                id TEXT PRIMARY KEY,
+                name TEXT UNIQUE,
+                description TEXT,
+                created_at TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS user_roles (
+                id TEXT PRIMARY KEY,
+                user_id TEXT NOT NULL,
+                role_id TEXT NOT NULL,
+                created_at TEXT,
+                UNIQUE(user_id, role_id)
+            );
+            ''')
+        except Exception:
+            pass
+
+        # USAREC completion gate records
+        try:
+            cur.executescript('''
+            CREATE TABLE IF NOT EXISTS usarec_completion (
+                id TEXT PRIMARY KEY,
+                scope_type TEXT,
+                scope_value TEXT,
+                completed_by TEXT,
+                completed_at TEXT,
+                details_json TEXT,
+                created_at TEXT
+            );
+            ''')
+        except Exception:
+            pass
+
+        # Ensure change_proposals contains the columns expected by new APIs.
+        # Use PRAGMA table_info and ALTER TABLE ADD COLUMN where safe.
+        try:
+            cur.execute("PRAGMA table_info(change_proposals)")
+            existing = [r[1] for r in cur.fetchall()]
+            needed = {
+                'proposed_changes_json': 'TEXT NOT NULL',
+                'submitted_by': 'TEXT',
+                'reviewed_by': 'TEXT',
+                'reviewed_at': 'TEXT',
+                'created_at': 'TEXT NOT NULL',
+                'updated_at': 'TEXT NOT NULL',
+                'status': 'TEXT NOT NULL'
+            }
+            for col, coldef in needed.items():
+                if col not in existing:
+                    try:
+                        cur.execute(f"ALTER TABLE change_proposals ADD COLUMN {col} {coldef}")
+                    except Exception:
+                        # best-effort; non-fatal if ALTER fails
+                        pass
         except Exception:
             pass
     finally:
