@@ -11,11 +11,22 @@ export default function SystemStrip(){
   const [alerts, setAlerts] = useState({alerts:{import_errors:0,api_errors:0,proposals_pending:0}, total:0})
   const [status, setStatus] = useState({mode: 'normal'})
   const timer = useRef(null)
+  const lastFetched = useRef(0)
+  const [fetchFailed, setFetchFailed] = useState(false)
 
   async function load(){
-    try{ const f = await getSystemFreshness(); setFresh(f) }catch(e){}
-    try{ const a = await getSystemAlerts(); setAlerts(a) }catch(e){}
-    try{ const s = await getSystemStatus(); setStatus(s) }catch(e){}
+    try{
+      const now = Date.now()
+      if (now - lastFetched.current < 60000) return
+      lastFetched.current = now
+      setFetchFailed(false)
+      const [f,a,s] = await Promise.all([getSystemFreshness(), getSystemAlerts(), getSystemStatus()])
+      setFresh(f)
+      setAlerts(a)
+      setStatus(s)
+    }catch(e){
+      setFetchFailed(true)
+    }
   }
 
   useEffect(()=>{
@@ -24,30 +35,42 @@ export default function SystemStrip(){
     return ()=> clearInterval(timer.current)
   },[])
 
-  const bg = theme.palette.background.paper || '#111'
+  const bg = theme.palette.mode === 'dark' ? (theme.palette.background.paper || '#111') : '#0f1720'
   const textColor = theme.palette.text.primary || '#fff'
 
-  const modeLabel = (status && status.mode) || 'normal'
+  const rawMode = (status && status.mode) || 'normal'
+  // determine effective mode per spec
+  let modeLabel = rawMode
+  try{
+    if (rawMode === 'maintenance') modeLabel = 'maintenance'
+    else if (fetchFailed) modeLabel = 'degraded'
+    else if (alerts && alerts.alerts && alerts.alerts.api_errors > 0) modeLabel = 'degraded'
+    else if (fresh && fresh.data_as_of){
+      const then = new Date(fresh.data_as_of)
+      const ageDays = (Date.now() - then.getTime()) / (1000*60*60*24)
+      if (ageDays > 7) modeLabel = 'degraded'
+    }
+  }catch(e){ modeLabel = 'degraded' }
   const proposalsPending = (alerts && alerts.alerts && alerts.alerts.proposals_pending) || 0
   const totalAlerts = alerts && alerts.total ? alerts.total : 0
 
   return (
-    <Box sx={{height:44, display:'flex', alignItems:'center', px:2, gap:2, backgroundColor:bg, color:textColor, borderRadius:1}}>
-      <Chip size="small" label={modeLabel.charAt(0).toUpperCase()+modeLabel.slice(1)} sx={{borderRadius:1, bgcolor: modeLabel==='maintenance'? 'error.main' : (modeLabel==='degraded'? 'warning.main' : 'success.main'), color:'white'}} />
+    <Box sx={{height:44, display:'flex', alignItems:'center', px:2, gap:2, backgroundColor:bg, color:textColor, borderRadius:'4px'}}>
+      <Chip size="small" label={modeLabel.charAt(0).toUpperCase()+modeLabel.slice(1)} sx={{borderRadius:'4px', bgcolor: modeLabel==='maintenance'? 'error.main' : (modeLabel==='degraded'? 'warning.main' : 'success.main'), color:'white'}} />
       <Typography variant="body2" sx={{flex:1, color:'text.secondary'}}>
         {fresh && fresh.data_as_of ? `Data as of ${fresh.data_as_of}` : 'Data not loaded'}
       </Typography>
       <Badge badgeContent={totalAlerts} color="error">
-        <Button variant="outlined" size="small" onClick={()=>nav('/system/alerts')} sx={{borderRadius:1, color:textColor, borderColor:'rgba(255,255,255,0.08)'}}>Alerts</Button>
+        <Button variant="outlined" size="small" onClick={()=>nav('/system/alerts')} sx={{borderRadius:'4px', color:textColor, borderColor:'rgba(255,255,255,0.08)'}}>Alerts</Button>
       </Badge>
       {proposalsPending>0 && (
-        <Button variant="contained" size="small" onClick={()=>nav('/system/proposals')} sx={{ml:1, borderRadius:1}}>
+        <Button variant="contained" size="small" onClick={()=>nav('/system/proposals')} sx={{ml:1, borderRadius:'4px'}}>
           Updates Ready ({proposalsPending})
         </Button>
       )}
       <Box sx={{ml:2, display:'flex', gap:1}}>
-        <Button size="small" onClick={()=>nav('/system/status')} sx={{borderRadius:1, color:textColor}}>Status</Button>
-        <Button size="small" onClick={()=>nav('/helpdesk')} sx={{borderRadius:1, color:textColor}}>Help Desk</Button>
+        <Button size="small" onClick={()=>nav('/system/status')} sx={{borderRadius:'4px', color:textColor}}>Status</Button>
+        <Button size="small" onClick={()=>nav('/helpdesk')} sx={{borderRadius:'4px', color:textColor}}>Help Desk</Button>
       </Box>
     </Box>
   )

@@ -396,6 +396,26 @@ export async function getSystemAlerts(){
   return apiFetch('/api/system/alerts')
 }
 
+export async function getSystemAlertsList(){
+  return apiFetch('/api/system/alerts/list')
+}
+
+export async function getMaintenance(){
+  return apiFetch('/api/system/maintenance')
+}
+
+export async function setMaintenance(payload){
+  return apiFetch('/api/system/maintenance', { method: 'POST', body: JSON.stringify(payload), headers: {'Content-Type':'application/json'} })
+}
+
+export async function approveProposal(id){
+  return apiFetch(`/api/system/proposals/${id}/decision`, { method: 'POST', body: JSON.stringify({ decision: 'approve' }), headers: {'Content-Type':'application/json'} })
+}
+
+export async function rejectProposal(id){
+  return apiFetch(`/api/system/proposals/${id}/decision`, { method: 'POST', body: JSON.stringify({ decision: 'reject' }), headers: {'Content-Type':'application/json'} })
+}
+
 export async function getSystemStatus(){
   return apiFetch('/api/system/status')
 }

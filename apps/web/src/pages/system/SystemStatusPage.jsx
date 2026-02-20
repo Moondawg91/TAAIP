@@ -1,5 +1,6 @@
 import React, {useEffect, useState} from 'react'
 import {Box, Typography, Paper, Grid, Button} from '@mui/material'
+import {useTheme} from '@mui/material/styles'
 import {getSystemFreshness, getSystemAlerts, getSystemStatus} from '../../api/client'
 
 export default function SystemStatusPage(){
@@ -7,6 +8,8 @@ export default function SystemStatusPage(){
   const [alerts, setAlerts] = useState(null)
   const [status, setStatus] = useState({mode:'normal'})
 
+  const theme = useTheme()
+  const cardBg = theme.palette.background.default
   useEffect(()=>{ async function load(){ try{ setFresh(await getSystemFreshness()) }catch(e){} try{ setAlerts(await getSystemAlerts()) }catch(e){} try{ setStatus(await getSystemStatus()) }catch(e){} } load() },[])
 
   return (
@@ -14,7 +17,7 @@ export default function SystemStatusPage(){
       <Typography variant="h5" sx={{mb:2}}>System Status</Typography>
       <Grid container spacing={2}>
         <Grid item xs={12} md={6}>
-          <Paper sx={{p:2, bgcolor:'background.paper', borderRadius:1}}>
+          <Paper sx={{p:2, bgcolor: cardBg, borderRadius:'4px'}}>
             <Typography variant="subtitle2">Mode</Typography>
             <Typography variant="body1">{status && status.mode}</Typography>
             {status && status.mode==='maintenance' && (
@@ -23,7 +26,7 @@ export default function SystemStatusPage(){
           </Paper>
         </Grid>
         <Grid item xs={12} md={6}>
-          <Paper sx={{p:2, bgcolor:'background.paper', borderRadius:1}}>
+          <Paper sx={{p:2, bgcolor: cardBg, borderRadius:'4px'}}>
             <Typography variant="subtitle2">Data Freshness</Typography>
             <Typography variant="body1">{fresh && fresh.data_as_of ? fresh.data_as_of : 'Data not available'}</Typography>
             <Typography variant="subtitle2" sx={{mt:1}}>Last Import</Typography>
@@ -31,7 +34,7 @@ export default function SystemStatusPage(){
           </Paper>
         </Grid>
         <Grid item xs={12}>
-          <Paper sx={{p:2, bgcolor:'background.paper', borderRadius:1}}>
+          <Paper sx={{p:2, bgcolor: cardBg, borderRadius:'4px'}}>
             <Typography variant="subtitle2">Alerts</Typography>
             <Typography variant="body2">{alerts ? JSON.stringify(alerts.alerts) : 'loading'}</Typography>
           </Paper>

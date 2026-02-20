@@ -229,6 +229,152 @@ def get_alerts(current_user: Dict = Depends(get_current_user)):
             pass
 
 
+@router.get('/maintenance')
+def get_maintenance(current_user: Dict = Depends(get_current_user)):
+    conn = dbmod.connect()
+    try:
+        cur = conn.cursor()
+        # return the active maintenance flag if any
+        if _table_exists(cur, 'maintenance_flags'):
+            try:
+                cur.execute("SELECT id, active, message, starts_at, ends_at, created_at, updated_at FROM maintenance_flags WHERE active=1 ORDER BY starts_at DESC LIMIT 1")
+                r = cur.fetchone()
+                if not r:
+                    return {'status': 'ok', 'active': False, 'message': None, 'starts_at': None, 'ends_at': None}
+                # normalize mapping
+                if isinstance(r, dict):
+                    return {'status': 'ok', 'active': bool(r.get('active')), 'message': r.get('message'), 'starts_at': r.get('starts_at'), 'ends_at': r.get('ends_at'), 'id': r.get('id')}
+                # tuple/list fallback
+                cols = [c[0] for c in cur.description] if cur.description else []
+                d = {cols[i]: r[i] for i in range(len(cols))}
+                return {'status': 'ok', 'active': bool(d.get('active')), 'message': d.get('message'), 'starts_at': d.get('starts_at'), 'ends_at': d.get('ends_at'), 'id': d.get('id')}
+            except Exception:
+                return {'status': 'ok', 'active': False, 'message': None, 'starts_at': None, 'ends_at': None}
+        else:
+            return {'status': 'ok', 'active': False, 'message': None, 'starts_at': None, 'ends_at': None}
+    finally:
+        try:
+            conn.close()
+        except Exception:
+            pass
+
+
+@router.post('/maintenance')
+def set_maintenance(payload: Dict[str, Any], user: Dict = Depends(get_current_user), _admin: Dict = Depends(require_any_role('USAREC_ADMIN', 'SYSTEM_ADMIN'))):
+    conn = dbmod.connect()
+    try:
+        cur = conn.cursor()
+        if not _table_exists(cur, 'maintenance_flags'):
+            # ensure table exists (safe-create)
+            try:
+                cur.executescript('''
+                CREATE TABLE IF NOT EXISTS maintenance_flags (
+                    id TEXT PRIMARY KEY,
+                    active INTEGER NOT NULL DEFAULT 0,
+                    message TEXT,
+                    starts_at TEXT,
+                    ends_at TEXT,
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT NOT NULL
+                );
+                ''')
+            except Exception:
+                pass
+        mid = payload.get('id') or 'maintenance'
+        active = 1 if payload.get('active') else 0
+        message = payload.get('message')
+        starts_at = payload.get('starts_at')
+        ends_at = payload.get('ends_at')
+        now = datetime.utcnow().isoformat()
+        # check if exists
+        try:
+            cur.execute('SELECT id, created_at FROM maintenance_flags WHERE id=?', (mid,))
+            r = cur.fetchone()
+            if r:
+                # update
+                cur.execute('UPDATE maintenance_flags SET active=?, message=?, starts_at=?, ends_at=?, updated_at=? WHERE id=?', (active, message, starts_at, ends_at, now, mid))
+            else:
+                cur.execute('INSERT INTO maintenance_flags(id, active, message, starts_at, ends_at, created_at, updated_at) VALUES (?,?,?,?,?,?,?)', (mid, active, message, starts_at, ends_at, now, now))
+            conn.commit()
+        except Exception:
+            conn.rollback()
+            raise
+        return {'status': 'ok', 'id': mid, 'active': bool(active), 'message': message, 'starts_at': starts_at, 'ends_at': ends_at}
+    finally:
+        try:
+            conn.close()
+        except Exception:
+            pass
+
+
+@router.get('/alerts/list')
+def list_alert_items(current_user: Dict = Depends(get_current_user)):
+    conn = dbmod.connect()
+    try:
+        cur = conn.cursor()
+        items = []
+        # import_error rows
+        try:
+            if _table_exists(cur, 'import_error'):
+                cur.execute('SELECT id, message, created_at, import_job_id FROM import_error ORDER BY created_at DESC LIMIT 200')
+                rows = cur.fetchall()
+                cols = [c[0] for c in cur.description] if cur.description else []
+                for r in rows:
+                    if isinstance(r, dict):
+                        items.append({'id': r.get('id'), 'type': 'import_error', 'message': r.get('message'), 'created_at': r.get('created_at'), 'source': r.get('import_job_id')})
+                        continue
+                    try:
+                        items.append({
+                            'id': r[0], 'type': 'import_error', 'message': r[1], 'created_at': r[2], 'source': r[3] if len(r) > 3 else None
+                        })
+                    except Exception:
+                        continue
+        except Exception:
+            pass
+
+        # api_error_log
+        try:
+            if _table_exists(cur, 'api_error_log'):
+                cur.execute('SELECT id, message, endpoint, created_at FROM api_error_log ORDER BY created_at DESC LIMIT 200')
+                rows = cur.fetchall()
+                for r in rows:
+                    if isinstance(r, dict):
+                        items.append({'id': r.get('id'), 'type': 'api_error', 'message': r.get('message'), 'created_at': r.get('created_at'), 'source': r.get('endpoint')})
+                        continue
+                    try:
+                        items.append({'id': r[0], 'type': 'api_error', 'message': r[1], 'created_at': r[3], 'source': r[2]})
+                    except Exception:
+                        continue
+            else:
+                # fallback to audit_log entries that look like errors
+                if _table_exists(cur, 'audit_log'):
+                    cur.execute("SELECT id, action, meta_json, created_at FROM audit_log WHERE action LIKE 'error%' OR action='api_error' ORDER BY created_at DESC LIMIT 200")
+                    rows = cur.fetchall()
+                    for r in rows:
+                        if isinstance(r, dict):
+                            items.append({'id': r.get('id'), 'type': 'api_error', 'message': r.get('meta_json') or r.get('action'), 'created_at': r.get('created_at'), 'source': None})
+                            continue
+                        try:
+                            items.append({'id': r[0], 'type': 'api_error', 'message': r[2] or r[1], 'created_at': r[3], 'source': None})
+                        except Exception:
+                            continue
+        except Exception:
+            pass
+
+        # sort by created_at desc where possible
+        try:
+            items_sorted = sorted(items, key=lambda x: x.get('created_at') or '', reverse=True)
+        except Exception:
+            items_sorted = items
+
+        return {'status': 'ok', 'count': len(items_sorted), 'alerts': items_sorted}
+    finally:
+        try:
+            conn.close()
+        except Exception:
+            pass
+
+
 def _ensure_cus_tables(conn):
     cur = conn.cursor()
     cur.executescript('''

@@ -1807,6 +1807,45 @@ def init_schema() -> None:
             ''')
         except Exception:
             pass
+        # Ensure maintenance_flags table exists (idempotent)
+        try:
+            cur.executescript('''
+            CREATE TABLE IF NOT EXISTS maintenance_flags (
+                id TEXT PRIMARY KEY,
+                active INTEGER NOT NULL DEFAULT 0,
+                message TEXT,
+                starts_at TEXT,
+                ends_at TEXT,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            );
+            ''')
+        except Exception:
+            pass
+
+        # Ensure change_proposals contains the columns expected by new APIs.
+        # Use PRAGMA table_info and ALTER TABLE ADD COLUMN where safe.
+        try:
+            cur.execute("PRAGMA table_info(change_proposals)")
+            existing = [r[1] for r in cur.fetchall()]
+            needed = {
+                'proposed_changes_json': 'TEXT NOT NULL',
+                'submitted_by': 'TEXT',
+                'reviewed_by': 'TEXT',
+                'reviewed_at': 'TEXT',
+                'created_at': 'TEXT NOT NULL',
+                'updated_at': 'TEXT NOT NULL',
+                'status': 'TEXT NOT NULL'
+            }
+            for col, coldef in needed.items():
+                if col not in existing:
+                    try:
+                        cur.execute(f"ALTER TABLE change_proposals ADD COLUMN {col} {coldef}")
+                    except Exception:
+                        # best-effort; non-fatal if ALTER fails
+                        pass
+        except Exception:
+            pass
     finally:
         try:
             if using_raw_engine:
