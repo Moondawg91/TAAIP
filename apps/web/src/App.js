@@ -12,8 +12,6 @@ import SystemAlertsPage from './pages/system/SystemAlertsPage'
 import SystemProposalsPage from './pages/system/SystemProposalsPage'
 
 import HomePage from './pages/HomePage'
-import DashboardPage from './pages/DashboardPage'
-import DashboardDetailPage from './pages/DashboardDetailPage'
 import QBRPage from './pages/QBRPage'
 import CommandCenterPage from './pages/CommandCenterPage'
 import ProjectsPage from './pages/ProjectsPage'
@@ -112,8 +110,6 @@ export default function App() {
           <ShellLayout>
           <Routes>
           <Route path="/" element={<HomePage />} />
-          <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/dashboard/:id" element={<DashboardDetailPage />} />
           <Route path="/qbr" element={<QBRPage />} />
           <Route path="/dashboards/command-center" element={<CommandCenterPage />} />
           <Route path="/projects" element={<ProjectsPage />} />

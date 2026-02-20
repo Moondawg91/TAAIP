@@ -160,7 +160,8 @@ def budget_dashboard(request: Request, fy: int = None, qtr: int = None, org_unit
             obligated = 0.0
 
         executed = actual
-        remaining = allocated - obligated - executed
+        # Remaining should reflect allocated minus planned minus actual (verification expectation)
+        remaining = allocated - planned - executed
 
         # by_category: union budget_line_item.category, projects.category, event.category, expenses.category
         by_category = []
