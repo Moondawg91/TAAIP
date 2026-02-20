@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Body
 from typing import List, Dict, Any, Optional
 from services.api.app import db as dbmod
 from .rbac import get_current_user, require_any_role
@@ -181,6 +181,103 @@ def get_freshness(current_user: Dict = Depends(get_current_user)):
         except Exception:
             pass
 
+
+# USAREC completion gate
+@router.get('/usarec-gate')
+def get_usarec_gate(current_user: Dict = Depends(get_current_user)):
+    conn = dbmod.connect()
+    try:
+        cur = conn.cursor()
+        checks = {}
+        # basic presence checks for canonical tables
+        tables = ['events', 'projects', 'budget_line_item', 'fact_production', 'marketing_activities', 'funnel_transitions']
+        for t in tables:
+            try:
+                cur.execute("SELECT COUNT(1) as c FROM sqlite_master WHERE type='table' AND name=?", (t,))
+                r = cur.fetchone()
+                exists = bool(r and (r['c'] if isinstance(r, dict) and 'c' in r else r[0]))
+            except Exception:
+                exists = False
+            checks[t] = {'exists': exists}
+
+        # row counts for critical tables (best-effort)
+        for t in ['events', 'projects', 'budget_line_item']:
+            try:
+                if checks.get(t, {}).get('exists'):
+                    cur.execute(f"SELECT COUNT(1) as c FROM {t}")
+                    r = cur.fetchone()
+                    cnt = int(r['c'] if isinstance(r, dict) and 'c' in r else (r[0] if r else 0))
+                else:
+                    cnt = 0
+            except Exception:
+                cnt = 0
+            checks[t]['rows'] = cnt
+
+        # see if a prior completion record exists
+        completed = False
+        last = None
+        try:
+            if _table_exists(cur, 'usarec_completion'):
+                cur.execute("SELECT id, scope_type, scope_value, completed_by, completed_at, details_json FROM usarec_completion ORDER BY created_at DESC LIMIT 1")
+                r = cur.fetchone()
+                if r:
+                    last = dict(r) if isinstance(r, dict) else {cur.description[i][0]: r[i] for i in range(len(r))}
+                    completed = True
+        except Exception:
+            pass
+
+        ready = all((checks[t]['exists'] and checks[t].get('rows', 0) > 0) for t in ['events', 'projects', 'budget_line_item'])
+
+        return {'status': 'ok', 'ready': ready, 'checks': checks, 'last_completion': last}
+    finally:
+        try:
+            conn.close()
+        except Exception:
+            pass
+
+
+@router.post('/usarec-gate/complete')
+def post_usarec_complete(payload: Dict = Body(...), user: Dict = Depends(require_any_role('USAREC_ADMIN'))):
+    """Mark USAREC scope as completed. Requires USAREC_ADMIN role or LOCAL_DEV_AUTH_BYPASS."""
+    conn = dbmod.connect()
+    try:
+        cur = conn.cursor()
+        try:
+            # ensure table exists (idempotent)
+            cur.executescript('''
+            CREATE TABLE IF NOT EXISTS usarec_completion (
+                id TEXT PRIMARY KEY,
+                scope_type TEXT,
+                scope_value TEXT,
+                completed_by TEXT,
+                completed_at TEXT,
+                details_json TEXT,
+                created_at TEXT
+            );
+            ''')
+        except Exception:
+            pass
+        import uuid, json, datetime
+        recid = str(uuid.uuid4())
+        now = datetime.datetime.utcnow().isoformat()
+        scope_type = payload.get('scope_type') if isinstance(payload, dict) else None
+        scope_value = payload.get('scope_value') if isinstance(payload, dict) else None
+        details = payload.get('details') if isinstance(payload, dict) else None
+        try:
+            cur.execute('INSERT OR REPLACE INTO usarec_completion(id, scope_type, scope_value, completed_by, completed_at, details_json, created_at) VALUES (?,?,?,?,?,?,?)', (recid, scope_type, scope_value, (user.get('username') if isinstance(user, dict) else str(user)), now, json.dumps(details) if details is not None else None, now))
+            conn.commit()
+        except Exception:
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+            raise
+        return {'status': 'ok', 'id': recid, 'completed_at': now}
+    finally:
+        try:
+            conn.close()
+        except Exception:
+            pass
 
 @router.get('/alerts')
 def get_alerts(current_user: Dict = Depends(get_current_user)):

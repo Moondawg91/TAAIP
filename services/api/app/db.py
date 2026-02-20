@@ -1823,6 +1823,79 @@ def init_schema() -> None:
         except Exception:
             pass
 
+        # Backfill/compat: ensure import_job_v3 contains completion and summary fields
+        try:
+            cols = table_columns('import_job_v3')
+            if 'completed_at' not in cols:
+                try:
+                    cur.execute("ALTER TABLE import_job_v3 ADD COLUMN completed_at TEXT")
+                except Exception:
+                    pass
+            if 'summary_json' not in cols:
+                try:
+                    cur.execute("ALTER TABLE import_job_v3 ADD COLUMN summary_json TEXT")
+                except Exception:
+                    pass
+        except Exception:
+            pass
+
+        # Create plural audit_logs table (SQLAlchemy models expect this name)
+        try:
+            cur.executescript('''
+            CREATE TABLE IF NOT EXISTS audit_logs (
+                id TEXT PRIMARY KEY,
+                actor TEXT NOT NULL,
+                action TEXT NOT NULL,
+                entity_type TEXT NOT NULL,
+                entity_id TEXT,
+                scope_type TEXT,
+                scope_value TEXT,
+                before_json TEXT,
+                after_json TEXT,
+                created_at TEXT,
+                updated_at TEXT
+            );
+            ''')
+        except Exception:
+            pass
+
+        # Minimal security/role mapping tables to support RBAC extensions
+        try:
+            cur.executescript('''
+            CREATE TABLE IF NOT EXISTS security_roles (
+                id TEXT PRIMARY KEY,
+                name TEXT UNIQUE,
+                description TEXT,
+                created_at TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS user_roles (
+                id TEXT PRIMARY KEY,
+                user_id TEXT NOT NULL,
+                role_id TEXT NOT NULL,
+                created_at TEXT,
+                UNIQUE(user_id, role_id)
+            );
+            ''')
+        except Exception:
+            pass
+
+        # USAREC completion gate records
+        try:
+            cur.executescript('''
+            CREATE TABLE IF NOT EXISTS usarec_completion (
+                id TEXT PRIMARY KEY,
+                scope_type TEXT,
+                scope_value TEXT,
+                completed_by TEXT,
+                completed_at TEXT,
+                details_json TEXT,
+                created_at TEXT
+            );
+            ''')
+        except Exception:
+            pass
+
         # Ensure change_proposals contains the columns expected by new APIs.
         # Use PRAGMA table_info and ALTER TABLE ADD COLUMN where safe.
         try:

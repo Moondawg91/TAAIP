@@ -1,4 +1,78 @@
 #!/usr/bin/env python3
+"""Simple smoke verifier for dashboard endpoints and exports.
+
+Usage: python scripts/verify_all.py [--base http://127.0.0.1:8000]
+"""
+import sys
+import json
+import argparse
+from urllib.request import urlopen, Request
+from urllib.error import URLError, HTTPError
+
+
+def get(url):
+    req = Request(url, headers={'User-Agent': 'taaip-verifier/1'})
+    with urlopen(req, timeout=10) as resp:
+        content = resp.read()
+        ct = resp.headers.get('Content-Type','')
+        return resp.status, ct, content
+
+
+def check_json(url):
+    status, ct, content = get(url)
+    assert status == 200, f'{url} returned {status}'
+    assert 'application/json' in ct or ct.startswith('text/'), f'{url} not json: {ct}'
+    js = json.loads(content)
+    assert isinstance(js, dict), f'{url} json not dict'
+    return js
+
+
+def check_csv(url):
+    status, ct, content = get(url)
+    assert status == 200, f'{url} returned {status}'
+    assert 'text/csv' in ct or 'text/plain' in ct or ct == '', f'{url} not csv: {ct}'
+    # ok if empty
+    return content.decode('utf-8', errors='ignore')
+
+
+def main():
+    p = argparse.ArgumentParser()
+    p.add_argument('--base', default='http://127.0.0.1:8000')
+    args = p.parse_args()
+    base = args.base.rstrip('/')
+
+    targets = [
+        f'{base}/api/dashboards/budget',
+        f'{base}/api/dashboards/projects',
+        f'{base}/api/dashboards/events',
+        f'{base}/api/dashboards/budget/export.json',
+        f'{base}/api/dashboards/budget/export.csv',
+        f'{base}/api/dashboards/budget/dashboard/export.json',
+        f'{base}/api/dashboards/budget/dashboard/export.csv',
+    ]
+
+    ok = True
+    for t in targets:
+        try:
+            if t.endswith('.json') or t.endswith('/budget') or t.endswith('/projects') or t.endswith('/events'):
+                js = check_json(t)
+                print(f'OK JSON {t} -> keys: {list(js.keys())[:5]}')
+            else:
+                csv = check_csv(t)
+                print(f'OK CSV {t} -> {len(csv)} bytes')
+        except (AssertionError, HTTPError, URLError) as e:
+            print('ERROR', t, str(e))
+            ok = False
+
+    if not ok:
+        print('\nOne or more checks failed.')
+        sys.exit(2)
+    print('\nAll checks passed.')
+
+
+if __name__ == '__main__':
+    main()
+#!/usr/bin/env python3
 """Comprehensive verification script for TAAIP.
 
 Assumes the API is running at http://127.0.0.1:8000 and the local Python

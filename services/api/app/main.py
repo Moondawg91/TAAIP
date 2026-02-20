@@ -133,6 +133,14 @@ api_router.include_router(tactical_rollups_router.router)
 from .routers import tactical_dashboards as tactical_dashboards_router
 api_router.include_router(tactical_dashboards_router.router)
 
+# New lightweight dashboards router for empty-safe dashboard endpoints
+from .routers import dashboards as dashboards_router
+api_router.include_router(dashboards_router.router)
+
+# Dashboard exports for CSV/JSON
+from .routers import exports_dashboards as exports_dashboards_router
+api_router.include_router(exports_dashboards_router.router)
+
 # Command center router (mission-assessment + priorities)
 from .routers import command_center as command_center_router
 api_router.include_router(command_center_router.router)
