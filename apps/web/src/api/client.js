@@ -90,6 +90,65 @@ export async function getHomeQuickLinks(limit = 50){
   return apiFetch(`/api/v2/home/quick-links?limit=${limit}`)
 }
 
+// Home portal clients (PHASE-12)
+export async function getHomeStatusStrip(){
+  return apiFetch('/api/home/status-strip')
+}
+
+export async function getHomeAlerts(qs = {}){
+  const params = new URLSearchParams(qs).toString()
+  return apiFetch(`/api/home/alerts?${params}`)
+}
+
+export async function ackHomeAlert(alertId){
+  return apiFetch(`/api/home/alerts/${alertId}/ack`, { method: 'POST' })
+}
+
+export async function getHomeFlashes(qs = {}){
+  const params = new URLSearchParams(qs).toString()
+  return apiFetch(`/api/home/flashes?${params}`)
+}
+
+export async function getHomeUpcoming(qs = {}){
+  const params = new URLSearchParams(qs).toString()
+  return apiFetch(`/api/home/upcoming?${params}`)
+}
+
+export async function getHomeRecognition(){
+  return apiFetch('/api/home/recognition')
+}
+
+export async function getHomeReferences(){
+  return apiFetch('/api/home/references')
+}
+
+// Tactical/Command Center clients
+export async function getMissionAssessment(qs = {}){
+  const params = new URLSearchParams(qs).toString()
+  return apiFetch(`/api/command-center/mission-assessment?${params}`)
+}
+
+export async function exportDashboard(type, format='csv', qs = {}){
+  const params = new URLSearchParams(qs)
+  if (format) params.set('format', format)
+  if (type) params.set('type', type)
+  const path = `/api/exports/dashboard?${params.toString()}`
+  // For csv we want raw text; apiFetch normalizes JSON — fetch directly for CSV
+  if (format === 'csv'){
+    const token = localStorage.getItem('taaip_jwt')
+    const headers = {}
+    if (token) headers['Authorization'] = `Bearer ${token}`
+    const res = await fetch(`${API_BASE}${path}`, { headers })
+    if (!res.ok) throw new Error('export failed')
+    return res.text()
+  }
+  return apiFetch(path)
+}
+
+export async function getVirtualTechBrief(){
+  return apiFetch('/api/home/virtual-tech-brief')
+}
+
 export async function getOrgUnitsSummary(){
   return apiFetch('/api/v2/org/units-summary')
 }
@@ -302,6 +361,33 @@ export async function triggerSchedule(id){
   return apiFetch(`/api/admin/schedules/${id}/trigger`, { method: 'POST', body: JSON.stringify({}) , headers: {'Content-Type':'application/json'} })
 }
 
+// System Controlled Update System (CUS) clients
+export async function listSystemObservations(qs = {}){
+  const params = new URLSearchParams(qs).toString()
+  return apiFetch(`/api/system/observations?${params}`)
+}
+
+export async function postSystemObservation(payload){
+  return apiFetch('/api/system/observations', { method: 'POST', body: JSON.stringify(payload), headers: {'Content-Type':'application/json'} })
+}
+
+export async function listProposals(qs = {}){
+  const params = new URLSearchParams(qs).toString()
+  return apiFetch(`/api/system/proposals?${params}`)
+}
+
+export async function createProposal(payload){
+  return apiFetch('/api/system/proposals', { method: 'POST', body: JSON.stringify(payload), headers: {'Content-Type':'application/json'} })
+}
+
+export async function submitProposal(id){
+  return apiFetch(`/api/system/proposals/${id}/submit`, { method: 'POST', body: JSON.stringify({}) , headers: {'Content-Type':'application/json'} })
+}
+
+export async function reviewProposal(id, payload){
+  return apiFetch(`/api/system/proposals/${id}/review`, { method: 'POST', body: JSON.stringify(payload), headers: {'Content-Type':'application/json'} })
+}
+
 // RBAC / admin
 export async function listRoles(){
   return apiFetch('/api/rbac/roles')
@@ -456,6 +542,97 @@ export async function getMarketPotential(scope, value){
   }
 }
 
+// Tactical rollup clients (PHASE-13)
+export async function getBudgetRollup(qs = {}){
+  const params = new URLSearchParams(qs).toString()
+  return apiFetch(`/api/rollups/budget?${params}`)
+}
+
+export async function getEventsRollup(qs = {}){
+  const params = new URLSearchParams(qs).toString()
+  return apiFetch(`/api/rollups/events?${params}`)
+}
+
+export async function getMarketingRollup(qs = {}){
+  const params = new URLSearchParams(qs).toString()
+  return apiFetch(`/api/rollups/marketing?${params}`)
+}
+
+export async function getFunnelRollup(qs = {}){
+  const params = new URLSearchParams(qs).toString()
+  return apiFetch(`/api/rollups/funnel?${params}`)
+}
+
+export async function getCommandRollup(qs = {}){
+  const params = new URLSearchParams(qs).toString()
+  return apiFetch(`/api/rollups/command?${params}`)
+}
+
+// Command Center clients (PHASE-14)
+export async function getCommandCenterOverview(qs = {}){
+  const params = new URLSearchParams(qs).toString()
+  return apiFetch(`/api/command-center/overview?${params}`)
+}
+
+export async function getCommandCenterPriorities(qs = {}){
+  const params = new URLSearchParams(qs).toString()
+  return apiFetch(`/api/command-center/priorities?${params}`)
+}
+
+export async function createCommandCenterPriority(payload){
+  return apiFetch('/api/command-center/priorities', { method: 'POST', body: JSON.stringify(payload), headers: {'Content-Type':'application/json'} })
+}
+
+export async function updateCommandCenterPriority(id, payload){
+  return apiFetch(`/api/command-center/priorities/${id}`, { method: 'PUT', body: JSON.stringify(payload), headers: {'Content-Type':'application/json'} })
+}
+
+export async function deleteCommandCenterPriority(id){
+  return apiFetch(`/api/command-center/priorities/${id}`, { method: 'DELETE' })
+}
+
+export async function listCommandCenterLoes(qs = {}){
+  const params = new URLSearchParams(qs).toString()
+  return apiFetch(`/api/command-center/loes?${params}`)
+}
+
+export async function createCommandCenterLoe(payload){
+  return apiFetch('/api/command-center/loes', { method: 'POST', body: JSON.stringify(payload), headers: {'Content-Type':'application/json'} })
+}
+
+export async function updateCommandCenterLoe(id, payload){
+  return apiFetch(`/api/command-center/loes/${id}`, { method: 'PUT', body: JSON.stringify(payload), headers: {'Content-Type':'application/json'} })
+}
+
+export async function deleteCommandCenterLoe(id){
+  return apiFetch(`/api/command-center/loes/${id}`, { method: 'DELETE' })
+}
+
+export async function evaluateCommandCenterLoes(){
+  return apiFetch('/api/command-center/loes/evaluate')
+}
+
+export async function getCommandCenterMissionAssessment(qs = {}){
+  const params = new URLSearchParams(qs).toString()
+  return apiFetch(`/api/command-center/mission-assessment?${params}`)
+}
+
+// Tactical dashboards clients
+export async function getEventsRoi(qs = {}){
+  const params = new URLSearchParams(qs).toString()
+  return apiFetch(`/api/tactical/events-roi?${params}`)
+}
+
+export async function getTacticalMarketing(qs = {}){
+  const params = new URLSearchParams(qs).toString()
+  return apiFetch(`/api/tactical/marketing?${params}`)
+}
+
+export async function getTacticalFunnel(qs = {}){
+  const params = new URLSearchParams(qs).toString()
+  return apiFetch(`/api/tactical/funnel?${params}`)
+}
+
 const apiClient = {
   // home
   getHomeNews, getHomeUpdates, getHomeQuickLinks,
@@ -481,12 +658,18 @@ const apiClient = {
   listRoles, createRole, updateRole, createUser, assignRole, listUsers, getRoleUsers, removeRole, deleteRole, deleteRoleForce,
   // projects / tasks / loes
   getProject, updateTask, assignTask, listLOEs, listLOEsForScope, createLOE, updateLOE, deleteLOE,
+  // legacy names
   listCommandPriorities, getCommandBaseline, createCommandPriority, updateCommandPriority, deleteCommandPriority, listPriorityLOEs, assignLOEToPriority, unassignLOEFromPriority,
+  // command center (new names retained for compatibility)
+  getCommandCenterPriorities, createCommandCenterPriority, updateCommandCenterPriority, deleteCommandCenterPriority,
+  listCommandCenterLoes, createCommandCenterLoe, updateCommandCenterLoe, deleteCommandCenterLoe, evaluateCommandCenterLoes, getCommandCenterOverview, getCommandCenterMissionAssessment,
   listProjects, listTasks, createProject, createTask, createMeeting,
   // calendar
   createCalendarEvent, listCalendarEvents, updateCalendarEvent, deleteCalendarEvent,
   // market
   getMarketPotential
+  // system CUS
+  , listSystemObservations, postSystemObservation, listProposals, createProposal, submitProposal, reviewProposal
 }
 
 export default apiClient

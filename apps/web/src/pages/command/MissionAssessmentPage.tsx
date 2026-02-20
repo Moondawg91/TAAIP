@@ -3,6 +3,9 @@ import { Box, Typography, Tabs, Tab, Card, CardContent, Grid, Chip, List, ListIt
 import EmptyState from '../../components/common/EmptyState'
 import { getAnalyticsSummary, getLatestMissionAssessment, saveMissionAssessment } from '../../api/client'
 import DashboardToolbar from '../../components/dashboard/DashboardToolbar'
+import DualModeTabs from '../../components/DualModeTabs'
+import DashboardFilterBar from '../../components/DashboardFilterBar'
+import ExportMenu from '../../components/ExportMenu'
 
 function TabPanel({ children, value, index }: any){
   return value === index ? <Box sx={{ mt:2 }}>{children}</Box> : null
@@ -36,7 +39,14 @@ export default function MissionAssessmentPage(){
 
   return (
     <Box sx={{ p:3, minHeight: '100vh', bgcolor: 'background.default', color: 'text.primary' }}>
-      <DashboardToolbar title="Mission Assessment" subtitle="FY / QTR / Month assessment for recruiting missions." filters={{}} onFiltersChange={()=>{}} onExport={(t)=>{ alert(`Export ${t} coming soon`) }} />
+      <Box sx={{display:'flex', alignItems:'center', gap:2}}>
+        <DashboardToolbar title="Mission Assessment" subtitle="FY / QTR / Month assessment for recruiting missions." filters={{}} onFiltersChange={()=>{}} onExport={(t)=>{ alert(`Export ${t} coming soon`) }} />
+        <Box sx={{ml:'auto'}}>
+          <ExportMenu data={[] } filename="mission_assessment" />
+        </Box>
+      </Box>
+      <DualModeTabs />
+      <DashboardFilterBar />
 
       <Tabs value={tab} onChange={(_,v)=>setTab(v)} aria-label="assessment-tabs">
         <Tab label="FY" />

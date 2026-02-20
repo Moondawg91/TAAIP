@@ -1,0 +1,96 @@
+{
+  "db_path": "/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_bhe7t9zr.sqlite3",
+  "sqlite_count": 1,
+  "pragma_projects": [
+    [
+      0,
+      "project_id",
+      "TEXT",
+      0,
+      null,
+      1
+    ],
+    [
+      1,
+      "title",
+      "TEXT",
+      0,
+      null,
+      0
+    ],
+    [
+      2,
+      "org_unit_id",
+      "INTEGER",
+      0,
+      null,
+      0
+    ],
+    [
+      3,
+      "fy",
+      "INTEGER",
+      0,
+      null,
+      0
+    ],
+    [
+      4,
+      "planned_cost",
+      "REAL",
+      0,
+      null,
+      0
+    ],
+    [
+      5,
+      "created_at",
+      "TEXT",
+      0,
+      null,
+      0
+    ]
+  ],
+  "sqlalchemy_rows": [
+    {
+      "project_id": "projA",
+      "title": "Project A",
+      "fy": 2026,
+      "planned_cost": 5000.0
+    }
+  ],
+  "sqlalchemy_count_fy": 1,
+  "route_status": 200,
+  "route_json": {
+    "filters": {
+      "fy": 2026
+    },
+    "totals": {
+      "count": 0,
+      "planned_cost": 0.0,
+      "avg_percent_complete": 0.0
+    },
+    "by_status": [],
+    "projects": [
+      {
+        "project_id": "projA",
+        "title": "Project A",
+        "planned_cost": 5000.0,
+        "actual_spent": 400.0,
+        "pending": 4600.0,
+        "variance": 4600.0
+      }
+    ],
+    "debug": {
+      "proj_cols": [
+        "project_id",
+        "title",
+        "org_unit_id",
+        "fy",
+        "planned_cost",
+        "created_at"
+      ],
+      "total_projects_sql": 0
+    }
+  }
+}

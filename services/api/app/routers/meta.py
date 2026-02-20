@@ -13,3 +13,18 @@ def list_routes() -> Dict[str, List[str]]:
         return {'routes': sorted(list(set(paths)))}
     except Exception:
         return {'routes': []}
+
+
+@router.get('/funding_sources')
+def funding_sources():
+    # Return canonical funding source taxonomy and optional permission hints
+    return {
+        'funding_sources': [
+            {'key': 'USAREC_BDE_FUNDS', 'label': 'USAREC / BDE Funds'},
+            {'key': 'BATTALION_FUNDS', 'label': 'Battalion Funds'},
+            {'key': 'LOCAL_AMP_LAMP', 'label': 'Local AMP / LAMP'},
+            {'key': 'DIRECT_AMP_DAMP', 'label': 'Direct AMP / DAMP'},
+            {'key': 'DIRECT_FUNDS_LOCAL', 'label': 'Direct Funds (Local)'},
+            {'key': 'ADVERTISING_FUNDS_NATIONAL', 'label': 'Advertising Funds (National)', 'permission': 'advertising_access'}
+        ]
+    }

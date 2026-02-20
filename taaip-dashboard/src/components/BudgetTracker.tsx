@@ -37,23 +37,45 @@ export const BudgetTracker: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [selectedUnit, setSelectedUnit] = useState<string>('all');
   const [fiscalYear, setFiscalYear] = useState<number>(2025);
+  const [fundingSource, setFundingSource] = useState<string>('all');
+  const [eorCode, setEorCode] = useState<string>('all');
   const [viewMode, setViewMode] = useState<'overview' | 'detailed'>('overview');
+  const [totals, setTotals] = useState<{allocated:number;obligated:number;executed:number;remaining:number}>({allocated:0,obligated:0,executed:0,remaining:0});
 
   useEffect(() => {
     loadBudgetData();
-  }, [fiscalYear, selectedUnit]);
+  }, [fiscalYear, selectedUnit, fundingSource, eorCode]);
 
   const loadBudgetData = async () => {
     setLoading(true);
     try {
-      const response = await fetch(
-          `${API_BASE}/api/v2/budget/allocations?fiscal_year=${fiscalYear}${selectedUnit !== 'all' ? `&unit_id=${selectedUnit}` : ''}`
-        );
+      const qs = new URLSearchParams();
+      qs.set('fy', String(fiscalYear));
+      if (selectedUnit && selectedUnit !== 'all') qs.set('org_unit_id', selectedUnit);
+      if (fundingSource && fundingSource !== 'all') qs.set('funding_source', fundingSource);
+      if (eorCode && eorCode !== 'all') qs.set('eor_code', eorCode);
+      const response = await fetch(`${API_BASE}/api/budget/dashboard/export.json?${qs.toString()}`);
       const data = await response.json();
-      
-      if (data.status === 'ok') {
-        setBudgets(data.budgets || []);
-        setTransactions(data.recent_transactions || []);
+      // set totals and by_project as budgets
+      if (data && data.totals) {
+        setTotals(data.totals);
+      }
+      if (data && data.by_project) {
+        // map projects to BudgetAllocation-lite shape
+        const mapped = (data.by_project || []).map((p: any) => ({
+          unit_id: p.project_id || p.name,
+          unit_name: p.name || p.project_id,
+          unit_type: 'brigade',
+          fiscal_year: fiscalYear,
+          total_budget: p.allocated || 0,
+          allocated: p.allocated || 0,
+          spent: p.executed || 0,
+          remaining: p.remaining || 0,
+          utilization_rate: p.allocated ? (p.executed / p.allocated) * 100 : 0,
+          categories: { events: 0, projects: 0, operations: 0, other: 0 },
+          transactions: []
+        }));
+        setBudgets(mapped);
       }
     } catch (error) {
       console.error('Error loading budget data:', error);
@@ -96,7 +118,7 @@ export const BudgetTracker: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       {/* Header */}
-      <div className="bg-gradient-to-r from-gray-800 to-gray-900 text-white rounded-xl shadow-lg p-6 mb-6">
+      <div className="bg-gradient-to-r from-gray-800 to-gray-900 text-white rounded-md shadow-lg p-6 mb-6">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold uppercase tracking-wider flex items-center gap-3">
@@ -105,11 +127,11 @@ export const BudgetTracker: React.FC = () => {
             </h1>
             <p className="text-gray-300 mt-2">FY {fiscalYear} Budget Allocation & Utilization</p>
           </div>
-          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4">
             <select
               value={fiscalYear}
               onChange={(e) => setFiscalYear(parseInt(e.target.value))}
-              className="px-4 py-2 bg-gray-700 text-white rounded-lg border border-gray-600 focus:ring-2 focus:ring-yellow-500"
+                className="px-4 py-2 bg-gray-700 text-white rounded-md border border-gray-600 focus:ring-2 focus:ring-yellow-500"
             >
               <option value={2024}>FY 2024</option>
               <option value={2025}>FY 2025</option>
@@ -183,13 +205,13 @@ export const BudgetTracker: React.FC = () => {
       </div>
 
       {/* Filter Bar */}
-      <div className="bg-white rounded-xl shadow-md p-4 mb-6">
+      <div className="bg-white rounded-md shadow-md p-4 mb-6">
         <div className="flex items-center gap-4">
           <Filter className="w-5 h-5 text-gray-500" />
           <select
             value={selectedUnit}
             onChange={(e) => setSelectedUnit(e.target.value)}
-            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500"
+            className="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-yellow-500"
           >
             <option value="all">All Units</option>
             <optgroup label="Brigades">
@@ -211,6 +233,43 @@ export const BudgetTracker: React.FC = () => {
               <option value="battalion_601">6-601 Battalion</option>
             </optgroup>
           </select>
+          <select
+            value={fundingSource}
+            onChange={(e) => setFundingSource(e.target.value)}
+            className="px-4 py-2 border border-gray-300 rounded-md"
+          >
+            <option value="all">All Funding Sources</option>
+            <option value="BDE_LAMP">BDE_LAMP</option>
+            <option value="BN_LAMP">BN_LAMP</option>
+            <option value="OPM">OPM</option>
+            <option value="OMA">OMA</option>
+            <option value="UNK">UNKNOWN</option>
+          </select>
+          <select
+            value={eorCode}
+            onChange={(e) => setEorCode(e.target.value)}
+            className="px-4 py-2 border border-gray-300 rounded-md"
+          >
+            <option value="all">All EOR</option>
+            <option value="EOR-001">EOR-001</option>
+            <option value="EOR-002">EOR-002</option>
+            <option value="EOR-003">EOR-003</option>
+          </select>
+          <div className="ml-auto flex items-center gap-2">
+            <button
+              onClick={() => {
+                const qs = new URLSearchParams();
+                qs.set('fy', String(fiscalYear));
+                if (selectedUnit && selectedUnit !== 'all') qs.set('org_unit_id', selectedUnit);
+                if (fundingSource && fundingSource !== 'all') qs.set('funding_source', fundingSource);
+                if (eorCode && eorCode !== 'all') qs.set('eor_code', eorCode);
+                window.open(`${API_BASE}/api/budget/dashboard/export.csv?${qs.toString()}`, '_blank');
+              }}
+              className="px-4 py-2 bg-yellow-500 text-black font-semibold rounded-md hover:bg-yellow-400"
+            >
+              Export
+            </button>
+          </div>
         </div>
       </div>
 

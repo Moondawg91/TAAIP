@@ -19,9 +19,13 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt || true
+          # Install backend-specific requirements for services/api
+          if [ -f services/api/requirements.txt ]; then pip install -r services/api/requirements.txt || true; fi
           pip install pytest || true
       - name: Run tests
         env:
           TAAIP_DB_PATH: ${{ github.workspace }}/taaip_test.db
         run: |
-          PYTHONPATH=. pytest -q services/api/tests -q
+          # ensure a fresh sqlite file for tests to avoid UNIQUE constraint issues
+          rm -f ${{ github.workspace }}/taaip_test.db || true
+          PYTHONPATH=. TAAIP_DB_PATH=${{ github.workspace }}/taaip_test.db pytest -q services/api/tests -q

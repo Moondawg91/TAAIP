@@ -1,6 +1,9 @@
 import React from 'react'
 import { Box, Typography, Grid, Button } from '@mui/material'
 import EmptyState from '../../components/common/EmptyState'
+import DualModeTabs from '../../components/DualModeTabs'
+import DashboardFilterBar from '../../components/DashboardFilterBar'
+import ExportMenu from '../../components/ExportMenu'
 import api from '../../api/client'
 import DashboardToolbar from '../../components/dashboard/DashboardToolbar'
 
@@ -14,6 +17,14 @@ export default function ProjectsEventsPage(){
 
   return (
     <Box sx={{ p:3, minHeight:'100vh', bgcolor:'background.default', color:'text.primary' }}>
+      <Box sx={{display:'flex', alignItems:'center'}}>
+        <Typography variant="h5">Projects & Events</Typography>
+        <Box sx={{ml:'auto'}}>
+          <ExportMenu data={[...projects, ...events]} filename="projects_events" />
+        </Box>
+      </Box>
+      <DualModeTabs />
+      <DashboardFilterBar />
       <DashboardToolbar title="Event + Project Management" subtitle="Projects & events" filters={{}} onFiltersChange={()=>{}} onExport={(t)=>{ alert(`Export ${t} coming soon`) }} />
       {loading ? <Typography>Loading...</Typography> : (
         (projects.length || events.length) ? (

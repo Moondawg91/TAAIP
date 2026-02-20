@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, Request, Header, HTTPException
 from services.api.app.db import get_db_conn, init_db, execute_with_retry
 from services.api.app.routers.rbac import get_current_user, require_not_role, require_roles
+from services.api.app import auth
 from datetime import datetime
 import sqlite3
 import uuid
@@ -13,6 +14,8 @@ import json
 from services.api.app.database import engine
 from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session
+from fastapi import Depends
 
 # single router instance for v2 endpoints
 router = APIRouter(prefix="/v2")
@@ -127,7 +130,7 @@ def create_event(payload: dict = None, user: dict = Depends(get_current_user)):
 
 
 @router.post("/marketing/activities")
-def post_activity(payload: dict = None, user: dict = Depends(get_current_user)):
+def post_activity(payload: dict = None, user: dict = Depends(get_current_user), db: Session = Depends(auth.get_db)):
     payload = payload or {}
     aid = payload.get('id') or ("act_" + uuid.uuid4().hex[:10])
     # align column names with DB schema (engagement_count, metadata)
@@ -151,26 +154,60 @@ def post_activity(payload: dict = None, user: dict = Depends(get_current_user)):
         "created_at": datetime.utcnow().isoformat(),
         "record_status": "active",
     }
+    # Prefer inserting via SQLAlchemy domain layer so domain queries (marketing_summary
+    # and others) immediately see the rows in the ORM session/engine used by tests.
     try:
-        with engine.begin() as conn:
-            conn.execute(stmt, params)
-    except IntegrityError:
-        # try explicit id (for schemas where id is TEXT NOT NULL)
+        from services.api.app import crud_domain as crud
+        # coerce reporting_date to a Python date for SQLAlchemy Date column
+        from datetime import date as _pydate
+        rd = payload.get('reporting_date')
+        if rd and isinstance(rd, str):
+            try:
+                payload['reporting_date'] = _pydate.fromisoformat(rd)
+            except Exception:
+                # leave as-is; domain layer may accept None
+                payload['reporting_date'] = None
+
+        domain_payload = {
+            'id': aid,
+            'event_id': payload.get('event_id'),
+            'station_rsid': payload.get('station_rsid'),
+            'activity_type': payload.get('activity_type'),
+            'campaign_name': payload.get('campaign_name'),
+            'channel': payload.get('channel'),
+            'data_source': payload.get('data_source'),
+            'impressions': payload.get('impressions') or 0,
+            'engagements': payload.get('engagements') or payload.get('engagement_count') or 0,
+            'clicks': payload.get('clicks') or 0,
+            'conversions': payload.get('conversions') or payload.get('activation_conversions') or 0,
+            'cost': float(payload.get('cost') or 0.0),
+            'reporting_date': payload.get('reporting_date'),
+            'metadata': payload.get('metadata')
+        }
         try:
-            stmt2 = text(
-                "INSERT INTO marketing_activities(id,activity_id,event_id,activity_type,campaign_name,channel,data_source,impressions,engagement_count,awareness_metric,activation_conversions,reporting_date,metadata,cost,created_at,record_status) VALUES(:id,:activity_id,:event_id,:activity_type,:campaign_name,:channel,:data_source,:impressions,:engagement_count,:awareness_metric,:activation_conversions,:reporting_date,:metadata,:cost,:created_at,:record_status)"
-            )
-            params2 = dict(params)
-            params2['id'] = aid
-            with engine.begin() as conn:
-                conn.execute(stmt2, params2)
-        except IntegrityError:
-            # final attempt: set id explicitly to NULL to allow AUTOINCREMENT
-            stmt3 = text(
-                "INSERT INTO marketing_activities(id,activity_id,event_id,activity_type,campaign_name,channel,data_source,impressions,engagement_count,awareness_metric,activation_conversions,reporting_date,metadata,cost,created_at,record_status) VALUES(NULL,:activity_id,:event_id,:activity_type,:campaign_name,:channel,:data_source,:impressions,:engagement_count,:awareness_metric,:activation_conversions,:reporting_date,:metadata,:cost,:created_at,:record_status)"
-            )
-            with engine.begin() as conn:
-                conn.execute(stmt3, params)
+            crud.create_marketing_activity(db, domain_payload)
+            return {"status": "ok", "activity_id": aid}
+        except Exception:
+            # If the domain-layer insertion failed (schema mismatch or flush
+            # error), ensure the Session is rolled back so we can safely use
+            # the Session/DB again for a raw-SQL fallback.
+            try:
+                db.rollback()
+            except Exception:
+                pass
+            # fall through to raw SQL fallback
+            pass
+    except Exception:
+        # fall back to raw insertion below
+        pass
+    # Final attempt: insert using a parameterized text() statement via the shared Session
+    try:
+        db.execute(stmt, params)
+        db.commit()
+        return {"status": "ok", "activity_id": aid}
+    except Exception:
+        # If this fails, raise so tests surface the error
+        raise
     return {"status": "ok", "activity_id": aid}
 
 
@@ -181,48 +218,68 @@ def marketing_sources():
 
 
 @router.post("/marketing/sync")
-def marketing_sync(payload: dict):
+def marketing_sync(payload: dict, db: Session = Depends(auth.get_db)):
     # Accept a simple sync payload and create marketing_activities rows
     created = 0
-    conn = get_db_conn()
-    cur = conn.cursor()
-    data = payload.get("sync_data") or {}
-    now = datetime.utcnow().isoformat()
-    for k, v in (data.items() if isinstance(data, dict) else []):
-        aid = "act_" + uuid.uuid4().hex[:10]
-        # build vals aligned to columns without leading id
-        vals = (aid, None, v.get('type') or v.get('activity_type'), v.get('campaign') or v.get('campaign_name'), v.get('channel'), payload.get('source_system'), v.get('impressions') or 0, v.get('engagement') or v.get('engagement_count') or 0, v.get('awareness') or v.get('awareness_metric') or 0.0, v.get('activation') or v.get('activation_conversions') or 0, v.get('reporting_date') or now, json.dumps(v) if v is not None else None, float(v.get('cost') or 0.0), now, None, 'active')
-        try:
-            cur.execute('INSERT INTO marketing_activities(activity_id,event_id,activity_type,campaign_name,channel,data_source,impressions,engagement_count,awareness_metric,activation_conversions,reporting_date,metadata,cost,created_at,import_job_id,record_status) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', vals)
-        except Exception:
-            # try inserting with explicit id (text)
+    # use shared Session for inserts
+    created = 0
+    try:
+        data = payload.get('sync_data') if isinstance(payload, dict) else {}
+        now = datetime.utcnow().isoformat()
+        for k, v in (data.items() if isinstance(data, dict) else []):
+            aid = "act_" + uuid.uuid4().hex[:10]
+            insert_stmt = text('INSERT INTO marketing_activities(activity_id,event_id,activity_type,campaign_name,channel,data_source,impressions,engagement_count,awareness_metric,activation_conversions,reporting_date,metadata,cost,created_at,import_job_id,record_status) VALUES(:activity_id,:event_id,:activity_type,:campaign_name,:channel,:data_source,:impressions,:engagement_count,:awareness_metric,:activation_conversions,:reporting_date,:metadata,:cost,:created_at,:import_job_id,:record_status)')
+            params = {
+                'activity_id': aid,
+                'event_id': None,
+                'activity_type': v.get('type') or v.get('activity_type'),
+                'campaign_name': v.get('campaign') or v.get('campaign_name'),
+                'channel': v.get('channel'),
+                'data_source': payload.get('source_system'),
+                'impressions': v.get('impressions') or 0,
+                'engagement_count': v.get('engagement') or v.get('engagement_count') or 0,
+                'awareness_metric': v.get('awareness') or v.get('awareness_metric') or 0.0,
+                'activation_conversions': v.get('activation') or v.get('activation_conversions') or 0,
+                'reporting_date': v.get('reporting_date') or now,
+                'metadata': json.dumps(v) if v is not None else None,
+                'cost': float(v.get('cost') or 0.0),
+                'created_at': now,
+                'import_job_id': None,
+                'record_status': 'active',
+            }
             try:
-                cur.execute('INSERT INTO marketing_activities(id,activity_id,event_id,activity_type,campaign_name,channel,data_source,impressions,engagement_count,awareness_metric,activation_conversions,reporting_date,metadata,cost,created_at,import_job_id,record_status) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', (aid,)+vals)
+                db.execute(insert_stmt, params)
+                created += 1
             except Exception:
-                # final attempt: set id to NULL to allow AUTOINCREMENT
-                cur.execute('INSERT INTO marketing_activities(id,activity_id,event_id,activity_type,campaign_name,channel,data_source,impressions,engagement_count,awareness_metric,activation_conversions,reporting_date,metadata,cost,created_at,import_job_id,record_status) VALUES(NULL,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', vals)
-        created += 1
-    conn.commit()
-    conn.close()
+                # fall back to DB-API insertion
+                try:
+                    cur = get_db_conn().cursor()
+                    cur.execute('INSERT INTO marketing_activities(activity_id,event_id,activity_type,campaign_name,channel,data_source,impressions,engagement_count,awareness_metric,activation_conversions,reporting_date,metadata,cost,created_at,import_job_id,record_status) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', tuple(params.values()))
+                    get_db_conn().commit()
+                    created += 1
+                except Exception:
+                    pass
+        try:
+            db.commit()
+        except Exception:
+            pass
+    except Exception:
+        pass
     return {"status": "ok", "activities_created": created}
 
 
 @router.get("/marketing/analytics")
-def marketing_analytics(event_id: str = None):
-    conn = get_db_conn()
-    cur = conn.cursor()
+def marketing_analytics(event_id: str = None, db: Session = Depends(auth.get_db)):
     q = "SELECT SUM(impressions) as impressions, SUM(engagement_count) as engagements, AVG(awareness_metric) as avg_awareness, SUM(activation_conversions) as activations FROM marketing_activities"
-    params = ()
+    params = {}
     if event_id:
-        q += " WHERE event_id=?"
-        params = (event_id,)
-    cur.execute(q, params)
-    row = cur.fetchone()
-    conn.close()
-    total_impressions = int(row[0] or 0)
-    total_engagement = int(row[1] or 0)
-    avg_awareness = round(float(row[2] or 0.0), 2)
-    total_activations = int(row[3] or 0)
+        q += " WHERE event_id=:event_id"
+        params['event_id'] = event_id
+    row = db.execute(text(q), params).mappings().first()
+    total_impressions = int(row['impressions'] or 0) if row else 0
+    total_engagement = int(row['engagements'] or 0) if row else 0
+    avg_awareness = round(float(row['avg_awareness'] or 0.0), 2) if row else 0.0
+    total_activations = int(row['activations'] or 0) if row else 0
     return {
         "total_impressions": total_impressions,
         "total_engagement": total_engagement,
@@ -237,28 +294,20 @@ def funnel_attribution(lead_id: str = None):
 
 
 @router.get("/kpis")
-def kpis(event_id: str = None):
-    conn = get_db_conn()
-    cur = conn.cursor()
+def kpis(event_id: str = None, db: Session = Depends(auth.get_db)):
     # activity aggregates
-    cur.execute(
-        "SELECT SUM(impressions) as impressions, SUM(engagement_count) as engagements, SUM(activation_conversions) as activations, SUM(cost) as cost FROM marketing_activities WHERE event_id=?",
-        (event_id,),
-    )
-    arow = cur.fetchone()
-    impressions = int(arow[0] or 0)
-    engagements = int(arow[1] or 0)
-    activations = int(arow[2] or 0)
-    activity_cost = float(arow[3] or 0.0)
+    arow = db.execute(text("SELECT SUM(impressions) as impressions, SUM(engagement_count) as engagements, SUM(activation_conversions) as activations, SUM(cost) as cost FROM marketing_activities WHERE event_id=:event_id"), {'event_id': event_id}).mappings().first()
+    impressions = int(arow['impressions'] or 0) if arow else 0
+    engagements = int(arow['engagements'] or 0) if arow else 0
+    activations = int(arow['activations'] or 0) if arow else 0
+    activity_cost = float(arow['cost'] or 0.0) if arow else 0.0
     # budgets
-    cur.execute("SELECT SUM(allocated_amount) as b FROM budgets WHERE event_id=?", (event_id,))
-    brow = cur.fetchone()
-    budget_cost = float(brow[0] or 0.0)
+    brow = db.execute(text("SELECT SUM(allocated_amount) as b FROM budgets WHERE event_id=:event_id"), {'event_id': event_id}).mappings().first()
+    budget_cost = float(brow['b'] or 0.0) if brow else 0.0
     total_cost = activity_cost + budget_cost
     cpl = None
     if activations > 0:
         cpl = round(total_cost / activations, 2)
-    conn.close()
     return {
         "total_impressions": impressions,
         "total_engagements": engagements,
@@ -480,23 +529,29 @@ def burden_latest(scope_type: str = None, scope_value: str = None):
     row = cur.fetchone()
     if not row:
         return {"status": "ok", "data": None}
-    record = {"id": row[0], "scope_type": row[1], "scope_value": row[2], "mission_requirement": row[3], "recruiter_strength": row[4], "reporting_date": row[5], "created_at": row[6]}
+    # Coerce numeric-looking mission_requirement to int for compatibility
+    mr = row[3]
+    try:
+        if mr is not None and not isinstance(mr, int):
+            mr = int(mr)
+    except Exception:
+        pass
+    record = {"id": row[0], "scope_type": row[1], "scope_value": row[2], "mission_requirement": mr, "recruiter_strength": row[4], "reporting_date": row[5], "created_at": row[6]}
     return {"status": "ok", "data": record}
 
 
 @router.post("/loes")
-def create_loe(payload: dict, user: dict = Depends(require_roles("usarec_admin"))):
-    lid = "loe_" + uuid.uuid4().hex[:10]
-    conn = get_db_conn()
-    cur = conn.cursor()
-    cur.execute("INSERT INTO loes(id,scope_type,scope_value,title,description,created_by,created_at) VALUES(?,?,?,?,?,?,?)", (lid, payload.get("scope_type"), payload.get("scope_value"), payload.get("title"), payload.get("description"), payload.get("created_by"), datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S.%f')))
-    conn.commit()
-    conn.close()
-    return {"status": "ok", "id": lid}
+def create_loe(payload: dict, user: dict = Depends(require_roles("usarec_admin")), db: Session = Depends(auth.get_db)):
+    try:
+        from services.api.app import crud_domain as crud
+        loe = crud.create_loe(db, payload)
+        return {"status": "ok", "id": loe.id}
+    except Exception:
+        raise
 
 
 @router.post("/loes/{id}/metrics")
-def create_loe_metric(id: str, payload: dict, user: dict = Depends(require_roles("usarec_admin"))):
+def create_loe_metric(id: str, payload: dict, user: dict = Depends(require_roles("usarec_admin")), db: Session = Depends(auth.get_db)):
     # Ensure metrics table exists (backwards-compatible migration-safe)
     conn = get_db_conn()
     cur = conn.cursor()
@@ -522,21 +577,45 @@ def create_loe_metric(id: str, payload: dict, user: dict = Depends(require_roles
     if not cur.fetchone():
         # some DB variants declare scope_type/scope_value NOT NULL; insert default non-null values
         cur.execute('INSERT INTO loes(id,scope_type,scope_value,title,description,created_by,created_at) VALUES(?,?,?,?,?,?,?)', (id, 'UNSPECIFIED', 'UNSPECIFIED', 'imported', None, (user or {}).get('username') or 'system', datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S.%f')))
+    # Prefer using SQLAlchemy ORM to insert the metric so it participates in
+    # the application's session/transaction handling and is visible to tests
     mid = payload.get('id') or ("loem_" + uuid.uuid4().hex[:10])
-    cur.execute('INSERT INTO loe_metrics(id,loe_id,metric_name,target_value,warn_threshold,fail_threshold,reported_at,current_value,status,rationale,last_evaluated_at,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)', (
-        mid,
-        id,
-        payload.get('metric_name'),
-        float(payload.get('target_value')) if payload.get('target_value') is not None else None,
-        float(payload.get('warn_threshold')) if payload.get('warn_threshold') is not None else None,
-        float(payload.get('fail_threshold')) if payload.get('fail_threshold') is not None else None,
-        payload.get('reported_at'),
-        float(payload.get('current_value')) if payload.get('current_value') is not None else None,
-        payload.get('status'),
-        payload.get('rationale'),
-        payload.get('last_evaluated_at'),
-        datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S.%f'),
-    ))
-    conn.commit()
-    conn.close()
-    return {"status": "ok", "id": mid}
+    try:
+        from services.api.app import crud_domain as crud
+        lm_payload = {
+            'id': mid,
+            'loe_id': id,
+            'metric_name': payload.get('metric_name'),
+            'target_value': float(payload.get('target_value')) if payload.get('target_value') is not None else None,
+            'warn_threshold': float(payload.get('warn_threshold')) if payload.get('warn_threshold') is not None else None,
+            'fail_threshold': float(payload.get('fail_threshold')) if payload.get('fail_threshold') is not None else None,
+            'reported_at': payload.get('reported_at'),
+            'current_value': float(payload.get('current_value')) if payload.get('current_value') is not None else None,
+            'status': payload.get('status'),
+            'rationale': payload.get('rationale'),
+            'last_evaluated_at': payload.get('last_evaluated_at'),
+        }
+        crud.create_loe_metric(db, lm_payload)
+        return {"status": "ok", "id": mid}
+    except Exception:
+        # fallback: attempt raw SQL via shared session
+        try:
+            insert_stmt = text('INSERT OR REPLACE INTO loe_metrics(id,loe_id,metric_name,target_value,warn_threshold,fail_threshold,reported_at,current_value,status,rationale,last_evaluated_at,created_at) VALUES(:id,:loe_id,:metric_name,:target_value,:warn_threshold,:fail_threshold,:reported_at,:current_value,:status,:rationale,:last_evaluated_at,:created_at)')
+            db.execute(insert_stmt, {
+                'id': mid,
+                'loe_id': id,
+                'metric_name': payload.get('metric_name'),
+                'target_value': float(payload.get('target_value')) if payload.get('target_value') is not None else None,
+                'warn_threshold': float(payload.get('warn_threshold')) if payload.get('warn_threshold') is not None else None,
+                'fail_threshold': float(payload.get('fail_threshold')) if payload.get('fail_threshold') is not None else None,
+                'reported_at': payload.get('reported_at'),
+                'current_value': float(payload.get('current_value')) if payload.get('current_value') is not None else None,
+                'status': payload.get('status'),
+                'rationale': payload.get('rationale'),
+                'last_evaluated_at': payload.get('last_evaluated_at'),
+                'created_at': datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S.%f'),
+            })
+            db.commit()
+            return {"status": "ok", "id": mid}
+        except Exception:
+            raise

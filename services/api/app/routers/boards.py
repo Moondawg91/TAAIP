@@ -18,6 +18,33 @@ def create_board(payload: dict, allowed_orgs: Optional[list] = Depends(require_s
     conn = connect()
     try:
         cur = conn.cursor()
+        # Ensure board tables exist for legacy/compat scenarios
+        cur.executescript('''
+        CREATE TABLE IF NOT EXISTS board (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT,
+            org_unit_id INTEGER,
+            description TEXT,
+            created_at TEXT,
+            record_status TEXT DEFAULT 'active'
+        );
+        CREATE TABLE IF NOT EXISTS board_session (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            board_id INTEGER,
+            fy INTEGER,
+            qtr INTEGER,
+            session_dt TEXT,
+            notes TEXT,
+            created_at TEXT
+        );
+        CREATE TABLE IF NOT EXISTS board_metric_snapshot (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            board_session_id INTEGER,
+            metric_key TEXT,
+            metric_value REAL,
+            captured_at TEXT
+        );
+        ''')
         cur.execute('INSERT INTO board(name, org_unit_id, description) VALUES (?,?,?)', (name, org_unit_id, description))
         conn.commit()
         bid = cur.lastrowid

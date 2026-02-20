@@ -113,26 +113,19 @@ export default function HomePage(){
           </Grid>
 
           <Grid item xs={12} md={4}>
-            <HomePanel title="System Status" icon={<ApiIcon sx={{ color: COLORS.primary }} />} actionLabel="View Imports" onActionClick={() => { /* navigation intentionally omitted */ }}>
-              <Stack spacing={1}>
-                <Box sx={{ display:'flex', justifyContent:'space-between' }}>
-                  <Typography variant="body2">API</Typography>
-                  <Typography variant="body2" sx={{ color: apiOnline ? '#22C55E' : '#FF6B6B' }}>{apiOnline ? 'Online' : (apiOnline===false ? 'Offline' : 'Checking')}</Typography>
+            <Box sx={{ p:0 }}>
+              <Box sx={{ display:'flex', alignItems:'center', justifyContent:'space-between', bgcolor: '#12121A', border: `1px solid ${COLORS.border}`, p:1, borderRadius:1 }}>
+                <Box sx={{ display:'flex', alignItems:'center', gap:1 }}>
+                  <ApiIcon sx={{ color: COLORS.primary }} />
+                  <Typography variant="subtitle2" sx={{ color: COLORS.text, fontWeight:700 }}>System Health</Typography>
                 </Box>
-                <Box sx={{ display:'flex', justifyContent:'space-between' }}>
-                  <Typography variant="body2">DB</Typography>
-                  <Typography variant="body2" sx={{ color: dbConnected ? COLORS.text : COLORS.muted }}>{dbConnected ? 'Connected' : (dbConnected===false ? 'Disconnected' : 'Unknown')}</Typography>
+                <Box sx={{ display:'flex', gap:2, alignItems:'center' }}>
+                  <Typography variant="caption">API: <strong style={{color: apiOnline ? '#22C55E' : '#FF6B6B'}}>{apiOnline ? 'Online' : (apiOnline===false ? 'Offline' : 'Checking')}</strong></Typography>
+                  <Typography variant="caption">DB: <strong style={{color: dbConnected ? COLORS.text : COLORS.muted}}>{dbConnected ? 'Connected' : (dbConnected===false ? 'Disconnected' : 'Unknown')}</strong></Typography>
+                  <Typography variant="caption">Last Import: <strong style={{color: COLORS.muted}}>None</strong></Typography>
                 </Box>
-                <Box sx={{ display:'flex', justifyContent:'space-between' }}>
-                  <Typography variant="body2">Last Import</Typography>
-                  <Typography variant="body2" sx={{ color: COLORS.muted }}>None</Typography>
-                </Box>
-                <Box sx={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-                  <Typography variant="body2">Alerts</Typography>
-                  <Chip label={0} size="small" sx={{ bgcolor: '#2A2A3A', color: COLORS.accent }} />
-                </Box>
-              </Stack>
-            </HomePanel>
+              </Box>
+            </Box>
             <Box sx={{ height:12 }} />
             <HomePanel title="Updates" icon={<StorageIcon sx={{ color: COLORS.accent }} /> }>
               <List sx={{ p:0 }}>
@@ -275,6 +268,7 @@ export default function HomePage(){
                 </ListItem>
               </List>
               <Divider sx={{ my:1, borderColor: COLORS.border }} />
+              <Typography variant="body2" sx={{ mb:1 }}>Archive / Hard copy: <a href="https://sharepoint.example.com/taaip-archive" target="_blank" rel="noreferrer">SharePoint Archive</a></Typography>
               <Typography variant="caption" sx={{ color: COLORS.muted }}>© 2026 TAAIP — Talent Acquisition Intelligence & Analytics Platform</Typography>
             </HomePanel>
           </Grid>

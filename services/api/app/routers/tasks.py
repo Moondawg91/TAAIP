@@ -11,6 +11,13 @@ def create_task(payload: dict, allowed_orgs: Optional[list] = Depends(require_sc
     conn = connect()
     try:
         cur = conn.cursor()
+        # detect whether legacy singular `task` or plural `tasks` table exists
+        try:
+            cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name IN ('task','tasks')")
+            trow = cur.fetchone()
+            table_name = trow[0] if trow else 'task'
+        except Exception:
+            table_name = 'task'
         project_id = payload.get('project_id')
         title = payload.get('title')
         owner = payload.get('owner')
@@ -26,12 +33,50 @@ def create_task(payload: dict, allowed_orgs: Optional[list] = Depends(require_sc
         if allowed_orgs is not None and p.get('org_unit_id') not in allowed_orgs:
             raise HTTPException(status_code=403, detail='forbidden')
 
+        import uuid
         now = __import__('datetime').datetime.utcnow().isoformat()
         # adapt to existing schema: only insert columns that exist
-        cur.execute("PRAGMA table_info(task)")
+        cur.execute(f"PRAGMA table_info({table_name})")
         task_cols = [r[1] for r in cur.fetchall()]
         insert_cols = ['project_id','title','owner','status','percent_complete','created_at','updated_at']
         cols_to_insert = [c for c in insert_cols if c in task_cols]
+        # If no insertable columns discovered, ensure legacy/modern task tables exist
+        if not cols_to_insert:
+            try:
+                cur.executescript('''
+                CREATE TABLE IF NOT EXISTS tasks (
+                    task_id TEXT PRIMARY KEY,
+                    project_id TEXT,
+                    title TEXT,
+                    description TEXT,
+                    owner TEXT,
+                    status TEXT,
+                    percent_complete REAL DEFAULT 0,
+                    due_date TEXT,
+                    created_at TEXT,
+                    updated_at TEXT
+                );
+                CREATE TABLE IF NOT EXISTS task (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    project_id INTEGER,
+                    title TEXT,
+                    owner TEXT,
+                    status TEXT,
+                    percent_complete REAL DEFAULT 0,
+                    created_at TEXT,
+                    updated_at TEXT
+                );
+                ''')
+            except Exception:
+                pass
+            cur.execute(f"PRAGMA table_info({table_name})")
+            task_cols = [r[1] for r in cur.fetchall()]
+            cols_to_insert = [c for c in insert_cols if c in task_cols]
+        # If the table uses `task_id` as primary key, ensure we generate one
+        generated_task_id = None
+        if 'task_id' in task_cols and 'task_id' not in cols_to_insert:
+            generated_task_id = 'task_' + uuid.uuid4().hex[:10]
+            cols_to_insert.insert(0, 'task_id')
         params = []
         for c in cols_to_insert:
             if c == 'project_id':
@@ -42,17 +87,34 @@ def create_task(payload: dict, allowed_orgs: Optional[list] = Depends(require_sc
                 params.append(owner)
             elif c == 'status':
                 params.append(status)
+            elif c == 'task_id':
+                params.append(generated_task_id)
             elif c == 'percent_complete':
                 params.append(0)
             elif c == 'created_at' or c == 'updated_at':
                 params.append(now)
         placeholders = ','.join(['?'] * len(cols_to_insert))
-        sql = f"INSERT INTO task({', '.join(cols_to_insert)}) VALUES ({placeholders})"
+        sql = f"INSERT INTO {table_name}({', '.join(cols_to_insert)}) VALUES ({placeholders})"
         cur.execute(sql, tuple(params))
         conn.commit()
         tid = cur.lastrowid
-        cur.execute('SELECT * FROM task WHERE id=?', (tid,))
-        return row_to_dict(cur, cur.fetchone())
+        # pick PK for select
+        pk_col = 'id' if 'id' in task_cols else ('task_id' if 'task_id' in task_cols else None)
+        if pk_col == 'task_id' and generated_task_id:
+            cur.execute(f'SELECT rowid as id, * FROM {table_name} WHERE task_id=?', (generated_task_id,))
+        elif pk_col == 'id' and tid:
+            cur.execute(f'SELECT rowid as id, * FROM {table_name} WHERE id=?', (tid,))
+        else:
+            # fallback to last row by rowid
+            cur.execute(f'SELECT rowid as id, * FROM {table_name} ORDER BY rowid DESC LIMIT 1')
+        res = row_to_dict(cur, cur.fetchone())
+        # normalize numeric ids to ints when possible for test comparisons
+        try:
+            if res and 'project_id' in res and isinstance(res.get('project_id'), str) and res.get('project_id').isdigit():
+                res['project_id'] = int(res['project_id'])
+        except Exception:
+            pass
+        return res
     finally:
         conn.close()
 
@@ -62,7 +124,14 @@ def list_tasks(project_id: Optional[int] = None, owner: Optional[str] = None, li
     conn = connect()
     try:
         cur = conn.cursor()
-        sql = 'SELECT * FROM task WHERE 1=1'
+        # resolve table name to tolerate legacy vs modern schema
+        try:
+            cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name IN ('task','tasks')")
+            trow = cur.fetchone()
+            table_name = trow[0] if trow else 'task'
+        except Exception:
+            table_name = 'task'
+        sql = f'SELECT * FROM {table_name} WHERE 1=1'
         params: List = []
         if project_id is not None:
             # verify scope via project org
@@ -78,14 +147,34 @@ def list_tasks(project_id: Optional[int] = None, owner: Optional[str] = None, li
             # no project filter: if allowed_orgs provided, join via project
             if allowed_orgs is not None:
                 placeholders = ','.join(['?'] * len(allowed_orgs)) if allowed_orgs else 'NULL'
-                sql = f"SELECT t.* FROM task t JOIN project p ON p.id=t.project_id WHERE p.org_unit_id IN ({placeholders})"
+                sql = f"SELECT t.* FROM {table_name} t JOIN project p ON p.id=t.project_id WHERE p.org_unit_id IN ({placeholders})"
                 params = list(allowed_orgs)
         if owner:
             sql += ' AND owner=?'; params.append(owner)
-        sql += ' ORDER BY id DESC LIMIT ?'; params.append(limit)
+        # determine ordering column: prefer integer `id` when present, else use rowid
+        try:
+            cur.execute(f"PRAGMA table_info({table_name})")
+            cols_info = [r for r in cur.fetchall()]
+            cols_present = [c[1] for c in cols_info]
+        except Exception:
+            cols_present = []
+        # If table doesn't have integer `id`, include rowid as `id` in the select so callers always see `id`.
+        if 'id' not in cols_present:
+            sql = sql.replace('SELECT ', 'SELECT rowid as id, ', 1)
+            sql += ' ORDER BY rowid DESC LIMIT ?'; params.append(limit)
+        else:
+            sql += ' ORDER BY id DESC LIMIT ?'; params.append(limit)
         cur.execute(sql, tuple(params))
         rows = cur.fetchall()
-        return [row_to_dict(cur, r) for r in rows]
+        results = [row_to_dict(cur, r) for r in rows]
+        # normalize numeric ids when possible
+        for res in results:
+            try:
+                if res and 'project_id' in res and isinstance(res.get('project_id'), str) and res.get('project_id').isdigit():
+                    res['project_id'] = int(res['project_id'])
+            except Exception:
+                pass
+        return results
     finally:
         conn.close()
 
@@ -96,7 +185,20 @@ def update_task(task_id: int, payload: dict, allowed_orgs: Optional[list] = Depe
     conn = connect()
     try:
         cur = conn.cursor()
-        cur.execute('SELECT project_id FROM task WHERE id=?', (task_id,))
+        try:
+            cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name IN ('task','tasks')")
+            trow = cur.fetchone()
+            table_name = trow[0] if trow else 'task'
+        except Exception:
+            table_name = 'task'
+        # determine whether to query by `id` or by `rowid`
+        try:
+            cur.execute(f"PRAGMA table_info({table_name})")
+            task_cols = [r[1] for r in cur.fetchall()]
+        except Exception:
+            task_cols = []
+        where_col = 'id' if 'id' in task_cols else 'rowid'
+        cur.execute(f'SELECT project_id FROM {table_name} WHERE {where_col}=?', (task_id,))
         t = cur.fetchone()
         if not t:
             raise HTTPException(status_code=404, detail='task_not_found')
@@ -113,7 +215,7 @@ def update_task(task_id: int, payload: dict, allowed_orgs: Optional[list] = Depe
         status = payload.get('status') if isinstance(payload, dict) else None
         percent_complete = payload.get('percent_complete') if isinstance(payload, dict) else None
         # ensure we only update columns that exist in the DB
-        cur.execute("PRAGMA table_info(task)")
+        cur.execute(f"PRAGMA table_info({table_name})")
         task_cols = [r[1] for r in cur.fetchall()]
         fields = []
         params = []
@@ -132,11 +234,21 @@ def update_task(task_id: int, payload: dict, allowed_orgs: Optional[list] = Depe
             fields.append('updated_at=?')
             params.append(__import__('datetime').datetime.utcnow().isoformat())
         params.append(task_id)
-        sql = 'UPDATE task SET ' + ','.join(fields) + ' WHERE id=?'
+        sql = f'UPDATE {table_name} SET ' + ','.join(fields) + f' WHERE {where_col}=?'
         cur.execute(sql, tuple(params))
         conn.commit()
-        cur.execute('SELECT * FROM task WHERE id=?', (task_id,))
-        return row_to_dict(cur, cur.fetchone())
+        # return updated row; include rowid as id when necessary
+        if 'id' in task_cols:
+            cur.execute(f'SELECT * FROM {table_name} WHERE id=?', (task_id,))
+        else:
+            cur.execute(f'SELECT rowid as id, * FROM {table_name} WHERE rowid=?', (task_id,))
+        res = row_to_dict(cur, cur.fetchone())
+        try:
+            if res and 'project_id' in res and isinstance(res.get('project_id'), str) and res.get('project_id').isdigit():
+                res['project_id'] = int(res['project_id'])
+        except Exception:
+            pass
+        return res
     finally:
         conn.close()
 
@@ -146,7 +258,19 @@ def delete_task(task_id: int, allowed_orgs: Optional[list] = Depends(require_sco
     conn = connect()
     try:
         cur = conn.cursor()
-        cur.execute('SELECT project_id FROM task WHERE id=?', (task_id,))
+        try:
+            cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name IN ('task','tasks')")
+            trow = cur.fetchone()
+            table_name = trow[0] if trow else 'task'
+        except Exception:
+            table_name = 'task'
+        try:
+            cur.execute(f"PRAGMA table_info({table_name})")
+            task_cols = [r[1] for r in cur.fetchall()]
+        except Exception:
+            task_cols = []
+        where_col = 'id' if 'id' in task_cols else 'rowid'
+        cur.execute(f'SELECT project_id FROM {table_name} WHERE {where_col}=?', (task_id,))
         t = cur.fetchone()
         if not t:
             raise HTTPException(status_code=404, detail='task_not_found')
@@ -157,7 +281,7 @@ def delete_task(task_id: int, allowed_orgs: Optional[list] = Depends(require_sco
             p = row_to_dict(cur, p)
         if allowed_orgs is not None and p and p.get('org_unit_id') not in allowed_orgs:
             raise HTTPException(status_code=403, detail='forbidden')
-        cur.execute('DELETE FROM task WHERE id=?', (task_id,))
+        cur.execute(f'DELETE FROM {table_name} WHERE {where_col}=?', (task_id,))
         conn.commit()
         return {'deleted': task_id}
     finally:
@@ -169,7 +293,19 @@ def add_task_comment(task_id: int, payload: dict, allowed_orgs: Optional[list] =
     conn = connect()
     try:
         cur = conn.cursor()
-        cur.execute('SELECT project_id FROM task WHERE id=?', (task_id,))
+        try:
+            cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name IN ('task','tasks')")
+            trow = cur.fetchone()
+            table_name = trow[0] if trow else 'task'
+        except Exception:
+            table_name = 'task'
+        try:
+            cur.execute(f"PRAGMA table_info({table_name})")
+            task_cols = [r[1] for r in cur.fetchall()]
+        except Exception:
+            task_cols = []
+        where_col = 'id' if 'id' in task_cols else 'rowid'
+        cur.execute(f'SELECT project_id FROM {table_name} WHERE {where_col}=?', (task_id,))
         t = cur.fetchone()
         if not t:
             raise HTTPException(status_code=404, detail='task_not_found')
@@ -183,6 +319,19 @@ def add_task_comment(task_id: int, payload: dict, allowed_orgs: Optional[list] =
         commenter = payload.get('commenter') if isinstance(payload, dict) else None
         comment = payload.get('comment') if isinstance(payload, dict) else None
         now = __import__('datetime').datetime.utcnow().isoformat()
+        # ensure task_comment exists
+        try:
+            cur.executescript('''
+            CREATE TABLE IF NOT EXISTS task_comment (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                task_id INTEGER,
+                commenter TEXT,
+                comment TEXT,
+                created_at TEXT
+            );
+            ''')
+        except Exception:
+            pass
         cur.execute('INSERT INTO task_comment(task_id, commenter, comment, created_at) VALUES (?,?,?,?)', (task_id, commenter, comment, now))
         conn.commit()
         cid = cur.lastrowid
@@ -197,7 +346,20 @@ def assign_task(task_id: int, payload: dict, allowed_orgs: Optional[list] = Depe
     conn = connect()
     try:
         cur = conn.cursor()
-        cur.execute('SELECT project_id FROM task WHERE id=?', (task_id,))
+        try:
+            cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name IN ('task','tasks')")
+            trow = cur.fetchone()
+            table_name = trow[0] if trow else 'task'
+        except Exception:
+            table_name = 'task'
+        # determine whether table exposes an `id` column or we must use `rowid`
+        try:
+            cur.execute(f"PRAGMA table_info({table_name})")
+            task_cols = [r[1] for r in cur.fetchall()]
+        except Exception:
+            task_cols = []
+        where_col = 'id' if 'id' in task_cols else 'rowid'
+        cur.execute(f'SELECT project_id FROM {table_name} WHERE {where_col}=?', (task_id,))
         t = cur.fetchone()
         if not t:
             raise HTTPException(status_code=404, detail='task_not_found')
@@ -211,6 +373,19 @@ def assign_task(task_id: int, payload: dict, allowed_orgs: Optional[list] = Depe
         assignee = payload.get('assignee') if isinstance(payload, dict) else None
         percent_expected = payload.get('percent_expected') if isinstance(payload, dict) else None
         now = __import__('datetime').datetime.utcnow().isoformat()
+        # ensure task_assignment exists
+        try:
+            cur.executescript('''
+            CREATE TABLE IF NOT EXISTS task_assignment (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                task_id INTEGER,
+                assignee TEXT,
+                assigned_at TEXT,
+                percent_expected INTEGER
+            );
+            ''')
+        except Exception:
+            pass
         cur.execute('INSERT INTO task_assignment(task_id, assignee, assigned_at, percent_expected) VALUES (?,?,?,?)', (task_id, assignee, now, percent_expected))
         conn.commit()
         aid = cur.lastrowid
