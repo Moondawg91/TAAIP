@@ -242,7 +242,28 @@ def list_observations(current_user: Dict = Depends(get_current_user)):
         cur = conn.cursor()
         cur.execute('SELECT id, username, title, body, created_at FROM system_observations ORDER BY created_at DESC')
         rows = cur.fetchall()
-        return [dict(r) for r in rows]
+        cols = [c[0] for c in cur.description] if cur.description else []
+        result = []
+        for r in rows:
+            # if it's already a mapping/dict-like
+            if isinstance(r, dict):
+                result.append(r)
+                continue
+            # sqlite row may expose keys(); try that first
+            try:
+                keys = getattr(r, 'keys', None)
+                if callable(keys):
+                    result.append({k: r[k] for k in r.keys()})
+                    continue
+            except Exception:
+                pass
+            # fallback: assume sequence and zip with column names
+            try:
+                result.append({cols[i]: r[i] for i in range(len(cols))})
+            except Exception:
+                result.append({})
+
+        return result
     finally:
         try:
             conn.close()
@@ -280,7 +301,25 @@ def list_proposals(current_user: Dict = Depends(get_current_user)):
         cur = conn.cursor()
         cur.execute('SELECT id, title, description, status, created_by, created_at, submitted_at, reviewed_at FROM change_proposals ORDER BY created_at DESC')
         rows = cur.fetchall()
-        return [dict(r) for r in rows]
+        cols = [c[0] for c in cur.description] if cur.description else []
+        result = []
+        for r in rows:
+            if isinstance(r, dict):
+                result.append(r)
+                continue
+            try:
+                keys = getattr(r, 'keys', None)
+                if callable(keys):
+                    result.append({k: r[k] for k in r.keys()})
+                    continue
+            except Exception:
+                pass
+            try:
+                result.append({cols[i]: r[i] for i in range(len(cols))})
+            except Exception:
+                result.append({})
+
+        return result
     finally:
         try:
             conn.close()
