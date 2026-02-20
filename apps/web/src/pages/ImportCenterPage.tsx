@@ -28,9 +28,10 @@ export default function ImportCenterPage(){
   const mapFn = api.mapImport || api.importMap
   const validateFn = api.validateImport || api.importValidate
   const commitFn = api.commitImport || api.importCommit
+  const importJobsFn = api.importJobs || api.getImportJobsList || (()=>Promise.resolve([]))
 
   async function loadJobs(){
-    try{ const list = await api.importJobs(); setJobs(list || []) }catch(e){ console.error(e) }
+    try{ const list = await importJobsFn(); setJobs(list || []) }catch(e){ console.error(e) }
   }
 
   async function onFileChange(e){
