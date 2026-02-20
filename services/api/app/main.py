@@ -67,6 +67,8 @@ from .routers import calendar as calendar_router
 api_router.include_router(calendar_router.router)
 from .routers import analytics as analytics_router
 api_router.include_router(analytics_router.router)
+from .routers import rollups as rollups_router
+api_router.include_router(rollups_router.router)
 from .routers import events as events_router
 api_router.include_router(events_router.router)
 from .routers import mission_assessments as mission_assessments_router
@@ -127,9 +129,6 @@ api_router.include_router(meta_router.router)
 
 from .routers import tactical_rollups as tactical_rollups_router
 api_router.include_router(tactical_rollups_router.router)
-
-from .routers import rollups as rollups_router
-api_router.include_router(rollups_router.router)
 
 from .routers import tactical_dashboards as tactical_dashboards_router
 api_router.include_router(tactical_dashboards_router.router)

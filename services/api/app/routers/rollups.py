@@ -206,3 +206,25 @@ def command_mission_assessment(request: Request) -> Dict[str, Any]:
     except Exception:
         pass
     return {'status': 'ok', 'data_as_of': _now_iso(), 'priorities': priorities, 'risk_flags': risk_flags, 'missing_data': missing}
+
+
+# --- Top-level aliases to match requested API contract paths ---
+@router.get('/events/dashboard')
+def events_dashboard_alias(request: Request):
+    return events_dashboard(request)
+
+
+@router.get('/marketing/dashboard')
+def marketing_dashboard_alias(request: Request):
+    return marketing_dashboard(request)
+
+
+@router.get('/funnel/dashboard')
+def funnel_dashboard_alias(request: Request):
+    return funnel_dashboard(request)
+
+
+@router.get('/command/mission-assessment')
+def command_mission_assessment_alias(request: Request):
+    return command_mission_assessment(request)
+
