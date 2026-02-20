@@ -3,6 +3,10 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 
 import ShellLayout from './layout/ShellLayout'
 import { ScopeProvider } from './contexts/ScopeContext'
+import MaintenanceGuard from './components/MaintenanceGuard'
+import MaintenancePage from './pages/MaintenancePage'
+import ObservationsPage from './pages/system/ObservationsPage'
+import ProposalsPage from './pages/system/ProposalsPage'
 
 import HomePage from './pages/HomePage'
 import DashboardPage from './pages/DashboardPage'
@@ -101,7 +105,8 @@ export default function App() {
   return (
     <Router>
       <ScopeProvider>
-        <ShellLayout>
+        <MaintenanceGuard>
+          <ShellLayout>
           <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/dashboard" element={<DashboardPage />} />
@@ -210,6 +215,10 @@ export default function App() {
           <Route path="/help/system-status" element={<SystemStatusPage />} />
           <Route path="/help-desk" element={<HelpDeskLandingPage />} />
 
+          <Route path="/system/observations" element={<ObservationsPage />} />
+          <Route path="/system/proposals" element={<ProposalsPage />} />
+          <Route path="/maintenance" element={<MaintenancePage />} />
+
           {/* performance */}
           <Route path="/performance/assessment" element={<PerformanceAssessment />} />
           <Route path="/performance-tracking" element={<PerformanceTrackingPage />} />
@@ -229,6 +238,7 @@ export default function App() {
           <Route path="/dash/events" element={<EventsDashboardPage />} />
           </Routes>
         </ShellLayout>
+        </MaintenanceGuard>
       </ScopeProvider>
     </Router>
   )
