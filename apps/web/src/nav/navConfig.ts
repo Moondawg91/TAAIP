@@ -1,13 +1,5 @@
 const NAV_CONFIG = [
-  // 0. Dashboard (top-level)
-  {
-    id: 'dashboard',
-    label: 'Dashboard',
-    icon: 'Dashboard',
-    items: [
-      { id: 'home-dashboard', label: 'Dashboard', path: '/dashboard', icon: 'Dashboard', disabled: false }
-    ]
-  },
+  // NOTE: top-level Dashboard entry removed to avoid duplicate Home/dashboard link
   // 1. Command Center
   {
     id: 'command-center',
