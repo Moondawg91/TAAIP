@@ -128,6 +128,9 @@ api_router.include_router(meta_router.router)
 from .routers import tactical_rollups as tactical_rollups_router
 api_router.include_router(tactical_rollups_router.router)
 
+from .routers import rollups as rollups_router
+api_router.include_router(rollups_router.router)
+
 from .routers import tactical_dashboards as tactical_dashboards_router
 api_router.include_router(tactical_dashboards_router.router)
 
