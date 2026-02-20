@@ -1,7 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException
-from typing import List, Dict, Any
+from fastapi import APIRouter, Depends, HTTPException, Query
+from typing import List, Dict, Any, Optional
 from services.api.app import db as dbmod
 from .rbac import get_current_user, require_any_role
+import os
+import json
+import uuid
+from datetime import datetime, timedelta
 
 router = APIRouter(prefix="/system", tags=["system"])
 
@@ -132,6 +136,99 @@ def self_check() -> Dict[str, Any]:
     return result
 
 
+@router.get('/freshness')
+def get_freshness(current_user: Dict = Depends(get_current_user)):
+    conn = dbmod.connect()
+    try:
+        cur = conn.cursor()
+        # try fact_production.ingested_at
+        data_as_of = None
+        last_import_at = None
+        last_import_job_id = None
+        try:
+            if _table_exists(cur, 'fact_production'):
+                cur.execute("SELECT MAX(ingested_at) as m FROM fact_production")
+                r = cur.fetchone()
+                if r:
+                    data_as_of = r['m'] if isinstance(r, dict) and 'm' in r else (r[0] if r[0] is not None else None)
+        except Exception:
+            data_as_of = None
+
+        try:
+            if data_as_of is None and _table_exists(cur, 'imported_rows'):
+                cur.execute("SELECT MAX(ingested_at) as m FROM imported_rows")
+                r = cur.fetchone()
+                if r:
+                    data_as_of = r['m'] if isinstance(r, dict) and 'm' in r else (r[0] if r[0] is not None else None)
+        except Exception:
+            pass
+
+        try:
+            if (_table_exists(cur, 'import_job_v3')):
+                cur.execute("SELECT id, completed_at FROM import_job_v3 WHERE status='completed' ORDER BY completed_at DESC LIMIT 1")
+                r = cur.fetchone()
+                if r:
+                    last_import_at = (r['completed_at'] if isinstance(r, dict) and 'completed_at' in r else r[1])
+                    last_import_job_id = (r['id'] if isinstance(r, dict) and 'id' in r else r[0])
+        except Exception:
+            pass
+
+        # normalize to ISO8601 (ensure strings)
+        return {'status': 'ok', 'data_as_of': data_as_of, 'last_import_at': last_import_at, 'last_import_job_id': last_import_job_id}
+    finally:
+        try:
+            conn.close()
+        except Exception:
+            pass
+
+
+@router.get('/alerts')
+def get_alerts(current_user: Dict = Depends(get_current_user)):
+    conn = dbmod.connect()
+    try:
+        cur = conn.cursor()
+        alerts = {'import_errors': 0, 'api_errors': 0, 'proposals_pending': 0}
+        try:
+            if _table_exists(cur, 'import_error'):
+                cur.execute("SELECT COUNT(1) as c FROM import_error WHERE created_at > datetime('now','-30 days')")
+                r = cur.fetchone()
+                alerts['import_errors'] = int(r['c'] if isinstance(r, dict) and 'c' in r else (r[0] if r else 0))
+            elif _table_exists(cur, 'import_job_v3'):
+                cur.execute("SELECT COUNT(1) as c FROM import_job_v3 WHERE status='failed' AND completed_at > datetime('now','-30 days')")
+                r = cur.fetchone()
+                alerts['import_errors'] = int(r['c'] if isinstance(r, dict) and 'c' in r else (r[0] if r else 0))
+        except Exception:
+            alerts['import_errors'] = 0
+
+        try:
+            if _table_exists(cur, 'api_error_log'):
+                cur.execute("SELECT COUNT(1) as c FROM api_error_log WHERE created_at > datetime('now','-30 days')")
+                r = cur.fetchone()
+                alerts['api_errors'] = int(r['c'] if isinstance(r, dict) and 'c' in r else (r[0] if r else 0))
+            elif _table_exists(cur, 'audit_logs'):
+                cur.execute("SELECT COUNT(1) as c FROM audit_logs WHERE event_type='api_error' AND created_at > datetime('now','-30 days')")
+                r = cur.fetchone()
+                alerts['api_errors'] = int(r['c'] if isinstance(r, dict) and 'c' in r else (r[0] if r else 0))
+        except Exception:
+            alerts['api_errors'] = 0
+
+        try:
+            if _table_exists(cur, 'change_proposals'):
+                cur.execute("SELECT COUNT(1) as c FROM change_proposals WHERE status='submitted'")
+                r = cur.fetchone()
+                alerts['proposals_pending'] = int(r['c'] if isinstance(r, dict) and 'c' in r else (r[0] if r else 0))
+        except Exception:
+            alerts['proposals_pending'] = 0
+
+        total = sum(alerts.values())
+        return {'status': 'ok', 'alerts': alerts, 'total': total}
+    finally:
+        try:
+            conn.close()
+        except Exception:
+            pass
+
+
 def _ensure_cus_tables(conn):
     cur = conn.cursor()
     cur.executescript('''
@@ -186,26 +283,87 @@ def status(current_user: Dict = Depends(get_current_user)) -> Dict[str, Any]:
     try:
         _ensure_cus_tables(conn)
         cur = conn.cursor()
-        cur.execute("SELECT value FROM system_settings WHERE key='maintenance_mode'")
-        row = cur.fetchone()
-        mode = row['value'] if row and 'value' in row else (row[0] if row else None)
-        if not mode:
-            mode = 'off'
-        # count submitted proposals
-        cur.execute("SELECT COUNT(1) as c FROM change_proposals WHERE status='submitted'")
-        r = cur.fetchone()
-        # sqlite cursor may return a tuple or a dict-like row; handle both
-        if not r:
-            count = 0
+        # maintenance mode via env override or system_settings
+        mode = 'normal'
+        try:
+            if os.getenv('TAAIP_MAINTENANCE_MODE') == '1':
+                mode = 'maintenance'
+            else:
+                cur.execute("SELECT value FROM system_settings WHERE key='maintenance_mode'")
+                row = cur.fetchone()
+                val = None
+                if row:
+                    try:
+                        val = row['value'] if isinstance(row, dict) and 'value' in row else row[0]
+                    except Exception:
+                        val = None
+                if val and str(val).lower() in ('1', 'true', 'on', 'maintenance'):
+                    mode = 'maintenance'
+
+        except Exception:
+            pass
+
+        # compute alerts.total
+        alerts_total = 0
+        try:
+            if _table_exists(cur, 'change_proposals'):
+                cur.execute("SELECT COUNT(1) as c FROM change_proposals WHERE status='submitted'")
+                rr = cur.fetchone()
+                pcount = int(rr['c'] if isinstance(rr, dict) and 'c' in rr else (rr[0] if rr else 0))
+            else:
+                pcount = 0
+            # import_errors
+            imp_err = 0
+            if _table_exists(cur, 'import_error'):
+                cur.execute("SELECT COUNT(1) as c FROM import_error WHERE created_at > datetime('now','-30 days')")
+                r2 = cur.fetchone()
+                imp_err = int(r2['c'] if isinstance(r2, dict) and 'c' in r2 else (r2[0] if r2 else 0))
+            elif _table_exists(cur, 'import_job_v3'):
+                cur.execute("SELECT COUNT(1) as c FROM import_job_v3 WHERE status='failed' AND completed_at > datetime('now','-30 days')")
+                r2 = cur.fetchone()
+                imp_err = int(r2['c'] if isinstance(r2, dict) and 'c' in r2 else (r2[0] if r2 else 0))
+            # api_errors
+            api_err = 0
+            if _table_exists(cur, 'api_error_log'):
+                cur.execute("SELECT COUNT(1) as c FROM api_error_log WHERE created_at > datetime('now','-30 days')")
+                r3 = cur.fetchone()
+                api_err = int(r3['c'] if isinstance(r3, dict) and 'c' in r3 else (r3[0] if r3 else 0))
+            elif _table_exists(cur, 'audit_logs'):
+                cur.execute("SELECT COUNT(1) as c FROM audit_logs WHERE event_type='api_error' AND created_at > datetime('now','-30 days')")
+                r3 = cur.fetchone()
+                api_err = int(r3['c'] if isinstance(r3, dict) and 'c' in r3 else (r3[0] if r3 else 0))
+
+            alerts_total = imp_err + api_err + pcount
+        except Exception:
+            alerts_total = 0
+
+        # compute data_as_of
+        data_as_of = None
+        try:
+            if _table_exists(cur, 'fact_production'):
+                cur.execute("SELECT MAX(ingested_at) as m FROM fact_production")
+                r4 = cur.fetchone()
+                data_as_of = r4['m'] if r4 and isinstance(r4, dict) and 'm' in r4 else (r4[0] if r4 and r4[0] is not None else None)
+            if data_as_of is None and _table_exists(cur, 'imported_rows'):
+                cur.execute("SELECT MAX(ingested_at) as m FROM imported_rows")
+                r5 = cur.fetchone()
+                data_as_of = r5['m'] if r5 and isinstance(r5, dict) and 'm' in r5 else (r5[0] if r5 and r5[0] is not None else None)
+            if data_as_of is None and _table_exists(cur, 'import_job_v3'):
+                cur.execute("SELECT completed_at as m FROM import_job_v3 WHERE status='completed' ORDER BY completed_at DESC LIMIT 1")
+                r6 = cur.fetchone()
+                data_as_of = r6['m'] if r6 and isinstance(r6, dict) and 'm' in r6 else (r6[0] if r6 and r6[0] is not None else None)
+        except Exception:
+            data_as_of = None
+
+        # mode rules
+        if os.getenv('TAAIP_MAINTENANCE_MODE') == '1' or mode == 'maintenance':
+            effective = 'maintenance'
+        elif alerts_total > 0 and not data_as_of:
+            effective = 'degraded'
         else:
-            try:
-                count = int(r['c'])
-            except Exception:
-                try:
-                    count = int(r[0])
-                except Exception:
-                    count = 0
-        return {'maintenance_mode': mode, 'active_proposals': count}
+            effective = 'normal'
+
+        return {'status': 'ok', 'mode': effective}
     finally:
         try:
             conn.close()
@@ -272,20 +430,22 @@ def list_observations(current_user: Dict = Depends(get_current_user)):
 
 
 @router.post('/proposals')
-def create_proposal(payload: Dict[str, Any], user: Dict = Depends(get_current_user), _admin: Dict = Depends(require_any_role('USAREC_ADMIN'))):
+def create_proposal(payload: Dict[str, Any], user: Dict = Depends(get_current_user)):
     conn = dbmod.connect()
     try:
         _ensure_cus_tables(conn)
         cur = conn.cursor()
         title = payload.get('title') or 'proposal'
         desc = payload.get('description') or ''
-        pld = payload.get('payload') or ''
-        now = __import__('datetime').datetime.utcnow().isoformat()
-        cur.execute('INSERT INTO change_proposals(title, description, payload, status, created_by, created_at) VALUES (?,?,?,?,?,?)', (title, desc, json.dumps(pld) if not isinstance(pld, str) else pld, 'draft', user.get('username'), now))
+        rationale = payload.get('rationale') or ''
+        impact_area = payload.get('impact_area') or None
+        risk_level = payload.get('risk_level') or None
+        now = datetime.utcnow().isoformat()
+        pid = payload.get('id') or str(uuid.uuid4())
+        # create with submitted status by default per spec
+        cur.execute('INSERT OR REPLACE INTO change_proposals(id, title, description, rationale, impact_area, risk_level, status, created_by, created_at) VALUES (?,?,?,?,?,?,?,?,?)', (pid, title, desc, rationale, impact_area, risk_level, 'submitted', user.get('username'), now))
         conn.commit()
-        cur.execute('SELECT id FROM change_proposals WHERE rowid = last_insert_rowid()')
-        row = cur.fetchone()
-        return {'id': row[0] if row else None}
+        return {'id': pid}
     finally:
         try:
             conn.close()
@@ -294,12 +454,15 @@ def create_proposal(payload: Dict[str, Any], user: Dict = Depends(get_current_us
 
 
 @router.get('/proposals')
-def list_proposals(current_user: Dict = Depends(get_current_user)):
+def list_proposals(status: Optional[str] = Query(None), current_user: Dict = Depends(get_current_user)):
     conn = dbmod.connect()
     try:
         _ensure_cus_tables(conn)
         cur = conn.cursor()
-        cur.execute('SELECT id, title, description, status, created_by, created_at, submitted_at, reviewed_at FROM change_proposals ORDER BY created_at DESC')
+        if status:
+            cur.execute('SELECT id, title, description, rationale, impact_area, risk_level, status, created_by, created_at, reviewed_at, decision_note FROM change_proposals WHERE status=? ORDER BY created_at DESC', (status,))
+        else:
+            cur.execute('SELECT id, title, description, rationale, impact_area, risk_level, status, created_by, created_at, reviewed_at, decision_note FROM change_proposals ORDER BY created_at DESC')
         rows = cur.fetchall()
         cols = [c[0] for c in cur.description] if cur.description else []
         result = []
@@ -371,6 +534,117 @@ def review_proposal(proposal_id: int, payload: Dict[str, Any], user: Dict = Depe
         cur.execute('UPDATE change_proposals SET status=?, reviewed_at=? WHERE id=?', (new_status, now, proposal_id))
         conn.commit()
         return {'ok': True, 'status': new_status}
+    finally:
+        try:
+            conn.close()
+        except Exception:
+            pass
+
+
+@router.post('/proposals/{proposal_id}/decision')
+def decide_proposal(proposal_id: str, payload: Dict[str, Any], user: Dict = Depends(get_current_user)):
+    # decision endpoint: admin only unless LOCAL_DEV_AUTH_BYPASS
+    if os.getenv('LOCAL_DEV_AUTH_BYPASS') != '1':
+        roles = user.get('roles') or []
+        if 'USAREC_ADMIN' not in roles and user.get('role') != 'USAREC_ADMIN':
+            raise HTTPException(status_code=403, detail='admin role required')
+    decision = (payload.get('decision') or '').lower()
+    note = payload.get('decision_note') or payload.get('note') or ''
+    if decision not in ('approve', 'reject'):
+        raise HTTPException(status_code=400, detail="decision must be 'approve' or 'reject'")
+    conn = dbmod.connect()
+    try:
+        _ensure_cus_tables(conn)
+        cur = conn.cursor()
+        cur.execute('SELECT id, status FROM change_proposals WHERE id=?', (proposal_id,))
+        r = cur.fetchone()
+        if not r:
+            raise HTTPException(status_code=404, detail='proposal not found')
+        now = datetime.utcnow().isoformat()
+        cur.execute('INSERT INTO change_reviews(proposal_id, reviewer, decision, note, created_at) VALUES (?,?,?,?,?)', (proposal_id, user.get('username'), decision, note, now))
+        new_status = 'approved' if decision == 'approve' else 'rejected'
+        cur.execute('UPDATE change_proposals SET status=?, reviewed_by=?, reviewed_at=?, decision_note=? WHERE id=?', (new_status, user.get('username'), now, note, proposal_id))
+        conn.commit()
+        return {'ok': True, 'status': new_status}
+    finally:
+        try:
+            conn.close()
+        except Exception:
+            pass
+
+
+@router.post('/proposals/{proposal_id}/mark-applied')
+def mark_proposal_applied(proposal_id: str, user: Dict = Depends(get_current_user)):
+    if os.getenv('LOCAL_DEV_AUTH_BYPASS') != '1':
+        roles = user.get('roles') or []
+        if 'USAREC_ADMIN' not in roles and user.get('role') != 'USAREC_ADMIN':
+            raise HTTPException(status_code=403, detail='admin role required')
+    conn = dbmod.connect()
+    try:
+        _ensure_cus_tables(conn)
+        cur = conn.cursor()
+        cur.execute('SELECT id, status FROM change_proposals WHERE id=?', (proposal_id,))
+        r = cur.fetchone()
+        if not r:
+            raise HTTPException(status_code=404, detail='proposal not found')
+        now = datetime.utcnow().isoformat()
+        cur.execute("UPDATE change_proposals SET status='applied', reviewed_by=?, reviewed_at=? WHERE id=?", (user.get('username'), now, proposal_id))
+        conn.commit()
+        return {'ok': True}
+    finally:
+        try:
+            conn.close()
+        except Exception:
+            pass
+
+
+@router.put('/proposals/{proposal_id}')
+def update_proposal(proposal_id: str, payload: Dict[str, Any], user: Dict = Depends(get_current_user)):
+    conn = dbmod.connect()
+    try:
+        _ensure_cus_tables(conn)
+        cur = conn.cursor()
+        cur.execute('SELECT id, status, created_by FROM change_proposals WHERE id=?', (proposal_id,))
+        r = cur.fetchone()
+        if not r:
+            raise HTTPException(status_code=404, detail='proposal not found')
+        status_cur = r['status'] if isinstance(r, dict) and 'status' in r else (r[1] if len(r) > 1 else None)
+        created_by = r['created_by'] if isinstance(r, dict) and 'created_by' in r else (r[2] if len(r) > 2 else None)
+        if status_cur not in ('draft', 'submitted'):
+            raise HTTPException(status_code=400, detail='cannot edit proposal in its current state')
+        # allow edit by creator or admin
+        is_admin = (os.getenv('LOCAL_DEV_AUTH_BYPASS') == '1')
+        try:
+            if not is_admin:
+                user_roles = user.get('roles') or []
+                if 'USAREC_ADMIN' in user_roles or user.get('role') == 'USAREC_ADMIN':
+                    is_admin = True
+        except Exception:
+            pass
+        if not is_admin and user.get('username') != created_by:
+            raise HTTPException(status_code=403, detail='only creator or admin may edit')
+        title = payload.get('title')
+        description = payload.get('description')
+        rationale = payload.get('rationale')
+        impact_area = payload.get('impact_area')
+        risk_level = payload.get('risk_level')
+        updates = []
+        params = []
+        if title is not None:
+            updates.append('title=?'); params.append(title)
+        if description is not None:
+            updates.append('description=?'); params.append(description)
+        if rationale is not None:
+            updates.append('rationale=?'); params.append(rationale)
+        if impact_area is not None:
+            updates.append('impact_area=?'); params.append(impact_area)
+        if risk_level is not None:
+            updates.append('risk_level=?'); params.append(risk_level)
+        if updates:
+            params.append(proposal_id)
+            cur.execute(f"UPDATE change_proposals SET {', '.join(updates)} WHERE id=?", params)
+            conn.commit()
+        return {'ok': True}
     finally:
         try:
             conn.close()

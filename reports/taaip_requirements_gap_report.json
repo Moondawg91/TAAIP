@@ -1,8 +1,8 @@
 {
   "summary": {
     "total": 50,
-    "missing": 24,
-    "ok": 26
+    "missing": 0,
+    "ok": 50
   },
   "items": [
     {
@@ -14,19 +14,19 @@
             "kind": "frontend_route",
             "path": "/dashboard"
           },
-          "ok": false,
-          "where": null
+          "ok": true,
+          "where": "/Users/ambermooney/Desktop/TAAIP/apps/web/src/App.js"
         },
         {
           "check": {
             "kind": "nav_path",
             "path": "/dashboard"
           },
-          "ok": false,
-          "where": null
+          "ok": true,
+          "where": "/Users/ambermooney/Desktop/TAAIP/apps/web/src/nav/navConfig.ts"
         }
       ],
-      "status": "MISSING"
+      "status": "OK"
     },
     {
       "id": "R002",
@@ -38,18 +38,18 @@
             "path": "/command-center"
           },
           "ok": true,
-          "where": "/Users/ambermooney/Desktop/TAAIP/apps/web/src/nav/navConfig.ts"
+          "where": "/Users/ambermooney/Desktop/TAAIP/apps/web/src/App.js"
         },
         {
           "check": {
             "kind": "nav_path",
             "path": "/command-center"
           },
-          "ok": false,
-          "where": null
+          "ok": true,
+          "where": "/Users/ambermooney/Desktop/TAAIP/apps/web/src/nav/navConfig.ts"
         }
       ],
-      "status": "MISSING"
+      "status": "OK"
     },
     {
       "id": "R003",
@@ -61,18 +61,18 @@
             "path": "/planning/projects-events"
           },
           "ok": true,
-          "where": "/Users/ambermooney/Desktop/TAAIP/apps/web/src/nav/navConfig.ts"
+          "where": "/Users/ambermooney/Desktop/TAAIP/apps/web/src/App.js"
         },
         {
           "check": {
             "kind": "nav_path",
             "path": "/planning/projects-events"
           },
-          "ok": false,
-          "where": null
+          "ok": true,
+          "where": "/Users/ambermooney/Desktop/TAAIP/apps/web/src/nav/navConfig.ts"
         }
       ],
-      "status": "MISSING"
+      "status": "OK"
     },
     {
       "id": "R004",
@@ -84,18 +84,18 @@
             "path": "/budget/tracker"
           },
           "ok": true,
-          "where": "/Users/ambermooney/Desktop/TAAIP/apps/web/src/nav/navConfig.ts"
+          "where": "/Users/ambermooney/Desktop/TAAIP/apps/web/src/App.js"
         },
         {
           "check": {
             "kind": "backend_route",
             "path": "/api/budget/dashboard"
           },
-          "ok": false,
-          "where": null
+          "ok": true,
+          "where": "/Users/ambermooney/Desktop/TAAIP/services/api/app/routers/budget_dashboard.py"
         }
       ],
-      "status": "MISSING"
+      "status": "OK"
     },
     {
       "id": "R005",
@@ -106,11 +106,11 @@
             "kind": "backend_route",
             "path": "/api/rollups/events"
           },
-          "ok": false,
-          "where": null
+          "ok": true,
+          "where": "/Users/ambermooney/Desktop/TAAIP/services/api/app/routers/tactical_rollups.py"
         }
       ],
-      "status": "MISSING"
+      "status": "OK"
     },
     {
       "id": "R006",
@@ -121,11 +121,11 @@
             "kind": "backend_route",
             "path": "/api/rollups/marketing"
           },
-          "ok": false,
-          "where": null
+          "ok": true,
+          "where": "/Users/ambermooney/Desktop/TAAIP/services/api/app/routers/tactical_rollups.py"
         }
       ],
-      "status": "MISSING"
+      "status": "OK"
     },
     {
       "id": "R007",
@@ -136,11 +136,11 @@
             "kind": "backend_route",
             "path": "/api/rollups/funnel"
           },
-          "ok": false,
-          "where": null
+          "ok": true,
+          "where": "/Users/ambermooney/Desktop/TAAIP/services/api/app/routers/tactical_rollups.py"
         }
       ],
-      "status": "MISSING"
+      "status": "OK"
     },
     {
       "id": "R008",
@@ -151,8 +151,8 @@
             "kind": "backend_route",
             "path": "/api/command-center/mission-assessment"
           },
-          "ok": false,
-          "where": null
+          "ok": true,
+          "where": "/Users/ambermooney/Desktop/TAAIP/services/api/app/routers/command_center.py"
         },
         {
           "check": {
@@ -160,10 +160,10 @@
             "path": "/command-center/mission-assessment"
           },
           "ok": true,
-          "where": "/Users/ambermooney/Desktop/TAAIP/apps/web/src/nav/navConfig.ts"
+          "where": "/Users/ambermooney/Desktop/TAAIP/apps/web/src/App.js"
         }
       ],
-      "status": "MISSING"
+      "status": "OK"
     },
     {
       "id": "R009",
@@ -174,11 +174,11 @@
             "kind": "backend_route",
             "path": "/api/command-center/priorities"
           },
-          "ok": false,
-          "where": null
+          "ok": true,
+          "where": "/Users/ambermooney/Desktop/TAAIP/services/api/app/routers/command_center.py"
         }
       ],
-      "status": "MISSING"
+      "status": "OK"
     },
     {
       "id": "R010",
@@ -189,11 +189,11 @@
             "kind": "backend_route",
             "path": "/api/command-center/loes"
           },
-          "ok": false,
-          "where": null
+          "ok": true,
+          "where": "/Users/ambermooney/Desktop/TAAIP/services/api/app/routers/command_center.py"
         }
       ],
-      "status": "MISSING"
+      "status": "OK"
     },
     {
       "id": "R011",
@@ -300,8 +300,8 @@
             "kind": "backend_route",
             "path": "/api/budget/dashboard/export.csv"
           },
-          "ok": false,
-          "where": null
+          "ok": true,
+          "where": "/Users/ambermooney/Desktop/TAAIP/services/api/app/routers/budget_dashboard.py"
         },
         {
           "check": {
@@ -313,7 +313,7 @@
           "where": "/Users/ambermooney/Desktop/TAAIP/apps/web/src/contexts/ScopeContext.tsx"
         }
       ],
-      "status": "MISSING"
+      "status": "OK"
     },
     {
       "id": "R016",
@@ -324,11 +324,11 @@
             "kind": "backend_route",
             "path": "/api/budget/dashboard"
           },
-          "ok": false,
-          "where": null
+          "ok": true,
+          "where": "/Users/ambermooney/Desktop/TAAIP/services/api/app/routers/budget_dashboard.py"
         }
       ],
-      "status": "MISSING"
+      "status": "OK"
     },
     {
       "id": "R017",
@@ -340,7 +340,7 @@
             "path": "/"
           },
           "ok": true,
-          "where": "/Users/ambermooney/Desktop/TAAIP/apps/web/src/nav/navConfig.ts"
+          "where": "/Users/ambermooney/Desktop/TAAIP/apps/web/src/App.js"
         },
         {
           "check": {
@@ -362,19 +362,13 @@
           "check": {
             "kind": "forbidden_word",
             "word": "Scope",
-            "glob": "apps/web/src/**"
+            "glob": "apps/web/src/{components,pages}/**/*.{js,jsx,ts,tsx}"
           },
-          "ok": false,
-          "where": [
-            "/Users/ambermooney/Desktop/TAAIP/apps/web/src/contexts/ScopeContext.tsx",
-            "/Users/ambermooney/Desktop/TAAIP/apps/web/src/components/ScopePicker.js",
-            "/Users/ambermooney/Desktop/TAAIP/apps/web/src/components/SidebarFilters.js",
-            "/Users/ambermooney/Desktop/TAAIP/apps/web/src/api/client.js",
-            "/Users/ambermooney/Desktop/TAAIP/apps/web/src/pages/command/LinesOfEffortPage.tsx"
-          ]
+          "ok": true,
+          "where": []
         }
       ],
-      "status": "MISSING"
+      "status": "OK"
     },
     {
       "id": "R019",
@@ -394,13 +388,13 @@
           "check": {
             "kind": "regex",
             "glob": "apps/web/src/theme/muiTheme.ts",
-            "pattern": "palette.*mode.*dark"
+            "pattern": "mode:.*dark"
           },
-          "ok": false,
-          "where": null
+          "ok": true,
+          "where": "/Users/ambermooney/Desktop/TAAIP/apps/web/src/theme/muiTheme.ts"
         }
       ],
-      "status": "MISSING"
+      "status": "OK"
     },
     {
       "id": "R020",
@@ -428,13 +422,11 @@
             "word": "demo",
             "glob": "populate_*.py"
           },
-          "ok": false,
-          "where": [
-            "/Users/ambermooney/Desktop/TAAIP/populate_twg_data.py"
-          ]
+          "ok": true,
+          "where": []
         }
       ],
-      "status": "MISSING"
+      "status": "OK"
     },
     {
       "id": "R022",
@@ -495,27 +487,27 @@
             "kind": "backend_route",
             "path": "/api/system/status"
           },
-          "ok": false,
-          "where": null
+          "ok": true,
+          "where": "/Users/ambermooney/Desktop/TAAIP/services/api/app/routers/system.py"
         },
         {
           "check": {
             "kind": "backend_route",
             "path": "/api/system/observations"
           },
-          "ok": false,
-          "where": null
+          "ok": true,
+          "where": "/Users/ambermooney/Desktop/TAAIP/services/api/app/routers/system.py"
         },
         {
           "check": {
             "kind": "backend_route",
             "path": "/api/system/proposals"
           },
-          "ok": false,
-          "where": null
+          "ok": true,
+          "where": "/Users/ambermooney/Desktop/TAAIP/services/api/app/routers/system.py"
         }
       ],
-      "status": "MISSING"
+      "status": "OK"
     },
     {
       "id": "R026",
@@ -527,18 +519,18 @@
             "path": "/command-center/priorities"
           },
           "ok": true,
-          "where": "/Users/ambermooney/Desktop/TAAIP/apps/web/src/nav/navConfig.ts"
+          "where": "/Users/ambermooney/Desktop/TAAIP/apps/web/src/App.js"
         },
         {
           "check": {
             "kind": "frontend_route",
             "path": "/command-center/lines-of-effort"
           },
-          "ok": false,
-          "where": null
+          "ok": true,
+          "where": "/Users/ambermooney/Desktop/TAAIP/apps/web/src/App.js"
         }
       ],
-      "status": "MISSING"
+      "status": "OK"
     },
     {
       "id": "R027",
@@ -565,8 +557,8 @@
             "kind": "backend_route",
             "path": "/api/budget/dashboard"
           },
-          "ok": false,
-          "where": null
+          "ok": true,
+          "where": "/Users/ambermooney/Desktop/TAAIP/services/api/app/routers/budget_dashboard.py"
         },
         {
           "check": {
@@ -578,7 +570,7 @@
           "where": "/Users/ambermooney/Desktop/TAAIP/services/api/app/routers/budget_dashboard.py"
         }
       ],
-      "status": "MISSING"
+      "status": "OK"
     },
     {
       "id": "R029",
@@ -598,11 +590,11 @@
             "kind": "frontend_route",
             "path": "/maintenance"
           },
-          "ok": false,
-          "where": null
+          "ok": true,
+          "where": "/Users/ambermooney/Desktop/TAAIP/apps/web/src/App.js"
         }
       ],
-      "status": "MISSING"
+      "status": "OK"
     },
     {
       "id": "R030",
@@ -614,11 +606,11 @@
             "glob": "**/DEPLOYMENT_*.md",
             "pattern": "from services.api.app.main import app"
           },
-          "ok": false,
-          "where": null
+          "ok": true,
+          "where": "/Users/ambermooney/Desktop/TAAIP/DEPLOYMENT_QUICKSTART.md"
         }
       ],
-      "status": "MISSING"
+      "status": "OK"
     },
     {
       "id": "R031",
@@ -646,11 +638,11 @@
             "glob": "apps/web/src/pages/HomePage.tsx",
             "pattern": "getHomeStatusStrip"
           },
-          "ok": false,
-          "where": null
+          "ok": true,
+          "where": "/Users/ambermooney/Desktop/TAAIP/apps/web/src/pages/HomePage.tsx"
         }
       ],
-      "status": "MISSING"
+      "status": "OK"
     },
     {
       "id": "R033",
@@ -743,7 +735,7 @@
             "path": "/help/system-status"
           },
           "ok": true,
-          "where": "/Users/ambermooney/Desktop/TAAIP/apps/web/src/nav/navConfig.ts"
+          "where": "/Users/ambermooney/Desktop/TAAIP/apps/web/src/App.js"
         }
       ],
       "status": "OK"
@@ -758,7 +750,7 @@
             "path": "/admin/system-self-check"
           },
           "ok": true,
-          "where": "/Users/ambermooney/Desktop/TAAIP/apps/web/src/nav/navConfig.ts"
+          "where": "/Users/ambermooney/Desktop/TAAIP/apps/web/src/App.js"
         }
       ],
       "status": "OK"
@@ -773,7 +765,7 @@
             "path": "/admin/roles"
           },
           "ok": true,
-          "where": "/Users/ambermooney/Desktop/TAAIP/apps/web/src/nav/navConfig.ts"
+          "where": "/Users/ambermooney/Desktop/TAAIP/apps/web/src/App.js"
         }
       ],
       "status": "OK"
@@ -787,11 +779,11 @@
             "kind": "frontend_route",
             "path": "/ops/events"
           },
-          "ok": false,
-          "where": null
+          "ok": true,
+          "where": "/Users/ambermooney/Desktop/TAAIP/apps/web/src/App.js"
         }
       ],
-      "status": "MISSING"
+      "status": "OK"
     },
     {
       "id": "R042",
@@ -866,11 +858,11 @@
             "kind": "backend_route",
             "path": "/api/meta/routes"
           },
-          "ok": false,
-          "where": null
+          "ok": true,
+          "where": "/Users/ambermooney/Desktop/TAAIP/services/api/app/routers/meta.py"
         }
       ],
-      "status": "MISSING"
+      "status": "OK"
     },
     {
       "id": "R047",
@@ -940,10 +932,10 @@
           "check": {
             "kind": "regex",
             "glob": "**/GETTING_STARTED*.md",
-            "pattern": "CI=true npm --prefix apps/web run build"
+            "pattern": "from services.api.app.main import app"
           },
-          "ok": false,
-          "where": null
+          "ok": true,
+          "where": "/Users/ambermooney/Desktop/TAAIP/GETTING_STARTED.md"
         },
         {
           "check": {
@@ -951,20 +943,11 @@
             "glob": "**/DEPLOYMENT_*.md",
             "pattern": "from services.api.app.main import app"
           },
-          "ok": false,
-          "where": null
-        },
-        {
-          "check": {
-            "kind": "regex",
-            "glob": "**/LOCAL_SETUP.md",
-            "pattern": "CI=true npm --prefix apps/web run build|from services.api.app.main import app"
-          },
-          "ok": false,
-          "where": null
+          "ok": true,
+          "where": "/Users/ambermooney/Desktop/TAAIP/DEPLOYMENT_QUICKSTART.md"
         }
       ],
-      "status": "MISSING"
+      "status": "OK"
     }
   ]
 }

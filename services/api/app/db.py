@@ -1145,6 +1145,37 @@ def init_schema() -> None:
         except Exception:
             pass
 
+        # Ensure burden_inputs contains reporting_date column (idempotent)
+        try:
+            bcols = table_columns('burden_inputs')
+            if 'reporting_date' not in bcols:
+                try:
+                    cur.execute("ALTER TABLE burden_inputs ADD COLUMN reporting_date TEXT")
+                except Exception:
+                    # Fallback: perform safe table rewrite to add missing column
+                    try:
+                        cur.executescript('''
+                        PRAGMA foreign_keys=OFF;
+                        CREATE TABLE IF NOT EXISTS burden_inputs_new (
+                            id TEXT PRIMARY KEY,
+                            scope_type TEXT,
+                            scope_value TEXT,
+                            mission_requirement TEXT,
+                            recruiter_strength INTEGER,
+                            reporting_date TEXT,
+                            created_at TEXT
+                        );
+                        INSERT INTO burden_inputs_new (id, scope_type, scope_value, mission_requirement, recruiter_strength, reporting_date, created_at)
+                            SELECT id, scope_type, scope_value, mission_requirement, recruiter_strength, NULL AS reporting_date, created_at FROM burden_inputs;
+                        DROP TABLE IF EXISTS burden_inputs;
+                        ALTER TABLE burden_inputs_new RENAME TO burden_inputs;
+                        PRAGMA foreign_keys=ON;
+                        ''')
+                    except Exception:
+                        pass
+        except Exception:
+            pass
+
         # Idempotent additions for tactical dashboards schema compatibility
         try:
             def ensure_col(tbl, col_def):
@@ -1746,6 +1777,34 @@ def init_schema() -> None:
                 models.Base.metadata.create_all(bind=database.engine)
             except Exception:
                 pass
+        except Exception:
+            pass
+
+        # PHASE-12: Ensure system tables for change proposals and api errors
+        try:
+            cur.executescript('''
+            CREATE TABLE IF NOT EXISTS change_proposals (
+                id TEXT PRIMARY KEY,
+                title TEXT NOT NULL,
+                description TEXT NOT NULL,
+                rationale TEXT,
+                impact_area TEXT,
+                risk_level TEXT,
+                status TEXT NOT NULL,
+                created_by TEXT,
+                created_at TEXT NOT NULL,
+                reviewed_by TEXT,
+                reviewed_at TEXT,
+                decision_note TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS api_error_log (
+                id TEXT PRIMARY KEY,
+                endpoint TEXT,
+                message TEXT,
+                created_at TEXT NOT NULL
+            );
+            ''')
         except Exception:
             pass
     finally:

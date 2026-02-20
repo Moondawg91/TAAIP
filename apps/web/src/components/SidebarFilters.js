@@ -25,14 +25,14 @@ export default function SidebarFilters({scope, value, onApply, onTokenSave, auto
 
       <Divider sx={{my:2}} />
 
-      <Typography variant="subtitle2">Scope</Typography>
+      <Typography variant="subtitle2">Echelon</Typography>
       <FormControl fullWidth size="small" sx={{mt:1}}>
-        <InputLabel>Scope</InputLabel>
-        <Select value={localScope} label="Scope" onChange={e=>setLocalScope(e.target.value)}>
+        <InputLabel>Echelon</InputLabel>
+        <Select value={localScope} label="Echelon" onChange={e=>setLocalScope(e.target.value)}>
           {SCOPES.map(s=> <MenuItem key={s} value={s}>{s}</MenuItem>)}
         </Select>
       </FormControl>
-      <TextField size="small" fullWidth sx={{mt:1}} placeholder="Value (prefix or RSID)" value={localValue} onChange={e=>setLocalValue(e.target.value)} />
+      <TextField size="small" fullWidth sx={{mt:1}} placeholder="Unit (prefix or RSID)" value={localValue} onChange={e=>setLocalValue(e.target.value)} />
       <Box sx={{display:'flex', gap:1, mt:1}}>
         <Button variant="outlined" onClick={()=>{ setLocalScope(scope); setLocalValue(value); onApply && onApply(scope, value); }}>Reset</Button>
         <Button variant="contained" onClick={()=>onApply && onApply(localScope, localValue)}>Apply</Button>
@@ -56,7 +56,7 @@ export default function SidebarFilters({scope, value, onApply, onTokenSave, auto
 
       <Box sx={{mt:3}}>
         <Typography variant="caption" color="text.secondary">Notes</Typography>
-        <Typography variant="body2" sx={{mt:1,color:'text.secondary'}}>This UI displays real data from the API. If no data is available for the selected scope, a clear empty state will be shown. No demo data is created.</Typography>
+        <Typography variant="body2" sx={{mt:1,color:'text.secondary'}}>This UI displays real data from the API. If no data is available for the selected echelon, a clear empty state will be shown. No demo data is created.</Typography>
       </Box>
     </Box>
   )

@@ -52,6 +52,7 @@ class MarketingActivityCreate(BaseModel):
     campaign_name: Optional[str]
     channel: Optional[str]
     data_source: Optional[str]
+    funding_source: Optional[str]
     impressions: Optional[int] = 0
     engagements: Optional[int] = 0
     clicks: Optional[int] = 0

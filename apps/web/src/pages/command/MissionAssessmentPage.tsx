@@ -76,7 +76,7 @@ export default function MissionAssessmentPage(){
                 <Box sx={{ mt:2 }}>
                   <TextField label="Period Type" size="small" value={periodType} onChange={(e)=>setPeriodType(e.target.value)} sx={{ mr:1 }} />
                   <TextField label="Period Value" size="small" value={periodValue} onChange={(e)=>setPeriodValue(e.target.value)} sx={{ mr:1 }} />
-                  <TextField label="Scope" size="small" value={scopeVal} onChange={(e)=>setScopeVal(e.target.value)} />
+                  <TextField label="Echelon / Unit" size="small" value={scopeVal} onChange={(e)=>setScopeVal(e.target.value)} />
                 </Box>
                 <Box sx={{ mt:2 }}>
                   <TextField label="Narrative" multiline fullWidth minRows={4} value={narrative} onChange={(e)=>setNarrative(e.target.value)} />

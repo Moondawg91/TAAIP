@@ -44,8 +44,7 @@ def test_projects_events_rollups():
     ''')
     now = '2026-02-01T00:00:00Z'
     cur.execute("INSERT INTO org_unit(name,type,created_at) VALUES (?,?,?)", ('Unit X','Station',now))
-    cur.execute("SELECT id FROM org_unit WHERE name=?", ('Unit X',))
-    org_id = cur.fetchone()[0]
+    org_id = cur.lastrowid
 
     # create project, event, budget and expense
     cur.execute("INSERT INTO projects(project_id,title,org_unit_id,fy,planned_cost,created_at) VALUES (?,?,?,?,?,?)", ('projA','Project A',org_id,2026,5000.0,now))

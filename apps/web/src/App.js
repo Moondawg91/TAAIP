@@ -7,6 +7,9 @@ import MaintenanceGuard from './components/MaintenanceGuard'
 import MaintenancePage from './pages/MaintenancePage'
 import ObservationsPage from './pages/system/ObservationsPage'
 import ProposalsPage from './pages/system/ProposalsPage'
+import SystemStatusSystemPage from './pages/system/SystemStatusPage'
+import SystemAlertsPage from './pages/system/SystemAlertsPage'
+import SystemProposalsPage from './pages/system/SystemProposalsPage'
 
 import HomePage from './pages/HomePage'
 import DashboardPage from './pages/DashboardPage'
@@ -216,7 +219,9 @@ export default function App() {
           <Route path="/help-desk" element={<HelpDeskLandingPage />} />
 
           <Route path="/system/observations" element={<ObservationsPage />} />
-          <Route path="/system/proposals" element={<ProposalsPage />} />
+          <Route path="/system/proposals" element={<SystemProposalsPage />} />
+          <Route path="/system/status" element={<SystemStatusSystemPage />} />
+          <Route path="/system/alerts" element={<SystemAlertsPage />} />
           <Route path="/maintenance" element={<MaintenancePage />} />
 
           {/* performance */}

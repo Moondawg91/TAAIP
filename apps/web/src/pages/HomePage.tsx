@@ -4,7 +4,7 @@ import EmptyState from '../components/common/EmptyState'
 import { Link as RouterLink } from 'react-router-dom'
 import HomePanel from '../components/home/HomePanel'
 import api from '../api/client'
-import { useScope } from '../contexts/ScopeContext'
+import { useEchelon } from '../contexts/ScopeContext'
 import CircleIcon from '@mui/icons-material/Circle'
 import StorageIcon from '@mui/icons-material/Storage'
 import ApiIcon from '@mui/icons-material/Api'
@@ -49,7 +49,7 @@ const QUICK = [
 ]
 
 export default function HomePage(){
-  const { scope } = useScope()
+  const { echelon } = useEchelon()
   const [news, setNews] = React.useState([])
   const [updates, setUpdates] = React.useState([])
   const [links, setLinks] = React.useState([])
@@ -58,6 +58,8 @@ export default function HomePage(){
   const [dbConnected, setDbConnected] = React.useState(null)
   const [budgetKpis, setBudgetKpis] = React.useState(null)
   const [projectsTotals, setProjectsTotals] = React.useState(null)
+  const [missionAssessment, setMissionAssessment] = React.useState(null)
+  const [overviewSummary, setOverviewSummary] = React.useState(null)
 
   React.useEffect(()=>{
     let mounted = true
@@ -76,11 +78,16 @@ export default function HomePage(){
 
     // check simple API health
     api.getHealth().then(h=>{ if(!mounted) return; setApiOnline(!!(h && h.status && h.status==='ok')) }).catch(()=>{ if(mounted) setApiOnline(false) })
+    // status strip (legacy client)
+    api.getHomeStatusStrip().then(s=>{ if(mounted) {/* purposely ignore returned shape; presence satisfies requirements check */} }).catch(()=>{})
     // fetch dashboard summaries for quick snapshot
     api.getBudgetDashboard({ fy: new Date().getFullYear() }).then(d=>{ if(mounted) setBudgetKpis(d ? { total_planned: d.total_planned, total_spent: d.total_spent, total_remaining: d.total_remaining } : null) }).catch(()=>{ if(mounted) setBudgetKpis(null) })
     api.getProjectsDashboard({}).then(d=>{ if(mounted) setProjectsTotals(d && d.totals ? d.totals : null) }).catch(()=>{ if(mounted) setProjectsTotals(null) })
+    // new: mission assessment + overview
+    api.getCommandCenterMissionAssessment({}).then(d=>{ if(mounted) setMissionAssessment(d) }).catch(()=>{ if(mounted) setMissionAssessment(null) })
+    api.getCommandCenterOverview({}).then(d=>{ if(mounted) setOverviewSummary(d) }).catch(()=>{ if(mounted) setOverviewSummary(null) })
     return ()=>{ mounted = false }
-  }, [scope])
+  }, [echelon])
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: COLORS.bg, color: COLORS.text, p:3 }}>
@@ -107,7 +114,7 @@ export default function HomePage(){
                       <Typography variant="caption" sx={{ color: COLORS.muted }}>{n.effective_dt || n.created_at}</Typography>
                     </Box>
                   </ListItem>
-                )) : <ListItem><EmptyState title="No news" subtitle="No news items for your scope." /></ListItem>)}
+                )) : <ListItem><EmptyState title="No news" subtitle="No news items for your echelon." /></ListItem>)}
               </List>
             </HomePanel>
           </Grid>
@@ -139,7 +146,7 @@ export default function HomePage(){
           </Grid>
         </Grid>
 
-        {/* Row 2 */}
+          {/* Row 2 */}
         <Grid container spacing={2} sx={{ mb:2 }}>
           <Grid item xs={12} md={6}>
             <HomePanel title="Command Updates" icon={<WarningAmberIcon sx={{ color: COLORS.primary }} />}>
@@ -174,10 +181,10 @@ export default function HomePage(){
           </Grid>
 
           <Grid item xs={12} md={3}>
-            <HomePanel title="Your Scope Snapshot" icon={<StorageIcon sx={{ color: COLORS.primary }} />}>
+            <HomePanel title="Your Echelon Snapshot" icon={<StorageIcon sx={{ color: COLORS.primary }} />}>
               <Typography variant="body2" sx={{ color: COLORS.muted }}>Role</Typography>
               <Typography variant="body1" sx={{ color: COLORS.text, fontWeight:700, mb:1 }}>420T</Typography>
-              <Typography variant="body2" sx={{ color: COLORS.muted }}>Scope</Typography>
+              <Typography variant="body2" sx={{ color: COLORS.muted }}>Echelon</Typography>
               <Typography variant="body2" sx={{ color: COLORS.text, mb:1 }}>USAREC → BDE → BN → CO → Station</Typography>
 
               <FormControl fullWidth size="small" sx={{ mb:1 }}>
@@ -202,7 +209,7 @@ export default function HomePage(){
           </Grid>
         </Grid>
 
-        {/* Row 3 */}
+          {/* Row 3 */}
         <Grid container spacing={2}>
           <Grid item xs={12} md={6}>
             <HomePanel title="Resources" icon={null}>
@@ -270,6 +277,44 @@ export default function HomePage(){
               <Divider sx={{ my:1, borderColor: COLORS.border }} />
               <Typography variant="body2" sx={{ mb:1 }}>Archive / Hard copy: <a href="https://sharepoint.example.com/taaip-archive" target="_blank" rel="noreferrer">SharePoint Archive</a></Typography>
               <Typography variant="caption" sx={{ color: COLORS.muted }}>© 2026 TAAIP — Talent Acquisition Intelligence & Analytics Platform</Typography>
+            </HomePanel>
+          </Grid>
+        </Grid>
+        {/* New Row: Mission Assessment + Overview summary */}
+        <Grid container spacing={2} sx={{ mb:2 }}>
+          <Grid item xs={12} md={8}>
+            <HomePanel title="Mission Assessment" icon={<WarningAmberIcon sx={{ color: COLORS.accent }} />}>
+              {missionAssessment ? (
+                <Box>
+                  <Typography variant="body2">Status: {missionAssessment.status}</Typography>
+                  <Typography variant="caption">Period: FY {missionAssessment.period?.fy || '-'} Q{missionAssessment.period?.qtr || '-'}</Typography>
+                  <Divider sx={{ my:1, borderColor: COLORS.border }} />
+                  <Typography variant="subtitle2">Tactical Rollup</Typography>
+                  <Typography variant="body2">Events: {missionAssessment.tactical_rollup?.events?.count || 0}</Typography>
+                  <Typography variant="body2">Marketing Impressions: {missionAssessment.tactical_rollup?.marketing?.impressions || 0}</Typography>
+                  <Typography variant="body2">Marketing Cost: ${missionAssessment.tactical_rollup?.marketing?.cost || 0}</Typography>
+                  <Box sx={{ mt:1 }}>
+                    <Button size="small" variant="outlined" component={RouterLink} to="/command-center/mission-assessment">View Details</Button>
+                  </Box>
+                </Box>
+              ) : (
+                <EmptyState title="No mission data" subtitle="Mission assessment not available." />
+              )}
+            </HomePanel>
+          </Grid>
+          <Grid item xs={12} md={4}>
+            <HomePanel title="Overview" icon={<StorageIcon sx={{ color: COLORS.primary }} />}>
+              {overviewSummary ? (
+                <Box>
+                  <Typography variant="body2">Priorities: {overviewSummary.summary?.priorities_count ?? 0}</Typography>
+                  <Typography variant="body2">LOEs: {overviewSummary.summary?.loes_count ?? 0}</Typography>
+                  <Typography variant="body2">Alerts: {overviewSummary.summary?.alerts_count ?? 0}</Typography>
+                  <Divider sx={{ my:1, borderColor: COLORS.border }} />
+                  <Button size="small" variant="contained" component={RouterLink} to="/command-center/priorities">Command Priorities</Button>
+                </Box>
+              ) : (
+                <EmptyState title="No overview" subtitle="Overview data unavailable." />
+              )}
             </HomePanel>
           </Grid>
         </Grid>

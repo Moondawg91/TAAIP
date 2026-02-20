@@ -38,11 +38,13 @@ export default function BudgetTrackerPage(){
     }finally{ setLoading(false) }
   }
 
-  const kpis = data ? {
-    allocated: data.total_planned || 0,
-    planned: data.total_planned || 0,
-    actual: data.total_spent || 0,
-    remaining: data.total_remaining || 0
+  // normalize payload shape: some callers return { data: { ... } } while API returns top-level
+  const payload = data && data.data ? data.data : data
+  const kpis = payload ? {
+    allocated: payload.totals && payload.totals.allocated ? payload.totals.allocated : (payload.allocated || 0),
+    planned: payload.totals && payload.totals.planned ? payload.totals.planned : (payload.total_planned || 0),
+    actual: payload.totals && payload.totals.actual ? payload.totals.actual : (payload.total_spent || 0),
+    remaining: payload.totals && payload.totals.remaining ? payload.totals.remaining : (payload.total_remaining || 0)
   } : { allocated:0, planned:0, actual:0, remaining:0 }
 
   // support dual-mode view via query param `view` (executive/comptroller)
@@ -54,7 +56,7 @@ export default function BudgetTrackerPage(){
       <Box sx={{display:'flex', alignItems:'center', gap:2}}>
         <DualModeTabs />
         <Box sx={{ml:'auto'}}>
-          <ExportMenu data={data && data.breakdown_by_project ? data.breakdown_by_project : []} filename="budget_tracker" />
+          <ExportMenu data={data && data.data && data.data.breakdown_by_project ? data.data.breakdown_by_project : []} filename="budget_tracker" />
         </Box>
       </Box>
       <DashboardFilterBar />
@@ -120,19 +122,19 @@ export default function BudgetTrackerPage(){
           {loading ? <Typography>Loading...</Typography> : (
             data ? (
               <Box>
-                {data.missing_data && data.missing_data.length>0 && (
+                {payload && payload.missing_data && payload.missing_data.length>0 && (
                   <Box sx={{ mt:1 }}>
-                    {data.missing_data.map((m,i)=> <Chip key={i} label={m} sx={{ mr:1, bgcolor: '#2A2A3A', color: '#FFB703' }} />)}
+                    {payload.missing_data.map((m,i)=> <Chip key={i} label={m} sx={{ mr:1, bgcolor: '#2A2A3A', color: '#FFB703' }} />)}
                   </Box>
                 )}
                 <Typography sx={{ mt:1 }}>By Category</Typography>
                 <Box>
-                  {data.breakdown_by_category && data.breakdown_by_category.length ? data.breakdown_by_category.map((c,i)=> (
-                    <Box key={i} sx={{ display:'flex', justifyContent:'space-between', p:1, bgcolor: '#0B0B10' }}>
-                      <Typography>{c.category}</Typography>
-                      <Typography>${(c.allocated||0).toFixed(0)} / {(c.planned||0).toFixed(0)} / {(c.actual||0).toFixed(0)}</Typography>
-                    </Box>
-                  )) : <Typography>No category data</Typography>}
+                  {payload && payload.breakdown_by_category && payload.breakdown_by_category.length ? payload.breakdown_by_category.map((c:any,i:any)=> (
+                      <Box key={i} sx={{ display:'flex', justifyContent:'space-between', p:1, bgcolor: '#0B0B10' }}>
+                          <Typography>{c.category || c.key || 'category'}</Typography>
+                          <Typography>${(c.allocated||c.value||0).toFixed(0)}</Typography>
+                      </Box>
+                    )) : <Typography>No category data</Typography>}
                 </Box>
                 <Typography sx={{ mt:2 }}>By Project</Typography>
                 <Box sx={{ display:'flex', gap:1, alignItems:'center', mb:1 }}>
@@ -171,7 +173,7 @@ export default function BudgetTrackerPage(){
                   </TableHead>
                   <TableBody>
                     {(() => {
-                      const rows = (data.breakdown_by_project || []).slice();
+                      const rows = (payload && payload.breakdown_by_project ? payload.breakdown_by_project : []).slice();
                       rows.sort((a:any,b:any)=>{
                         const key = projSort
                         const va = Number(a[key]||0); const vb = Number(b[key]||0)
@@ -179,7 +181,7 @@ export default function BudgetTrackerPage(){
                       })
                       const start = (projPage-1)*projPageSize; const paged = rows.slice(start, start+projPageSize)
                       return paged.length ? paged.map((p:any,i:number)=> (
-                        <TableRow key={String(p.project_id||i)}><TableCell>{p.name || p.project_id}</TableCell><TableCell>{p.planned}</TableCell><TableCell>{p.actual}</TableCell><TableCell>{p.variance}</TableCell></TableRow>
+                        <TableRow key={String(p.project_id||p.key||i)}><TableCell>{p.name || p.project_id || p.key}</TableCell><TableCell>{p.planned || ''}</TableCell><TableCell>{p.value || p.actual || 0}</TableCell><TableCell>{p.variance || ''}</TableCell></TableRow>
                       )) : <TableRow><TableCell colSpan={4}>No project data</TableCell></TableRow>
                     })()}
                   </TableBody>
@@ -225,7 +227,7 @@ export default function BudgetTrackerPage(){
                   </TableHead>
                   <TableBody>
                     {(() => {
-                      const rows = (data.breakdown_by_event || []).slice();
+                      const rows = (payload && payload.breakdown_by_event ? payload.breakdown_by_event : []).slice();
                       rows.sort((a:any,b:any)=>{
                         const key = evtSort
                         const va = Number(a[key]||0); const vb = Number(b[key]||0)
@@ -233,7 +235,7 @@ export default function BudgetTrackerPage(){
                       })
                       const start = (evtPage-1)*evtPageSize; const paged = rows.slice(start, start+evtPageSize)
                       return paged.length ? paged.map((e:any,i:number)=> (
-                        <TableRow key={String(e.event_id||i)}><TableCell>{e.name || e.event_id}</TableCell><TableCell>{e.planned}</TableCell><TableCell>{e.actual}</TableCell><TableCell>{e.variance}</TableCell></TableRow>
+                        <TableRow key={String(e.event_id||e.key||i)}><TableCell>{e.name || e.event_id || e.key}</TableCell><TableCell>{e.planned || ''}</TableCell><TableCell>{e.value || e.actual || 0}</TableCell><TableCell>{e.variance || ''}</TableCell></TableRow>
                       )) : <TableRow><TableCell colSpan={4}>No event data</TableCell></TableRow>
                     })()}
                   </TableBody>

@@ -10,7 +10,7 @@ export default function DocLibraryPage(){
       <Card sx={{ bgcolor:'background.paper' }}>
         <CardContent>
           <Typography variant="h6">Library</Typography>
-          <EmptyState title="No documents" subtitle="The document library is empty for your scope." />
+          <EmptyState title="No documents" subtitle="The document library is empty for your echelon." />
         </CardContent>
       </Card>
     </Box>

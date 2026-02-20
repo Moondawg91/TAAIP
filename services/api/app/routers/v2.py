@@ -133,6 +133,14 @@ def create_event(payload: dict = None, user: dict = Depends(get_current_user)):
 def post_activity(payload: dict = None, user: dict = Depends(get_current_user), db: Session = Depends(auth.get_db)):
     payload = payload or {}
     aid = payload.get('id') or ("act_" + uuid.uuid4().hex[:10])
+    # Funding source enforcement is opt-in via ENFORCE_FUNDING env var.
+    # Default to provided funding_source, then data_source, then 'UNSPECIFIED'.
+    funding_source = payload.get('funding_source') or payload.get('fundingSource') or payload.get('data_source') or payload.get('dataSource')
+    enforce = os.environ.get('ENFORCE_FUNDING')
+    if enforce and enforce.lower() in ('1', 'true', 'yes') and not funding_source:
+        raise HTTPException(status_code=400, detail='funding_source is required')
+    if not funding_source:
+        funding_source = 'UNSPECIFIED'
     # align column names with DB schema (engagement_count, metadata)
     stmt = text(
         "INSERT INTO marketing_activities(activity_id,event_id,activity_type,campaign_name,channel,data_source,impressions,engagement_count,awareness_metric,activation_conversions,reporting_date,metadata,cost,created_at,record_status) VALUES(:activity_id,:event_id,:activity_type,:campaign_name,:channel,:data_source,:impressions,:engagement_count,:awareness_metric,:activation_conversions,:reporting_date,:metadata,:cost,:created_at,:record_status)"
@@ -140,6 +148,7 @@ def post_activity(payload: dict = None, user: dict = Depends(get_current_user), 
     params = {
         "activity_id": aid,
         "event_id": payload.get("event_id"),
+        "funding_source": funding_source,
         "activity_type": payload.get("activity_type"),
         "campaign_name": payload.get("campaign_name"),
         "channel": payload.get("channel"),
@@ -206,9 +215,33 @@ def post_activity(payload: dict = None, user: dict = Depends(get_current_user), 
         db.commit()
         return {"status": "ok", "activity_id": aid}
     except Exception:
-        # If this fails, raise so tests surface the error
-        raise
-    return {"status": "ok", "activity_id": aid}
+        # If this fails, attempt a compatibility insert that only uses
+        # columns present in the target DB (handles schemas without
+        # funding_source column).
+        try:
+            cur = get_db_conn().cursor()
+            cur.execute('PRAGMA table_info(marketing_activities)')
+            fcols = [r[1] for r in cur.fetchall()]
+            base_cols = ['activity_id','event_id','activity_type','campaign_name','channel','data_source','impressions','engagement_count','awareness_metric','activation_conversions','reporting_date','metadata','cost','created_at','record_status']
+            insert_cols = []
+            insert_vals = []
+            for c in base_cols:
+                if c in fcols:
+                    insert_cols.append(c)
+                    insert_vals.append(params.get(c))
+            if 'funding_source' in fcols:
+                insert_cols.append('funding_source')
+                insert_vals.append(funding_source)
+            if not insert_cols:
+                raise
+            placeholders = ','.join(['?'] * len(insert_cols))
+            col_list = ','.join(insert_cols)
+            cur.execute(f'INSERT INTO marketing_activities({col_list}) VALUES({placeholders})', tuple(insert_vals))
+            get_db_conn().commit()
+            return {"status": "ok", "activity_id": aid}
+        except Exception:
+            # If this fails, raise so tests surface the error
+            raise
 
 
 @router.get("/marketing/sources")
@@ -225,6 +258,13 @@ def marketing_sync(payload: dict, db: Session = Depends(auth.get_db)):
     created = 0
     try:
         data = payload.get('sync_data') if isinstance(payload, dict) else {}
+        # Ensure funding_source is provided per-item or at top-level when enforced.
+        default_fs = payload.get('funding_source') or payload.get('fundingSource') or payload.get('fundingSource') or payload.get('source_system')
+        enforce = os.environ.get('ENFORCE_FUNDING')
+        for k, v in (data.items() if isinstance(data, dict) else []):
+            item_fs = v.get('funding_source') if isinstance(v, dict) else None
+            if enforce and enforce.lower() in ('1', 'true', 'yes') and not (item_fs or default_fs):
+                raise HTTPException(status_code=400, detail='funding_source is required for all sync items')
         now = datetime.utcnow().isoformat()
         for k, v in (data.items() if isinstance(data, dict) else []):
             aid = "act_" + uuid.uuid4().hex[:10]
@@ -236,6 +276,7 @@ def marketing_sync(payload: dict, db: Session = Depends(auth.get_db)):
                 'campaign_name': v.get('campaign') or v.get('campaign_name'),
                 'channel': v.get('channel'),
                 'data_source': payload.get('source_system'),
+                'funding_source': v.get('funding_source') or default_fs,
                 'impressions': v.get('impressions') or 0,
                 'engagement_count': v.get('engagement') or v.get('engagement_count') or 0,
                 'awareness_metric': v.get('awareness') or v.get('awareness_metric') or 0.0,
@@ -254,7 +295,19 @@ def marketing_sync(payload: dict, db: Session = Depends(auth.get_db)):
                 # fall back to DB-API insertion
                 try:
                     cur = get_db_conn().cursor()
-                    cur.execute('INSERT INTO marketing_activities(activity_id,event_id,activity_type,campaign_name,channel,data_source,impressions,engagement_count,awareness_metric,activation_conversions,reporting_date,metadata,cost,created_at,import_job_id,record_status) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', tuple(params.values()))
+                    # Compatibility: insert only columns present in DB
+                    cur.execute('PRAGMA table_info(marketing_activities)')
+                    fcols = [r[1] for r in cur.fetchall()]
+                    insert_cols = []
+                    insert_vals = []
+                    preferred_order = ['activity_id','event_id','activity_type','campaign_name','channel','data_source','funding_source','impressions','engagement_count','awareness_metric','activation_conversions','reporting_date','metadata','cost','created_at','import_job_id','record_status']
+                    for c in preferred_order:
+                        if c in fcols:
+                            insert_cols.append(c)
+                            insert_vals.append(params.get(c))
+                    placeholders = ','.join(['?'] * len(insert_cols))
+                    col_list = ','.join(insert_cols)
+                    cur.execute(f'INSERT INTO marketing_activities({col_list}) VALUES({placeholders})', tuple(insert_vals))
                     get_db_conn().commit()
                     created += 1
                 except Exception:

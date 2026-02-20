@@ -247,7 +247,7 @@ export default function ImportCenterPage(){
                 <Button variant="contained" color="primary" sx={{ ml:2 }} onClick={()=>doCommit('append')}>Commit</Button>
                 <Button variant="contained" color="secondary" sx={{ ml:2 }} onClick={()=>doCommit('append')}>Append</Button>
                 <Button variant="contained" color="error" sx={{ ml:2 }} onClick={()=>doCommit('replace')}>Replace</Button>
-                <Button variant="contained" color="warning" sx={{ ml:2 }} onClick={()=>doCommit('replace-scope')}>Replace Scope</Button>
+                <Button variant="contained" color="warning" sx={{ ml:2 }} onClick={()=>doCommit('replace-scope')}>Replace Echelon</Button>
               </Box>
               <Box sx={{ mt:2 }}>
                 <Typography>Errors</Typography>

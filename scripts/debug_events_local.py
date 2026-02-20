@@ -29,8 +29,8 @@ CREATE TABLE IF NOT EXISTS expenses (id INTEGER PRIMARY KEY AUTOINCREMENT, proje
 ''')
 now = '2026-02-01T00:00:00Z'
 cur.execute("INSERT INTO org_unit(name,type,created_at) VALUES (?,?,?)", ('Unit X','Station',now))
-cur.execute("SELECT id FROM org_unit WHERE name=?", ('Unit X',))
-org_id = cur.fetchone()[0]
+# use lastrowid to avoid name-based lookups
+org_id = cur.lastrowid
 cur.execute("INSERT INTO projects(project_id,title,org_unit_id,fy,planned_cost,created_at) VALUES (?,?,?,?,?,?)", ('projA','Project A',org_id,2026,5000.0,now))
 cur.execute("INSERT INTO event(org_unit_id,name,fy,planned_cost,project_id,created_at) VALUES (?,?,?,?,?,?)", (org_id,'Event A',2026,1200.0,'projA',now))
 cur.execute("INSERT INTO expenses(project_id,event_id,fy,qtr,org_unit_id,amount,created_at) VALUES (?,?,?,?,?,?,?)", ('projA', None, 2026,1,org_id,400.0,now))

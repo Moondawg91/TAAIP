@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { Box, Typography, Card, CardContent, List, ListItem, ListItemText } from '@mui/material'
-import { getFunnelStages, getFunnelEvents } from '../../api/client'
+import { getFunnelRollup } from '../../api/client'
 
 export default function FunnelMetricsPage(){
   const [stages, setStages] = useState([])
@@ -9,10 +9,11 @@ export default function FunnelMetricsPage(){
   useEffect(()=>{ load() }, [])
   async function load(){
     try{
-      const s = await getFunnelStages()
+      const r = await getFunnelRollup()
+      const s = (r && r.data && r.data.stages) ? r.data.stages : []
+      const conv = (r && r.data && r.data.conversion_rates) ? r.data.conversion_rates : []
       setStages(s || [])
-      const e = await getFunnelEvents()
-      setEvents(e || [])
+      setEvents(conv || [])
     }catch(e){ console.error('load funnel', e) }
   }
 
@@ -20,7 +21,7 @@ export default function FunnelMetricsPage(){
     <Box sx={{ p:3, minHeight:'100vh', bgcolor:'background.default', color:'text.primary' }}>
       <Typography variant="h5">Funnel Metrics</Typography>
       <Typography variant="body2" sx={{ color:'text.secondary', mb:2 }}>Funnel performance and conversion metrics.</Typography>
-      <Card sx={{ bgcolor:'background.paper', mb:2 }}>
+          <Card sx={{ bgcolor:'background.paper', mb:2 }}>
         <CardContent>
           <Typography variant="h6">Stages</Typography>
           <List>
@@ -32,7 +33,7 @@ export default function FunnelMetricsPage(){
         <CardContent>
           <Typography variant="h6">Recent Funnel Events ({(events||[]).length})</Typography>
           <List>
-            {(events || []).slice(0,20).map((ev:any)=> <ListItem key={ev.id}><ListItemText primary={ev.name || ev.event_type} secondary={`${ev.start_dt || ''} • ${ev.location_city || ''}`} /></ListItem>)}
+            {(events || []).slice(0,20).map((ev:any)=> <ListItem key={ev.from + '-' + ev.to}><ListItemText primary={`${ev.from} → ${ev.to}`} secondary={`rate ${ev.rate || ''}`} /></ListItem>)}
           </List>
         </CardContent>
       </Card>

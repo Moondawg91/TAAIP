@@ -33,13 +33,13 @@ export default function ProjectsEventsPage(){
               <Typography variant="h6">Projects</Typography>
               {projects.length ? projects.slice(0,20).map(p=> (
                 <Box key={p.project_id || p.id} sx={{ p:1, bgcolor:'#0B0B10', mb:1 }}>{p.title || p.project_id} — Planned: {p.planned_cost}</Box>
-              )) : <EmptyState title="No projects" subtitle="No projects imported for your scope." actionLabel="Go to Import Center" onAction={()=>{ window.location.href='/import-center' }} />}
+              )) : <EmptyState title="No projects" subtitle="No projects imported for your echelon." actionLabel="Go to Import Center" onAction={()=>{ window.location.href='/import-center' }} />}
             </Grid>
             <Grid item xs={12} md={6}>
               <Typography variant="h6">Events</Typography>
               {events.length ? events.slice(0,20).map(ev=> (
                 <Box key={ev.event_id || ev.id} sx={{ p:1, bgcolor:'#0B0B10', mb:1 }}>{ev.name || ev.event_id} — Planned: {ev.planned_cost}</Box>
-              )) : <EmptyState title="No events" subtitle="No events imported for your scope." actionLabel="Go to Import Center" onAction={()=>{ window.location.href='/import-center' }} />}
+              )) : <EmptyState title="No events" subtitle="No events imported for your echelon." actionLabel="Go to Import Center" onAction={()=>{ window.location.href='/import-center' }} />}
             </Grid>
           </Grid>
         ) : <EmptyState title="No data yet" subtitle="No projects or events found. Import templates to get started." actionLabel="Go to Import Center" onAction={()=>{ window.location.href='/import-center' }} />

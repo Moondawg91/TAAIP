@@ -125,6 +125,16 @@ api_router.include_router(imports_compat_router.router)
 from .routers import meta as meta_router
 api_router.include_router(meta_router.router)
 
+from .routers import tactical_rollups as tactical_rollups_router
+api_router.include_router(tactical_rollups_router.router)
+
+from .routers import tactical_dashboards as tactical_dashboards_router
+api_router.include_router(tactical_dashboards_router.router)
+
+# Command center router (mission-assessment + priorities)
+from .routers import command_center as command_center_router
+api_router.include_router(command_center_router.router)
+
 from .routers import maintenance as maintenance_router
 api_router.include_router(maintenance_router.router)
 # start the DB-driven maintenance scheduler (disabled by default in test/dev)

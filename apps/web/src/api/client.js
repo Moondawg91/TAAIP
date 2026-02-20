@@ -388,6 +388,26 @@ export async function reviewProposal(id, payload){
   return apiFetch(`/api/system/proposals/${id}/review`, { method: 'POST', body: JSON.stringify(payload), headers: {'Content-Type':'application/json'} })
 }
 
+export async function getSystemFreshness(){
+  return apiFetch('/api/system/freshness')
+}
+
+export async function getSystemAlerts(){
+  return apiFetch('/api/system/alerts')
+}
+
+export async function getSystemStatus(){
+  return apiFetch('/api/system/status')
+}
+
+export async function decideProposal(id, payload){
+  return apiFetch(`/api/system/proposals/${id}/decision`, { method: 'POST', body: JSON.stringify(payload), headers: {'Content-Type':'application/json'} })
+}
+
+export async function markProposalApplied(id){
+  return apiFetch(`/api/system/proposals/${id}/mark-applied`, { method: 'POST' })
+}
+
 // RBAC / admin
 export async function listRoles(){
   return apiFetch('/api/rbac/roles')
