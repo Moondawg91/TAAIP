@@ -15,6 +15,7 @@ import HomePage from './pages/HomePage'
 import QBRPage from './pages/QBRPage'
 import CommandCenterPage from './pages/CommandCenterPage'
 import ProjectsPage from './pages/ProjectsPage'
+import ProjectDetailPage from './pages/projects/ProjectDetailPage'
 import MeetingsPage from './pages/MeetingsPage'
 import CalendarPage from './pages/CalendarPage'
 import ImportCenterPage from './pages/ImportCenterPage'
@@ -49,6 +50,10 @@ import MissionPlanningPage from './pages/operations/MissionPlanningPage'
 import TargetingMethodologyPage from './pages/operations/TargetingMethodologyPage'
 import TargetingDataPage from './pages/operations/TargetingDataPage'
 import USARECTargetingPage from './pages/operations/USARECTargetingPage'
+
+// 420T command center / MDMP workspace
+import Command420TPage from './pages/command/420TCommandCenterPage'
+import MDMPWorkspacePage from './pages/command/MDMPWorkspacePage'
 
 import TargetingBoardPage from './pages/planning/TargetingBoardPage'
 
@@ -113,6 +118,7 @@ export default function App() {
           <Route path="/qbr" element={<QBRPage />} />
           <Route path="/dashboards/command-center" element={<CommandCenterPage />} />
           <Route path="/projects" element={<ProjectsPage />} />
+          <Route path="/projects/:id" element={<ProjectDetailPage />} />
           <Route path="/meetings" element={<MeetingsPage />} />
           <Route path="/calendar" element={<CalendarPage />} />
           <Route path="/import-center" element={<ImportCenterPage />} />
@@ -142,6 +148,8 @@ export default function App() {
           <Route path="/command-center/lines-of-effort" element={<LinesOfEffortPage />} />
           <Route path="/command-center/priorities" element={<CommandPrioritiesPage />} />
           <Route path="/command-center/mission-assessment" element={<MissionAssessmentPage />} />
+          <Route path="/command-center/420t" element={<Command420TPage />} />
+          <Route path="/command-center/mdmp" element={<MDMPWorkspacePage />} />
           <Route path="/command-center/intel" element={<CommandIntelPage />} />
           <Route path="/command-center/recruiting-ops" element={<RecruitingOpsPage />} />
           <Route path="/command-center/mission-analysis" element={<MissionAnalysisPage />} />
