@@ -149,22 +149,6 @@ export async function getVirtualTechBrief(){
   return apiFetch('/api/home/virtual-tech-brief')
 }
 
-// 420T scoring and COA clients
-export async function getScoringMarketCapacity(qs = {}){
-  const params = new URLSearchParams(qs).toString()
-  return apiFetch(`/api/command/scoring/market-capacity?${params}`)
-}
-
-export async function getScoringMissionFeasibility(qs = {}){
-  const params = new URLSearchParams(qs).toString()
-  return apiFetch(`/api/command/scoring/mission-feasibility?${params}`)
-}
-
-export async function getCOARecommendations(qs = {}){
-  const params = new URLSearchParams(qs).toString()
-  return apiFetch(`/api/command/coa/recommendations?${params}`)
-}
-
 export async function getOrgUnitsSummary(){
   return apiFetch('/api/v2/org/units-summary')
 }

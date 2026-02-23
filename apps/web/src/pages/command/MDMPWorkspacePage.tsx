@@ -68,24 +68,4 @@ export default function MDMPWorkspacePage(){
     </Box>
   )
 }
-import React, {useEffect, useState} from 'react'
-import api from '../../api/client'
-import { Box, Typography, Paper } from '@mui/material'
 
-export default function MDMPWorkspacePage(){
-  const [coas, setCoas] = useState([])
-  useEffect(()=>{ let mounted=true; api.getCOARecommendations().then(r=>{ if(mounted) setCoas(r.coas||[]) }).catch(()=>{}); return ()=>{ mounted=false } },[])
-  return (
-    <Box sx={{p:3, bgcolor:'background.default', color:'text.primary'}}>
-      <Typography variant="h4">MDMP Workspace</Typography>
-      <Paper sx={{p:2, bgcolor:'transparent', borderRadius:1, mt:2}}>
-        <Typography variant="h6">Problem Statement</Typography>
-        <Typography sx={{mt:1}}>Automatically generated problem statements and COAs appear below.</Typography>
-        <Typography variant="h6" sx={{mt:2}}>COA List</Typography>
-        {coas.length===0 ? <div>No COAs</div> : (
-          <ul>{coas.map(c=> <li key={c.id}>{c.title} — {c.rationale}</li>)}</ul>
-        )}
-      </Paper>
-    </Box>
-  )
-}
