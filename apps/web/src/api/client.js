@@ -149,6 +149,22 @@ export async function getVirtualTechBrief(){
   return apiFetch('/api/home/virtual-tech-brief')
 }
 
+// 420T scoring and COA clients
+export async function getScoringMarketCapacity(qs = {}){
+  const params = new URLSearchParams(qs).toString()
+  return apiFetch(`/api/command/scoring/market-capacity?${params}`)
+}
+
+export async function getScoringMissionFeasibility(qs = {}){
+  const params = new URLSearchParams(qs).toString()
+  return apiFetch(`/api/command/scoring/mission-feasibility?${params}`)
+}
+
+export async function getCOARecommendations(qs = {}){
+  const params = new URLSearchParams(qs).toString()
+  return apiFetch(`/api/command/coa/recommendations?${params}`)
+}
+
 export async function getOrgUnitsSummary(){
   return apiFetch('/api/v2/org/units-summary')
 }
@@ -552,6 +568,10 @@ export async function createTask(payload){
   return apiFetch('/api/projects/tasks', { method: 'POST', body: JSON.stringify(payload), headers: {'Content-Type':'application/json'} })
 }
 
+export async function getDomainProject(projectId){
+  return apiFetch(`/api/projects/projects/${projectId}`)
+}
+
 export async function createMeeting(payload){
   return apiFetch('/api/meetings/', { method: 'POST', body: JSON.stringify(payload), headers: {'Content-Type':'application/json'} })
 }
@@ -657,6 +677,71 @@ export async function getCommandCenterMissionAssessment(qs = {}){
   return apiFetch(`/api/command-center/mission-assessment?${params}`)
 }
 
+// Operations Market Intelligence clients (PHASE-13)
+export async function getMarketSummary(qs = {}){
+  const params = new URLSearchParams(qs).toString()
+  return apiFetch(`/api/ops/market/summary?${params}`)
+}
+
+export async function listMarketZips(qs = {}){
+  const params = new URLSearchParams(qs).toString()
+  return apiFetch(`/api/ops/market/zips?${params}`)
+}
+
+export async function listMarketCbsas(qs = {}){
+  const params = new URLSearchParams(qs).toString()
+  return apiFetch(`/api/ops/market/cbsa?${params}`)
+}
+
+export async function listMarketDemographics(qs = {}){
+  const params = new URLSearchParams(qs).toString()
+  return apiFetch(`/api/ops/market/demographics?${params}`)
+}
+
+export async function listGeoZones(qs = {}){
+  const params = new URLSearchParams(qs).toString()
+  return apiFetch(`/api/ops/market/geotargeting/zones?${params}`)
+}
+
+export async function createGeoZone(payload){
+  return apiFetch('/api/ops/market/geotargeting/zones', { method: 'POST', body: JSON.stringify(payload), headers: {'Content-Type':'application/json'} })
+}
+
+export async function updateGeoZone(id, payload){
+  return apiFetch(`/api/ops/market/geotargeting/zones/${id}`, { method: 'PUT', body: JSON.stringify(payload), headers: {'Content-Type':'application/json'} })
+}
+
+export async function exportTargetingList(qs = {}){
+  const params = new URLSearchParams(qs).toString()
+  return apiFetch(`/api/ops/market/targeting/export?${params}`)
+}
+
+// Market Intelligence compute + scoring clients
+export async function getP2PBand(qs = {}){
+  const params = new URLSearchParams(qs).toString()
+  return apiFetch(`/api/ops/market/compute/p2p-band?${params}`)
+}
+
+export async function classifyZip(qs = {}){
+  const params = new URLSearchParams(qs).toString()
+  return apiFetch(`/api/ops/market/compute/classify-zip?${params}`)
+}
+
+export async function getMarketCapacityScore(qs = {}){
+  const params = new URLSearchParams(qs).toString()
+  return apiFetch(`/api/command/scoring/market-capacity?${params}`)
+}
+
+export async function getMissionFeasibility(qs = {}){
+  const params = new URLSearchParams(qs).toString()
+  return apiFetch(`/api/command/scoring/mission-feasibility?${params}`)
+}
+
+export async function getCOARecommendations(qs = {}){
+  const params = new URLSearchParams(qs).toString()
+  return apiFetch(`/api/command/coa/recommendations?${params}`)
+}
+
 // Tactical dashboards clients
 export async function getEventsRoi(qs = {}){
   const params = new URLSearchParams(qs).toString()
@@ -675,7 +760,7 @@ export async function getTacticalFunnel(qs = {}){
 
 const apiClient = {
   // home
-  getHomeNews, getHomeUpdates, getHomeQuickLinks,
+  getHomeNews, getHomeUpdates, getHomeQuickLinks, getHomeStatusStrip, getHomeAlerts, ackHomeAlert, getHomeFlashes, getHomeUpcoming, getHomeRecognition, getHomeReferences,
   // health / summary
   getHealth, getCommandSummary, getCoverageSummary, getMarketPotential, getKpis, getOrgUnitsSummary,
   // auth / user
@@ -707,7 +792,8 @@ const apiClient = {
   // calendar
   createCalendarEvent, listCalendarEvents, updateCalendarEvent, deleteCalendarEvent,
   // market
-  getMarketPotential
+  getMarketPotential, getBudgetRollup, getEventsRollup, getMarketingRollup, getFunnelRollup, getCommandRollup
+  , getMarketSummary, listMarketZips, listMarketCbsas, listMarketDemographics, listGeoZones, createGeoZone, updateGeoZone, exportTargetingList
   // system CUS
   , listSystemObservations, postSystemObservation, listProposals, createProposal, submitProposal, reviewProposal
 }
