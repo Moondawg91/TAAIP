@@ -8,6 +8,24 @@ function normalizeResponseJson(json) {
   return json
 }
 
+// Safe fetch helper: returns a consistent error shape instead of throwing.
+async function safeGet(path, opts = {}) {
+  try {
+    const token = localStorage.getItem('taaip_jwt')
+    const headers = Object.assign({}, opts.headers || {})
+    if (token) headers['Authorization'] = `Bearer ${token}`
+    const url = path.startsWith('http') ? path : `${API_BASE}${path}`
+    const res = await fetch(url, Object.assign({}, opts, { headers }))
+    if (!res.ok) {
+      return { status: 'error', http_status: res.status, path: url, message: `HTTP ${res.status}` }
+    }
+    const text = await res.text()
+    try { return text ? JSON.parse(text) : null } catch(e){ return { status: 'error', http_status: 0, path: url, message: String(e?.message || e) } }
+  } catch (e) {
+    return { status: 'error', http_status: 0, path, message: String(e?.message || e) }
+  }
+}
+
 async function apiFetch(path, opts = {}) {
   const token = localStorage.getItem('taaip_jwt')
   const headers = Object.assign({'Accept': 'application/json'}, opts.headers || {})
@@ -79,7 +97,8 @@ export async function getKpis(scope){
 }
 
 export async function getHomeNews(limit = 50){
-  return apiFetch(`/api/v2/home/news?limit=${limit}`)
+  const resp = await safeGet(`/api/v2/home/news?limit=${limit}`)
+  return (resp && resp.status === 'error') ? { status: 'ok', items: [], warnings: [resp] } : resp
 }
 
 export async function getHomeUpdates(limit = 50){
@@ -92,7 +111,8 @@ export async function getHomeQuickLinks(limit = 50){
 
 // Home portal clients (PHASE-12)
 export async function getHomeStatusStrip(){
-  return apiFetch('/api/home/status-strip')
+  const resp = await safeGet('/api/home/status-strip')
+  return (resp && resp.status === 'error') ? { status: 'ok', data: [] } : resp
 }
 
 export async function getHomeAlerts(qs = {}){
@@ -106,20 +126,70 @@ export async function ackHomeAlert(alertId){
 
 export async function getHomeFlashes(qs = {}){
   const params = new URLSearchParams(qs).toString()
-  return apiFetch(`/api/home/flashes?${params}`)
+  const resp = await safeGet(`/api/home/flashes?${params}`)
+  return (resp && resp.status === 'error') ? { status: 'ok', items: [], warnings: [resp] } : resp
 }
 
-export async function getHomeUpcoming(qs = {}){
-  const params = new URLSearchParams(qs).toString()
-  return apiFetch(`/api/home/upcoming?${params}`)
+// New Home feed clients (Phase 15C awareness)
+export async function getHomeFlash(limit = 25){
+  const resp = await safeGet(`/api/home/flash?limit=${limit}`)
+  return (resp && resp.status === 'error') ? { status: 'ok', items: [], warnings: [resp] } : resp
 }
 
-export async function getHomeRecognition(){
-  return apiFetch('/api/home/recognition')
+export async function createHomeFlash(payload){
+  return apiFetch('/api/home/flash', { method: 'POST', body: JSON.stringify(payload), headers: {'Content-Type':'application/json'} })
 }
 
+export async function getHomeMessages(limit = 25){
+  const resp = await safeGet(`/api/home/messages?limit=${limit}`)
+  return (resp && resp.status === 'error') ? { status: 'ok', items: [], warnings: [resp] } : resp
+}
+
+export async function createHomeMessage(payload){
+  return apiFetch('/api/home/messages', { method: 'POST', body: JSON.stringify(payload), headers: {'Content-Type':'application/json'} })
+}
+
+export async function getHomeRecognitionItems(limit = 25){
+  const resp = await safeGet(`/api/home/recognition?limit=${limit}`)
+  return (resp && resp.status === 'error') ? { status: 'ok', items: [], warnings: [resp] } : resp
+}
+
+// Backwards-compatible aliases used elsewhere in the app
+export async function getHomeRecognition(limit = 25){
+  return getHomeRecognitionItems(limit)
+}
+
+export async function createHomeRecognition(payload){
+  return apiFetch('/api/home/recognition', { method: 'POST', body: JSON.stringify(payload), headers: {'Content-Type':'application/json'} })
+}
+
+export async function getHomeUpcoming(limit = 25){
+  const resp = await safeGet(`/api/home/upcoming?limit=${limit}`)
+  return (resp && resp.status === 'error') ? { status: 'ok', items: [], warnings: [resp] } : resp
+}
+
+export async function createHomeUpcoming(payload){
+  return apiFetch('/api/home/upcoming', { method: 'POST', body: JSON.stringify(payload), headers: {'Content-Type':'application/json'} })
+}
+
+export async function getHomeReferenceRails(){
+  const resp = await safeGet('/api/home/reference-rails')
+  return (resp && resp.status === 'error') ? { status: 'ok', items: [], warnings: [resp] } : resp
+}
+
+// Backwards-compatible alias
 export async function getHomeReferences(){
-  return apiFetch('/api/home/references')
+  return getHomeReferenceRails()
+}
+
+export async function createHomeReferenceRail(payload){
+  return apiFetch('/api/home/reference-rails', { method: 'POST', body: JSON.stringify(payload), headers: {'Content-Type':'application/json'} })
+}
+
+export async function getMe(){
+  const resp = await safeGet('/api/me')
+  if (!resp || resp.status === 'error') return null
+  return resp
 }
 
 // Tactical/Command Center clients
@@ -143,6 +213,17 @@ export async function exportDashboard(type, format='csv', qs = {}){
     return res.text()
   }
   return apiFetch(path)
+}
+
+export async function exportCommanderTargetsCsv(qs = {}){
+  const params = new URLSearchParams(qs)
+  const path = `/api/market-intel/exports/commander-targets.csv?${params.toString()}`
+  const token = localStorage.getItem('taaip_jwt')
+  const headers = {}
+  if (token) headers['Authorization'] = `Bearer ${token}`
+  const res = await fetch(`${API_BASE}${path}`, { headers })
+  if (!res.ok) throw new Error('export failed')
+  return res.text()
 }
 
 export async function getVirtualTechBrief(){
@@ -197,6 +278,74 @@ export async function importValidate(import_job_id){
 
 export async function importCommit(import_job_id, mode='append'){
   return apiFetch('/api/import/commit', { method: 'POST', body: JSON.stringify({ import_job_id, mode }), headers: {'Content-Type':'application/json'} })
+}
+
+export async function previewMiImport(formData){
+  const token = localStorage.getItem('taaip_jwt')
+  const headers = {}
+  if (token) headers['Authorization'] = `Bearer ${token}`
+  const res = await fetch((process.env.REACT_APP_API_BASE || 'http://localhost:8000') + '/api/imports/mi/preview', { method: 'POST', body: formData, headers })
+  if (!res.ok) throw new Error('preview failed')
+  return res.json()
+}
+
+export async function commitMiImport(formData){
+  const token = localStorage.getItem('taaip_jwt')
+  const headers = {}
+  if (token) headers['Authorization'] = `Bearer ${token}`
+  const res = await fetch((process.env.REACT_APP_API_BASE || 'http://localhost:8000') + '/api/imports/mi/commit', { method: 'POST', body: formData, headers })
+  if (!res.ok) throw new Error('commit failed')
+  return res.json()
+}
+
+export async function previewFoundationImport(formData){
+  const token = localStorage.getItem('taaip_jwt')
+  const headers = {}
+  if (token) headers['Authorization'] = `Bearer ${token}`
+  const res = await fetch((process.env.REACT_APP_API_BASE || 'http://localhost:8000') + '/api/imports/foundation/preview', { method: 'POST', body: formData, headers })
+  if (!res.ok) throw new Error('preview failed')
+  return res.json()
+}
+
+export async function commitFoundationImport(formData){
+  const token = localStorage.getItem('taaip_jwt')
+  const headers = {}
+  if (token) headers['Authorization'] = `Bearer ${token}`
+  const res = await fetch((process.env.REACT_APP_API_BASE || 'http://localhost:8000') + '/api/imports/foundation/commit', { method: 'POST', body: formData, headers })
+  if (!res.ok) throw new Error('commit failed')
+  return res.json()
+}
+
+export async function getSchoolProgramReadiness(){
+  return apiFetch('/api/school-program/readiness')
+}
+
+export async function getSchoolProgramSummary(qs = {}){
+  const params = new URLSearchParams(qs).toString()
+  return apiFetch(`/api/school-program/summary?${params}`)
+}
+
+export async function getRegulatoryReferences(qs = {}){
+  const params = new URLSearchParams(qs).toString()
+  return apiFetch(`/api/resources/regulatory?${params}`)
+}
+
+export async function getRegulatoryReference(id){
+  return apiFetch(`/api/resources/regulatory/${id}`)
+}
+
+export async function getTraceabilityLinks(qs = {}){
+  const params = new URLSearchParams(qs).toString()
+  return apiFetch(`/api/regulatory/traceability?${params}`)
+}
+
+export async function getModuleRegistry(){
+  return apiFetch(`/api/regulatory/modules`)
+}
+
+export async function getRegulatoryReferencesApi(qs = {}){
+  const params = new URLSearchParams(qs).toString()
+  return apiFetch(`/api/regulatory/references?${params}`)
 }
 
 export async function importJobs(){
@@ -398,6 +547,84 @@ export async function getSystemAlerts(){
 
 export async function getSystemAlertsList(){
   return apiFetch('/api/system/alerts/list')
+}
+
+// Market Intelligence clients (Phase 13)
+export async function getMarketIntelSummary(params = {}){
+  const qs = new URLSearchParams()
+  if (params.fy) qs.set('fy', params.fy)
+  if (params.qtr) qs.set('qtr', params.qtr)
+  if (params.month) qs.set('month', params.month)
+  if (params.rsid_prefix) qs.set('rsid_prefix', params.rsid_prefix)
+  return apiFetch(`/api/market-intel/summary?${qs.toString()}`)
+}
+
+export async function getMarketIntelZipRankings(params = {}){
+  const qs = new URLSearchParams()
+  if (params.fy) qs.set('fy', params.fy)
+  if (params.qtr) qs.set('qtr', params.qtr)
+  if (params.month) qs.set('month', params.month)
+  if (params.rsid_prefix) qs.set('rsid_prefix', params.rsid_prefix)
+  if (params.limit) qs.set('limit', params.limit)
+  return apiFetch(`/api/market-intel/zip-rankings?${qs.toString()}`)
+}
+
+export async function getMarketIntelCbsaRollup(params = {}){
+  const qs = new URLSearchParams()
+  if (params.fy) qs.set('fy', params.fy)
+  if (params.qtr) qs.set('qtr', params.qtr)
+  if (params.rsid_prefix) qs.set('rsid_prefix', params.rsid_prefix)
+  if (params.limit) qs.set('limit', params.limit)
+  return apiFetch(`/api/market-intel/cbsa-rollup?${qs.toString()}`)
+}
+
+export async function getMarketIntelTargets(params = {}){
+  const qs = new URLSearchParams()
+  if (params.fy) qs.set('fy', params.fy)
+  if (params.qtr) qs.set('qtr', params.qtr)
+  if (params.rsid_prefix) qs.set('rsid_prefix', params.rsid_prefix)
+  return apiFetch(`/api/market-intel/targets?${qs.toString()}`)
+}
+
+export async function getMarketIntelImportTemplates(){
+  return apiFetch('/api/market-intel/import-templates')
+}
+
+export async function getMarketIntelReadiness(){
+  return apiFetch('/api/market-intel/readiness')
+}
+
+export async function getMarketIntelDemographics(params = {}){
+  const qs = new URLSearchParams()
+  if (params.fy) qs.set('fy', params.fy)
+  if (params.qtr) qs.set('qtr', params.qtr)
+  if (params.rsid_prefix) qs.set('rsid_prefix', params.rsid_prefix)
+  return apiFetch(`/api/market-intel/demographics?${qs.toString()}`)
+}
+
+export async function getMarketIntelCategories(params = {}){
+  const qs = new URLSearchParams()
+  if (params.fy) qs.set('fy', params.fy)
+  if (params.qtr) qs.set('qtr', params.qtr)
+  if (params.rsid_prefix) qs.set('rsid_prefix', params.rsid_prefix)
+  if (params.limit) qs.set('limit', params.limit)
+  return apiFetch(`/api/market-intel/categories?${qs.toString()}`)
+}
+
+export async function exportMarketIntelTargetsCsv(params = {}){
+  const qs = new URLSearchParams()
+  if (params.fy) qs.set('fy', params.fy)
+  if (params.qtr) qs.set('qtr', params.qtr)
+  if (params.rsid_prefix) qs.set('rsid_prefix', params.rsid_prefix)
+  if (params.limit) qs.set('limit', params.limit)
+  const path = `/api/market-intel/export/targets.csv?${qs.toString()}`
+  const token = localStorage.getItem('taaip_jwt')
+  const headers = {}
+  if (token) headers['Authorization'] = `Bearer ${token}`
+  const res = await fetch(`${API_BASE}${path}`, { headers })
+  if (!res.ok) throw new Error('export failed')
+  const text = await res.text()
+  return text
 }
 
 export async function getMaintenance(){

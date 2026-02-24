@@ -14,8 +14,20 @@ def _safe_sum(cur, sql, params=()):
         r = cur.fetchone()
         if not r:
             return 0.0
-        # r may be dict-like
-        val = list(r.values())[0] if hasattr(r, 'values') else (r[0] if isinstance(r, (list, tuple)) else r)
+        # r may be dict-like, sqlite3.Row, tuple, or a plain value
+        try:
+            # prefer numeric first column access
+            val = r[0]
+        except Exception:
+            try:
+                # mapping-like (dict or sqlite3.Row supports keys())
+                if hasattr(r, 'values'):
+                    val = list(r.values())[0]
+                else:
+                    # last-resort: coerce to float directly
+                    val = float(r)
+            except Exception:
+                return 0.0
         return float(val) if val is not None else 0.0
     except Exception:
         return 0.0

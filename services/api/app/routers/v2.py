@@ -348,15 +348,53 @@ def funnel_attribution(lead_id: str = None):
 
 @router.get("/kpis")
 def kpis(event_id: str = None, db: Session = Depends(auth.get_db)):
-    # activity aggregates
-    arow = db.execute(text("SELECT SUM(impressions) as impressions, SUM(engagement_count) as engagements, SUM(activation_conversions) as activations, SUM(cost) as cost FROM marketing_activities WHERE event_id=:event_id"), {'event_id': event_id}).mappings().first()
-    impressions = int(arow['impressions'] or 0) if arow else 0
-    engagements = int(arow['engagements'] or 0) if arow else 0
-    activations = int(arow['activations'] or 0) if arow else 0
-    activity_cost = float(arow['cost'] or 0.0) if arow else 0.0
-    # budgets
-    brow = db.execute(text("SELECT SUM(allocated_amount) as b FROM budgets WHERE event_id=:event_id"), {'event_id': event_id}).mappings().first()
-    budget_cost = float(brow['b'] or 0.0) if brow else 0.0
+    # Prefer using SQLAlchemy session for domain-backed data (keeps canonical
+    # model semantics). If SQLAlchemy returns no activity cost (e.g., legacy
+    # vs domain table mismatch), fall back to raw DB-API query so tests that
+    # update via `get_db_conn()` are also visible.
+    activity_cost = 0.0
+    impressions = engagements = activations = 0
+    try:
+        arow = db.execute(text("SELECT SUM(impressions) as impressions, SUM(engagement_count) as engagements, SUM(activation_conversions) as activations, SUM(cost) as cost FROM marketing_activities WHERE event_id=:event_id"), {'event_id': event_id}).mappings().first()
+        if arow:
+            impressions = int(arow['impressions'] or 0)
+            engagements = int(arow['engagements'] or 0)
+            activations = int(arow['activations'] or 0)
+            activity_cost = float(arow['cost'] or 0.0)
+    except Exception:
+        # ignore SQLAlchemy path failures and fall back to raw
+        activity_cost = 0.0
+
+    # If SQLAlchemy reported no activity cost, check raw DB for updates
+    if not activity_cost:
+        try:
+            conn = get_db_conn()
+            cur = conn.cursor()
+            if event_id:
+                cur.execute("SELECT SUM(impressions), SUM(engagement_count), SUM(activation_conversions), SUM(cost) FROM marketing_activities WHERE event_id=?", (event_id,))
+            else:
+                cur.execute("SELECT SUM(impressions), SUM(engagement_count), SUM(activation_conversions), SUM(cost) FROM marketing_activities")
+            arow = cur.fetchone()
+            if arow:
+                impressions = int(arow[0] or 0)
+                engagements = int(arow[1] or 0)
+                activations = int(arow[2] or 0)
+                activity_cost = float(arow[3] or 0.0)
+        except Exception:
+            pass
+
+    # budgets (raw read is sufficient)
+    try:
+        conn = get_db_conn()
+        cur = conn.cursor()
+        if event_id:
+            cur.execute("SELECT SUM(allocated_amount) as b FROM budgets WHERE event_id=?", (event_id,))
+        else:
+            cur.execute("SELECT SUM(allocated_amount) as b FROM budgets")
+        brow = cur.fetchone()
+        budget_cost = float((brow[0] if brow is not None else 0) or 0.0)
+    except Exception:
+        budget_cost = 0.0
     total_cost = activity_cost + budget_cost
     cpl = None
     if activations > 0:

@@ -16,6 +16,10 @@ LOCAL_DEV_AUTH_BYPASS = os.getenv("LOCAL_DEV_AUTH_BYPASS", "0") in ("1", "true",
 if LOCAL_DEV_AUTH_BYPASS:
     logging.warning("LOCAL_DEV_AUTH_BYPASS enabled: JWT validation will be bypassed for local development")
 
+# Master mode (single-user full permissions override for local/dev)
+TAAIP_MASTER_MODE = os.getenv('TAAIP_MASTER_MODE', '0') in ('1', 'true', 'True')
+if TAAIP_MASTER_MODE:
+    logging.warning("TAAIP_MASTER_MODE enabled: granting master permissions to local user")
 
 def create_token_for_user(user: models.User):
     payload = {
@@ -55,6 +59,9 @@ class _MockUser:
         self.role = _MockRole(role_name)
         self.scope = scope
         self.id = "dev"
+        # emulate list of roles/permissions for compatibility
+        self.roles = [role_name]
+        self.permissions = ['*']
 
 
 def get_current_user(authorization: str = Header(None), db: Session = Depends(get_db)) -> models.User:
@@ -67,6 +74,12 @@ def get_current_user(authorization: str = Header(None), db: Session = Depends(ge
         username = payload.get("sub")
         user = db.query(models.User).filter_by(username=username).one_or_none()
     else:
+        # Master mode override: return a master user without requiring header
+        if os.getenv('TAAIP_MASTER_MODE', '0').lower() in ('1', 'true', 'True'):
+            mu = _MockUser(username=os.getenv('DEV_USER', 'dev.user'), role_name='system_admin')
+            mu.roles = ['system_admin', 'usarec_admin', '420t_admin']
+            mu.permissions = ['*']
+            return mu
         # Local dev bypass (only when no Authorization header)
         if os.getenv("LOCAL_DEV_AUTH_BYPASS", "0").lower() in ("1", "true", "True"):
             return _MockUser()
@@ -80,3 +93,45 @@ def get_current_user(authorization: str = Header(None), db: Session = Depends(ge
     if not user:
         raise HTTPException(status_code=401, detail="User not found")
     return user
+
+
+def get_effective_user(authorization: str = Header(None)) -> dict:
+    """Return a normalized effective user dict for frontend consumption.
+
+    If `LOCAL_DEV_AUTH_BYPASS` or `TAAIP_MASTER_MODE` is enabled, return a
+    master dev user with wildcard permissions. Otherwise attempt to decode
+    the Bearer token and return claims (roles/permissions normalized).
+    """
+    # Master/mode dev bypass: prefer explicit master env
+    if os.getenv('TAAIP_MASTER_MODE', '0').lower() in ('1', 'true', 'True') or os.getenv('LOCAL_DEV_AUTH_BYPASS', '0').lower() in ('1', 'true', 'True'):
+        return {
+            "sub": "local-dev",
+            "name": "Amber (Local Dev)",
+            "roles": ["system_admin", "usarec_admin", "420t_admin"],
+            "permissions": ["*"],
+            "org": {"level": "USAREC", "rsid_prefix": ""}
+        }
+
+    # If an authorization header is present, attempt to decode JWT payload
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization.split(" ", 1)[1]
+        try:
+            payload = decode_token(token)
+        except Exception:
+            raise HTTPException(status_code=401, detail="Invalid token")
+        # normalize into expected dict shape
+        roles = payload.get('roles') or payload.get('role') or []
+        if isinstance(roles, str):
+            roles = [roles]
+        permissions = payload.get('permissions') or payload.get('perms') or []
+        if isinstance(permissions, str):
+            permissions = [permissions]
+        return {
+            "sub": payload.get('sub') or payload.get('username'),
+            "name": payload.get('name') or payload.get('sub') or '',
+            "roles": roles,
+            "permissions": permissions,
+            "org": {"level": payload.get('org_level') or '', "rsid_prefix": payload.get('rsid_prefix') or ''}
+        }
+
+    raise HTTPException(status_code=401, detail="Authorization required")

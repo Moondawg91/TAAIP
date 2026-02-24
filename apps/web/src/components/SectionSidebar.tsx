@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from 'react'
 import { Box, IconButton, Typography, List, ListItemButton, ListItemIcon, ListItemText, Tooltip, Divider } from '@mui/material'
 import * as Icons from '@mui/icons-material'
 import NAV_CONFIG from '../nav/navConfig'
-import { getCurrentUserFromToken } from '../api/client'
+import { getCurrentUserFromToken, getMe } from '../api/client'
+import { isMaster, canAccess } from '../auth/effectiveAccess'
 import PushPinIcon from '@mui/icons-material/PushPin'
 import CloseIcon from '@mui/icons-material/Close'
 import MenuIcon from '@mui/icons-material/Menu'
@@ -22,11 +23,12 @@ export default function SectionSidebar(){
   const [pinned, setPinned] = useState<boolean>(() => {
     try { return localStorage.getItem('taaip_sidebar_pinned') === 'true' } catch { return false }
   })
-  const [hovered, setHovered] = useState<boolean>(false)
+  const [explicitOpen, setExplicitOpen] = useState<boolean>(false)
   const [activeSection, setActiveSection] = useState<string | null>(null)
   const navigate = useNavigate()
   const loc = useLocation()
   const [userRoles, setUserRoles] = useState<string[]>([])
+  const [effectiveUser, setEffectiveUser] = useState<any>(null)
 
   // Ensure the active section reflects the current route so sidebar shows correct group
   useEffect(()=>{
@@ -50,11 +52,23 @@ export default function SectionSidebar(){
   }, [loc.pathname])
 
   useEffect(()=>{
-    try{
-      const u = getCurrentUserFromToken()
-      const roles = (u && u.roles) ? (Array.isArray(u.roles)?u.roles:u.roles.split?.(',')||[]) : []
-      setUserRoles(roles.map((r:any)=>String(r).toLowerCase()))
-    }catch(e){ setUserRoles([]) }
+    let canceled = false
+    getMe().then(me => {
+      if(canceled) return
+      setEffectiveUser(me)
+      if (isMaster(me)) {
+        setUserRoles(['system_admin','usarec_admin','420t_admin'])
+      } else if(me && Array.isArray(me.roles)){
+        setUserRoles(me.roles.map(r=>String(r).toLowerCase()))
+      } else {
+        try{
+          const u = getCurrentUserFromToken()
+          const roles = (u && u.roles) ? (Array.isArray(u.roles)?u.roles:u.roles.split?.(',')||[]) : []
+          setUserRoles(roles.map((r:any)=>String(r).toLowerCase()))
+        }catch(e){ setUserRoles([]) }
+      }
+    }).catch(()=>{ setUserRoles([]) })
+    return ()=>{ canceled = true }
   },[])
 
   useEffect(()=>{
@@ -63,12 +77,12 @@ export default function SectionSidebar(){
 
   const collapsedWidth = 72
   const expandedWidth = 280
-  const open = pinned || hovered
+  const open = pinned || explicitOpen
 
   // tempSection removed; collapsed icon click directly sets activeSection and expands
 
   return (
-    <Box sx={{ width: open ? expandedWidth : collapsedWidth, transition: 'width 220ms cubic-bezier(.2,0,.2,1)', bgcolor: 'background.paper', color: 'text.primary', display: 'flex', flexDirection: 'column', borderRight: `1px solid rgba(255,255,255,0.04)` }} onMouseEnter={()=>setHovered(true)} onMouseLeave={()=>{ setHovered(false); if(!pinned) setActiveSection(null) }}>
+    <Box sx={{ width: open ? expandedWidth : collapsedWidth, transition: 'width 220ms cubic-bezier(.2,0,.2,1)', bgcolor: 'background.paper', color: 'text.primary', display: 'flex', flexDirection: 'column', borderRight: `1px solid rgba(255,255,255,0.04)` }}>
       <Box sx={{ display:'flex', alignItems:'center', px:2, py:1, gap:2 }}>
           <Box sx={{ display:'flex', alignItems:'center', gap:1, flex:1 }}>
           <Typography variant="h6" sx={{ fontWeight:700, cursor: 'pointer' }} onClick={()=>navigate('/')}>{/* keep short */}TAAIP</Typography>
@@ -87,14 +101,9 @@ export default function SectionSidebar(){
           {(NAV_CONFIG as unknown as NavSection[]).map(section => (
             <Tooltip key={section.id} title={section.label} placement="right">
                 <IconButton
-                  onMouseEnter={() => {
-                    // when hovering the collapsed icon rail, expand and show this section
-                    setHovered(true)
-                    setActiveSection(section.id)
-                  }}
                   onClick={() => {
-                    // also allow click to navigate to first item and expand
-                    setHovered(true)
+                    // toggle explicit open state and set active section on click
+                    setExplicitOpen(o => !o)
                     setActiveSection(section.id)
                     try {
                       const first = (section.items || []).find((i: NavItem) => {
@@ -124,15 +133,13 @@ export default function SectionSidebar(){
                 <List>
                   {section.items.map((it:NavItem)=> {
                     const path = it.path || ''
-                    // apply frontend gating based on roles
-                    let roleDisabled = !!it.disabled
-                    if (!roleDisabled && path.startsWith('/admin') && !userRoles.includes('usarec_admin') && !userRoles.includes('sysadmin')) roleDisabled = true
-                    if (!roleDisabled && path === '/command-center/priorities' && !userRoles.includes('usarec_admin') && !userRoles.includes('commander')) roleDisabled = true
+                    // apply frontend gating based on roles via central helper
+                    const roleDisabled = !canAccess(effectiveUser, it)
                     return (
                       <Tooltip key={it.path || it.id} title={!open ? it.label : ''} placement="right">
-                        <ListItemButton selected={loc.pathname===it.path} onClick={()=>{ console.debug('sidebar click', section.id, it.id, it.path); if(path) navigate(path) }} sx={{ borderRadius:1, my:0.5, px: open ? 1.5 : 0.5 }}>
+                        <ListItemButton selected={loc.pathname===it.path} onClick={()=>{ if(path) navigate(path) }} sx={{ borderRadius:1, my:0.5, px: open ? 1.5 : 0.5 }}>
                           <ListItemIcon sx={{ minWidth: open ? 40 : 0, justifyContent:'center', color: roleDisabled ? 'text.secondary' : 'primary.main' }}>{ roleDisabled ? <LockIcon fontSize="small" /> : IconByName(it.icon) }</ListItemIcon>
-                          {open && <ListItemText primary={it.label} primaryTypographyProps={{ variant:'body2' }} secondary={roleDisabled ? 'No access' : undefined} />}
+                          {open && <ListItemText primary={it.label} primaryTypographyProps={{ variant:'body2' }} secondary={roleDisabled ? undefined : undefined} />}
                         </ListItemButton>
                       </Tooltip>
                     )

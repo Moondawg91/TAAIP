@@ -9,6 +9,7 @@
     "@mui/material": "^5.18.0",
     "@mui/x-data-grid": "^6.20.4",
     "axios": "1.4.0",
+    "playwright": "^1.36.0",
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "react-router-dom": "^7.13.0",
@@ -33,11 +34,11 @@
     ]
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^6.0.0",
+    "@testing-library/react": "^14.0.0",
     "@types/node": "^25.2.3",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "typescript": "^5.9.3",
-    "@testing-library/react": "^14.0.0",
-    "@testing-library/jest-dom": "^6.0.0"
+    "typescript": "^5.9.3"
   }
 }

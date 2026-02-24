@@ -26,6 +26,7 @@ const NAV_CONFIG = [
       { id: 'mission-planning', label: 'Mission Planning', path: '/operations/mission-planning', icon: 'Map', disabled: false },
       { id: 'targeting-method', label: 'USAREC Targeting Methodology', path: '/operations/targeting-methodology', icon: 'MilitaryTech', disabled: false },
       { id: 'targeting-data', label: 'Targeting Data', path: '/operations/targeting-data', icon: 'Storage', disabled: false },
+      { id: 'phonetics', label: 'Phonetics', path: '/operations/phonetics', icon: 'RecordVoiceOver', disabled: false },
       { id: 'marketing-roi', label: 'Marketing & Advertisement ROI', path: '/operations/marketing-roi', icon: 'Campaign', disabled: true },
       { id: 'event-performance', label: 'Event Performance', path: '/operations/event-performance', icon: 'Event', disabled: true }
     ]
@@ -103,6 +104,7 @@ const NAV_CONFIG = [
     items: [
       { id: 'doc-library', label: 'Document Library', path: '/resources/doc-library', icon: 'Description', disabled: false },
       { id: 'regulations', label: 'Regulations', path: '/resources/regulations', icon: 'Gavel', disabled: false },
+      { id: 'regulatory-registry', label: 'Regulatory Registry', path: '/resources/regulatory', icon: 'Gavel', disabled: false },
       { id: 'manuals', label: 'Manuals', path: '/resources/manuals', icon: 'MenuBook', disabled: true },
       { id: 'sops', label: 'SOPs', path: '/resources/sops', icon: 'Article', disabled: true },
       { id: 'training', label: 'Training Modules', path: '/resources/training', icon: 'School', disabled: true },

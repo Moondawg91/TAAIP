@@ -33,9 +33,30 @@ app = FastAPI(title="TAAIP API", description="TAAIP API service. © 2026 TAAIP. 
 # under a common namespace.
 api_router = APIRouter()
 
+# Configure CORS. Use explicit local dev origins when available to allow credentialed
+# requests from the frontend. For deployed environments set `ALLOW_ORIGINS` env var
+# to a JSON array of allowed origins (or a comma-separated list) if needed.
+allow_origins_env = os.getenv('ALLOW_ORIGINS')
+if allow_origins_env:
+    try:
+        # support JSON array or comma-separated list
+        if allow_origins_env.strip().startswith('['):
+            allow_origins = json.loads(allow_origins_env)
+        else:
+            allow_origins = [o.strip() for o in allow_origins_env.split(',') if o.strip()]
+    except Exception:
+        allow_origins = ["*"]
+else:
+    # sensible defaults for local development
+    allow_origins = [
+        'http://localhost:3000', 'http://127.0.0.1:3000',
+        'http://localhost:3001', 'http://127.0.0.1:3001',
+        'http://127.0.0.1:5000'
+    ]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=allow_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -53,6 +74,8 @@ from .routers import imports as imports_router
 api_router.include_router(imports_router.router)
 from .routers import rbac as rbac_router
 api_router.include_router(rbac_router.router)
+from .routers import me as me_router
+api_router.include_router(me_router.router)
 from .routers import funnel as funnel_router
 api_router.include_router(funnel_router.router)
 from .routers import benchmarks as benchmarks_router
@@ -114,6 +137,34 @@ from .routers import projects_dashboard as projects_dashboard_router
 api_router.include_router(projects_dashboard_router.router)
 from .routers import events_dashboard as events_dashboard_router
 api_router.include_router(events_dashboard_router.router)
+from .routers import operations_market as operations_market_router
+api_router.include_router(operations_market_router.router)
+from .routers import ops_market_intel as ops_market_intel_router
+api_router.include_router(ops_market_intel_router.router)
+from .routers import operations as operations_router
+api_router.include_router(operations_router.router)
+from .routers import import_templates as import_templates_router
+api_router.include_router(import_templates_router.router)
+from .routers import market_engine as market_engine_router
+api_router.include_router(market_engine_router.router)
+from .routers import scoring as scoring_router
+api_router.include_router(scoring_router.router)
+from .routers import coa as coa_router
+api_router.include_router(coa_router.router)
+from .routers import market_intel as market_intel_router
+api_router.include_router(market_intel_router.router)
+from .routers import phonetics as phonetics_router
+api_router.include_router(phonetics_router.router)
+from .routers import home_feed as home_feed_router
+api_router.include_router(home_feed_router.router)
+from .routers import imports_mi as imports_mi_router
+api_router.include_router(imports_mi_router.router)
+from .routers import regulatory as regulatory_router
+api_router.include_router(regulatory_router.router)
+from .routers import imports_foundation as imports_foundation_router
+api_router.include_router(imports_foundation_router.router)
+from .routers import school_program as school_program_router
+api_router.include_router(school_program_router.router)
 from .routers import performance_dashboard as performance_dashboard_router
 api_router.include_router(performance_dashboard_router.router)
 from .routers import performance_summary as performance_summary_router

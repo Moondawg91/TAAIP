@@ -23,30 +23,24 @@ def test_kpis_basic_and_with_budget():
     # Add two activities with cost
     # prepare first activity payload
     # Use lower-level insertion: POST marketing activities
-    a1p = {"event_id": event_id, "activity_type": "social_media", "campaign_name": "camp1", "channel": "FB", "data_source": "emm", "impressions": 1000, "engagement_count": 100, "awareness_metric": 0.5, "activation_conversions": 10, "reporting_date": "2025-11-14", "metadata": None}
+    a1p = {"event_id": event_id, "activity_type": "social_media", "campaign_name": "camp1", "channel": "FB", "data_source": "emm", "impressions": 1000, "engagement_count": 100, "awareness_metric": 0.5, "activation_conversions": 10, "reporting_date": "2025-11-14", "metadata": None, "cost": 200.0}
     r1 = client.post("/api/v2/marketing/activities", json=a1p)
     assert r1.status_code == 200
     act1 = r1.json().get("activity_id")
 
-    # Update activity cost directly via SQL (since API doesn't yet accept cost field)
-    from taaip_service import get_db_conn
-    conn = get_db_conn()
-    cur = conn.cursor()
-    cur.execute("UPDATE marketing_activities SET cost = ? WHERE activity_id = ?", (200.0, act1))
-    conn.commit()
-
     # Create another activity
     a2p = {"event_id": event_id, "activity_type": "email", "campaign_name": "camp1", "channel": "Email", "data_source": "aiem", "impressions": 500, "engagement_count": 50, "awareness_metric": 0.7, "activation_conversions": 5, "reporting_date": "2025-11-15", "metadata": None}
+    a2p['cost'] = 100.0
     r2 = client.post("/api/v2/marketing/activities", json=a2p)
     assert r2.status_code == 200
     act2 = r2.json().get("activity_id")
-    cur.execute("UPDATE marketing_activities SET cost = ? WHERE activity_id = ?", (100.0, act2))
-    conn.commit()
-
-    # Add a budget allocation for the event
+    # Add a budget allocation for the event via raw DB helper
     import uuid
     budget_id = f"bud_{uuid.uuid4().hex[:8]}"
     now = "2025-11-01T00:00:00"
+    from taaip_service import get_db_conn
+    conn = get_db_conn()
+    cur = conn.cursor()
     cur.execute("INSERT INTO budgets (budget_id, event_id, campaign_name, allocated_amount, start_date, end_date, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", (budget_id, event_id, "camp1", 500.0, now, now, now, now))
     conn.commit()
     conn.close()

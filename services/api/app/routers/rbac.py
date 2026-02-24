@@ -45,6 +45,7 @@ def get_current_user(request: Request) -> Dict[str, Any]:
         claims = _decode_jwt_payload(token)
         roles = claims.get("roles") or claims.get("role") or []
         scopes = claims.get("scopes") or claims.get("scope") or []
+        perms = claims.get("permissions") or claims.get("perms") or []
         # Normalize roles into a list of lowercase strings for consistent checks
         if isinstance(roles, str):
             roles = [roles]
@@ -59,9 +60,12 @@ def get_current_user(request: Request) -> Dict[str, Any]:
             roles = [r.lower() for r in roles if r is not None]
         except Exception:
             roles = [str(r).lower() for r in roles]
-        return {"username": claims.get("username") or claims.get("sub") or str(claims), "roles": roles, "scopes": scopes}
+        return {"username": claims.get("username") or claims.get("sub") or str(claims), "roles": roles, "scopes": scopes, "permissions": perms}
     if local_bypass:
-        return {"username": os.getenv("DEV_USER", "dev.user"), "roles": ["USAREC_ADMIN"], "scopes": [{"scope_type": "USAREC", "scope_value": "USAREC"}]}
+        return {"username": os.getenv("DEV_USER", "dev.user"), "roles": ["usarec_admin", "system_admin"], "scopes": [{"scope_type": "USAREC", "scope_value": "USAREC"}], "permissions": ["*"]}
+    # Master mode override
+    if os.environ.get('TAAIP_MASTER_MODE','0').lower() in ('1','true','True','true'):
+        return {"username": os.getenv("DEV_USER", "dev.user"), "roles": ["system_admin","usarec_admin","420t_admin"], "scopes": [{"scope_type": "USAREC", "scope_value": "USAREC"}], "permissions": ["*"]}
     raise HTTPException(status_code=401, detail="Unauthorized")
 
 
@@ -72,6 +76,9 @@ def require_roles(*roles: str):
             if os.getenv('LOCAL_DEV_AUTH_BYPASS', '0').lower() in ('1', 'true'):
                 return {"username": os.getenv('DEV_USER', 'dev.user'), "roles": [r.lower() for r in roles], "scopes": []}
             raise HTTPException(status_code=401, detail="Unauthorized")
+        # wildcard permissions bypass
+        if isinstance(user, dict) and ("permissions" in user and ("*" in (user.get("permissions") or []))):
+            return user
         user_roles = [u.lower() for u in (user.get("roles") or [])]
         username = (user.get('username') or '').lower() if isinstance(user, dict) else ''
         for r in roles:
@@ -92,6 +99,9 @@ def require_any_role(*roles: str):
             if os.getenv('LOCAL_DEV_AUTH_BYPASS', '0').lower() in ('1', 'true'):
                 return {"username": os.getenv('DEV_USER', 'dev.user'), "roles": [r.lower() for r in roles], "scopes": []}
             raise HTTPException(status_code=401, detail="Unauthorized")
+        # wildcard permissions bypass
+        if isinstance(user, dict) and ("permissions" in user and ("*" in (user.get("permissions") or []))):
+            return user
         user_roles = [u.lower() for u in (user.get("roles") or [])]
         username = (user.get('username') or '').lower() if isinstance(user, dict) else ''
         for r in roles:

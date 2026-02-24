@@ -47,6 +47,7 @@ import TWGPageNew from './pages/command/TWGPage'
 import FusionCellPage from './pages/command/FusionCellPage'
 import MissionAnalysisPage from './pages/operations/MissionAnalysisPage'
 import MissionPlanningPage from './pages/operations/MissionPlanningPage'
+import MarketIntelligencePage from './pages/operations/MarketIntelligencePage'
 import TargetingMethodologyPage from './pages/operations/TargetingMethodologyPage'
 import TargetingDataPage from './pages/operations/TargetingDataPage'
 import USARECTargetingPage from './pages/operations/USARECTargetingPage'
@@ -64,6 +65,7 @@ import ProjectsEventsPage from './pages/projects/ProjectsEventsPage'
 import MarketSegmentationPage from './pages/operations/MarketSegmentationPage'
 
 import SchoolLandingPage from './pages/school/SchoolLandingPage'
+import SchoolProgramPage from './pages/school/SchoolProgramPage'
 
 import BudgetTrackerPage from './pages/budget/BudgetTrackerPage'
 import ProjectsDashboardPage from './pages/dash/ProjectsDashboardPage'
@@ -102,6 +104,8 @@ import ResourcesRegulationsPage from './pages/resources/ResourcesRegulationsPage
 import TrainingPage from './pages/resources/TrainingPage'
 import UploadsPage from './pages/resources/UploadsPage'
 import HistoricalDataPage from './pages/resources/HistoricalDataPage'
+import RegulatoryPage from './pages/resources/RegulatoryPage'
+import TraceabilityMatrixPage from './pages/resources/TraceabilityMatrixPage'
 import SubmitTicketPage from './pages/help/SubmitTicketPage'
 import TicketStatusPage from './pages/help/TicketStatusPage'
 import SystemStatusPage from './pages/help/SystemStatusPage'
@@ -197,6 +201,8 @@ export default function App() {
 
           <Route path="/resources/doc-library" element={<DocLibraryPage />} />
           <Route path="/resources/regulations" element={<ResourcesRegulationsPage />} />
+          <Route path="/resources/regulatory" element={<RegulatoryPage />} />
+          <Route path="/resources/traceability" element={<TraceabilityMatrixPage />} />
           <Route path="/resources/manuals" element={<ManualsPage />} />
           <Route path="/resources/sops" element={<SopsPage />} />
           <Route path="/resources/training" element={<TrainingModulesPage />} />
@@ -237,9 +243,11 @@ export default function App() {
 
           {/* operations */}
           <Route path="/operations/market-segmentation" element={<MarketSegmentationPage />} />
+          <Route path="/operations/market-intelligence" element={<MarketIntelligencePage />} />
 
           {/* school recruiting */}
           <Route path="/school-recruiting" element={<SchoolLandingPage />} />
+          <Route path="/school-recruiting/program" element={<SchoolProgramPage />} />
 
           {/* budget */}
           <Route path="/budget/tracker" element={<BudgetTrackerPage />} />

@@ -19,7 +19,7 @@ export default function CommandPrioritiesPage(){
       setPriorities(r || [])
     }).catch(()=>{}).finally(()=> mounted && setLoading(false))
     return ()=>{ mounted = false }
-  }, [scope])
+  }, [echelon])
 
   function openNew(){ setEdit(null); setTitle(''); setOpen(true) }
   function openEdit(p){ setEdit(p); setTitle(p.title||''); setOpen(true) }

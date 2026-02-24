@@ -14,6 +14,24 @@ _test_raw_conn = None
 def set_test_raw_conn(conn):
     """Set a DB-API connection to be returned by connect() during tests."""
     global _test_raw_conn
+    # Accept either a direct sqlite3.Connection or a SQLAlchemy wrapper
+    # that exposes the underlying DB-API connection as `connection` or
+    # `dbapi_connection`.
+    if conn is None:
+        _test_raw_conn = None
+        return
+    try:
+        if isinstance(conn, sqlite3.Connection):
+            _test_raw_conn = conn
+            return
+        # common SQLAlchemy wrappers expose the underlying DBAPI
+        maybe = getattr(conn, 'connection', None) or getattr(conn, 'dbapi_connection', None)
+        if isinstance(maybe, sqlite3.Connection):
+            _test_raw_conn = maybe
+            return
+    except Exception:
+        pass
+    # If we couldn't unwrap, store the provided object as a last resort.
     _test_raw_conn = conn
 
 def get_db_path() -> str:
@@ -37,61 +55,71 @@ def connect() -> sqlite3.Connection:
     # mixing independent sqlite3 connections (which can hold locks)
     path = get_db_path()
     _ensure_db_dir(path)
+    # Use sqlite3.Row so callers can access rows by index and by column name.
+    _row_factory = sqlite3.Row
     # If tests set a dedicated raw DB-API connection, return that so all
     # callers operate on the same physical connection/transaction.
     global _test_raw_conn
     if _test_raw_conn is not None:
         try:
-            _test_raw_conn.row_factory = _dict_row_factory
-            return _test_raw_conn
+            # ensure the helper row factory is available before assignment
+            def _dict_row_factory(cursor, row):
+                # return a plain dict for each row so callers can safely do dict(row)
+                try:
+                    return {d[0]: row[i] for i, d in enumerate(cursor.description)}
+                except Exception:
+                    return row
+
+            _test_raw_conn.row_factory = _row_factory
+            try:
+                # test whether connection is usable
+                _test_raw_conn.cursor()
+                # ensure the test connection points at the same DB file
+                try:
+                    # pragma database_list returns [(seq, name, file), ...]
+                    db_list = _test_raw_conn.execute("PRAGMA database_list").fetchall()
+                    file_path = db_list[0][2] if db_list else None
+                    # if the file path differs from requested path, discard helper
+                    if file_path and os.path.abspath(file_path) != os.path.abspath(path):
+                        try:
+                            _test_raw_conn.close()
+                        except Exception:
+                            pass
+                    else:
+                        return _test_raw_conn
+                except Exception:
+                    # if we cannot verify, still return it if usable
+                    return _test_raw_conn
+            except Exception:
+                try:
+                    _test_raw_conn.close()
+                except Exception:
+                    pass
         except Exception:
             # fall through to normal behavior
             pass
-    def _dict_row_factory(cursor, row):
-        # return a plain dict for each row so callers can safely do dict(row)
-        try:
-            return {d[0]: row[i] for i, d in enumerate(cursor.description)}
-        except Exception:
-            return row
 
+    # Attempt to reload the SQLAlchemy engine if the application needs it.
     try:
         from services.api.app import database as _database
-        # Ensure database engine/session match current env (tests may change it)
         try:
             _database.reload_engine_if_needed()
         except Exception:
             pass
-        # Debug: print engine url when opening raw_connection
-        try:
-            print(f"db.connect using engine: {_database.engine.url}")
-        except Exception:
-            pass
-        from services.api.app.database import engine
-        raw = engine.raw_connection()
-        # raw_connection() returns a DB-API connection (sqlite3.Connection)
-        raw.row_factory = _dict_row_factory
-        try:
-            cur = raw.cursor()
-            cur.executescript("""
-            PRAGMA foreign_keys=ON;
-            PRAGMA synchronous=NORMAL;
-            PRAGMA busy_timeout=10000;
-            """)
-            raw.commit()
-        except Exception:
-            pass
-        return raw
     except Exception:
-        conn = sqlite3.connect(path, check_same_thread=False, timeout=30)
-        conn.row_factory = _dict_row_factory
-        cur = conn.cursor()
-        cur.executescript("""
-        PRAGMA foreign_keys=ON;
-        PRAGMA synchronous=NORMAL;
-        PRAGMA busy_timeout=10000;
-        """)
-        conn.commit()
-        return conn
+        pass
+
+    # Use a plain sqlite3 connection for predictable DB-API behavior.
+    conn = sqlite3.connect(path, check_same_thread=False, timeout=30)
+    conn.row_factory = _row_factory
+    cur = conn.cursor()
+    cur.executescript("""
+    PRAGMA foreign_keys=ON;
+    PRAGMA synchronous=NORMAL;
+    PRAGMA busy_timeout=10000;
+    """)
+    conn.commit()
+    return conn
 
 
 def get_db_conn() -> sqlite3.Connection:
@@ -198,6 +226,14 @@ def init_schema() -> None:
                 row_count_detected INTEGER DEFAULT 0
             );
 
+            CREATE TABLE IF NOT EXISTS import_job_preview (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                import_job_id TEXT NOT NULL,
+                preview_json TEXT,
+                columns_json TEXT,
+                created_at TEXT
+            );
+
             CREATE TABLE IF NOT EXISTS imported_rows (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 import_job_id INTEGER,
@@ -205,6 +241,10 @@ def init_schema() -> None:
                 row_json TEXT,
                 created_at TEXT
             );
+
+            -- Ensure provenance columns exist for processed state (safe to run repeatedly)
+            -- Older DB files may not have these columns; attempt to add them if missing.
+            PRAGMA user_version;
 
             CREATE TABLE IF NOT EXISTS audit_log (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -237,6 +277,575 @@ def init_schema() -> None:
                 updated_at TEXT,
                 record_status TEXT DEFAULT 'active'
             );
+
+            -- Operations Market Intelligence tables (Phase 13)
+            CREATE TABLE IF NOT EXISTS market_zip_metrics (
+                id TEXT PRIMARY KEY,
+                as_of_date TEXT,
+                component TEXT,
+                echelon_type TEXT,
+                unit_value TEXT,
+                station_rsid TEXT,
+                zip TEXT,
+                zip_category TEXT,
+                cbsa_code TEXT,
+                dma_name TEXT,
+                army_potential INTEGER,
+                dod_potential INTEGER,
+                dod_wtd_avg INTEGER,
+                army_share_of_potential REAL,
+                contracts_ga INTEGER,
+                contracts_sa INTEGER,
+                contracts_vol INTEGER,
+                potential_remaining INTEGER,
+                p2p_band TEXT,
+                p2p_value REAL,
+                ingested_at TEXT NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS market_cbsa_metrics (
+                id TEXT PRIMARY KEY,
+                as_of_date TEXT,
+                component TEXT,
+                echelon_type TEXT,
+                unit_value TEXT,
+                cbsa_code TEXT,
+                cbsa_name TEXT,
+                plot_parameter TEXT,
+                segment_code TEXT,
+                total_population INTEGER,
+                total_potential INTEGER,
+                potential_remaining INTEGER,
+                contracts_total INTEGER,
+                army_share_of_potential REAL,
+                p2p_band TEXT,
+                p2p_value REAL,
+                ingested_at TEXT NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS market_demographics (
+                id TEXT PRIMARY KEY,
+                as_of_date TEXT,
+                component TEXT,
+                echelon_type TEXT,
+                unit_value TEXT,
+                geo_level TEXT,
+                geo_value TEXT,
+                race_ethnicity TEXT,
+                gender TEXT,
+                fqma_population INTEGER,
+                youth_population INTEGER,
+                enlistments INTEGER,
+                p2p_value REAL,
+                ingested_at TEXT NOT NULL
+            );
+            CREATE TABLE IF NOT EXISTS geo_target_zones (
+                id TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                description TEXT,
+                zone_type TEXT,
+                echelon_type TEXT,
+                unit_value TEXT,
+                component TEXT,
+                status TEXT,
+                geometry_json TEXT,
+                created_by TEXT,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS geo_target_zone_members (
+                id TEXT PRIMARY KEY,
+                zone_id TEXT NOT NULL,
+                member_type TEXT,
+                member_value TEXT,
+                created_at TEXT NOT NULL
+            );
+
+            -- Additional Market Intelligence fact and dimension tables (Phase 13A)
+            CREATE TABLE IF NOT EXISTS market_sama_zip_fact (
+                id TEXT PRIMARY KEY,
+                as_of_date TEXT,
+                fy INTEGER,
+                qtr TEXT,
+                month INTEGER,
+                component TEXT,
+                echelon_type TEXT,
+                unit_value TEXT,
+                rsid_prefix TEXT,
+                station_rsid TEXT,
+                zip_code TEXT,
+                zip_category TEXT,
+                targeted INTEGER DEFAULT 0,
+                army_potential INTEGER,
+                dod_potential INTEGER,
+                dod_wtd_avg REAL,
+                army_share_of_potential REAL,
+                army_ga_ach INTEGER,
+                army_sa_ach INTEGER,
+                army_vol_ach INTEGER,
+                contracts INTEGER,
+                potential_remaining INTEGER,
+                p2p REAL,
+                created_at TEXT,
+                ingested_at TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS market_cbsa_fact (
+                id TEXT PRIMARY KEY,
+                as_of_date TEXT,
+                fy INTEGER,
+                qtr TEXT,
+                month INTEGER,
+                component TEXT,
+                echelon_type TEXT,
+                unit_value TEXT,
+                rsid_prefix TEXT,
+                cbsa_code TEXT,
+                cbsa_name TEXT,
+                dma_name TEXT,
+                plot_parameter TEXT,
+                value REAL,
+                p2p REAL,
+                market_category TEXT,
+                created_at TEXT,
+                ingested_at TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS market_demographics_fact (
+                id TEXT PRIMARY KEY,
+                as_of_date TEXT,
+                fy INTEGER,
+                component TEXT,
+                geo_type TEXT,
+                geo_id TEXT,
+                race_ethnicity TEXT,
+                gender TEXT,
+                population_type TEXT,
+                population_value REAL,
+                production_value REAL,
+                p2p REAL,
+                created_at TEXT,
+                ingested_at TEXT
+            );
+            -- New Phase: Operations fact tables for Market Intelligence, Schools, CEP, Geo campaigns
+            CREATE TABLE IF NOT EXISTS market_zip_fact (
+                id TEXT PRIMARY KEY,
+                fy INTEGER,
+                qtr TEXT,
+                month INTEGER,
+                rsid_prefix TEXT,
+                zip5 TEXT,
+                cbsa_code TEXT,
+                market_category TEXT,
+                youth_pop INTEGER,
+                fqma INTEGER,
+                army_accessions INTEGER,
+                army_share REAL,
+                potential_remaining INTEGER,
+                p2p REAL,
+                must_keep INTEGER DEFAULT 0,
+                must_win INTEGER DEFAULT 0,
+                market_of_opportunity INTEGER DEFAULT 0,
+                supplemental_market INTEGER DEFAULT 0,
+                ingested_at TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS market_cbsa_fact (
+                id TEXT PRIMARY KEY,
+                fy INTEGER,
+                qtr TEXT,
+                rsid_prefix TEXT,
+                cbsa_code TEXT,
+                cbsa_name TEXT,
+                youth_pop INTEGER,
+                fqma INTEGER,
+                army_accessions INTEGER,
+                army_share REAL,
+                potential_remaining INTEGER,
+                p2p REAL,
+                market_category_rollup TEXT,
+                ingested_at TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS school_fact (
+                id TEXT PRIMARY KEY,
+                fy INTEGER,
+                qtr TEXT,
+                rsid_prefix TEXT,
+                school_id TEXT,
+                school_name TEXT,
+                school_type TEXT,
+                enrollment INTEGER,
+                fqma_est INTEGER,
+                access_level TEXT,
+                last_visit_at TEXT,
+                visits_ytd INTEGER,
+                engagements_ytd INTEGER,
+                leads_ytd INTEGER,
+                contracts_ytd INTEGER,
+                ingested_at TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS cep_fact (
+                id TEXT PRIMARY KEY,
+                fy INTEGER,
+                qtr TEXT,
+                rsid_prefix TEXT,
+                school_id TEXT,
+                asvab_tests INTEGER,
+                asvab_high_score INTEGER,
+                cep_events INTEGER,
+                cep_participants INTEGER,
+                leads_from_cep INTEGER,
+                contracts_from_cep INTEGER,
+                ingested_at TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS geo_campaign_fact (
+                id TEXT PRIMARY KEY,
+                fy INTEGER,
+                qtr TEXT,
+                rsid_prefix TEXT,
+                campaign_id TEXT,
+                campaign_name TEXT,
+                geo_type TEXT,
+                area_label TEXT,
+                spend REAL,
+                impressions INTEGER,
+                engagements INTEGER,
+                activations INTEGER,
+                leads INTEGER,
+                contracts INTEGER,
+                ingested_at TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS market_geotarget_zone (
+                id TEXT PRIMARY KEY,
+                name TEXT,
+                zone_type TEXT,
+                rsid_prefix TEXT,
+                component TEXT,
+                market_category TEXT,
+                targeted INTEGER DEFAULT 0,
+                geojson TEXT,
+                zip_list TEXT,
+                cbsa_list TEXT,
+                created_by TEXT,
+                created_at TEXT,
+                updated_at TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS market_category_rule (
+                id TEXT PRIMARY KEY,
+                name TEXT,
+                description TEXT,
+                rule_json TEXT,
+                created_at TEXT,
+                updated_at TEXT
+            );
+
+            -- Phase 13: Market Intelligence operational tables (idempotent)
+            CREATE TABLE IF NOT EXISTS market_target_list (
+                id TEXT PRIMARY KEY,
+                fy INTEGER NOT NULL,
+                qtr TEXT NOT NULL,
+                rsid_prefix TEXT NOT NULL,
+                target_type TEXT NOT NULL,
+                zip5 TEXT,
+                cbsa_code TEXT,
+                rationale TEXT,
+                created_at TEXT NOT NULL
+            );
+
+            -- Market Intelligence dataset registry and import templates (Phase 14)
+            CREATE TABLE IF NOT EXISTS mi_dataset_registry (
+                dataset_key TEXT PRIMARY KEY,
+                display_name TEXT NOT NULL,
+                table_name TEXT NOT NULL,
+                required_columns_json TEXT NOT NULL,
+                optional_columns_json TEXT NOT NULL,
+                last_seen_at TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS mi_import_template (
+                template_key TEXT PRIMARY KEY,
+                dataset_key TEXT NOT NULL,
+                description TEXT,
+                columns_json TEXT NOT NULL,
+                mapping_hints_json TEXT NOT NULL,
+                validation_rules_json TEXT NOT NULL,
+                created_at TEXT NOT NULL
+            );
+
+            -- Regulatory references registry (static doctrine/regulations)
+            CREATE TABLE IF NOT EXISTS regulatory_references (
+                id TEXT PRIMARY KEY,
+                code TEXT,
+                title TEXT,
+                description TEXT,
+                category TEXT,
+                authority_level TEXT,
+                created_at TEXT
+            );
+
+            -- Regulatory traceability and module registry (Phase 17)
+            CREATE TABLE IF NOT EXISTS regulatory_traceability (
+                id TEXT PRIMARY KEY,
+                reference_id TEXT NOT NULL,
+                module_key TEXT NOT NULL,
+                page_route TEXT,
+                metric_key TEXT,
+                decision_supported TEXT,
+                tor_enclosure TEXT,
+                notes TEXT,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS module_registry (
+                id TEXT PRIMARY KEY,
+                module_key TEXT NOT NULL UNIQUE,
+                display_name TEXT NOT NULL,
+                owner_role TEXT,
+                description TEXT,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            );
+
+            -- Seed regulatory references (INSERT OR IGNORE to be idempotent)
+            INSERT OR IGNORE INTO regulatory_references (id, code, title, description, category, authority_level, created_at) VALUES
+                ('um-3-0','UM 3-0','Unified Manual 3-0','Doctrine reference: Operations','Operations','Manual', datetime('now')),
+                ('um-3-29','UM 3-29','Unified Manual 3-29','Doctrine reference: Recruiting and retention','Operations','Manual', datetime('now')),
+                ('um-3-30','UM 3-30','Unified Manual 3-30','Doctrine reference','Operations','Manual', datetime('now')),
+                ('um-3-31','UM 3-31','Unified Manual 3-31','Doctrine reference','Operations','Manual', datetime('now')),
+                ('um-3-32','UM 3-32','Unified Manual 3-32','Doctrine reference','Operations','Manual', datetime('now')),
+                ('ur-601-73','UR 601-73','Unit Reference 601-73','Personnel processing regs','Processing','Regulation', datetime('now')),
+                ('ur-601-210','UR 601-210','Unit Reference 601-210','Personnel assignment regs','Processing','Regulation', datetime('now')),
+                ('ur-601-106','UR 601-106','Unit Reference 601-106','Personnel procedures','Processing','Regulation', datetime('now')),
+                ('ur-10-1','UR 10-1','Unit Reference 10-1','Logistics and sustainment','Operations','Regulation', datetime('now')),
+                ('ur-27-4','UR 27-4','Unit Reference 27-4','Training and readiness','Training','Regulation', datetime('now')),
+                ('ur-350-1','UR 350-1','Unit Reference 350-1','Training doctrine','Training','Regulation', datetime('now')),
+                ('ur-350-13','UR 350-13','Unit Reference 350-13','Field training guidance','Training','Regulation', datetime('now')),
+                ('utp-3-10-2','UTP 3-10.2','Unit Training Publication 3-10.2','Tactical training publication','Training','Publication', datetime('now')),
+                ('420t-tor-2026','420T TOR 2026','420T Terms of Reference 2026','420T program Terms of Reference 2026','Governance','Directive', datetime('now'));
+
+            -- Seed module_registry entries if empty
+            INSERT OR IGNORE INTO module_registry (id, module_key, display_name, owner_role, description, created_at, updated_at) VALUES
+                ('m-op-mi','operations.market_intel','Market Intelligence Engine','420T','Market intelligence rollups and targets', datetime('now'), datetime('now')),
+                ('m-op-target','operations.targeting','Targeting Board','420T','Targeting and prioritization workflows', datetime('now'), datetime('now')),
+                ('m-school-prog','school.program','School Recruiting Program','USAREC','School recruiting program rollups', datetime('now'), datetime('now')),
+                ('m-cmd-420t','command.420t','420T Command Center','420T','Command center workspace', datetime('now'), datetime('now')),
+                ('m-cmd-mdmp','command.mdmp','MDMP Workspace','420T','MDMP planning workspace', datetime('now'), datetime('now')),
+                ('m-tac-events','tactical.events_roi','Event ROI','Operations','Event ROI analysis', datetime('now'), datetime('now')),
+                ('m-tac-marketing','tactical.marketing','Marketing Performance','Operations','Marketing performance and attribution', datetime('now'), datetime('now')),
+                ('m-tac-funnel','tactical.funnel','Funnel Analysis','Operations','Funnel and pipeline metrics', datetime('now'), datetime('now')),
+                ('m-budget-res','budget.resource_management','Budget & Resource Management','Finance','Budget and resource management', datetime('now'), datetime('now')),
+                ('m-proc-health','processing.health','Processing Health','Operations','Processing and ingestion health', datetime('now'), datetime('now')),
+                ('m-train-res','training.resources','Training & Resources','Training','Training resources and modules', datetime('now'), datetime('now')),
+                ('m-sys-gov','system.governance','System Governance','Governance','System governance and policy', datetime('now'), datetime('now'));
+
+            -- Foundation MI + School tables (Phase 16)
+            CREATE TABLE IF NOT EXISTS mi_zip_fact (
+                id TEXT PRIMARY KEY,
+                fy TEXT,
+                qtr TEXT,
+                component TEXT,
+                rsid_prefix TEXT,
+                zip5 TEXT,
+                station_name TEXT,
+                market_category TEXT,
+                army_potential REAL,
+                dod_potential REAL,
+                army_share_of_potential REAL,
+                potential_remaining REAL,
+                contracts_ga INTEGER,
+                contracts_sa INTEGER,
+                contracts_vol INTEGER,
+                p2p REAL,
+                as_of_date TEXT,
+                ingested_at TEXT NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS mi_cbsa_fact (
+                id TEXT PRIMARY KEY,
+                fy TEXT,
+                qtr TEXT,
+                component TEXT,
+                rsid_prefix TEXT,
+                cbsa_code TEXT,
+                cbsa_name TEXT,
+                market_category TEXT,
+                army_potential REAL,
+                dod_potential REAL,
+                army_share_of_potential REAL,
+                potential_remaining REAL,
+                contracts_ga INTEGER,
+                contracts_sa INTEGER,
+                contracts_vol INTEGER,
+                p2p REAL,
+                as_of_date TEXT,
+                ingested_at TEXT NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS mi_mission_category_ref (
+                id TEXT PRIMARY KEY,
+                mission_category TEXT,
+                education_tier TEXT,
+                pct_gt_enlistments REAL,
+                pct_enlistments REAL,
+                ingested_at TEXT NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS mi_enlistments_bde (
+                id TEXT PRIMARY KEY,
+                bde TEXT,
+                enlistments INTEGER,
+                fy TEXT,
+                as_of_date TEXT,
+                ingested_at TEXT NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS mi_enlistments_bn (
+                id TEXT PRIMARY KEY,
+                battalion_name TEXT,
+                rsid_prefix TEXT,
+                enlistments INTEGER,
+                fy TEXT,
+                as_of_date TEXT,
+                ingested_at TEXT NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS school_program_fact (
+                id TEXT PRIMARY KEY,
+                bde TEXT,
+                bn TEXT,
+                co TEXT,
+                rsid_prefix TEXT,
+                population INTEGER,
+                available INTEGER,
+                attempted_students INTEGER,
+                attempted_students_pct REAL,
+                contacted_students INTEGER,
+                contacted_students_pct REAL,
+                fy TEXT,
+                qtr TEXT,
+                as_of_date TEXT,
+                ingested_at TEXT NOT NULL
+            );
+
+            -- Ensure registry has operational fields (add columns if missing)
+            -- mi_dataset_registry earlier schema may differ; add loaded/row_count/last_ingested_at/notes if missing
+            BEGIN;
+            CREATE TEMP TABLE IF NOT EXISTS __mi_registry_cols(colname TEXT);
+            INSERT INTO __mi_registry_cols
+            SELECT name FROM pragma_table_info('mi_dataset_registry');
+            -- Add columns conditionally by attempting to add if not present
+            -- Use dynamic SQL: check count of column rows
+            COMMIT;
+
+            -- Phonetics module tables (Phase 15C)
+            CREATE TABLE IF NOT EXISTS phonetic_map (
+                id TEXT PRIMARY KEY,
+                term TEXT NOT NULL,
+                phonetic TEXT NOT NULL,
+                type TEXT,
+                created_at TEXT,
+                updated_at TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS phonetic_dataset_registry (
+                dataset_key TEXT PRIMARY KEY,
+                as_of TEXT,
+                row_count INTEGER DEFAULT 0,
+                last_loaded_at TEXT,
+                status TEXT
+            );
+
+            -- Home feed tables for awareness portal (Phase 15C)
+            CREATE TABLE IF NOT EXISTS home_flash_items (
+                id TEXT PRIMARY KEY,
+                title TEXT NOT NULL,
+                body TEXT NOT NULL,
+                category TEXT NOT NULL,
+                source TEXT,
+                effective_date TEXT,
+                created_at TEXT NOT NULL,
+                created_by TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS home_messages (
+                id TEXT PRIMARY KEY,
+                title TEXT NOT NULL,
+                body TEXT NOT NULL,
+                priority TEXT NOT NULL,
+                created_at TEXT NOT NULL,
+                created_by TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS home_recognition (
+                id TEXT PRIMARY KEY,
+                title TEXT NOT NULL,
+                body TEXT NOT NULL,
+                person_name TEXT,
+                unit TEXT,
+                created_at TEXT NOT NULL,
+                created_by TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS home_upcoming (
+                id TEXT PRIMARY KEY,
+                title TEXT NOT NULL,
+                body TEXT,
+                event_date TEXT,
+                tag TEXT,
+                created_at TEXT NOT NULL,
+                created_by TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS home_reference_rails (
+                id TEXT PRIMARY KEY,
+                title TEXT NOT NULL,
+                kind TEXT NOT NULL,
+                target TEXT NOT NULL,
+                created_at TEXT NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS market_taxonomy (
+                id TEXT PRIMARY KEY,
+                key TEXT NOT NULL,
+                value TEXT NOT NULL,
+                description TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS geo_planning_container (
+                id TEXT PRIMARY KEY,
+                fy INTEGER NOT NULL,
+                qtr TEXT NOT NULL,
+                rsid_prefix TEXT NOT NULL,
+                name TEXT NOT NULL,
+                geo_type TEXT NOT NULL,
+                area_json TEXT NOT NULL,
+                status TEXT NOT NULL,
+                created_at TEXT NOT NULL
+            );
+
+            -- Ensure required MI columns exist for compatibility with Phase-13 APIs.
+            -- Add missing columns to market_zip_fact if they do not exist.
+            PRAGMA foreign_keys=OFF;
+            -- Collect existing columns and add any missing ones.
+            -- Note: SQLite does not support ALTER COLUMN; we only add missing columns.
+            -- market_zip_fact expected additional columns (if missing):
+            -- youth_pop_17_24, fqma, market_potential, army_share_pct,
+            -- contracts_total, leads_total, activations_total
+            BEGIN;
+            CREATE TEMP TABLE IF NOT EXISTS __tbl_info_tmp(colname TEXT);
+            INSERT INTO __tbl_info_tmp
+            SELECT name FROM pragma_table_info('market_zip_fact');
+            -- Add columns only if missing
+            SELECT 1;
+            COMMIT;
+            
 
             -- Many-to-many linkage between projects and events (relational link)
             CREATE TABLE IF NOT EXISTS project_event_link (
@@ -514,6 +1123,16 @@ def init_schema() -> None:
                 id TEXT PRIMARY KEY,
                 import_job_id TEXT NOT NULL,
                 mapping_json TEXT NOT NULL,
+                created_at TEXT
+            );
+
+            -- Mapping templates saved by the import UI (used by import map/commit flow)
+            CREATE TABLE IF NOT EXISTS import_mapping_template (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                target_domain TEXT,
+                mapping_json TEXT,
+                created_by TEXT,
                 created_at TEXT
             );
 
@@ -892,13 +1511,17 @@ def init_schema() -> None:
             -- Command Center tables
             CREATE TABLE IF NOT EXISTS loe_metrics (
                 id TEXT PRIMARY KEY,
-                loe_id TEXT,
-                metric_key TEXT,
-                metric_label TEXT,
+                loe_id TEXT NOT NULL,
+                metric_name TEXT NOT NULL,
                 target_value REAL,
-                actual_value REAL,
-                status TEXT,
+                warn_threshold REAL,
+                fail_threshold REAL,
                 reported_at TEXT,
+                ingested_at TEXT,
+                current_value REAL,
+                status TEXT,
+                rationale TEXT,
+                last_evaluated_at TEXT,
                 created_at TEXT
             );
 
@@ -1763,7 +2386,215 @@ def init_schema() -> None:
         except Exception:
             pass
 
-        conn.commit()
+        # Ensure MI fact tables have the expected columns for Phase-13 APIs.
+        try:
+            try:
+                cur.execute("PRAGMA table_info('market_zip_fact')")
+                existing = [c[1] for c in cur.fetchall()]
+            except Exception:
+                existing = []
+            zip_expected = {
+                'youth_pop_17_24': 'INTEGER',
+                'fqma': 'INTEGER',
+                'market_potential': 'INTEGER',
+                'army_share_pct': 'REAL',
+                'contracts_total': 'INTEGER',
+                'leads_total': 'INTEGER',
+                'activations_total': 'INTEGER'
+            }
+            for col, typ in zip_expected.items():
+                if col not in existing:
+                    try:
+                        cur.execute(f"ALTER TABLE market_zip_fact ADD COLUMN {col} {typ}")
+                    except Exception:
+                        pass
+
+            try:
+                cur.execute("PRAGMA table_info('market_cbsa_fact')")
+                existing_cbsa = [c[1] for c in cur.fetchall()]
+            except Exception:
+                existing_cbsa = []
+            cbsa_expected = {
+                'youth_pop_17_24': 'INTEGER',
+                'market_potential': 'INTEGER',
+                'army_share_pct': 'REAL',
+                'contracts_total': 'INTEGER',
+                'p2p': 'REAL'
+            }
+            for col, typ in cbsa_expected.items():
+                if col not in existing_cbsa:
+                    try:
+                        cur.execute(f"ALTER TABLE market_cbsa_fact ADD COLUMN {col} {typ}")
+                    except Exception:
+                        pass
+        except Exception:
+            pass
+
+        # Ensure canonical Phase-13 tables exist (market_zip_fact, market_cbsa_fact canonical schema, market_targets, market_rules)
+        try:
+            cur.executescript('''
+            CREATE TABLE IF NOT EXISTS market_zip_fact (
+                id TEXT PRIMARY KEY,
+                fy INTEGER,
+                qtr TEXT,
+                rsid_prefix TEXT,
+                zip TEXT,
+                cbsa_code TEXT,
+                market_category TEXT,
+                fqma INTEGER,
+                population_17_24 INTEGER,
+                contracts INTEGER,
+                army_share REAL,
+                potential_remaining INTEGER,
+                p2p REAL,
+                demo_json TEXT,
+                ingested_at TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS market_cbsa_fact (
+                id TEXT PRIMARY KEY,
+                fy INTEGER,
+                qtr TEXT,
+                rsid_prefix TEXT,
+                cbsa_code TEXT,
+                cbsa_name TEXT,
+                market_category TEXT,
+                fqma INTEGER,
+                contracts INTEGER,
+                army_share REAL,
+                potential_remaining INTEGER,
+                demo_json TEXT,
+                ingested_at TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS market_targets (
+                id TEXT PRIMARY KEY,
+                fy INTEGER,
+                qtr TEXT,
+                rsid_prefix TEXT,
+                target_type TEXT,
+                zip TEXT,
+                cbsa_code TEXT,
+                rationale TEXT,
+                score REAL,
+                created_at TEXT,
+                ingested_at TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS market_rules (
+                key TEXT PRIMARY KEY,
+                value TEXT,
+                updated_at TEXT
+            );
+            ''')
+            conn.commit()
+        except Exception:
+            pass
+
+        # Canonical Market Intelligence tables (Phase 15): mi_*
+        try:
+            cur.executescript('''
+            CREATE TABLE IF NOT EXISTS mi_zip_fact (
+                id TEXT PRIMARY KEY,
+                fy INTEGER,
+                qtr TEXT,
+                rsid_prefix TEXT,
+                zip5 TEXT,
+                cbsa_code TEXT,
+                cbsa_name TEXT,
+                station_name TEXT,
+                component TEXT,
+                market_category TEXT,
+                army_potential INTEGER,
+                dod_potential INTEGER,
+                army_share_of_potential REAL,
+                potential_remaining INTEGER,
+                contracts_ga INTEGER,
+                contracts_sa INTEGER,
+                contracts_vol INTEGER,
+                p2p REAL,
+                as_of_date TEXT,
+                created_at TEXT,
+                updated_at TEXT,
+                demo_json TEXT,
+                ingested_at TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS mi_cbsa_fact (
+                id TEXT PRIMARY KEY,
+                fy INTEGER,
+                qtr TEXT,
+                rsid_prefix TEXT,
+                cbsa_code TEXT,
+                cbsa_name TEXT,
+                station_name TEXT,
+                component TEXT,
+                market_category TEXT,
+                army_potential INTEGER,
+                dod_potential INTEGER,
+                army_share_of_potential REAL,
+                potential_remaining INTEGER,
+                contracts_ga INTEGER,
+                contracts_sa INTEGER,
+                contracts_vol INTEGER,
+                p2p REAL,
+                as_of_date TEXT,
+                created_at TEXT,
+                updated_at TEXT,
+                demo_json TEXT,
+                ingested_at TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS mi_demo_fact (
+                id TEXT PRIMARY KEY,
+                fy INTEGER,
+                component TEXT,
+                geo_type TEXT,
+                geo_id TEXT,
+                attribute_key TEXT,
+                attribute_value REAL,
+                ingested_at TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS mi_school_fact (
+                id TEXT PRIMARY KEY,
+                fy INTEGER,
+                qtr TEXT,
+                rsid_prefix TEXT,
+                school_id TEXT,
+                school_name TEXT,
+                enrollment INTEGER,
+                fqma_est INTEGER,
+                ingested_at TEXT
+            );
+            ''')
+            conn.commit()
+        except Exception:
+            pass
+
+            conn.commit()
+            # Minor migration: add processed columns to imported_rows if they don't exist
+            try:
+                cur.execute("PRAGMA table_info(imported_rows)")
+                cols = [c[1] for c in cur.fetchall()]
+                if 'processed' not in cols:
+                    try:
+                        cur.execute("ALTER TABLE imported_rows ADD COLUMN processed INTEGER DEFAULT 0")
+                    except Exception:
+                        pass
+                if 'processed_at' not in cols:
+                    try:
+                        cur.execute("ALTER TABLE imported_rows ADD COLUMN processed_at TEXT")
+                    except Exception:
+                        pass
+                if 'processed_by' not in cols:
+                    try:
+                        cur.execute("ALTER TABLE imported_rows ADD COLUMN processed_by TEXT")
+                    except Exception:
+                        pass
+                conn.commit()
+            except Exception:
+                pass
         # If SQLAlchemy models are present, try to ensure their tables exist
         try:
             # Import all model modules that register tables on the shared Base
@@ -1937,6 +2768,18 @@ def init_db() -> str:
     """
     # Keep init_db minimal and non-destructive for tests and dev helpers.
     init_schema()
+    # Ensure SQLAlchemy engine used by the application points at the same DB
+    # path so tests and API handlers operate on the same database file.
+    try:
+        from services.api.app import database as _database
+        try:
+            os.environ['DATABASE_URL'] = f"sqlite:///{get_db_path()}"
+            if hasattr(_database, 'reload_engine_if_needed'):
+                _database.reload_engine_if_needed()
+        except Exception:
+            pass
+    except Exception:
+        pass
     return get_db_path()
 
 
@@ -1999,4 +2842,28 @@ def execute_with_retry(cur, sql, params=(), retries: int = 5, backoff: float = 0
 
 
 # Backwards compatibility: expose names expected elsewhere in the codebase
-__all__ = ["get_db_path", "connect", "get_db_conn", "init_schema", "init_db", "execute_with_retry"]
+def table_has_cols(table_name: str, cols) -> bool:
+    """Return True if the given table exists and contains all columns in `cols`.
+
+    `cols` may be a string for a single column or an iterable of column names.
+    This is a lightweight helper used by routers that need runtime
+    compatibility checks against the sqlite schema.
+    """
+    try:
+        conn = connect()
+        cur = conn.cursor()
+        cur.execute(f"PRAGMA table_info({table_name})")
+        existing = [r[1] for r in cur.fetchall()]
+        if isinstance(cols, str):
+            return cols in existing
+        # treat cols as iterable of names
+        for c in cols:
+            if c not in existing:
+                return False
+        return True
+    except Exception:
+        return False
+
+
+# Backwards compatibility: expose names expected elsewhere in the codebase
+__all__ = ["get_db_path", "connect", "get_db_conn", "init_schema", "init_db", "execute_with_retry", "table_has_cols"]
