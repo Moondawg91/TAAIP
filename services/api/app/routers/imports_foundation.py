@@ -146,6 +146,9 @@ async def commit_foundation_import(dataset_key: str = Form(...), file: UploadFil
             # 1) if source had exact same column name as target, use it
             if col in src:
                 val = src.get(col)
+            # 0) prefer explicit client-provided mapping if present (mapping_json maps target -> source)
+            if mapping_json and isinstance(mapping_json, dict) and mapping_json.get(col):
+                val = src.get(mapping_json.get(col))
             # 2) if this column is one of required and we have an auto_map entry, use the mapped detected column
             elif col in auto_map and auto_map.get(col):
                 val = src.get(auto_map.get(col))
