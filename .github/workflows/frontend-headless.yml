@@ -49,3 +49,22 @@ jobs:
           path: |
             headless_result.json
             /tmp/gha_headless.png
+
+      - name: Install minimist for E2E script
+        run: npm --prefix apps/web install --no-audit --no-fund minimist --legacy-peer-deps
+
+      - name: Run Playwright mapping E2E script
+        env:
+          TEST_URL: http://127.0.0.1:5000/
+        run: |
+          node apps/web/scripts/playwright_mapping_e2e.cjs --url $TEST_URL --csv apps/web/test-fixtures/school_messy.csv || true
+          # upload results if produced
+          if [ -f playwright_mapping_result.json ]; then mv playwright_mapping_result.json playwright_mapping_result.json; fi
+          if [ -f /tmp/playwright_mapping_e2e.png ]; then cp /tmp/playwright_mapping_e2e.png /tmp/gha_playwright.png; fi
+      - name: Upload playwright artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-mapping-results
+          path: |
+            playwright_mapping_result.json
+            /tmp/gha_playwright.png
