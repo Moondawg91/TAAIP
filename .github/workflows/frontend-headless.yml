@@ -21,7 +21,7 @@ jobs:
           node-version: '18'
 
       - name: Install frontend deps (legacy-peer-deps)
-        run: npm --prefix apps/web ci --legacy-peer-deps
+        run: npm --prefix apps/web install --legacy-peer-deps
 
       - name: Build frontend
         run: CI=true npm --prefix apps/web run build --silent
