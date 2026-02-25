@@ -266,8 +266,12 @@ def _on_startup():
 
 # SPA fallback: serve index.html for non-API routes when a frontend build exists
 from fastapi.responses import FileResponse
+from fastapi import HTTPException
 INDEX_FILE = os.path.join(FRONTEND_BUILD, "index.html")
 if os.path.isfile(INDEX_FILE):
     @app.get("/{full_path:path}", include_in_schema=False)
     async def spa_fallback(full_path: str):
+        # Don't intercept API or static asset requests — let the router return 404s
+        if full_path.startswith('api') or full_path.startswith('static'):
+            raise HTTPException(status_code=404)
         return FileResponse(INDEX_FILE, media_type="text/html")
