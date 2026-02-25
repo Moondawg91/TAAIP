@@ -316,6 +316,24 @@ export async function commitFoundationImport(formData){
   return res.json()
 }
 
+// Documents API
+export async function uploadDocumentForm(formData){
+  const token = localStorage.getItem('taaip_jwt')
+  const headers = {}
+  if (token) headers['Authorization'] = `Bearer ${token}`
+  const res = await fetch((process.env.REACT_APP_API_BASE || 'http://localhost:8000') + '/api/documents/upload', { method: 'POST', body: formData, headers })
+  if (!res.ok) throw new Error('upload failed')
+  return res.json()
+}
+
+export async function listDocuments(){
+  return apiFetch('/api/documents')
+}
+
+export function documentDownloadUrl(docId){
+  return (process.env.REACT_APP_API_BASE || 'http://localhost:8000') + `/api/documents/${docId}/download`
+}
+
 export async function getSchoolProgramReadiness(){
   return apiFetch('/api/school-program/readiness')
 }

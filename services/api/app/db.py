@@ -43,6 +43,15 @@ def get_db_path() -> str:
     return os.getenv("TAAIP_DB_PATH", "./data/taaip.sqlite3")
 
 
+def get_documents_path() -> str:
+    """Return path to the documents storage directory. Created if missing."""
+    p = os.getenv('TAAIP_DOCUMENTS_PATH', './data/documents')
+    _ensure_db_dir(p + '/placeholder')
+    if not os.path.exists(p):
+        os.makedirs(p, exist_ok=True)
+    return p
+
+
 def _ensure_db_dir(path: str) -> None:
     dirname = os.path.dirname(path)
     if dirname and not os.path.exists(dirname):
@@ -733,6 +742,20 @@ def init_schema() -> None:
                 as_of_date TEXT,
                 ingested_at TEXT NOT NULL
             );
+
+            -- Documents storage registry (for uploaded manuals, regulations, datasets)
+            CREATE TABLE IF NOT EXISTS documents (
+                id TEXT PRIMARY KEY,
+                filename TEXT NOT NULL,
+                stored_path TEXT NOT NULL,
+                content_type TEXT,
+                size INTEGER,
+                uploaded_by TEXT,
+                uploaded_at TEXT NOT NULL,
+                description TEXT,
+                tags TEXT
+            );
+            CREATE INDEX IF NOT EXISTS idx_documents_uploaded_at ON documents(uploaded_at);
 
             -- Ensure registry has operational fields (add columns if missing)
             -- mi_dataset_registry earlier schema may differ; add loaded/row_count/last_ingested_at/notes if missing

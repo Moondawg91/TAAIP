@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 
 import ShellLayout from './layout/ShellLayout'
@@ -112,6 +112,19 @@ import SystemStatusPage from './pages/help/SystemStatusPage'
 import HelpDeskLandingPage from './pages/help/HelpDeskLandingPage'
 
 export default function App() {
+  useEffect(() => {
+    try {
+      // E2E tests can wait for this flag to know the client has mounted
+      window.__APP_READY__ = true
+    } catch (e) {
+      // noop
+    }
+    return () => {
+      try {
+        delete window.__APP_READY__
+      } catch (e) {}
+    }
+  }, [])
   return (
     <Router>
       <ScopeProvider>

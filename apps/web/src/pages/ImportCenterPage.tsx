@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { Box, Typography, Stepper, Step, StepLabel, Button, Paper, CircularProgress, TextField, Select, MenuItem, FormControl, InputLabel, Table, TableHead, TableRow, TableCell, TableBody, Divider } from '@mui/material'
 import * as api from '../api/client'
 import FoundationUploadPanel from '../components/imports/FoundationUploadPanel'
+import DocumentUploadPanel from '../components/imports/DocumentUploadPanel'
 
 const steps = ['Upload', 'Preview', 'Map', 'Validate', 'Commit']
 
@@ -108,6 +109,7 @@ export default function ImportCenterPage(){
 
       <Box sx={{ mt:3 }}>
         <FoundationUploadPanel />
+        <DocumentUploadPanel />
         <Stepper activeStep={active} alternativeLabel>
           {steps.map(s=> (
             <Step key={s}><StepLabel>{s}</StepLabel></Step>

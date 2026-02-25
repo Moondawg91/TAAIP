@@ -23,11 +23,27 @@ from fastapi.middleware.cors import CORSMiddleware
 from . import api_ingest
 from . import api_domain
 from .db import init_db, get_db_path
+from fastapi.staticfiles import StaticFiles
+
 
 
 
 
 app = FastAPI(title="TAAIP API", description="TAAIP API service. © 2026 TAAIP. Copyright pending.")
+
+# If a production/dev frontend build exists inside the workspace, mount it
+# at root so the API and static frontend are served from the same origin.
+# This simplifies local E2E (Playwright) by avoiding CORS and proxying.
+ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
+FRONTEND_BUILD = os.path.join(ROOT_DIR, "apps", "web", "build")
+if os.path.isdir(FRONTEND_BUILD):
+    try:
+        # Mount static asset directory at /static — index.html will be served
+        # by an explicit SPA fallback route so deep links work correctly.
+        app.mount("/static", StaticFiles(directory=os.path.join(FRONTEND_BUILD, "static")), name="static")
+        _log.info(f"Mounted frontend static assets at {FRONTEND_BUILD}/static")
+    except Exception:
+        _log.exception("Failed to mount frontend build")
 
 # Create a single API router mounted under /api so all app endpoints live
 # under a common namespace.
@@ -161,6 +177,8 @@ from .routers import imports_mi as imports_mi_router
 api_router.include_router(imports_mi_router.router)
 from .routers import regulatory as regulatory_router
 api_router.include_router(regulatory_router.router)
+from .routers import documents as documents_router
+api_router.include_router(documents_router.router)
 from .routers import imports_foundation as imports_foundation_router
 api_router.include_router(imports_foundation_router.router)
 from .routers import school_program as school_program_router
@@ -244,3 +262,12 @@ def _on_startup():
         _log.info(f"DB path: {get_db_path()}")
     except Exception as e:
         _log.error(f"DB init/seed failed: {e}")
+
+
+# SPA fallback: serve index.html for non-API routes when a frontend build exists
+from fastapi.responses import FileResponse
+INDEX_FILE = os.path.join(FRONTEND_BUILD, "index.html")
+if os.path.isfile(INDEX_FILE):
+    @app.get("/{full_path:path}", include_in_schema=False)
+    async def spa_fallback(full_path: str):
+        return FileResponse(INDEX_FILE, media_type="text/html")

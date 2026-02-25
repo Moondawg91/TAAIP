@@ -10,6 +10,10 @@ jest.mock('../api/client', () => ({
   mapImport: jest.fn(),
   validateImport: jest.fn(),
   commitImport: jest.fn(),
+  // document helpers used by DocumentUploadPanel
+  listDocuments: jest.fn().mockResolvedValue([]),
+  uploadDocumentForm: jest.fn(),
+  documentDownloadUrl: jest.fn(),
   default: {}
 }))
 
@@ -58,8 +62,9 @@ test('full import flow UI - upload -> parse -> map -> validate -> commit', async
   fireEvent.click(validateBtn)
   await waitFor(() => expect(validateImport).toHaveBeenCalled())
 
-  // commit
-  const commitBtn = screen.getByRole('button', { name: /Commit/i })
+  // commit - pick the enabled Commit button (there may be a disabled duplicate)
+  const commitBtns = await screen.findAllByRole('button', { name: /Commit/i })
+  const commitBtn = commitBtns.find((b: HTMLButtonElement) => !b.hasAttribute('disabled')) || commitBtns[0]
   fireEvent.click(commitBtn)
   await waitFor(() => expect(commitImport).toHaveBeenCalled())
   expect(alertSpy).toHaveBeenCalledWith('Imported 1 rows')
