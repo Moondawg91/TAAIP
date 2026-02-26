@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react'
-import { Box, Typography, Chip, Button, Menu, MenuItem } from '@mui/material'
+import { Box, Typography, Chip, Button, Menu, MenuItem, TextField, FormControl, InputLabel, Select, Accordion, AccordionSummary, AccordionDetails } from '@mui/material'
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
+import CascadingUnitSelector from '../../components/org/CascadingUnitSelector'
+import PageFrame from '../../components/layout/PageFrame'
+import Panel from '../../components/layout/Panel'
 import { getMissionAssessment, exportDashboard } from '../../api/client'
 import { useLocation } from 'react-router-dom'
-import { TextField, FormControl, InputLabel, Select } from '@mui/material'
-
 export default function OpsRoiPage(){
   const [summary, setSummary] = useState(null)
   const [anchorEl, setAnchorEl] = useState(null)
@@ -49,6 +51,7 @@ export default function OpsRoiPage(){
   }
 
   return (
+    <PageFrame>
     <Box>
       <Box sx={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
         <Typography variant="h4">Event ROI / Analytics</Typography>
@@ -66,18 +69,19 @@ export default function OpsRoiPage(){
 
       <Box sx={{ mt:2 }}>
         {summary ? (
-          <Box>
+          <Panel>
             <Typography variant="subtitle1">Tactical rollup</Typography>
             <pre style={{whiteSpace:'pre-wrap'}}>{JSON.stringify(summary.tactical_rollup || summary, null, 2)}</pre>
-          </Box>
+          </Panel>
         ) : (
           <Chip label="Loading rollup..." sx={{ mt:2 }} />
         )}
 
         {events && events.length > 0 && (
           <Box sx={{ mt:3 }}>
-            <Typography variant="h6">Selected event</Typography>
-            <pre style={{whiteSpace:'pre-wrap'}}>{JSON.stringify(events[0], null, 2)}</pre>
+            <Panel title="Selected event">
+              <pre style={{whiteSpace:'pre-wrap'}}>{JSON.stringify(events[0], null, 2)}</pre>
+            </Panel>
           </Box>
         )}
         <Box sx={{ mt:2, display:'flex', gap:1, alignItems:'center', flexWrap:'wrap' }}>
@@ -99,9 +103,15 @@ export default function OpsRoiPage(){
               <MenuItem value="Q4">Q4</MenuItem>
             </Select>
           </FormControl>
-          <TextField size="small" label="Echelon" value={filters.echelon_type} onChange={(e)=>setFilters(f=>({...f, echelon_type: e.target.value}))} />
-          <TextField size="small" label="Unit" value={filters.unit_value} onChange={(e)=>setFilters(f=>({...f, unit_value: e.target.value}))} />
-          <TextField size="small" label="Funding Line" value={filters.funding_line} onChange={(e)=>setFilters(f=>({...f, funding_line: e.target.value}))} />
+          <CascadingUnitSelector mode="filter" value={{echelon: filters.echelon_type}} onChange={(nv)=>{ setFilters(f=>({...f, echelon_type: nv.echelon || '', unit_value: nv.stn || nv.co || nv.bn || nv.bde || '' })) }} onApply={()=>{}} initialScope={filters.echelon_type} initialValue={filters.unit_value} />
+          <Accordion disableGutters elevation={0} sx={{ bgcolor: 'transparent' }}>
+            <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: 'text.secondary' }} />}>
+              <Typography variant="caption" sx={{ color: 'text.secondary' }}>Advanced Filters</Typography>
+            </AccordionSummary>
+            <AccordionDetails>
+              <TextField size="small" label="Funding Line" value={filters.funding_line} onChange={(e)=>setFilters(f=>({...f, funding_line: e.target.value}))} />
+            </AccordionDetails>
+          </Accordion>
           <Button variant="outlined" onClick={()=>{
             const qs = Object.fromEntries(Object.entries(filters).filter(([,v])=>v))
             exportDashboard('events-roi','json', qs).then(d=>setEvents(d||[])).catch(()=>{})

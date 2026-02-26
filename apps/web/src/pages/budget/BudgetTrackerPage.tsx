@@ -1,5 +1,7 @@
 import React from 'react'
-import { Box, Typography, Chip, Grid, Paper, Button, TextField, MenuItem, Select, FormControl, InputLabel, Pagination } from '@mui/material'
+import { Box, Typography, Chip, Grid, Button, TextField, MenuItem, Select, FormControl, InputLabel, Pagination } from '@mui/material'
+import PageFrame from '../../components/layout/PageFrame'
+import Panel from '../../components/layout/Panel'
 import api from '../../api/client'
 import EmptyState from '../../components/common/EmptyState'
 import { Table, TableHead, TableRow, TableCell, TableBody } from '@mui/material'
@@ -52,6 +54,7 @@ export default function BudgetTrackerPage(){
   const view = params.get('view') || 'executive'
 
   return (
+    <PageFrame>
     <Box sx={{ color: '#EAEAF2' }}>
       <Box sx={{display:'flex', alignItems:'center', gap:2}}>
         <DualModeTabs />
@@ -59,7 +62,7 @@ export default function BudgetTrackerPage(){
           <ExportMenu data={data && data.data && data.data.breakdown_by_project ? data.data.breakdown_by_project : []} filename="budget_tracker" />
         </Box>
       </Box>
-      <DashboardFilterBar />
+      <DashboardFilterBar showFunding={true} fundingMode="default" />
       <DashboardToolbar title="Budget Tracker" subtitle="Budget rollups & breakdowns" filters={filters} onFiltersChange={(f)=>setFilters(f)} onExport={async (t:string)=>{
         try{
           if(t==='csv' || t==='json'){
@@ -79,7 +82,7 @@ export default function BudgetTrackerPage(){
             a.remove()
             window.URL.revokeObjectURL(dlUrl)
           }else{
-            alert(`Export ${t} coming soon`)
+            alert('Export unavailable')
           }
         }catch(e){ console.error('export error', e); alert('Export failed') }
       }} />
@@ -91,28 +94,28 @@ export default function BudgetTrackerPage(){
       ) : (
         <Grid container spacing={2}>
         <Grid item xs={12} md={3}>
-          <Paper sx={{ p:2, bgcolor: '#12121A' }} elevation={0}>
+          <Panel sx={{ p:1, bgcolor: '#12121A' }}>
             <Typography variant="caption">Allocated</Typography>
             <Typography variant="h6">${kpis.allocated.toFixed(2)}</Typography>
-          </Paper>
+          </Panel>
         </Grid>
         <Grid item xs={12} md={3}>
-          <Paper sx={{ p:2, bgcolor: '#12121A' }} elevation={0}>
+          <Panel sx={{ p:1, bgcolor: '#12121A' }}>
             <Typography variant="caption">Planned</Typography>
             <Typography variant="h6">${kpis.planned.toFixed(2)}</Typography>
-          </Paper>
+          </Panel>
         </Grid>
         <Grid item xs={12} md={3}>
-          <Paper sx={{ p:2, bgcolor: '#12121A' }} elevation={0}>
+          <Panel sx={{ p:1, bgcolor: '#12121A' }}>
             <Typography variant="caption">Actual</Typography>
             <Typography variant="h6">${kpis.actual.toFixed(2)}</Typography>
-          </Paper>
+          </Panel>
         </Grid>
         <Grid item xs={12} md={3}>
-          <Paper sx={{ p:2, bgcolor: '#12121A' }} elevation={0}>
+          <Panel sx={{ p:1, bgcolor: '#12121A' }}>
             <Typography variant="caption">Remaining</Typography>
             <Typography variant="h6">${kpis.remaining.toFixed(2)}</Typography>
-          </Paper>
+          </Panel>
         </Grid>
 
         
@@ -125,18 +128,19 @@ export default function BudgetTrackerPage(){
                 {payload && payload.missing_data && payload.missing_data.length>0 && (
                   <Box sx={{ mt:1 }}>
                     {payload.missing_data.map((m,i)=> <Chip key={i} label={m} sx={{ mr:1, bgcolor: '#2A2A3A', color: '#FFB703' }} />)}
-                  </Box>
+                  </Grid>
+                    ) : <React.Fragment>
+                        <Box sx={{ mt:2 }}>
+                          <EmptyState title="No data yet" subtitle="No budget data available for the selected filters." actionLabel="Go to Import Center" onAction={() => { window.location.href = '/import-center' }} />
+                        </Box>
+                      </React.Fragment>
+                    )}
+                  </Grid>
+                  </Grid>
                 )}
-                <Typography sx={{ mt:1 }}>By Category</Typography>
-                <Box>
-                  {payload && payload.breakdown_by_category && payload.breakdown_by_category.length ? payload.breakdown_by_category.map((c:any,i:any)=> (
-                      <Box key={i} sx={{ display:'flex', justifyContent:'space-between', p:1, bgcolor: '#0B0B10' }}>
-                          <Typography>{c.category || c.key || 'category'}</Typography>
-                          <Typography>${(c.allocated||c.value||0).toFixed(0)}</Typography>
-                      </Box>
-                    )) : <Typography>No category data</Typography>}
-                </Box>
-                <Typography sx={{ mt:2 }}>By Project</Typography>
+              </Box>
+              </PageFrame>
+              )
                 <Box sx={{ display:'flex', gap:1, alignItems:'center', mb:1 }}>
                   <FormControl size="small">
                     <InputLabel>Sort</InputLabel>

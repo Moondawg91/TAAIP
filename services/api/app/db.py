@@ -1,5 +1,7 @@
 import os
 import sqlite3
+import fcntl
+import threading
 from datetime import datetime
 from typing import Optional
 import time
@@ -9,6 +11,9 @@ from time import sleep
 # specific DB-API connection so raw sqlite3 callers and SQLAlchemy
 # sessions operate on the same underlying connection/transaction.
 _test_raw_conn = None
+_test_raw_conn_path = None
+_advisory_lock_fd = None
+_advisory_lock_lock = threading.Lock()
 
 
 def set_test_raw_conn(conn):
@@ -19,15 +24,71 @@ def set_test_raw_conn(conn):
     # `dbapi_connection`.
     if conn is None:
         _test_raw_conn = None
+        try:
+            global _test_raw_conn_path
+            _test_raw_conn_path = None
+        except Exception:
+            pass
+        # If we previously patched sqlite3.connect, restore the original.
+        try:
+            orig = getattr(sqlite3, '_orig_connect', None)
+            if orig is not None:
+                sqlite3.connect = orig
+                try:
+                    delattr(sqlite3, '_orig_connect')
+                except Exception:
+                    pass
+        except Exception:
+            pass
         return
     try:
         if isinstance(conn, sqlite3.Connection):
             _test_raw_conn = conn
+            # Attempt to determine the underlying DB file path for this
+            # sqlite3 connection so callers of `connect()` can validate
+            # whether reusing this connection matches the requested
+            # `TAAIP_DB_PATH` file. Use `PRAGMA database_list` which returns
+            # the attached database file path.
+            try:
+                cur = conn.cursor()
+                cur.execute("PRAGMA database_list;")
+                rows = cur.fetchall()
+                if rows and len(rows[0]) >= 3:
+                    _test_raw_conn_path = rows[0][2]
+            except Exception:
+                _test_raw_conn_path = None
             return
         # common SQLAlchemy wrappers expose the underlying DBAPI
         maybe = getattr(conn, 'connection', None) or getattr(conn, 'dbapi_connection', None)
         if isinstance(maybe, sqlite3.Connection):
             _test_raw_conn = maybe
+            # If tests provided a raw connection, patch sqlite3.connect so
+            # subsequent callers that request the same DB path will reuse
+            # the test-provided connection. We only patch calls that target
+            # the configured `TAAIP_DB_PATH` to avoid interfering with other
+            # independent DB files used by scripts.
+            try:
+                # preserve original connect if not already preserved
+                if not hasattr(sqlite3, '_orig_connect'):
+                    setattr(sqlite3, '_orig_connect', sqlite3.connect)
+
+                orig_connect = getattr(sqlite3, '_orig_connect')
+
+                def _patched_connect(path=None, *args, **kwargs):
+                    try:
+                        # If the caller requested the same DB path used by
+                        # the application/tests, return our connect() which
+                        # will reuse the test raw connection.
+                        if path is None or str(path) == str(get_db_path()):
+                            return connect()
+                    except Exception:
+                        pass
+                    # Otherwise delegate to the original sqlite3.connect.
+                    return orig_connect(path, *args, **kwargs)
+
+                sqlite3.connect = _patched_connect
+            except Exception:
+                pass
             return
     except Exception:
         pass
@@ -70,40 +131,64 @@ def connect() -> sqlite3.Connection:
     # callers operate on the same physical connection/transaction.
     global _test_raw_conn
     if _test_raw_conn is not None:
-        try:
-            # ensure the helper row factory is available before assignment
-            def _dict_row_factory(cursor, row):
-                # return a plain dict for each row so callers can safely do dict(row)
-                try:
-                    return {d[0]: row[i] for i, d in enumerate(cursor.description)}
-                except Exception:
-                    return row
-
-            _test_raw_conn.row_factory = _row_factory
+        # ensure the helper row factory is available before assignment
+        def _dict_row_factory(cursor, row):
+            # return a plain dict for each row so callers can safely do dict(row)
             try:
-                # test whether connection is usable
-                _test_raw_conn.cursor()
-                # ensure the test connection points at the same DB file
+                return {d[0]: row[i] for i, d in enumerate(cursor.description)}
+            except Exception:
+                return row
+
+        # Only reuse the test-provided raw connection when the path
+        # requested by `get_db_path()` matches the DB file path of the
+        # stored connection. This avoids accidentally reusing a
+        # connection bound to a different file when tests change
+        # `TAAIP_DB_PATH` per-test.
+        try:
+            global _test_raw_conn_path
+            requested = str(get_db_path())
+            if _test_raw_conn_path and os.path.abspath(_test_raw_conn_path) != os.path.abspath(requested):
+                # Do not reuse; fall through to open a new connection
+                pass
+            else:
+                # Avoid returning the same sqlite3.Connection object across
+                # multiple threads. Reusing a single Connection instance from
+                # different threads can produce 'database is locked' errors even
+                # when `check_same_thread=False` is used. Instead, open a new
+                # connection to the same DB file so each caller gets its own
+                # connection object while still targeting the same underlying
+                # database file (this preserves test isolation semantics).
                 try:
-                    # pragma database_list returns [(seq, name, file), ...]
-                    db_list = _test_raw_conn.execute("PRAGMA database_list").fetchall()
-                    file_path = db_list[0][2] if db_list else None
-                    # if the file path differs from requested path, discard helper
-                    if file_path and os.path.abspath(file_path) != os.path.abspath(path):
+                    # Create a fresh sqlite3 connection to the requested path
+                    new_conn = sqlite3.connect(requested, check_same_thread=False, timeout=30)
+                    new_conn.row_factory = _row_factory
+                    cur = new_conn.cursor()
+                    cur.executescript("""
+                    PRAGMA foreign_keys=ON;
+                    PRAGMA journal_mode=WAL;
+                    PRAGMA synchronous=NORMAL;
+                    PRAGMA busy_timeout=20000;
+                    """)
+                    try:
+                        print(f"connect: opened new sqlite3 conn (from test_raw_conn) for path={path}")
+                    except Exception:
+                        pass
+                    return new_conn
+                except Exception:
+                    # Fall back to trying to reuse the provided connection
+                    try:
+                        _test_raw_conn.row_factory = _row_factory
+                        _test_raw_conn.cursor()
+                        try:
+                            print(f"connect: reusing test_raw_conn for path={path}")
+                        except Exception:
+                            pass
+                        return _test_raw_conn
+                    except Exception:
                         try:
                             _test_raw_conn.close()
                         except Exception:
                             pass
-                    else:
-                        return _test_raw_conn
-                except Exception:
-                    # if we cannot verify, still return it if usable
-                    return _test_raw_conn
-            except Exception:
-                try:
-                    _test_raw_conn.close()
-                except Exception:
-                    pass
         except Exception:
             # fall through to normal behavior
             pass
@@ -124,10 +209,15 @@ def connect() -> sqlite3.Connection:
     cur = conn.cursor()
     cur.executescript("""
     PRAGMA foreign_keys=ON;
+    PRAGMA journal_mode=WAL;
     PRAGMA synchronous=NORMAL;
-    PRAGMA busy_timeout=10000;
+    PRAGMA busy_timeout=20000;
     """)
     conn.commit()
+    try:
+        print(f"connect: opened new sqlite3 conn for path={path}")
+    except Exception:
+        pass
     return conn
 
 
@@ -151,6 +241,13 @@ def init_schema() -> None:
     # connection, then attempt to run the same DDL through SQLAlchemy's
     # raw connection when available.
     try:
+        # Debug trace: show which DB path we're initializing and whether
+        # a test raw connection is present and its path.
+        try:
+            global _test_raw_conn_path
+            print(f"init_schema: requested_path={get_db_path()}, test_raw_conn_path={_test_raw_conn_path}")
+        except Exception:
+            pass
         conn = connect()
         cur = conn.cursor()
         using_raw_engine = False
@@ -332,6 +429,77 @@ def init_schema() -> None:
                 ingested_at TEXT NOT NULL
             );
 
+            -- School recruiting canonical tables
+            CREATE TABLE IF NOT EXISTS schools (
+                id TEXT PRIMARY KEY,
+                school_name TEXT,
+                school_type TEXT,
+                district TEXT,
+                city TEXT,
+                state TEXT,
+                zip_code TEXT,
+                latitude REAL,
+                longitude REAL,
+                created_at TEXT,
+                updated_at TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS school_accounts (
+                id TEXT PRIMARY KEY,
+                school_id TEXT,
+                assigned_station_rsid TEXT,
+                assigned_company_prefix TEXT,
+                assigned_battalion_prefix TEXT,
+                assigned_brigade_prefix TEXT,
+                last_contacted_at TEXT,
+                status TEXT,
+                notes TEXT,
+                created_at TEXT,
+                updated_at TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS school_contacts (
+                id TEXT PRIMARY KEY,
+                school_id TEXT,
+                contact_name TEXT,
+                contact_role TEXT,
+                email TEXT,
+                phone TEXT,
+                created_at TEXT,
+                updated_at TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS school_activities (
+                id TEXT PRIMARY KEY,
+                school_id TEXT,
+                station_rsid TEXT,
+                activity_type TEXT,
+                activity_date TEXT,
+                outcome TEXT,
+                notes TEXT,
+                created_at TEXT,
+                updated_at TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS school_milestones (
+                id TEXT PRIMARY KEY,
+                school_id TEXT,
+                milestone_type TEXT,
+                milestone_date TEXT,
+                linked_event_id TEXT,
+                created_at TEXT,
+                updated_at TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS school_program_leads (
+                id TEXT PRIMARY KEY,
+                lead_id TEXT,
+                school_id TEXT,
+                source_tag TEXT,
+                created_at TEXT,
+                updated_at TEXT
+            );
+
             CREATE TABLE IF NOT EXISTS market_demographics (
                 id TEXT PRIMARY KEY,
                 as_of_date TEXT,
@@ -494,6 +662,52 @@ def init_schema() -> None:
                 leads_ytd INTEGER,
                 contracts_ytd INTEGER,
                 ingested_at TEXT
+            );
+
+            -- Canonical schools and supporting tables for School Recruiting feature
+            CREATE TABLE IF NOT EXISTS schools (
+                id TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                school_type TEXT,
+                address TEXT,
+                city TEXT,
+                state TEXT,
+                zip TEXT,
+                cbsa_code TEXT,
+                enrollment INTEGER,
+                created_at TEXT,
+                updated_at TEXT,
+                record_status TEXT DEFAULT 'active'
+            );
+
+            CREATE TABLE IF NOT EXISTS school_zone_assignments (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                school_id TEXT NOT NULL,
+                zone_id TEXT NOT NULL,
+                created_at TEXT,
+                UNIQUE(school_id, zone_id)
+            );
+
+            CREATE TABLE IF NOT EXISTS school_contacts (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                school_id TEXT NOT NULL,
+                name TEXT,
+                role TEXT,
+                email TEXT,
+                phone TEXT,
+                notes TEXT,
+                created_at TEXT,
+                updated_at TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS school_milestones (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                school_id TEXT NOT NULL,
+                milestone_type TEXT,
+                milestone_date TEXT,
+                description TEXT,
+                created_at TEXT,
+                updated_at TEXT
             );
 
             CREATE TABLE IF NOT EXISTS cep_fact (
@@ -2595,6 +2809,30 @@ def init_schema() -> None:
         except Exception:
             pass
 
+        # Ensure `event` table contains school-related and planning columns used by new APIs.
+        try:
+            cur.execute("PRAGMA table_info('event')")
+            existing_event_cols = [r[1] for r in cur.fetchall()]
+        except Exception:
+            existing_event_cols = []
+        event_expected = {
+            'event_category': 'TEXT',
+            'school_id': 'TEXT',
+            'planned_cost': 'REAL',
+            'funding_line': 'TEXT',
+            'planned_outcomes_json': 'TEXT',
+            'actual_outcomes_json': 'TEXT'
+        }
+        try:
+            for col, typ in event_expected.items():
+                if col not in existing_event_cols:
+                    try:
+                        cur.execute(f"ALTER TABLE event ADD COLUMN {col} {typ}")
+                    except Exception:
+                        pass
+        except Exception:
+            pass
+
             conn.commit()
             # Minor migration: add processed columns to imported_rows if they don't exist
             try:
@@ -2860,6 +3098,45 @@ def execute_with_retry(cur, sql, params=(), retries: int = 5, backoff: float = 0
             # retry only for sqlite locked errors
             if attempt > retries or 'locked' not in msg:
                 raise
+
+            # Attempt to acquire an advisory file lock on the DB path
+            try:
+                dbpath = get_db_path()
+                lock_path = f"{dbpath}.lock"
+                start = time.time()
+                acquired = False
+                # Use a threading lock to avoid hammering the same process
+                with _advisory_lock_lock:
+                    try:
+                        fd = open(lock_path, 'w+')
+                        # try non-blocking first, then loop until timeout
+                        while time.time() - start < max(1.0, delay * 5):
+                            try:
+                                fcntl.flock(fd.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+                                acquired = True
+                                break
+                            except BlockingIOError:
+                                sleep(0.05)
+                        if not acquired:
+                            try:
+                                fd.close()
+                            except Exception:
+                                pass
+                        else:
+                            # release immediately; presence of lock reduces contention
+                            try:
+                                fcntl.flock(fd.fileno(), fcntl.LOCK_UN)
+                            except Exception:
+                                pass
+                            try:
+                                fd.close()
+                            except Exception:
+                                pass
+                    except Exception:
+                        pass
+            except Exception:
+                pass
+
             sleep(delay)
             delay = min(delay * 2, 2.0)
 

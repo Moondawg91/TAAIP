@@ -1,5 +1,9 @@
 import React, { useEffect, useState } from 'react'
-import { Box, Typography, Chip, Button, Menu, MenuItem, TextField, FormControl, InputLabel, Select, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper } from '@mui/material'
+import { Box, Typography, Chip, Button, Menu, MenuItem, TextField, FormControl, InputLabel, Select, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Accordion, AccordionSummary, AccordionDetails } from '@mui/material'
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
+import CascadingUnitSelector from '../../components/org/CascadingUnitSelector'
+import PageFrame from '../../components/layout/PageFrame'
+import Panel from '../../components/layout/Panel'
 import { getMissionAssessment, exportDashboard } from '../../api/client'
 import { useNavigate } from 'react-router-dom'
 
@@ -41,6 +45,7 @@ export default function OpsEventsPage(){
   }
 
   return (
+    <PageFrame>
     <Box>
       <Box sx={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:2, flexWrap:'wrap' }}>
         <Typography variant="h4">Event Management</Typography>
@@ -63,9 +68,15 @@ export default function OpsEventsPage(){
               <MenuItem value="Q4">Q4</MenuItem>
             </Select>
           </FormControl>
-          <TextField size="small" label="Echelon" value={filters.echelon_type} onChange={(e)=>setFilters(f=>({...f, echelon_type: e.target.value}))} />
-          <TextField size="small" label="Unit" value={filters.unit_value} onChange={(e)=>setFilters(f=>({...f, unit_value: e.target.value}))} />
-          <TextField size="small" label="Funding Line" value={filters.funding_line} onChange={(e)=>setFilters(f=>({...f, funding_line: e.target.value}))} />
+          <CascadingUnitSelector mode="filter" value={{echelon: filters.echelon_type}} onChange={(nv)=>{ setFilters(f=>({...f, echelon_type: nv.echelon || '', unit_value: nv.stn || nv.co || nv.bn || nv.bde || '' })) }} onApply={()=>{}} initialScope={filters.echelon_type} initialValue={filters.unit_value} />
+          <Accordion disableGutters elevation={0} sx={{ bgcolor: 'transparent' }}>
+            <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: 'text.secondary' }} />}>
+              <Typography variant="caption" sx={{ color: 'text.secondary' }}>Advanced Filters</Typography>
+            </AccordionSummary>
+            <AccordionDetails>
+              <TextField size="small" label="Funding Line" value={filters.funding_line} onChange={(e)=>setFilters(f=>({...f, funding_line: e.target.value}))} />
+            </AccordionDetails>
+          </Accordion>
           <Button variant="contained" color="primary" onClick={handleExportClick}>Export</Button>
           <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleExportClose}>
             <MenuItem onClick={()=>doExport('events-roi','csv')}>Events ROI — CSV</MenuItem>
@@ -76,10 +87,10 @@ export default function OpsEventsPage(){
 
       <Box sx={{ mt:2 }}>
         {summary ? (
-          <Box>
+          <Panel>
             <Typography variant="subtitle1">Tactical rollup (events)</Typography>
             <pre style={{whiteSpace:'pre-wrap'}}>{JSON.stringify(summary.tactical_rollup?.events || {}, null, 2)}</pre>
-          </Box>
+          </Panel>
         ) : (
           <Chip label="Loading rollup..." sx={{ mt:2 }} />
         )}
@@ -87,7 +98,7 @@ export default function OpsEventsPage(){
         <Box sx={{ mt:3 }}>
           <Typography variant="h6">Events (click name for ROI)</Typography>
           {events && events.length ? (
-            <TableContainer component={Paper} sx={{ mt:1 }}>
+            <Panel sx={{ mt:1 }}>
               <Table size="small">
                 <TableHead>
                   <TableRow>
