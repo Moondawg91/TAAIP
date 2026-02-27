@@ -51,6 +51,7 @@ import LinesOfEffortPage from './pages/command/LinesOfEffortPage'
 import CommandPrioritiesPage from './pages/command/CommandPrioritiesPage'
 import MissionAssessmentPage from './pages/command/MissionAssessmentPage'
 import MissionFeasibilityPage from './pages/command/MissionFeasibilityPage'
+import FsLossPage from './pages/command/FsLossPage'
 import TWGPageNew from './pages/command/TWGPage'
 import FusionCellPage from './pages/command/FusionCellPage'
 import MissionAnalysisPage from './pages/operations/MissionAnalysisPage'
@@ -198,6 +199,7 @@ export default function App() {
           <Route path="/command-center/priorities" element={<CommandPrioritiesPage />} />
           <Route path="/command-center/mission-assessment" element={<MissionAssessmentPage />} />
           <Route path="/command-center/feasibility" element={<MissionFeasibilityPage />} />
+          <Route path="/command-center/fs-loss" element={<FsLossPage />} />
           <Route path="/command-center/420t" element={<Command420TPage />} />
           <Route path="/command-center/mdmp" element={<MDMPWorkspacePage />} />
           <Route path="/command-center/intel" element={<CommandIntelPage />} />

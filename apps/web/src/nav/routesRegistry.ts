@@ -12,6 +12,7 @@ const ROUTES_REGISTRY = [
       { id: 'priorities', label: 'Command Priorities', path: '/command-center/priorities', icon: 'Flag' },
       { id: 'mission-assess', label: 'Mission Assessment', path: '/command-center/mission-assessment', icon: 'Assessment' }
       ,{ id: 'mission-feasibility', label: 'Mission Feasibility', path: '/command-center/feasibility', icon: 'Analytics' }
+        ,{ id: 'fs-loss', label: 'FS Loss', path: '/command-center/fs-loss', icon: 'Report' }
     ]
   },
   {

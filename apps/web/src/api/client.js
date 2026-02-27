@@ -775,6 +775,18 @@ export async function getMissionFeasibilitySummary(params = {}){
   return apiFetch(`/api/v2/mission-feasibility/summary?${qs.toString()}`)
 }
 
+export async function getFsLossSummary(params = {}){
+  const qs = new URLSearchParams()
+  if (params.unit_rsid) qs.set('unit_rsid', params.unit_rsid)
+  if (params.fy) qs.set('fy', params.fy)
+  if (params.qtr) qs.set('qtr', params.qtr)
+  return apiFetch(`/api/v2/fs-loss/summary?${qs.toString()}`)
+}
+
+export async function getFsLossCodes(){
+  return apiFetch(`/api/v2/fs-loss/codes`)
+}
+
 export async function saveMissionAssessment(payload){
   return apiFetch('/api/mission_assessments/', { method: 'POST', body: JSON.stringify(payload), headers: {'Content-Type':'application/json'} })
 }
