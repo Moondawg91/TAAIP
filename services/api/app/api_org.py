@@ -84,3 +84,103 @@ def coverage_summary(scope: str = "USAREC", value: str = None, current_user: mod
     rows = q_filtered.all()
     totals = [schemas.CoverageSummaryItem(category=r[0].name if hasattr(r[0], 'name') else str(r[0]), count=r[1]) for r in rows]
     return schemas.CoverageSummaryResponse(scope=scope, value=value or "ALL", totals=totals)
+
+
+@router.get("/echelons")
+def list_echelons(current_user: models.User = Depends(auth.get_current_user)):
+    return {
+        "status": "ok",
+        "echelons": [
+            {"code": "USAREC", "label": "USAREC"},
+            {"code": "BDE", "label": "Brigade"},
+            {"code": "BN", "label": "Battalion"},
+            {"code": "CO", "label": "Company"},
+            {"code": "STN", "label": "Station"},
+        ],
+    }
+
+
+@router.get("/children")
+def org_children(parent_type: str = "USAREC", parent_prefix: str = None, current_user: models.User = Depends(auth.get_current_user), db: Session = Depends(database.get_db)):
+    pt = (parent_type or "USAREC").upper()
+    parent_prefix = (parent_prefix or "").upper() if parent_prefix else None
+    children = []
+    org_not_loaded = False
+    # USAREC -> brigades
+    if pt == 'USAREC':
+        q = db.query(models.Brigade)
+        total = db.query(models.Brigade).count()
+        if total == 0:
+            org_not_loaded = True
+        q = rbac.apply_scope_filter(q, models.Brigade, getattr(current_user, 'scope', 'USAREC'))
+        rows = q.order_by(models.Brigade.brigade_prefix).all()
+        for r in rows:
+            children.append({"id": r.brigade_prefix, "label": f"{r.brigade_prefix} - {r.display or ''}".strip(), "type": "BDE"})
+
+    elif pt == 'BDE':
+        # return battalions for brigade prefix
+        if not parent_prefix:
+            return {"status": "ok", "parent": {"type": "BDE", "prefix": parent_prefix}, "children": [], "org_not_loaded": False}
+        total = db.query(models.Battalion).count()
+        if total == 0:
+            org_not_loaded = True
+        q = db.query(models.Battalion).join(models.Brigade).filter(models.Brigade.brigade_prefix == parent_prefix)
+        q = rbac.apply_scope_filter(q, models.Battalion, getattr(current_user, 'scope', 'USAREC'))
+        rows = q.order_by(models.Battalion.battalion_prefix).all()
+        for r in rows:
+            children.append({"id": r.battalion_prefix, "label": f"{r.battalion_prefix} - {r.display or ''}".strip(), "type": "BN"})
+
+    elif pt == 'BN':
+        if not parent_prefix:
+            return {"status": "ok", "parent": {"type": "BN", "prefix": parent_prefix}, "children": [], "org_not_loaded": False}
+        total = db.query(models.Company).count()
+        if total == 0:
+            org_not_loaded = True
+        q = db.query(models.Company).join(models.Battalion).filter(models.Battalion.battalion_prefix == parent_prefix)
+        q = rbac.apply_scope_filter(q, models.Company, getattr(current_user, 'scope', 'USAREC'))
+        rows = q.order_by(models.Company.company_prefix).all()
+        for r in rows:
+            children.append({"id": r.company_prefix, "label": f"{r.company_prefix} - {r.display or ''}".strip(), "type": "CO"})
+
+    elif pt == 'CO':
+        if not parent_prefix:
+            return {"status": "ok", "parent": {"type": "CO", "prefix": parent_prefix}, "children": [], "org_not_loaded": False}
+        total = db.query(models.Station).count()
+        if total == 0:
+            org_not_loaded = True
+        q = db.query(models.Station).join(models.Company).filter(models.Company.company_prefix == parent_prefix)
+        q = rbac.apply_scope_filter(q, models.Station, getattr(current_user, 'scope', 'USAREC'))
+        rows = q.order_by(models.Station.rsid).all()
+        for r in rows:
+            children.append({"id": r.rsid, "label": f"{r.rsid} - {r.display or ''}".strip(), "type": "STN"})
+
+    else:
+        return {"status": "ok", "parent": {"type": pt, "prefix": parent_prefix}, "children": [], "org_not_loaded": False}
+
+    return {"status": "ok", "parent": {"type": pt, "prefix": parent_prefix}, "children": children, "org_not_loaded": org_not_loaded}
+
+
+@router.get("/path")
+def org_path(rsid: str, current_user: models.User = Depends(auth.get_current_user), db: Session = Depends(database.get_db)):
+    rsid = (rsid or '').upper()
+    if not rsid:
+        return {"status": "ok", "path": {}}
+    st = db.query(models.Station).filter(models.Station.rsid == rsid).one_or_none()
+    if not st:
+        return {"status": "ok", "path": {}}
+    co = db.query(models.Company).filter(models.Company.id == st.company_id).one_or_none() if st and st.company_id else None
+    bn = db.query(models.Battalion).filter(models.Battalion.id == co.battalion_id).one_or_none() if co and co.battalion_id else None
+    bde = db.query(models.Brigade).filter(models.Brigade.id == bn.brigade_id).one_or_none() if bn and bn.brigade_id else None
+    path = {
+        "bde": bde.brigade_prefix if bde else None,
+        "bn": bn.battalion_prefix if bn else None,
+        "co": co.company_prefix if co else None,
+        "stn": st.rsid if st else None,
+    }
+    # enforce RBAC: ensure user may view this station
+    try:
+        if not rbac.is_rsid_in_scope(getattr(current_user, 'scope', 'USAREC'), rsid):
+            return {"status": "forbidden", "detail": "out_of_scope"}
+    except Exception:
+        pass
+    return {"status": "ok", "path": path}

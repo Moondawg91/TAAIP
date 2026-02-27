@@ -358,14 +358,10 @@ export const SharePointIntegration: React.FC = () => {
                 <X className="w-6 h-6 text-gray-400 hover:text-gray-600" />
               </button>
             </div>
-            <input
-              type="file"
-              multiple
-              onChange={(e) => {
-                if (e.target.files) handleUpload(e.target.files);
-              }}
-              className="w-full border-2 border-dashed border-gray-300 rounded-lg p-4"
-            />
+            <div className="w-full border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
+              <p className="mb-2">SharePoint file uploads are managed via the Data Hub imports workflow.</p>
+              <a href="/datahub/imports" className="inline-block px-4 py-2 bg-blue-600 text-white rounded-lg">Open Data Hub Imports</a>
+            </div>
           </div>
         </div>
       )}

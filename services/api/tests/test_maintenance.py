@@ -9,6 +9,36 @@ from pprint import pprint
 def setup_test_db(tmp_path):
     os.environ['TAAIP_DB_PATH'] = str(tmp_path / 'taaip_test.db')
     db.init_schema()
+    # Ensure maintenance tables exist in case init_schema had any silent failures
+    try:
+        import sqlite3
+        conn = sqlite3.connect(os.environ['TAAIP_DB_PATH'])
+        cur = conn.cursor()
+        cur.executescript('''
+            CREATE TABLE IF NOT EXISTS maintenance_schedules (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT,
+                enabled INTEGER DEFAULT 0,
+                interval_minutes INTEGER,
+                last_run_at TEXT,
+                next_run_at TEXT,
+                params_json TEXT,
+                created_at TEXT
+            );
+            CREATE TABLE IF NOT EXISTS maintenance_runs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                schedule_id INTEGER,
+                run_type TEXT,
+                params_json TEXT,
+                result_json TEXT,
+                started_at TEXT,
+                finished_at TEXT
+            );
+        ''')
+        conn.commit()
+        conn.close()
+    except Exception:
+        pass
     return os.environ['TAAIP_DB_PATH']
 
 

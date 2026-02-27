@@ -2,7 +2,7 @@ import React from 'react'
 import { Box, Typography, Grid, Button } from '@mui/material'
 import EmptyState from '../../components/common/EmptyState'
 import DualModeTabs from '../../components/DualModeTabs'
-import DashboardFilterBar from '../../components/DashboardFilterBar'
+// TopFilterBar is rendered centrally by the shell when enabled via route policy
 import ExportMenu from '../../components/ExportMenu'
 import api from '../../api/client'
 import DashboardToolbar from '../../components/dashboard/DashboardToolbar'
@@ -24,25 +24,24 @@ export default function ProjectsEventsPage(){
         </Box>
       </Box>
       <DualModeTabs />
-      <DashboardFilterBar />
-      <DashboardToolbar title="Event + Project Management" subtitle="Projects & events" filters={{}} onFiltersChange={()=>{}} onExport={(t)=>{ alert(`Export ${t} coming soon`) }} />
+      <DashboardToolbar title="Event + Project Management" subtitle="Projects & events" filters={{}} onFiltersChange={()=>{}} onExport={(t)=>{ alert('Export unavailable') }} />
       {loading ? <Typography>Loading...</Typography> : (
         (projects.length || events.length) ? (
           <Grid container spacing={2} sx={{ mt:2 }}>
             <Grid item xs={12} md={6}>
               <Typography variant="h6">Projects</Typography>
-              {projects.length ? projects.slice(0,20).map(p=> (
+                 {projects.length ? projects.slice(0,20).map(p=> (
                 <Box key={p.project_id || p.id} sx={{ p:1, bgcolor:'#0B0B10', mb:1 }}>{p.title || p.project_id} — Planned: {p.planned_cost}</Box>
-              )) : <EmptyState title="No projects" subtitle="No projects imported for your echelon." actionLabel="Go to Import Center" onAction={()=>{ window.location.href='/import-center' }} />}
+              )) : <EmptyState title="No projects" subtitle="No projects imported for your echelon." />}
             </Grid>
             <Grid item xs={12} md={6}>
               <Typography variant="h6">Events</Typography>
-              {events.length ? events.slice(0,20).map(ev=> (
+                 {events.length ? events.slice(0,20).map(ev=> (
                 <Box key={ev.event_id || ev.id} sx={{ p:1, bgcolor:'#0B0B10', mb:1 }}>{ev.name || ev.event_id} — Planned: {ev.planned_cost}</Box>
-              )) : <EmptyState title="No events" subtitle="No events imported for your echelon." actionLabel="Go to Import Center" onAction={()=>{ window.location.href='/import-center' }} />}
+              )) : <EmptyState title="No events" subtitle="No events imported for your echelon." />}
             </Grid>
           </Grid>
-        ) : <EmptyState title="No data yet" subtitle="No projects or events found. Import templates to get started." actionLabel="Go to Import Center" onAction={()=>{ window.location.href='/import-center' }} />
+        ) : <EmptyState title="No data yet" subtitle="No projects or events found. Import templates to get started." />
       )}
     </Box>
   )

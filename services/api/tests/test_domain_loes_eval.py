@@ -22,16 +22,27 @@ def teardown_module(module):
 
 
 def create_org_and_user(db):
-    cmd = models.Command(command='CMD1', display='CMD1')
-    db.add(cmd); db.commit()
-    bde = models.Brigade(brigade_prefix='1', display='B1', command_id=cmd.id)
-    db.add(bde); db.commit()
-    bn = models.Battalion(battalion_prefix='1A', display='Bn1A', brigade_id=bde.id)
-    db.add(bn); db.commit()
-    co = models.Company(company_prefix='1A1', display='Co', battalion_id=bn.id)
-    db.add(co); db.commit()
-    u = models.User(username='usarec_admin', role=models.UserRole.USAREC, scope='USAREC')
-    db.add(u); db.commit()
+    # idempotent creation: check existence before inserting to avoid duplicates
+    cmd = db.query(models.Command).filter_by(command='CMD1').first()
+    if not cmd:
+        cmd = models.Command(command='CMD1', display='CMD1')
+        db.add(cmd); db.commit()
+    bde = db.query(models.Brigade).filter_by(brigade_prefix='1').first()
+    if not bde:
+        bde = models.Brigade(brigade_prefix='1', display='B1', command_id=cmd.id)
+        db.add(bde); db.commit()
+    bn = db.query(models.Battalion).filter_by(battalion_prefix='1A').first()
+    if not bn:
+        bn = models.Battalion(battalion_prefix='1A', display='Bn1A', brigade_id=bde.id)
+        db.add(bn); db.commit()
+    co = db.query(models.Company).filter_by(company_prefix='1A1').first()
+    if not co:
+        co = models.Company(company_prefix='1A1', display='Co', battalion_id=bn.id)
+        db.add(co); db.commit()
+    u = db.query(models.User).filter_by(username='usarec_admin').first()
+    if not u:
+        u = models.User(username='usarec_admin', role=models.UserRole.USAREC, scope='USAREC')
+        db.add(u); db.commit()
 
 
 def token_for(db, username):

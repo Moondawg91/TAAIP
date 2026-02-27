@@ -1,34 +1,29 @@
 import React, { useEffect, useState } from 'react'
 import { Box, Typography, Chip, Button, Menu, MenuItem, TextField, FormControl, InputLabel, Select, Accordion, AccordionSummary, AccordionDetails } from '@mui/material'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
-import CascadingUnitSelector from '../../components/org/CascadingUnitSelector'
+// TopFilterBar rendered centrally by shell
+import { useFilters } from '../../contexts/FilterContext'
 import PageFrame from '../../components/layout/PageFrame'
 import Panel from '../../components/layout/Panel'
 import { getMissionAssessment, exportDashboard } from '../../api/client'
 import { useLocation } from 'react-router-dom'
 export default function OpsRoiPage(){
+  const { filters } = useFilters()
   const [summary, setSummary] = useState(null)
   const [anchorEl, setAnchorEl] = useState(null)
   const [events, setEvents] = useState([])
-  const [filters, setFilters] = useState({ fy:'', qtr:'', echelon_type:'', unit_value:'', funding_line:'' })
+  const location = useLocation()
 
   useEffect(()=>{
     let mounted = true
-    getMissionAssessment().then(d=>{ if(mounted) setSummary(d) }).catch(()=>{})
-    // if event_id provided, fetch events and expose selected event
     const params = new URLSearchParams(location.search)
     const eventId = params.get('event_id')
-    if (eventId){
-      exportDashboard('events-roi','json',{ event_id: eventId }).then(data=>{ if(mounted) setEvents(data || []) }).catch(()=>{})
-    }
     const qs = Object.fromEntries(Object.entries(filters).filter(([,v])=>v))
     if (eventId) qs.event_id = eventId
     getMissionAssessment(qs).then(d=>{ if(mounted) setSummary(d) }).catch(()=>{})
-    if (eventId){
-      exportDashboard('events-roi','json', qs).then(data=>{ if(mounted) setEvents(data || []) }).catch(()=>{})
-    }
+    exportDashboard('events-roi','json', qs).then(data=>{ if(mounted) setEvents(data || []) }).catch(()=>{})
     return ()=>{ mounted = false }
-  },[])
+  },[filters, location.search])
 
   function handleExportClick(e){ setAnchorEl(e.currentTarget) }
   function handleExportClose(){ setAnchorEl(null) }
@@ -67,6 +62,7 @@ export default function OpsRoiPage(){
         </Box>
       </Box>
 
+      {/* TopFilterBar rendered by shell */}
       <Box sx={{ mt:2 }}>
         {summary ? (
           <Panel>
@@ -84,41 +80,23 @@ export default function OpsRoiPage(){
             </Panel>
           </Box>
         )}
-        <Box sx={{ mt:2, display:'flex', gap:1, alignItems:'center', flexWrap:'wrap' }}>
-          <FormControl size="small" sx={{ minWidth:100 }}>
-            <InputLabel>FY</InputLabel>
-            <Select value={filters.fy} label="FY" onChange={(e)=>setFilters(f=>({...f, fy: e.target.value}))}>
-              <MenuItem value="">All</MenuItem>
-              <MenuItem value="2025">2025</MenuItem>
-              <MenuItem value="2026">2026</MenuItem>
-            </Select>
-          </FormControl>
-          <FormControl size="small" sx={{ minWidth:100 }}>
-            <InputLabel>QTR</InputLabel>
-            <Select value={filters.qtr} label="QTR" onChange={(e)=>setFilters(f=>({...f, qtr: e.target.value}))}>
-              <MenuItem value="">All</MenuItem>
-              <MenuItem value="Q1">Q1</MenuItem>
-              <MenuItem value="Q2">Q2</MenuItem>
-              <MenuItem value="Q3">Q3</MenuItem>
-              <MenuItem value="Q4">Q4</MenuItem>
-            </Select>
-          </FormControl>
-          <CascadingUnitSelector mode="filter" value={{echelon: filters.echelon_type}} onChange={(nv)=>{ setFilters(f=>({...f, echelon_type: nv.echelon || '', unit_value: nv.stn || nv.co || nv.bn || nv.bde || '' })) }} onApply={()=>{}} initialScope={filters.echelon_type} initialValue={filters.unit_value} />
+        <Box sx={{ mt:2 }}>
           <Accordion disableGutters elevation={0} sx={{ bgcolor: 'transparent' }}>
             <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: 'text.secondary' }} />}>
               <Typography variant="caption" sx={{ color: 'text.secondary' }}>Advanced Filters</Typography>
             </AccordionSummary>
             <AccordionDetails>
-              <TextField size="small" label="Funding Line" value={filters.funding_line} onChange={(e)=>setFilters(f=>({...f, funding_line: e.target.value}))} />
+              {/* Funding controls moved to Budget pages only */}
             </AccordionDetails>
           </Accordion>
           <Button variant="outlined" onClick={()=>{
             const qs = Object.fromEntries(Object.entries(filters).filter(([,v])=>v))
             exportDashboard('events-roi','json', qs).then(d=>setEvents(d||[])).catch(()=>{})
             getMissionAssessment(qs).then(d=>setSummary(d)).catch(()=>{})
-          }}>Apply filters</Button>
+          }}>Refresh</Button>
         </Box>
       </Box>
     </Box>
+    </PageFrame>
   )
 }

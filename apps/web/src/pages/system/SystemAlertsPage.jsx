@@ -19,7 +19,7 @@ export default function SystemAlertsPage(){
         <List>
           <ListItem>
             <ListItemText primary={`Import errors`} secondary={alerts ? alerts.alerts.import_errors : '0'} />
-            <Button size="small" onClick={()=>nav('/imports')}>Import Center</Button>
+            <Button size="small" onClick={()=>nav('/data-hub')}>Data Hub</Button>
           </ListItem>
           <ListItem>
             <ListItemText primary={`API errors`} secondary={alerts ? alerts.alerts.api_errors : '0'} />

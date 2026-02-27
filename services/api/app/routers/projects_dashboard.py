@@ -110,28 +110,30 @@ def projects_dashboard(fy: int = None, qtr: int = None, org_unit_id: int = None,
             # by the `TAAIP_DB_PATH` env var (tests set this to the temp file).
             if not projects:
                 try:
-                    import os, sqlite3
-                    path = os.getenv('TAAIP_DB_PATH')
-                    if path:
-                        conn3 = sqlite3.connect(path, check_same_thread=False)
-                        conn3.row_factory = sqlite3.Row
-                        cur3 = conn3.cursor()
-                        cur3.execute('SELECT project_id, title, COALESCE(planned_cost,0) as planned, fy FROM projects ORDER BY project_id')
-                        srows = cur3.fetchall()
-                        for r in srows:
-                            rmap = dict(r)
-                            if fy is not None and ('fy' in rmap and rmap.get('fy') != fy):
-                                continue
-                            pid = rmap.get('project_id')
-                            title = rmap.get('title')
-                            planned_cost = float(rmap.get('planned') or 0)
-                            cur3.execute('SELECT SUM(COALESCE(amount,0)) as s FROM expenses WHERE project_id=?', (pid,))
-                            rr = cur3.fetchone()
-                            actual_spent = float(rr[0]) if rr and rr[0] is not None else 0.0
-                            pending = max(planned_cost - actual_spent, 0.0)
-                            variance = planned_cost - actual_spent
-                            projects.append({'project_id': pid, 'title': title, 'planned_cost': planned_cost, 'actual_spent': actual_spent, 'pending': pending, 'variance': variance})
+                    # Use the application `connect()` helper so the same raw
+                    # DB-API connection is used under tests instead of opening
+                    # a new sqlite3 connection to the file.
+                    conn3 = connect()
+                    cur3 = conn3.cursor()
+                    cur3.execute('SELECT project_id, title, COALESCE(planned_cost,0) as planned, fy FROM projects ORDER BY project_id')
+                    srows = cur3.fetchall()
+                    for r in srows:
+                        rmap = dict(r)
+                        if fy is not None and ('fy' in rmap and rmap.get('fy') != fy):
+                            continue
+                        pid = rmap.get('project_id')
+                        title = rmap.get('title')
+                        planned_cost = float(rmap.get('planned') or 0)
+                        cur3.execute('SELECT SUM(COALESCE(amount,0)) as s FROM expenses WHERE project_id=?', (pid,))
+                        rr = cur3.fetchone()
+                        actual_spent = float(rr[0]) if rr and rr[0] is not None else 0.0
+                        pending = max(planned_cost - actual_spent, 0.0)
+                        variance = planned_cost - actual_spent
+                        projects.append({'project_id': pid, 'title': title, 'planned_cost': planned_cost, 'actual_spent': actual_spent, 'pending': pending, 'variance': variance})
+                    try:
                         conn3.close()
+                    except Exception:
+                        pass
                 except Exception:
                     pass
         except Exception:

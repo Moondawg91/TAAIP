@@ -64,28 +64,11 @@ export default function FoundationUploadPanel(){
       <Typography variant="h6">Foundation Datasets (420T)</Typography>
       <Typography variant="body2" sx={{ color:'text.secondary' }}>Upload foundation CSVs (school program, enlistments, MI ZIPs). Preview shows detected columns, sample rows, and missing required fields.</Typography>
 
-      <Box sx={{ mt:2, display:'flex', gap:2, alignItems:'center', flexWrap:'wrap' }}>
-        <input data-testid="foundation-file-input" type="file" onChange={onFileChange} />
-        <FormControl size="small" sx={{ minWidth:220 }}>
-          <InputLabel>Dataset</InputLabel>
-          <Select value={datasetKey} label="Dataset" onChange={(e)=>setDatasetKey(e.target.value as string)}>
-            <MenuItem value={'school_program_fact'}>School Program Fact</MenuItem>
-            <MenuItem value={'mi_zip_fact'}>MI ZIP Fact</MenuItem>
-            <MenuItem value={'mi_cbsa_fact'}>MI CBSA Fact</MenuItem>
-            <MenuItem value={'mi_mission_category_ref'}>MI Mission Categories</MenuItem>
-            <MenuItem value={'mi_enlistments_bde'}>MI Enlistments BDE</MenuItem>
-            <MenuItem value={'mi_enlistments_bn'}>MI Enlistments BN</MenuItem>
-          </Select>
-        </FormControl>
-        <Button variant="contained" onClick={doPreview} disabled={!file} sx={{ mr:1 }}>Preview</Button>
-        <FormControl size="small" sx={{ minWidth:140 }}>
-          <InputLabel>Mode</InputLabel>
-          <Select value={mode} label="Mode" onChange={(e)=>setMode(e.target.value as any)}>
-            <MenuItem value={'append'}>Append</MenuItem>
-            <MenuItem value={'replace'}>Replace</MenuItem>
-          </Select>
-        </FormControl>
-        <Button variant="contained" color="primary" onClick={doCommit} disabled={!file}>Commit</Button>
+      <Box sx={{ mt:2 }}>
+        <Typography variant="body2">Foundation dataset uploads are now handled by the Data Hub imports workflow. Please use the centralized Data Hub imports page to upload foundation CSVs.</Typography>
+        <Box sx={{ mt:2 }}>
+          <Button variant="contained" onClick={()=>{ window.location.href = '/data-hub/imports' }}>Open Data Hub Imports</Button>
+        </Box>
       </Box>
 
       {status && <Typography variant="caption" sx={{ display:'block', mt:1 }}>{status}</Typography>}

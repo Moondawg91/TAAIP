@@ -1,13 +1,14 @@
 import React from 'react'
-import { Box, Typography, Chip } from '@mui/material'
+import { Box, Typography } from '@mui/material'
+import ZeroState from '../../components/ZeroState'
 import DashboardToolbar from '../../components/dashboard/DashboardToolbar'
 
 export default function MarketSegmentationPage(){
   return (
     <Box>
-      <DashboardToolbar title="Market Segmentation" subtitle="Audience segmentation & insights" filters={{}} onFiltersChange={()=>{}} onExport={(t)=>{ alert(`Export ${t} coming soon`) }} />
+      <DashboardToolbar title="Market Segmentation" subtitle="Audience segmentation & insights" filters={{}} onFiltersChange={()=>{}} onExport={(t)=>{ alert('Export unavailable') }} />
       <Typography variant="h4">Market Segmentation</Typography>
-      <Chip label="Status: Coming soon" sx={{ mt:2 }} />
+      <ZeroState title="Feature available soon" message="This route exists but is not enabled yet." />
     </Box>
   )
 }

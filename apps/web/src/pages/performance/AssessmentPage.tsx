@@ -1,8 +1,9 @@
 import React from 'react'
-import { Box, Typography, Tab, Tabs, Chip } from '@mui/material'
+import { Box, Typography, Tab, Tabs } from '@mui/material'
+import ZeroState from '../../components/ZeroState'
 import { useState } from 'react'
 import DualModeTabs from '../../components/DualModeTabs'
-import DashboardFilterBar from '../../components/DashboardFilterBar'
+// TopFilterBar centrally rendered by shell when route policy enables it
 import ExportMenu from '../../components/ExportMenu'
 
 export default function PerformanceAssessment(){
@@ -16,13 +17,12 @@ export default function PerformanceAssessment(){
         </Box>
       </Box>
       <DualModeTabs />
-      <DashboardFilterBar />
       <Tabs value={tab} onChange={(_,v)=>setTab(v)} sx={{ mt:2 }}>
         <Tab label="FY Performance" />
         <Tab label="QTR Assessment" />
         <Tab label="Recruiting Month" />
       </Tabs>
-      <Chip label="Status: Coming soon" sx={{ mt:2 }} />
+      <ZeroState title="Feature available soon" message="This route exists but is not enabled yet." />
     </Box>
   )
 }

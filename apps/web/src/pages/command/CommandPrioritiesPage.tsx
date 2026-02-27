@@ -7,7 +7,6 @@ import { listCommandPriorities, createCommandPriority, updateCommandPriority, de
 import { useEchelon } from '../../contexts/ScopeContext'
 import EmptyState from '../../components/common/EmptyState'
 import DualModeTabs from '../../components/DualModeTabs'
-import DashboardFilterBar from '../../components/DashboardFilterBar'
 import ExportMenu from '../../components/ExportMenu'
 
 export default function CommandPrioritiesPage(){
@@ -126,7 +125,7 @@ export default function CommandPrioritiesPage(){
         </Box>
       </Box>
       <DualModeTabs roles={userRoles} />
-      <DashboardFilterBar />
+          {/* <TopFilterBar title="Command Priorities" /> */}
 
       <Grid container spacing={2}>
         {(!loading && (!priorities || priorities.length===0)) ? (

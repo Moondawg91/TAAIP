@@ -1,62 +1,70 @@
 import { createTheme } from '@mui/material/styles'
 import { alpha } from '@mui/material'
+import tokens from './tokens'
 
 const palette = {
-  mode: 'dark' as const,
+  mode: 'light' as const,
   background: {
-    default: '#0b0f1e',
-    paper: '#121833'
+    // canvas uses token for the app background
+    default: tokens.colors.canvasBg,
+    // paper used for elevated surfaces (cards)
+    paper: tokens.colors.surface
   },
-  primary: { main: '#7c3aed', contrastText: '#EDEDF7' },
-  secondary: { main: '#f97316', contrastText: '#0b0f1e' },
-  info: { main: '#38bdf8' },
-  text: { primary: '#EDEDF7', secondary: alpha('#EDEDF7', 0.8) },
-  divider: 'rgba(255,255,255,0.08)'
+  primary: { main: tokens.colors.accentProponent, contrastText: tokens.colors.textPrimary },
+  secondary: { main: '#0B3A66', contrastText: '#FFFFFF' },
+  info: { main: tokens.colors.accentInfo },
+  text: { primary: tokens.colors.textPrimary, secondary: tokens.colors.textSecondary },
+  divider: alpha(tokens.colors.borderSubtle, 1)
 }
 
 const muiTheme = createTheme({
   palette,
-  shape: { borderRadius: 2 },
-  typography: { h6: { fontWeight: 700 }, button: { textTransform: 'none' } },
+  shape: { borderRadius: tokens.radius },
+  typography: {
+    h4: { fontWeight: 700, fontSize: '1.4rem' },
+    h5: { fontWeight: 700, fontSize: '1.2rem' },
+    h6: { fontWeight: 700 },
+    button: { textTransform: 'none' }
+  },
   components: {
     MuiCssBaseline: {
       styleOverrides: {
         body: {
           backgroundColor: palette.background.default,
-          backgroundImage: 'linear-gradient(180deg, rgba(124,77,255,0.04), transparent)',
-          backgroundAttachment: 'fixed'
+          backgroundImage: 'none',
+          backgroundAttachment: 'fixed',
+          color: tokens.colors.textPrimary
         },
         '::-webkit-scrollbar': { width: 8, height:8 },
-        '::-webkit-scrollbar-thumb': { background: alpha('#7C4DFF', 0.22), borderRadius: 8 }
+        '::-webkit-scrollbar-thumb': { background: alpha(tokens.colors.accentProponent, 0.22), borderRadius: 8 }
       }
     },
     MuiAppBar: {
       styleOverrides: {
         root: {
-          background: `linear-gradient(90deg, ${alpha('#7C4DFF',0.12)}, transparent)`,
-          borderBottom: `1px solid ${palette.divider}
-`
+          background: `linear-gradient(90deg, ${alpha(tokens.colors.accentProponent,0.12)}, transparent)`,
+          borderBottom: `1px solid ${palette.divider}`
         }
       }
     },
     MuiPaper: {
       styleOverrides: {
         root: {
-          backgroundColor: palette.background.paper,
-          color: palette.text.primary,
-          border: `1px solid ${palette.divider}`,
-          borderRadius: 2
+          backgroundColor: tokens.colors.surface,
+          color: tokens.colors.textPrimary,
+          border: `1px solid ${tokens.colors.borderSubtle}`,
+          borderRadius: tokens.radius
         }
       }
     },
-    MuiCard: { styleOverrides: { root: { backgroundColor: palette.background.paper, boxShadow: '0 4px 18px rgba(7,5,15,0.45)', borderRadius: 2 } } },
+    MuiCard: { styleOverrides: { root: { backgroundColor: tokens.colors.surface, boxShadow: '0 8px 28px rgba(6,10,18,0.12)', borderRadius: tokens.radius } } },
     MuiDrawer: { styleOverrides: { paper: { backgroundColor: palette.background.paper } } },
     MuiMenu: { styleOverrides: { paper: { backgroundColor: palette.background.paper } } },
-    MuiListItemButton: { styleOverrides: { root: { borderRadius: 2, '&.Mui-selected': { background: alpha('#7C4DFF', 0.12), boxShadow: `0 6px 18px ${alpha('#7C4DFF',0.12)}`, border: `1px solid ${alpha('#7C4DFF',0.18)}` } } } },
+    MuiListItemButton: { styleOverrides: { root: { borderRadius: tokens.radius, '&.Mui-selected': { background: alpha(tokens.colors.accentProponent, 0.08), boxShadow: `0 6px 18px ${alpha(tokens.colors.accentProponent,0.08)}`, border: `1px solid ${alpha(tokens.colors.accentProponent,0.12)}` } } } },
     MuiTooltip: { styleOverrides: { tooltip: { backgroundColor: '#1b122f', color: '#EDEDF7', fontSize: 12 } } },
-    MuiButton: { styleOverrides: { root: { borderRadius: 2 } } },
-    MuiSelect: { styleOverrides: { root: { borderRadius: 2 } } },
-    MuiTextField: { styleOverrides: { root: { borderRadius: 2 } } }
+    MuiButton: { styleOverrides: { root: { borderRadius: tokens.radius } } },
+    MuiSelect: { styleOverrides: { root: { borderRadius: tokens.radius, backgroundColor: tokens.colors.surface, color: tokens.colors.textPrimary } } },
+    MuiTextField: { styleOverrides: { root: { borderRadius: tokens.radius, backgroundColor: tokens.colors.surface, color: tokens.colors.textPrimary } } }
   }
 })
 

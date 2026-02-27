@@ -1,9 +1,16 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { Box, Typography } from '@mui/material'
 import FilterBar from './FilterBar'
 import ExportMenu from './ExportMenu'
 
 export default function DashboardToolbar({ title, subtitle, filters, onFiltersChange, onExport }:{ title?:string, subtitle?:string, filters?:any, onFiltersChange?: (f:any)=>void, onExport?: (t:string)=>void }){
+  useEffect(()=>{
+    try{
+      if(title) document.title = `${title} — TAAIP`
+      else document.title = 'TAAIP'
+    }catch(e){}
+    return ()=>{}
+  },[title])
   return (
     <Box sx={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:2, mb:2 }}>
       <Box>

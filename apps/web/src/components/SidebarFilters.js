@@ -1,11 +1,14 @@
 import React from 'react'
-import {Box, Button, Divider, FormControl, InputLabel, MenuItem, Select, TextField, Typography, Switch, FormControlLabel} from '@mui/material'
+import {Box, Button, Divider, TextField, Typography, Switch, FormControlLabel} from '@mui/material'
+import UnitCascadePicker from './UnitCascadePicker'
+import { useFilters } from '../contexts/FilterContext'
 
 const SCOPES = ['USAREC','BDE','BN','CO','STN']
 
 export default function SidebarFilters({scope, value, onApply, onTokenSave, autoRefresh, setAutoRefresh, onRefresh, timeWindow, setTimeWindow}){
+  const { filters, setUnit } = useFilters()
   const [localScope, setLocalScope] = React.useState(scope || 'USAREC')
-  const [localValue, setLocalValue] = React.useState(value || '')
+  const [localValue, setLocalValue] = React.useState(value || (filters?.unit_rsid||''))
   const [token, setToken] = React.useState(localStorage.getItem('taaip_jwt') || '')
 
   function saveToken(){
@@ -25,17 +28,9 @@ export default function SidebarFilters({scope, value, onApply, onTokenSave, auto
 
       <Divider sx={{my:2}} />
 
-      <Typography variant="subtitle2">Echelon</Typography>
-      <FormControl fullWidth size="small" sx={{mt:1}}>
-        <InputLabel>Echelon</InputLabel>
-        <Select value={localScope} label="Echelon" onChange={e=>setLocalScope(e.target.value)}>
-          {SCOPES.map(s=> <MenuItem key={s} value={s}>{s}</MenuItem>)}
-        </Select>
-      </FormControl>
-      <TextField size="small" fullWidth sx={{mt:1}} placeholder="Unit (prefix or RSID)" value={localValue} onChange={e=>setLocalValue(e.target.value)} />
-      <Box sx={{display:'flex', gap:1, mt:1}}>
-        <Button variant="outlined" onClick={()=>{ setLocalScope(scope); setLocalValue(value); onApply && onApply(scope, value); }}>Reset</Button>
-        <Button variant="contained" onClick={()=>onApply && onApply(localScope, localValue)}>Apply</Button>
+      <Typography variant="subtitle2">Echelon / Unit</Typography>
+      <Box sx={{mt:1}}>
+        <Typography variant="body2" color="text.secondary">Unit selection is handled in the Top filter bar on dashboard pages. Use the Top filter to change the active unit.</Typography>
       </Box>
 
       <Divider sx={{my:2}} />

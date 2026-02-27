@@ -4,12 +4,25 @@ import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown'
 import { alpha } from '@mui/material'
 import AccountCircleIcon from '@mui/icons-material/AccountCircle'
 import LockIcon from '@mui/icons-material/Lock'
-import { getMe } from '../api/client'
+import { getMe, getMarketIntelReadiness, getPhoneticsReadiness, getSystemStatus } from '../api/client'
+import AddIcon from '@mui/icons-material/Add'
+import { useAuth } from '../contexts/AuthContext'
+import { useLocation, useNavigate } from 'react-router-dom'
+import ExportButton from './ExportButton'
 
 export default function TopHeader({ title }: { title?: string }){
   const [anchor, setAnchor] = useState<null | HTMLElement>(null)
   const [isMaster, setIsMaster] = useState(false)
   const [blocked, setBlocked] = useState<string[]>([])
+  const { roles, loading } = useAuth()
+  const location = useLocation()
+  const navigate = useNavigate()
+  const p = location && location.pathname ? location.pathname : ''
+  const dashboardPrefixes = [
+    '/', '/dash', '/dashboards', '/command-center', '/qbr', '/market-intel', '/operations', '/ops', '/planning', '/roi', '/school', '/schools', '/budget'
+  ]
+  const showExport = dashboardPrefixes.some(pref => pref === '/' ? p === '/' : p.startsWith(pref))
+  const showCascade = showExport
 
   useEffect(()=>{
     let canceled = false
@@ -20,9 +33,9 @@ export default function TopHeader({ title }: { title?: string }){
 
     // check readiness briefly to set header badge
     Promise.all([
-      fetch('/api/market-intel/readiness').then(r=>r.json()).catch(()=>null),
-      fetch('/api/phonetics/readiness').then(r=>r.json()).catch(()=>null),
-      fetch('/api/system/status').then(r=>r.json()).catch(()=>null)
+      getMarketIntelReadiness().catch(()=>null),
+      getPhoneticsReadiness().catch(()=>null),
+      getSystemStatus().catch(()=>null)
     ]).then(([mi, ph, sys])=>{
       if(canceled) return
       const bk = []
@@ -46,6 +59,7 @@ export default function TopHeader({ title }: { title?: string }){
           </Box>
 
           <Box sx={{display:'flex', alignItems:'center', gap:1}}>
+            {showExport && <ExportButton />}
             {isMaster && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') && (
               <Box sx={{ px:1, py:0.5, bgcolor: 'primary.main', color: 'primary.contrastText', borderRadius:1, mr:1, fontSize:'0.75rem' }}>MASTER MODE</Box>
             )}
@@ -57,16 +71,23 @@ export default function TopHeader({ title }: { title?: string }){
               <Box sx={{ px:1, py:0.5, color:'text.secondary', borderRadius:1, mr:1, fontSize:'0.75rem' }}>Ready</Box>
             )}
 
+            {/* Admin-only subtle New Post action (top-right) */}
+            {(!loading && roles && roles.some(r=>['system_admin','usarec_admin','sysadmin','admin','420t_admin'].includes(r)) && location.pathname.startsWith('/admin')) && (
+              <IconButton size="small" color="primary" onClick={()=>navigate('/admin?new=1')} sx={{ mr:1 }} title="New Post">
+                <AddIcon />
+              </IconButton>
+            )}
             <IconButton size="small" onClick={(e)=>setAnchor(e.currentTarget)} sx={{color:'text.primary'}}>
               <AccountCircleIcon />
             </IconButton>
             <Menu anchorEl={anchor} open={Boolean(anchor)} onClose={()=>setAnchor(null)}>
-              <MenuItem onClick={()=>setAnchor(null)}><LockIcon sx={{mr:1}} /> Roles</MenuItem>
+              <MenuItem onClick={()=>setAnchor(null)}>Roles</MenuItem>
               <MenuItem onClick={()=>setAnchor(null)}>Preferences</MenuItem>
             </Menu>
           </Box>
         </Toolbar>
       </AppBar>
+      {/* Top filter bar removed from header; filter bar moved into layout for dashboards */}
     </Box>
   )
 }

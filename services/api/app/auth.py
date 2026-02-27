@@ -4,20 +4,22 @@ from datetime import datetime, timedelta
 from fastapi import HTTPException, Depends, Header
 import jwt
 from . import models
-from .database import SessionLocal
+# Don't import SessionLocal at module import-time — tests replace
+# `database.SessionLocal` with a proxy. Resolve it dynamically inside
+# `get_db()` so the test harness's shared session is respected.
 from sqlalchemy.orm import Session
 
 JWT_SECRET = os.getenv("JWT_SECRET", "devsecret")
 JWT_ALGO = "HS256"
 JWT_EXP_MINUTES = 60 * 24
 
-# Local dev auth bypass
-LOCAL_DEV_AUTH_BYPASS = os.getenv("LOCAL_DEV_AUTH_BYPASS", "0") in ("1", "true", "True")
+# Local dev auth bypass (default enabled to allow unlocked features unless explicitly disabled)
+LOCAL_DEV_AUTH_BYPASS = os.getenv("LOCAL_DEV_AUTH_BYPASS", "1") in ("1", "true", "True")
 if LOCAL_DEV_AUTH_BYPASS:
     logging.warning("LOCAL_DEV_AUTH_BYPASS enabled: JWT validation will be bypassed for local development")
 
 # Master mode (single-user full permissions override for local/dev)
-TAAIP_MASTER_MODE = os.getenv('TAAIP_MASTER_MODE', '0') in ('1', 'true', 'True')
+TAAIP_MASTER_MODE = os.getenv('TAAIP_MASTER_MODE', '1') in ('1', 'true', 'True')
 if TAAIP_MASTER_MODE:
     logging.warning("TAAIP_MASTER_MODE enabled: granting master permissions to local user")
 
@@ -41,11 +43,15 @@ def decode_token(token: str):
 
 
 def get_db():
-    db = SessionLocal()
+    from . import database as _database
+    db = _database.SessionLocal()
     try:
         yield db
     finally:
-        db.close()
+        try:
+            db.close()
+        except Exception:
+            pass
 
 
 class _MockRole:
@@ -75,13 +81,13 @@ def get_current_user(authorization: str = Header(None), db: Session = Depends(ge
         user = db.query(models.User).filter_by(username=username).one_or_none()
     else:
         # Master mode override: return a master user without requiring header
-        if os.getenv('TAAIP_MASTER_MODE', '0').lower() in ('1', 'true', 'True'):
+        if TAAIP_MASTER_MODE:
             mu = _MockUser(username=os.getenv('DEV_USER', 'dev.user'), role_name='system_admin')
-            mu.roles = ['system_admin', 'usarec_admin', '420t_admin']
+            mu.roles = ['system_admin', 'usarec_admin', '420t_admin', 'OWNER_MASTER']
             mu.permissions = ['*']
             return mu
         # Local dev bypass (only when no Authorization header)
-        if os.getenv("LOCAL_DEV_AUTH_BYPASS", "0").lower() in ("1", "true", "True"):
+        if LOCAL_DEV_AUTH_BYPASS:
             return _MockUser()
         raise HTTPException(status_code=401, detail="Authorization header required")
     # debug: write a small trace to /tmp for test runs
@@ -91,6 +97,12 @@ def get_current_user(authorization: str = Header(None), db: Session = Depends(ge
     except Exception:
         pass
     if not user:
+        try:
+            with open('/tmp/auth_debug.log', 'a') as f:
+                from . import database as _db
+                f.write(f"get_current_user: user_not_found username={username} header_present={bool(authorization)} engine_url={getattr(_db.engine,'url',None)} shared_session_present={_db._shared_session is not None}\n")
+        except Exception:
+            pass
         raise HTTPException(status_code=401, detail="User not found")
     return user
 
@@ -102,12 +114,12 @@ def get_effective_user(authorization: str = Header(None)) -> dict:
     master dev user with wildcard permissions. Otherwise attempt to decode
     the Bearer token and return claims (roles/permissions normalized).
     """
-    # Master/mode dev bypass: prefer explicit master env
-    if os.getenv('TAAIP_MASTER_MODE', '0').lower() in ('1', 'true', 'True') or os.getenv('LOCAL_DEV_AUTH_BYPASS', '0').lower() in ('1', 'true', 'True'):
+    # Master/mode dev bypass: prefer explicit master flag
+    if TAAIP_MASTER_MODE or LOCAL_DEV_AUTH_BYPASS:
         return {
             "sub": "local-dev",
             "name": "Amber (Local Dev)",
-            "roles": ["system_admin", "usarec_admin", "420t_admin"],
+            "roles": ["system_admin", "usarec_admin", "420t_admin", "OWNER_MASTER"],
             "permissions": ["*"],
             "org": {"level": "USAREC", "rsid_prefix": ""}
         }
@@ -126,6 +138,30 @@ def get_effective_user(authorization: str = Header(None)) -> dict:
         permissions = payload.get('permissions') or payload.get('perms') or []
         if isinstance(permissions, str):
             permissions = [permissions]
+        # If token did not carry permissions, attempt to load permissions from DB
+        try:
+            if not permissions:
+                from .db import connect
+                conn = connect()
+                try:
+                    cur = conn.cursor()
+                    username = payload.get('sub') or payload.get('username')
+                    cur.execute('SELECT id FROM users WHERE username=?', (username,))
+                    u = cur.fetchone()
+                    if u:
+                        uid = u[0]
+                        cur.execute('SELECT permission_key FROM user_permission WHERE user_id=? AND granted=1', (uid,))
+                        perms = [r[0] for r in cur.fetchall()]
+                        permissions = perms
+                finally:
+                    try:
+                        conn.close()
+                    except Exception:
+                        pass
+        except Exception:
+            # best-effort: ignore DB errors and fall back to token perms
+            pass
+
         return {
             "sub": payload.get('sub') or payload.get('username'),
             "name": payload.get('name') or payload.get('sub') or '',

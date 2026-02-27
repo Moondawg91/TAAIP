@@ -11,16 +11,8 @@ jest.mock('../../../api/client', () => {
   })
 })
 
-test('renders and uploads a file', async ()=>{
+test('renders Data Hub redirect instead of inline upload', async ()=>{
   render(<DocumentUploadPanel />)
-  // file input exists
-  const input = screen.getByTestId('document-file-input') as HTMLInputElement
-  const file = new File(['hello'], 'hello.txt', { type: 'text/plain' })
-  // simulate selecting file
-  fireEvent.change(input, { target: { files: [file] } })
-  // click upload
-  const btn = screen.getByText('Upload')
-  fireEvent.click(btn)
-  const matches = await screen.findAllByText(/uploaded/i)
-  expect(matches.length).toBeGreaterThan(0)
+  const btn = await screen.findByRole('button', { name: /Open Data Hub Imports/i })
+  expect(btn).toBeInTheDocument()
 })

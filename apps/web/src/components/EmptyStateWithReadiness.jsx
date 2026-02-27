@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+import { getMarketIntelReadiness, getPhoneticsReadiness } from '../api/client'
 import { Box, Typography, Button, Link, List, ListItem, CircularProgress } from '@mui/material'
 
 function humanize(key){ return String(key).replace(/_/g,' ').replace(/mi /,'Market Intel ').replace(/phonetic/,'Phonetics ') }
@@ -10,8 +11,8 @@ export default function EmptyStateWithReadiness({ title, purpose, requiredDatase
     let cancelled = false
     async function fetchAll(){
       try{
-        const mi = await fetch('/api/market-intel/readiness').then(r=>r.json()).catch(()=>null)
-        const ph = await fetch('/api/phonetics/readiness').then(r=>r.json()).catch(()=>null)
+        const mi = await getMarketIntelReadiness().catch(()=>null)
+        const ph = await getPhoneticsReadiness().catch(()=>null)
         const combined = []
         if(mi && mi.blocking) combined.push(...mi.blocking)
         if(ph && ph.blocking) combined.push(...ph.blocking)

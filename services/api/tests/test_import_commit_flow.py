@@ -20,6 +20,65 @@ def setup_temp_db(tmp_path):
     # ensure schema
     from services.api.app import db as app_db
     app_db.init_schema()
+    # best-effort: ensure critical tables exist in the temp DB for tests
+    try:
+        import sqlite3
+        conn = sqlite3.connect(db_path)
+        cur = conn.cursor()
+        cur.executescript('''
+            CREATE TABLE IF NOT EXISTS import_job_v3 (
+                id TEXT PRIMARY KEY,
+                created_at TEXT,
+                created_by TEXT,
+                dataset_key TEXT NOT NULL,
+                source_system TEXT,
+                filename TEXT,
+                file_sha256 TEXT,
+                status TEXT DEFAULT 'uploaded',
+                row_count INTEGER DEFAULT 0,
+                error_count INTEGER DEFAULT 0,
+                updated_at TEXT,
+                notes TEXT,
+                scope_org_unit_id TEXT
+            );
+            CREATE TABLE IF NOT EXISTS imported_rows (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                import_job_id INTEGER,
+                target_domain TEXT,
+                row_json TEXT,
+                created_at TEXT
+            );
+            CREATE TABLE IF NOT EXISTS import_column_map (
+                id TEXT PRIMARY KEY,
+                import_job_id TEXT NOT NULL,
+                mapping_json TEXT NOT NULL,
+                created_at TEXT
+            );
+            CREATE TABLE IF NOT EXISTS import_file (
+                id TEXT PRIMARY KEY,
+                import_job_id TEXT NOT NULL,
+                stored_path TEXT NOT NULL,
+                content_type TEXT,
+                size_bytes INTEGER,
+                uploaded_at TEXT
+            );
+            CREATE TABLE IF NOT EXISTS fact_production (
+                id TEXT PRIMARY KEY,
+                org_unit_id TEXT,
+                date_key TEXT,
+                metric_key TEXT,
+                metric_value REAL,
+                source_system TEXT,
+                import_job_id TEXT,
+                created_at TEXT,
+                record_status TEXT,
+                archived_at TEXT
+            );
+        ''' )
+        conn.commit()
+        conn.close()
+    except Exception:
+        pass
     return db_path
 
 

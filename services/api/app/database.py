@@ -35,13 +35,43 @@ def _create_engine_from_env():
 
 # Create engine/session at import-time but allow re-creation if env changes.
 engine = _create_engine_from_env()
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 _shared_session = None
+
+
+class SessionProxy:
+    """A stable proxy around a SQLAlchemy sessionmaker.
+
+    This object allows test modules that import `SessionLocal` early to
+    retain a reference that can later be configured to return a shared
+    session (used by the pytest transactional fixture) or produce new
+    sessions from an internal sessionmaker.
+    """
+    def __init__(self, maker):
+        self._maker = maker
+
+    def __call__(self):
+        # If a shared session was installed by tests, return it so all
+        # callers operate on the same Session instance.
+        global _shared_session
+        if _shared_session is not None:
+            return _shared_session
+        return self._maker()
+
+    def configure(self, **kwargs):
+        return self._maker.configure(**kwargs)
+
+    def __getattr__(self, name):
+        return getattr(self._maker, name)
+
+
+SessionLocal = SessionProxy(sessionmaker(autocommit=False, autoflush=False, bind=engine))
 
 
 def set_shared_session(sess):
     global _shared_session
     _shared_session = sess
+
+
 
 
 def reload_engine_if_needed():
@@ -58,7 +88,15 @@ def reload_engine_if_needed():
         current_url = None
     if current_url != desired:
         engine = _create_engine_from_env()
-        SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+        # If SessionLocal is our proxy type, update its internal maker so
+        # existing references continue to work. Otherwise, replace it.
+        try:
+            if isinstance(SessionLocal, SessionProxy):
+                SessionLocal._maker = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+            else:
+                SessionLocal = SessionProxy(sessionmaker(autocommit=False, autoflush=False, bind=engine))
+        except Exception:
+            SessionLocal = SessionProxy(sessionmaker(autocommit=False, autoflush=False, bind=engine))
 
 
 def get_db():

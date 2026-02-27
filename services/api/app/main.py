@@ -5,6 +5,7 @@ API entrypoint and router mounting. OpenAPI description includes branding footer
 from dotenv import load_dotenv
 import os
 import logging
+import json
 
 # Load environment variables from services/api/.env (local dev)
 load_dotenv("services/api/.env")
@@ -31,6 +32,24 @@ from fastapi.staticfiles import StaticFiles
 
 app = FastAPI(title="TAAIP API", description="TAAIP API service. © 2026 TAAIP. Copyright pending.")
 
+# Ensure the DB schema exists at import time when running the server normally.
+# During pytest collection tests control DB initialization and set
+# `DATABASE_URL`/`TAAIP_DB_PATH` themselves. Skip init_db while pytest is
+# running to avoid creating an engine bound to the wrong DB during test
+# collection which can introduce order-dependent failures.
+if not os.getenv('PYTEST_CURRENT_TEST'):
+    try:
+        init_db()
+        _log.info(f"DB initialized at {get_db_path()}")
+        # Ensure RBAC seeds and role/permission catalog are present
+        try:
+            from . import seed_rbac
+            seed_rbac.seed_rbac()
+            _log.info('RBAC seed applied')
+        except Exception:
+            _log.exception('Failed to apply RBAC seed')
+    except Exception:
+        _log.exception("init_db at import failed")
 # If a production/dev frontend build exists inside the workspace, mount it
 # at root so the API and static frontend are served from the same origin.
 # This simplifies local E2E (Playwright) by avoiding CORS and proxying.
@@ -88,14 +107,26 @@ from .routers import powerbi_feed
 api_router.include_router(powerbi_feed.router)
 from .routers import imports as imports_router
 api_router.include_router(imports_router.router)
+from .routers import datahub as datahub_router
+api_router.include_router(datahub_router.router)
+from .routers import assets as assets_router
+api_router.include_router(assets_router.router)
+from .routers import ref_assets as ref_assets_router
+api_router.include_router(ref_assets_router.router)
+from .routers import compat_importers as compat_importers_router
+api_router.include_router(compat_importers_router.router)
 from .routers import rbac as rbac_router
 api_router.include_router(rbac_router.router)
+from .routers import admin_v2 as admin_v2_router
+api_router.include_router(admin_v2_router.router)
 from .routers import me as me_router
 api_router.include_router(me_router.router)
 from .routers import funnel as funnel_router
 api_router.include_router(funnel_router.router)
 from .routers import benchmarks as benchmarks_router
 api_router.include_router(benchmarks_router.router)
+from .routers import roi as roi_router
+api_router.include_router(roi_router.router)
 from .routers import projects as projects_router
 api_router.include_router(projects_router.router)
 from .routers import command_priorities as command_priorities_router
@@ -132,6 +163,8 @@ from .routers import v2_home as v2_home_router
 api_router.include_router(v2_home_router.router)
 from .routers import v2_org as v2_org_router
 api_router.include_router(v2_org_router.router)
+from .routers import v2_mission_feasibility as v2_mf_router
+api_router.include_router(v2_mf_router.router)
 from .routers import compat_helpers as compat_helpers_router
 api_router.include_router(compat_helpers_router.router)
 
@@ -161,6 +194,8 @@ from .routers import operations as operations_router
 api_router.include_router(operations_router.router)
 from .routers import import_templates as import_templates_router
 api_router.include_router(import_templates_router.router)
+from .routers import uploads as uploads_router
+api_router.include_router(uploads_router.router)
 from .routers import market_engine as market_engine_router
 api_router.include_router(market_engine_router.router)
 from .routers import scoring as scoring_router
@@ -183,6 +218,8 @@ from .routers import imports_foundation as imports_foundation_router
 api_router.include_router(imports_foundation_router.router)
 from .routers import school_program as school_program_router
 api_router.include_router(school_program_router.router)
+from .routers import school_recruiting as school_recruiting_router
+api_router.include_router(school_recruiting_router.router)
 from .routers import performance_dashboard as performance_dashboard_router
 api_router.include_router(performance_dashboard_router.router)
 from .routers import performance_summary as performance_summary_router
@@ -198,6 +235,8 @@ api_router.include_router(meta_router.router)
 
 from .routers import tactical_rollups as tactical_rollups_router
 api_router.include_router(tactical_rollups_router.router)
+from .routers import metrics as metrics_router
+api_router.include_router(metrics_router.router)
 
 from .routers import tactical_dashboards as tactical_dashboards_router
 api_router.include_router(tactical_dashboards_router.router)
@@ -239,6 +278,8 @@ from .routers import event_ops as event_ops_router
 api_router.include_router(event_ops_router.router)
 from .routers import tasks as tasks_router
 api_router.include_router(tasks_router.router)
+from .routers import tasks_compat as tasks_compat_router
+api_router.include_router(tasks_compat_router.router)
 from .routers import boards as boards_router
 api_router.include_router(boards_router.router)
 
@@ -262,6 +303,13 @@ def _on_startup():
         _log.info(f"DB path: {get_db_path()}")
     except Exception as e:
         _log.error(f"DB init/seed failed: {e}")
+    # Ensure export storage directory exists
+    try:
+        export_dir = os.getenv('EXPORT_STORAGE_DIR', './data/exports')
+        os.makedirs(export_dir, exist_ok=True)
+        _log.info(f"Export storage dir ensured: {export_dir}")
+    except Exception:
+        _log.exception('Failed to ensure export storage dir')
 
 
 # SPA fallback: serve index.html for non-API routes when a frontend build exists

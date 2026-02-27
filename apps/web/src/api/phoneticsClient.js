@@ -8,7 +8,10 @@ export async function searchPhonetics(query){
 
 export async function exportPhoneticsCsv(type){
   const url = type ? `/api/phonetics/export.csv?type=${encodeURIComponent(type)}` : '/api/phonetics/export.csv'
-  const res = await fetch((process.env.REACT_APP_API_BASE || 'http://localhost:8000') + url, { headers: {} })
+  const token = localStorage.getItem('taaip_jwt')
+  const headers = {}
+  if (token) headers['Authorization'] = `Bearer ${token}`
+  const res = await fetch((process.env.REACT_APP_API_BASE || 'http://localhost:8000') + url, { headers })
   if(!res.ok) throw new Error('export failed')
   return res.text()
 }

@@ -1,7 +1,8 @@
 import React from 'react'
-import { Box, Typography, Chip } from '@mui/material'
+import { Box, Typography } from '@mui/material'
+import ZeroState from '../../components/ZeroState'
 import DualModeTabs from '../../components/DualModeTabs'
-import DashboardFilterBar from '../../components/DashboardFilterBar'
+// TopFilterBar rendered centrally by shell
 import ExportMenu from '../../components/ExportMenu'
 
 export default function SchoolLandingPage(){
@@ -14,8 +15,7 @@ export default function SchoolLandingPage(){
         </Box>
       </Box>
       <DualModeTabs />
-      <DashboardFilterBar />
-      <Chip label="Dashboards coming soon" sx={{ mt:2 }} />
+      <ZeroState title="Data not loaded" message="No program dashboards available — import datasets or check API connectivity." />
     </Box>
   )
 }

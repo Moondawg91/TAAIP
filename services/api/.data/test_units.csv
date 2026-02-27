@@ -1,0 +1,5 @@
+rsid,display_name,echelon,parent_rsid,uic
+B001,Brigade 1,BDE,,
+B00101,Battalion 01,BN,B001,
+B0010101,Company 01,CO,B00101,
+B001010101,Station 101,STN,B0010101,

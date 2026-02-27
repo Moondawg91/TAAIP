@@ -1,6 +1,6 @@
 import React from 'react'
-import PlaceholderPage from '../PlaceholderPage'
+import { NotLoadedPage } from '../PlaceholderPage'
 
 export default function FundingAllocationsPage(){
-  return <PlaceholderPage title="Funding Allocations" subtitle="Manage funding allocations (coming soon)." />
+  return <NotLoadedPage title="Funding Allocations" />
 }

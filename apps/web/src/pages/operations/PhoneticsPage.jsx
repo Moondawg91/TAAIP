@@ -48,7 +48,7 @@ export default function PhoneticsPage(){
 
   return (
     <Box sx={{ p:2 }}>
-      <Typography variant="h5" sx={{ mb:2 }}>Phonetics</Typography>
+      <Typography variant="h5" sx={{ mb:2 }}>Processing</Typography>
       <Box sx={{ display:'flex', gap:2, mb:2 }}>
         <TextField size="small" label="Search" value={query} onChange={(e)=>setQuery(e.target.value)} />
         <Button variant="contained" onClick={doSearch}>Search</Button>
@@ -78,27 +78,10 @@ export default function PhoneticsPage(){
 
       <Box sx={{ mt:3 }}>
         <Typography variant="h6">Import CSV</Typography>
-        <Typography variant="caption">Expect columns: term, phonetic, type (optional)</Typography>
-        <TextField multiline rows={8} fullWidth value={csvText} onChange={(e)=>setCsvText(e.target.value)} sx={{ mt:1, bgcolor:'background.default', borderRadius:1 }} />
-        <Box sx={{ display:'flex', gap:2, mt:1 }}>
-          <Button variant="contained" onClick={doPreview}>Preview</Button>
-          <Button variant="contained" color="success" onClick={doCommit}>Commit</Button>
+        <Typography variant="body2" sx={{ color:'text.secondary' }}>Data not loaded. Load datasets in Data Hub.</Typography>
+        <Box sx={{ mt:1 }}>
+          <a href="/data-hub" style={{ fontSize:13 }}>Go to Data Hub</a>
         </Box>
-        {preview && (
-          <Paper sx={{ mt:2, p:1 }}>
-            <Typography variant="subtitle2">Preview ({preview.length} rows)</Typography>
-            <Table size="small">
-              <TableHead>
-                <TableRow><TableCell>Term</TableCell><TableCell>Phonetic</TableCell><TableCell>Type</TableCell></TableRow>
-              </TableHead>
-              <TableBody>
-                {preview.map(p=> (
-                  <TableRow key={p.row}><TableCell>{p.term}</TableCell><TableCell>{p.phonetic}</TableCell><TableCell>{p.type}</TableCell></TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </Paper>
-        )}
       </Box>
     </Box>
   )

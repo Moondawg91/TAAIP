@@ -21,11 +21,11 @@ def events_dashboard(fy: int = None, qtr: int = None, org_unit_id: int = None, s
             json.dump(info, _f)
     except Exception:
         pass
-    if db_path:
-        conn = sqlite3.connect(db_path, check_same_thread=False)
-        conn.row_factory = sqlite3.Row
-    else:
-        conn = connect()
+    # Always use the application `connect()` helper which honors the
+    # test harness `TAAIP_DB_PATH` and the shared raw connection when
+    # running under pytest. This avoids opening independent sqlite3
+    # connections that can cause visibility/isolation issues.
+    conn = connect()
     try:
         cur = conn.cursor()
         filters = {}
@@ -150,29 +150,31 @@ def events_dashboard(fy: int = None, qtr: int = None, org_unit_id: int = None, s
         # sqlite fallback to the path set by the test harness (`TAAIP_DB_PATH`).
         if not events:
             try:
-                import os, sqlite3
-                path = os.getenv('TAAIP_DB_PATH')
-                if path:
-                    conn2 = sqlite3.connect(path, check_same_thread=False)
-                    conn2.row_factory = sqlite3.Row
-                    c2 = conn2.cursor()
-                    c2.execute('SELECT id as event_id, name, event_type, COALESCE(planned_cost,0) as planned, loe, project_id FROM event ORDER BY start_dt DESC')
+                # fallback also uses the same `connect()` helper for
+                # consistency and to ensure test harness reuse of the
+                # raw DB-API connection.
+                conn2 = connect()
+                c2 = conn2.cursor()
+                c2.execute('SELECT id as event_id, name, event_type, COALESCE(planned_cost,0) as planned, loe, project_id FROM event ORDER BY start_dt DESC')
+                srows = c2.fetchall()
+                if not srows:
+                    c2.execute('SELECT id as event_id, name, event_type, COALESCE(planned_cost,0) as planned, loe, project_id FROM event')
                     srows = c2.fetchall()
-                    if not srows:
-                        c2.execute('SELECT id as event_id, name, event_type, COALESCE(planned_cost,0) as planned, loe, project_id FROM event')
-                        srows = c2.fetchall()
-                    for r in srows:
-                        rmap = dict(r)
-                        eid = rmap.get('event_id')
-                        name = rmap.get('name')
-                        planned_cost = float(rmap.get('planned') or 0)
-                        proj_id = rmap.get('project_id')
-                        c2.execute('SELECT SUM(COALESCE(amount,0)) as s FROM expenses WHERE event_id=?', (eid,))
-                        rr = c2.fetchone(); actual_spent = float(rr[0]) if rr and rr[0] is not None else 0.0
-                        pending = max(planned_cost - actual_spent, 0.0)
-                        variance = planned_cost - actual_spent
-                        events.append({'event_id': eid, 'name': name, 'project_id': proj_id, 'planned_cost': planned_cost, 'actual_spent': actual_spent, 'pending': pending, 'variance': variance, 'roe': None})
+                for r in srows:
+                    rmap = dict(r)
+                    eid = rmap.get('event_id')
+                    name = rmap.get('name')
+                    planned_cost = float(rmap.get('planned') or 0)
+                    proj_id = rmap.get('project_id')
+                    c2.execute('SELECT SUM(COALESCE(amount,0)) as s FROM expenses WHERE event_id=?', (eid,))
+                    rr = c2.fetchone(); actual_spent = float(rr[0]) if rr and rr[0] is not None else 0.0
+                    pending = max(planned_cost - actual_spent, 0.0)
+                    variance = planned_cost - actual_spent
+                    events.append({'event_id': eid, 'name': name, 'project_id': proj_id, 'planned_cost': planned_cost, 'actual_spent': actual_spent, 'pending': pending, 'variance': variance, 'roe': None})
+                try:
                     conn2.close()
+                except Exception:
+                    pass
             except Exception:
                 pass
 

@@ -1,6 +1,6 @@
 import React from 'react'
-import PlaceholderPage from '../PlaceholderPage'
+import { NotLoadedPage } from '../PlaceholderPage'
 
 export default function RoiOverviewPage(){
-  return <PlaceholderPage title="ROI Overview" subtitle="Budget ROI overview placeholder." />
+  return <NotLoadedPage title="ROI Overview" />
 }

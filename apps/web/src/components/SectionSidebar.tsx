@@ -2,8 +2,10 @@ import React, { useState, useEffect, useRef } from 'react'
 import { Box, IconButton, Typography, List, ListItemButton, ListItemIcon, ListItemText, Tooltip, Divider } from '@mui/material'
 import * as Icons from '@mui/icons-material'
 import NAV_CONFIG from '../nav/navConfig'
-import { getCurrentUserFromToken, getMe } from '../api/client'
-import { isMaster, canAccess } from '../auth/effectiveAccess'
+import permissionMap from '../auth/permissionMap'
+import ROUTE_POLICIES from '../auth/routePolicy'
+import { useAuth } from '../contexts/AuthContext'
+import accessHelper from '../auth/accessHelper'
 import PushPinIcon from '@mui/icons-material/PushPin'
 import CloseIcon from '@mui/icons-material/Close'
 import MenuIcon from '@mui/icons-material/Menu'
@@ -27,8 +29,7 @@ export default function SectionSidebar(){
   const [activeSection, setActiveSection] = useState<string | null>(null)
   const navigate = useNavigate()
   const loc = useLocation()
-  const [userRoles, setUserRoles] = useState<string[]>([])
-  const [effectiveUser, setEffectiveUser] = useState<any>(null)
+  const auth = useAuth()
 
   // Ensure the active section reflects the current route so sidebar shows correct group
   useEffect(()=>{
@@ -51,25 +52,8 @@ export default function SectionSidebar(){
     }
   }, [loc.pathname])
 
-  useEffect(()=>{
-    let canceled = false
-    getMe().then(me => {
-      if(canceled) return
-      setEffectiveUser(me)
-      if (isMaster(me)) {
-        setUserRoles(['system_admin','usarec_admin','420t_admin'])
-      } else if(me && Array.isArray(me.roles)){
-        setUserRoles(me.roles.map(r=>String(r).toLowerCase()))
-      } else {
-        try{
-          const u = getCurrentUserFromToken()
-          const roles = (u && u.roles) ? (Array.isArray(u.roles)?u.roles:u.roles.split?.(',')||[]) : []
-          setUserRoles(roles.map((r:any)=>String(r).toLowerCase()))
-        }catch(e){ setUserRoles([]) }
-      }
-    }).catch(()=>{ setUserRoles([]) })
-    return ()=>{ canceled = true }
-  },[])
+  // derive roles from auth context for admin checks
+  const userRoles = (auth && auth.roles) ? auth.roles.map(r=>String(r).toLowerCase()) : []
 
   useEffect(()=>{
     try { localStorage.setItem('taaip_sidebar_pinned', pinned ? 'true' : 'false') } catch {}
@@ -78,6 +62,11 @@ export default function SectionSidebar(){
   const collapsedWidth = 72
   const expandedWidth = 280
   const open = pinned || explicitOpen
+
+  // Always show all sections per UX requirements. Items will be shown locked when access is missing.
+  const visibleNav = (NAV_CONFIG as unknown as NavSection[])
+
+  // access checks are evaluated per-item using accessHelper
 
   // tempSection removed; collapsed icon click directly sets activeSection and expands
 
@@ -98,7 +87,7 @@ export default function SectionSidebar(){
       {/* Section quick icons when collapsed */}
       {!open && (
         <Box sx={{ display:'flex', flexDirection:'column', alignItems:'center', gap:1, py:1 }}>
-          {(NAV_CONFIG as unknown as NavSection[]).map(section => (
+          {visibleNav.map(section => (
             <Tooltip key={section.id} title={section.label} placement="right">
                 <IconButton
                   onClick={() => {
@@ -124,7 +113,7 @@ export default function SectionSidebar(){
       )}
 
       <Box sx={{ flex:1, overflow:'auto', py:1 }}>
-        {(NAV_CONFIG as unknown as NavSection[]).map(section => {
+        {visibleNav.map(section => {
           const showItems = open && (activeSection ? section.id === activeSection : section.id === 'command-center')
           return (
             <Box key={section.id} sx={{ px: open ? 2 : 0, mb:1 }} id={`${section.id}-section`} onMouseEnter={() => { if (open) setActiveSection(section.id) }}>
@@ -133,13 +122,28 @@ export default function SectionSidebar(){
                 <List>
                   {section.items.map((it:NavItem)=> {
                     const path = it.path || ''
-                    // apply frontend gating based on roles via central helper
-                    const roleDisabled = !canAccess(effectiveUser, it)
+                    const permsSource = (auth && auth.permissionsObj && Object.keys(auth.permissionsObj).length) ? Object.keys(auth.permissionsObj) : auth.permissions
+                    const access = accessHelper.canAccessForPath(permsSource, path)
+                    const disabledForUser = !access.allowed
                     return (
                       <Tooltip key={it.path || it.id} title={!open ? it.label : ''} placement="right">
-                        <ListItemButton selected={loc.pathname===it.path} onClick={()=>{ if(path) navigate(path) }} sx={{ borderRadius:1, my:0.5, px: open ? 1.5 : 0.5 }}>
-                          <ListItemIcon sx={{ minWidth: open ? 40 : 0, justifyContent:'center', color: roleDisabled ? 'text.secondary' : 'primary.main' }}>{ roleDisabled ? <LockIcon fontSize="small" /> : IconByName(it.icon) }</ListItemIcon>
-                          {open && <ListItemText primary={it.label} primaryTypographyProps={{ variant:'body2' }} secondary={roleDisabled ? undefined : undefined} />}
+                              <ListItemButton
+                                selected={loc.pathname===it.path}
+                                onClick={()=>{
+                                  if (!path) return
+                                  if (auth.loading) return
+                                  if (disabledForUser) {
+                                    // navigate to unauthorized page with missing perms and requested path
+                                    try { navigate('/unauthorized', { state: { missing: access.missing || [], path } }) } catch(e){ }
+                                    return
+                                  }
+                                  navigate(path)
+                                }}
+                                disabled={auth.loading}
+                                sx={{ borderRadius:1, my:0.5, px: open ? 1.5 : 0.5, opacity: auth.loading ? 0.6 : 1 }}>
+                          <ListItemIcon sx={{ minWidth: open ? 40 : 0, justifyContent:'center', color: disabledForUser ? 'text.disabled' : 'primary.main' }}>{ IconByName(it.icon) }</ListItemIcon>
+                          {open && <ListItemText primary={it.label} primaryTypographyProps={{ variant:'body2' }} />}
+                          { (disabledForUser && open) ? <LockIcon fontSize="small" sx={{ ml:1, color:'text.secondary' }} /> : null }
                         </ListItemButton>
                       </Tooltip>
                     )

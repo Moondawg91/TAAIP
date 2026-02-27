@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
+import { getSystemStatus } from '../api/client'
 
 type Props = { children: React.ReactNode }
 
@@ -14,12 +15,7 @@ export default function MaintenanceGuard({ children }: Props) {
     let mounted = true
     async function check() {
       try {
-        const res = await fetch('/api/system/status')
-        if (!res.ok) {
-          setMode('off')
-          return
-        }
-        const j = await res.json()
+        const j = await getSystemStatus()
         const m = (j && j.maintenance_mode) ? String(j.maintenance_mode) : 'off'
         if (!mounted) return
         setMode(m === 'on' ? 'on' : 'off')

@@ -21,13 +21,13 @@ export default function LoeEditorPanel(){
 
   return (
     <div style={{padding:12}}>
-      <h4 style={{color:'#fff', marginTop:0}}>Lines of Effort</h4>
+      <h4 style={{color:'#0F1724', marginTop:0}}>Lines of Effort</h4>
       <div style={{display:'flex', gap:8}}>
         <input value={title} onChange={e=>setTitle(e.target.value)} placeholder='New LOE title' />
         <button onClick={add}>Add LOE</button>
       </div>
       <ul>
-        {loes.map(l=> <li key={l.id} style={{color:'#fff'}}>{l.title}</li>)}
+        {loes.map(l=> <li key={l.id} style={{color:'#0F1724'}}>{l.title}</li>)}
       </ul>
     </div>
   )

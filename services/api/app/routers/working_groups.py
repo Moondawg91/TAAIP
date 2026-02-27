@@ -3,7 +3,7 @@ from typing import Optional, List, Dict, Any
 from ..db import connect
 from datetime import datetime
 import json
-from .rbac import require_scope
+from .rbac import require_scope, require_perm
 
 router = APIRouter(prefix="/working-groups", tags=["working_groups"])
 
@@ -19,7 +19,7 @@ def write_audit(conn, who, action, entity, entity_id, meta=None):
     conn.commit()
 
 
-@router.post("/", summary="Create working group")
+@router.post("/", summary="Create working group", dependencies=[Depends(require_perm('twg.edit'))])
 def create_wg(payload: Dict[str, Any]):
     conn = connect()
     try:
@@ -63,7 +63,7 @@ def list_wgs(org_unit_id: Optional[int] = None, limit: int = 100, allowed_orgs: 
         conn.close()
 
 
-@router.post("/{wg_id}/meeting", summary="Create meeting in working group")
+@router.post("/{wg_id}/meeting", summary="Create meeting in working group", dependencies=[Depends(require_perm('twg.edit'))])
 def create_meeting(wg_id: int, payload: Dict[str, Any]):
     # link via org_unit_id if provided
     conn = connect()

@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react'
-import { Box, Container, Grid, Paper, Typography, Select, MenuItem, TextField, Button } from '@mui/material'
+import { Box, Container, Grid, Paper, Typography, Select, MenuItem, Button } from '@mui/material'
 import { getMarketIntelSummary, getMarketIntelZipRankings, getMarketIntelCbsaRollup, getMarketIntelTargets, getMarketIntelImportTemplates, getMarketIntelDemographics, getMarketIntelCategories, getMarketIntelReadiness, exportMarketIntelTargetsCsv, exportCommanderTargetsCsv } from '../../api/client'
 import { previewMiImport, commitMiImport } from '../../api/client'
 import MarketIntelKpiStrip from '../../components/operations/MarketIntelKpiStrip'
@@ -11,8 +11,11 @@ import MarketIntelImportTemplates from '../../components/operations/MarketIntelI
 import MarketIntelDemographicsTable from '../../components/operations/MarketIntelDemographicsTable'
 import MarketIntelCategoriesStrip from '../../components/operations/MarketIntelCategoriesStrip'
 
+import { useFilters } from '../../contexts/FilterContext'
+
 export default function MarketIntelligencePage(){
-  const [filters, setFilters] = useState({fy:'', qtr:'', rsid_prefix:''})
+  const { filters: globalFilters } = useFilters()
+  const [localFilters, setLocalFilters] = useState({ component:'', market_category:'' })
   const [summary, setSummary] = useState(null)
   const [zipData, setZipData] = useState([])
   const [cbsaData, setCbsaData] = useState([])
@@ -29,84 +32,39 @@ export default function MarketIntelligencePage(){
 
   async function loadAll(){
     setLoading(true)
+    const merged = {
+      fy: globalFilters?.fy || '',
+      qtr: globalFilters?.qtr || '',
+      rsid_prefix: globalFilters?.unit_rsid || '',
+      component: localFilters.component || '',
+      market_category: localFilters.market_category || ''
+    }
     try{
-      const s = await getMarketIntelSummary(filters)
+      const s = await getMarketIntelSummary(merged)
       setSummary(s)
       setMissing(s && s.missing_data ? s.missing_data : [])
     }catch(e){ setSummary(null); setMissing(['api_error']) }
-    try{ const z = await getMarketIntelZipRankings(Object.assign({}, filters, {limit:25})); setZipData((z && (z.tables||z.breakdowns) && (z.tables?.zip_rankings||z.breakdowns?.zip_rankings)) || []) }catch(e){ setZipData([]) }
-    try{ const c = await getMarketIntelCbsaRollup(Object.assign({}, filters, {limit:50})); setCbsaData((c && (c.tables||c.breakdowns) && (c.tables?.cbsa_rollup||c.breakdowns?.cbsa_rollup)) || []) }catch(e){ setCbsaData([]) }
-    try{ const t = await getMarketIntelTargets(filters); setTargets((t && (t.tables||t.breakdowns) && (t.tables?.targets||t.breakdowns?.targets)) || []) }catch(e){ setTargets([]) }
+    try{ const z = await getMarketIntelZipRankings(Object.assign({}, merged, {limit:25})); setZipData((z && (z.tables||z.breakdowns) && (z.tables?.zip_rankings||z.breakdowns?.zip_rankings)) || []) }catch(e){ setZipData([]) }
+    try{ const c = await getMarketIntelCbsaRollup(Object.assign({}, merged, {limit:50})); setCbsaData((c && (c.tables||c.breakdowns) && (c.tables?.cbsa_rollup||c.breakdowns?.cbsa_rollup)) || []) }catch(e){ setCbsaData([]) }
+    try{ const t = await getMarketIntelTargets(merged); setTargets((t && (t.tables||t.breakdowns) && (t.tables?.targets||t.breakdowns?.targets)) || []) }catch(e){ setTargets([]) }
     try{ const it = await getMarketIntelImportTemplates(); setTemplates(it.templates || []) }catch(e){ setTemplates([]) }
-    try{ const d = await getMarketIntelDemographics(filters); setDemographics(d) }catch(e){ setDemographics(null) }
-    try{ const c = await getMarketIntelCategories(Object.assign({}, filters, {limit:10})); setCategories(c) }catch(e){ setCategories(null) }
+    try{ const d = await getMarketIntelDemographics(merged); setDemographics(d) }catch(e){ setDemographics(null) }
+    try{ const c = await getMarketIntelCategories(Object.assign({}, merged, {limit:10})); setCategories(c) }catch(e){ setCategories(null) }
     try{ const r = await getMarketIntelReadiness(); setReadiness(r) }catch(e){ setReadiness(null) }
     setLoading(false)
   }
 
-  useEffect(()=>{ loadAll() }, [])
+  useEffect(()=>{ loadAll() }, [globalFilters?.fy, globalFilters?.qtr, globalFilters?.unit_rsid, localFilters.component, localFilters.market_category])
 
-  const handleFilterChange = (k, v)=> setFilters(f=> ({...f, [k]: v}))
+  const handleFilterChange = (k, v)=> setLocalFilters(f=> ({...f, [k]: v}))
 
   return (
     <Container maxWidth="xl" sx={{py:2}}>
       <Typography variant="h5" sx={{mb:2}}>Market Intelligence</Typography>
 
-      <Paper sx={{p:1, mb:2, display:'flex', gap:1, alignItems:'center', bgcolor:'transparent', borderRadius:'4px'}}>
-        <Select value={filters.fy||''} size="small" onChange={e=>handleFilterChange('fy', e.target.value)} sx={{minWidth:100}}>
-          <MenuItem value="">FY</MenuItem>
-          <MenuItem value={2026}>2026</MenuItem>
-          <MenuItem value={2025}>2025</MenuItem>
-        </Select>
-        <Select value={filters.qtr||''} size="small" onChange={e=>handleFilterChange('qtr', e.target.value)} sx={{minWidth:80}}>
-          <MenuItem value="">QTR</MenuItem>
-          <MenuItem value={'Q1'}>Q1</MenuItem>
-          <MenuItem value={'Q2'}>Q2</MenuItem>
-          <MenuItem value={'Q3'}>Q3</MenuItem>
-          <MenuItem value={'Q4'}>Q4</MenuItem>
-        </Select>
-        <TextField size="small" placeholder="RSID prefix (optional)" value={filters.rsid_prefix||''} onChange={e=>handleFilterChange('rsid_prefix', e.target.value)} sx={{minWidth:180}}/>
-        <Button variant="contained" size="small" onClick={loadAll} sx={{ml:'auto', borderRadius:'4px'}}>Apply</Button>
-      </Paper>
+      {/* Filters are provided globally via TopFilterBar on dashboard pages */}
 
-      {/* MI Upload panel */}
-      <Paper sx={{p:1, mb:2, bgcolor:'transparent', borderRadius:'4px'}}>
-        <Typography variant="subtitle1" sx={{mb:1}}>Upload MI Dataset</Typography>
-        <Box sx={{display:'flex', gap:1, alignItems:'center'}}>
-          <Select value={miDataset} size="small" onChange={e=>setMiDataset(e.target.value)} sx={{minWidth:180}}>
-            <MenuItem value={'mi_zip_fact'}>ZIP Fact</MenuItem>
-            <MenuItem value={'mi_cbsa_fact'}>CBSA Fact</MenuItem>
-          </Select>
-          <Button variant="outlined" component="label" size="small" sx={{borderRadius:'4px'}}>
-            Choose CSV
-            <input type="file" hidden accept="text/csv" onChange={e=>setMiFile(e.target.files && e.target.files[0])} />
-          </Button>
-          <Button variant="contained" size="small" onClick={async ()=>{
-            if(!miFile) return alert('select file')
-            const fd = new FormData(); fd.append('dataset_key', miDataset); fd.append('file', miFile)
-            try{
-              const res = await previewMiImport(fd)
-              setMiPreview(res)
-            }catch(e){ alert('preview failed') }
-          }} sx={{borderRadius:'4px'}}>Preview</Button>
-          <Button variant="contained" color="success" size="small" onClick={async ()=>{
-            if(!miFile) return alert('select file')
-            const fd = new FormData(); fd.append('dataset_key', miDataset); fd.append('file', miFile); fd.append('mode', 'replace')
-            try{
-              const res = await commitMiImport(fd)
-              alert(`Inserted ${res.inserted} rows`)
-              setMiPreview(null)
-              loadAll()
-            }catch(e){ alert('commit failed') }
-          }} sx={{borderRadius:'4px'}}>Commit</Button>
-        </Box>
-        {miPreview && (
-          <Box sx={{mt:1}}>
-            <Typography variant="caption">Preview rows: {miPreview.row_count}</Typography>
-            <pre style={{whiteSpace:'pre-wrap', color:'#ccc'}}>{JSON.stringify(miPreview.sample||[],null,2)}</pre>
-          </Box>
-        )}
-      </Paper>
+      {/* Uploads are centralized in Data Hub - remove local upload UI */}
 
       {missing && missing.length>0 ? <MarketIntelDatasetBanner missing={missing} /> : null}
 
@@ -132,8 +90,9 @@ export default function MarketIntelligencePage(){
             ))}
             <Box sx={{mt:1, display:'flex', gap:1}}>
               <Button size="small" variant="contained" onClick={async ()=>{
-                try{
-                  const csv = await exportMarketIntelTargetsCsv(filters)
+                    try{
+                      const merged = { fy: globalFilters?.fy || '', qtr: globalFilters?.qtr || '', rsid_prefix: globalFilters?.unit_rsid || '', component: localFilters.component || '', market_category: localFilters.market_category || '' }
+                      const csv = await exportMarketIntelTargetsCsv(merged)
                   const blob = new Blob([csv], {type:'text/csv'})
                   const url = URL.createObjectURL(blob)
                   const a = document.createElement('a')
@@ -148,11 +107,11 @@ export default function MarketIntelligencePage(){
               <Button size="small" variant="contained" onClick={async ()=>{
                 try{
                   const qs = {}
-                  if(filters.fy) qs.fy = filters.fy
-                  if(filters.qtr) qs.qtr = filters.qtr
-                  if(filters.rsid_prefix) qs.rsid_prefix = filters.rsid_prefix
-                  if(filters.component) qs.component = filters.component
-                  if(filters.market_category) qs.market_category = filters.market_category
+                  if(globalFilters?.fy) qs.fy = globalFilters.fy
+                  if(globalFilters?.qtr) qs.qtr = globalFilters.qtr
+                  if(globalFilters?.unit_rsid) qs.rsid_prefix = globalFilters.unit_rsid
+                  if(localFilters.component) qs.component = localFilters.component
+                  if(localFilters.market_category) qs.market_category = localFilters.market_category
                   const csv = await exportCommanderTargetsCsv(qs)
                   const blob = new Blob([csv], {type:'text/csv'})
                   const url = URL.createObjectURL(blob)

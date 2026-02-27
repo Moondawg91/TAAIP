@@ -218,6 +218,98 @@ def connect() -> sqlite3.Connection:
         print(f"connect: opened new sqlite3 conn for path={path}")
     except Exception:
         pass
+
+
+def _column_exists(cur: sqlite3.Cursor, table: str, column: str) -> bool:
+    try:
+        cur.execute(f"PRAGMA table_info({table})")
+        cols = [r[1] for r in cur.fetchall()]
+        return column in cols
+    except Exception:
+        return False
+
+
+def _add_column_if_missing(cur: sqlite3.Cursor, table: str, column: str, ddl: str) -> None:
+    if not _column_exists(cur, table, column):
+        try:
+            cur.execute(f"ALTER TABLE {table} ADD COLUMN {column} {ddl}")
+        except Exception:
+            # best-effort, non-fatal
+            pass
+
+
+def _migrate_mission_feasibility_schema(conn: sqlite3.Connection) -> None:
+    """Ensure canonical columns exist for mission feasibility and backfill from legacy columns.
+
+    This function is idempotent and safe to run on every startup.
+    """
+    try:
+        cur = conn.cursor()
+
+        # mission_target: ensure annual_contract_mission, fy, unit_rsid
+        _add_column_if_missing(cur, 'mission_target', 'annual_contract_mission', 'INTEGER')
+        _add_column_if_missing(cur, 'mission_target', 'fy', 'INTEGER')
+        _add_column_if_missing(cur, 'mission_target', 'unit_rsid', 'TEXT')
+        # backfill mission_contracts -> annual_contract_mission
+        try:
+            cur.execute("UPDATE mission_target SET annual_contract_mission = mission_contracts WHERE annual_contract_mission IS NULL AND mission_contracts IS NOT NULL")
+        except Exception:
+            pass
+        try:
+            cur.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_mission_target_unit_fy ON mission_target(unit_rsid, fy)")
+        except Exception:
+            pass
+
+        # recruiter_strength: ensure recruiters_assigned, recruiters_available, month, unit_rsid
+        _add_column_if_missing(cur, 'recruiter_strength', 'recruiters_assigned', 'INTEGER')
+        _add_column_if_missing(cur, 'recruiter_strength', 'recruiters_available', 'INTEGER')
+        _add_column_if_missing(cur, 'recruiter_strength', 'month', 'TEXT')
+        _add_column_if_missing(cur, 'recruiter_strength', 'unit_rsid', 'TEXT')
+        # backfill producers_available -> recruiters_available
+        try:
+            cur.execute("UPDATE recruiter_strength SET recruiters_available = producers_available WHERE recruiters_available IS NULL AND producers_available IS NOT NULL")
+        except Exception:
+            pass
+        # backfill assigned_strength if exists
+        try:
+            cur.execute("UPDATE recruiter_strength SET recruiters_assigned = assigned_strength WHERE recruiters_assigned IS NULL AND assigned_strength IS NOT NULL")
+        except Exception:
+            pass
+        try:
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_recruiter_strength_unit_month ON recruiter_strength(unit_rsid, month)")
+        except Exception:
+            pass
+
+        # market_capacity: ensure baseline_contract_capacity, market_burden_factor, fy, unit_rsid
+        _add_column_if_missing(cur, 'market_capacity', 'baseline_contract_capacity', 'INTEGER')
+        _add_column_if_missing(cur, 'market_capacity', 'market_burden_factor', 'REAL DEFAULT 1.0')
+        _add_column_if_missing(cur, 'market_capacity', 'fy', 'INTEGER')
+        _add_column_if_missing(cur, 'market_capacity', 'unit_rsid', 'TEXT')
+        # backfill market_index -> baseline_contract_capacity
+        try:
+            cur.execute("UPDATE market_capacity SET baseline_contract_capacity = CAST(market_index AS INTEGER) WHERE baseline_contract_capacity IS NULL AND market_index IS NOT NULL")
+        except Exception:
+            pass
+        # ensure market_burden_factor has defaults
+        try:
+            cur.execute("UPDATE market_capacity SET market_burden_factor = 1.0 WHERE market_burden_factor IS NULL")
+        except Exception:
+            pass
+        try:
+            cur.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_market_capacity_unit_fy ON market_capacity(unit_rsid, fy)")
+        except Exception:
+            pass
+
+        try:
+            conn.commit()
+        except Exception:
+            pass
+    except Exception:
+        try:
+            conn.rollback()
+        except Exception:
+            pass
+        return
     return conn
 
 
@@ -348,6 +440,341 @@ def init_schema() -> None:
                 created_at TEXT
             );
 
+            -- Ingest pipeline tables (new)
+            CREATE TABLE IF NOT EXISTS ingest_file (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                source_system TEXT,
+                original_filename TEXT,
+                stored_path TEXT,
+                file_hash TEXT,
+                uploaded_by TEXT,
+                uploaded_at TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS ingest_run (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                ingest_file_id INTEGER,
+                importer_id TEXT,
+                started_at TEXT,
+                finished_at TEXT,
+                status TEXT,
+                row_count_in INTEGER DEFAULT 0,
+                row_count_loaded INTEGER DEFAULT 0,
+                errors_json TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS ingest_row_error (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                ingest_run_id INTEGER,
+                row_number INTEGER,
+                error_code TEXT,
+                error_message TEXT,
+                row_json TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS stg_raw_dataset (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                ingest_run_id INTEGER,
+                row_number INTEGER,
+                row_json TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS stg_raw_dataset_profile (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                ingest_file_id INTEGER,
+                columns_json TEXT,
+                sample_json TEXT,
+                detected_source_hint TEXT
+            );
+
+            -- Data Hub import tables (canonical names used by Data Hub APIs)
+            CREATE TABLE IF NOT EXISTS import_file (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                sha256 TEXT UNIQUE,
+                original_filename TEXT,
+                stored_path TEXT,
+                content_type TEXT,
+                byte_size INTEGER,
+                uploaded_at TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS import_run (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                import_file_id INTEGER,
+                source_system TEXT,
+                dataset_key TEXT,
+                status TEXT,
+                started_at TEXT,
+                finished_at TEXT,
+                rows_in INTEGER DEFAULT 0,
+                rows_inserted INTEGER DEFAULT 0,
+                rows_updated INTEGER DEFAULT 0,
+                rows_rejected INTEGER DEFAULT 0,
+                warnings_json TEXT,
+                errors_json TEXT,
+                detected_signature_json TEXT,
+                dry_run INTEGER DEFAULT 0,
+                initiated_by TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS import_row_error (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                import_run_id INTEGER,
+                row_number INTEGER,
+                severity TEXT,
+                message TEXT,
+                raw_row_json TEXT
+            );
+
+            -- Normalized Data Hub tables
+            CREATE TABLE IF NOT EXISTS emm_event (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                event_id TEXT,
+                mac_id TEXT,
+                event_name TEXT,
+                event_type TEXT,
+                start_date TEXT,
+                end_date TEXT,
+                location_name TEXT,
+                city TEXT,
+                state TEXT,
+                zip TEXT,
+                cbsa_code TEXT,
+                unit_rsid TEXT,
+                cost_total REAL,
+                notes TEXT,
+                source_import_run_id INTEGER,
+                created_at TEXT,
+                updated_at TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS emm_mac (
+                mac_id TEXT PRIMARY KEY,
+                mac_name TEXT,
+                mac_type TEXT,
+                unit_rsid TEXT,
+                status TEXT,
+                source_import_run_id INTEGER
+            );
+
+            CREATE TABLE IF NOT EXISTS g2_market_metric (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                metric_key TEXT,
+                value_real REAL,
+                value_text TEXT,
+                as_of_date TEXT,
+                cbsa_code TEXT,
+                zip TEXT,
+                unit_rsid TEXT,
+                echelon TEXT,
+                unit_display TEXT,
+                source_import_run_id INTEGER
+            );
+
+            CREATE TABLE IF NOT EXISTS alrl_school (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                school_id TEXT,
+                school_name TEXT,
+                district TEXT,
+                city TEXT,
+                state TEXT,
+                zip TEXT,
+                unit_rsid TEXT,
+                contact_name TEXT,
+                contact_email TEXT,
+                contact_phone TEXT,
+                contract_status TEXT,
+                contract_date TEXT,
+                source_import_run_id INTEGER
+            );
+
+            CREATE TABLE IF NOT EXISTS fstsm_metric (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                metric_key TEXT,
+                value_real REAL,
+                value_text TEXT,
+                as_of_date TEXT,
+                unit_rsid TEXT,
+                source_import_run_id INTEGER
+            );
+
+            CREATE TABLE IF NOT EXISTS aie_lead_stub (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                aie_person_key TEXT,
+                created_at TEXT,
+                lead_source TEXT,
+                unit_rsid TEXT,
+                cbsa_code TEXT,
+                source_import_run_id INTEGER
+            );
+
+            -- Assets master list tables
+            CREATE TABLE IF NOT EXISTS asset_catalog (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                asset_id TEXT UNIQUE,
+                asset_name TEXT,
+                asset_type TEXT,
+                category TEXT,
+                supported_objectives TEXT,
+                supported_tactics TEXT,
+                description TEXT,
+                constraints TEXT,
+                requires_approval_level TEXT,
+                enabled INTEGER DEFAULT 1,
+                version INTEGER DEFAULT 1,
+                created_at TEXT,
+                updated_at TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS asset_inventory (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                inventory_id TEXT UNIQUE,
+                asset_id TEXT,
+                owning_unit_rsid TEXT,
+                holding_unit_rsid TEXT,
+                status TEXT,
+                available_from_dt TEXT,
+                available_to_dt TEXT,
+                notes TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS asset_requests (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                request_id TEXT UNIQUE,
+                unit_rsid TEXT,
+                event_id TEXT,
+                requested_asset_type TEXT,
+                requested_asset_ids TEXT,
+                priority TEXT,
+                needed_start_dt TEXT,
+                needed_end_dt TEXT,
+                justification TEXT,
+                approval_status TEXT,
+                approval_chain TEXT,
+                created_by TEXT,
+                created_at TEXT,
+                updated_at TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS asset_assignments (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                assignment_id TEXT UNIQUE,
+                request_id TEXT,
+                asset_id TEXT,
+                assigned_unit_rsid TEXT,
+                assigned_start_dt TEXT,
+                assigned_end_dt TEXT,
+                assignment_status TEXT,
+                notes TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS asset_capabilities (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                asset_id TEXT,
+                capability_key TEXT,
+                weight REAL DEFAULT 1.0
+            );
+
+            -- Fact tables required by the importer registry
+            CREATE TABLE IF NOT EXISTS fact_enlistments (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                unit_rsid TEXT,
+                grain TEXT,
+                period_start TEXT,
+                period_end TEXT,
+                metric_name TEXT,
+                metric_value REAL,
+                source_system TEXT,
+                ingest_run_id INTEGER
+            );
+
+            CREATE TABLE IF NOT EXISTS fact_productivity (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                unit_rsid TEXT,
+                period_start TEXT,
+                period_end TEXT,
+                metric_name TEXT,
+                metric_value REAL,
+                recruiter_id TEXT,
+                source_system TEXT,
+                ingest_run_id INTEGER
+            );
+
+            CREATE TABLE IF NOT EXISTS fact_zip_potential (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                zip TEXT,
+                unit_rsid TEXT,
+                cbsa_code TEXT,
+                category TEXT,
+                metric_name TEXT,
+                metric_value REAL,
+                source_system TEXT,
+                ingest_run_id INTEGER
+            );
+
+            CREATE TABLE IF NOT EXISTS fact_school_contacts (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                unit_rsid TEXT,
+                school_id TEXT,
+                school_name TEXT,
+                city TEXT,
+                state TEXT,
+                zip TEXT,
+                contact_name TEXT,
+                contact_type TEXT,
+                email TEXT,
+                phone TEXT,
+                source_system TEXT,
+                ingest_run_id INTEGER
+            );
+
+            CREATE TABLE IF NOT EXISTS fact_school_contracts (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                unit_rsid TEXT,
+                school_id TEXT,
+                school_name TEXT,
+                contract_type TEXT,
+                start_date TEXT,
+                end_date TEXT,
+                status TEXT,
+                source_system TEXT,
+                ingest_run_id INTEGER
+            );
+
+            CREATE TABLE IF NOT EXISTS fact_alrl (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                unit_rsid TEXT,
+                period_start TEXT,
+                period_end TEXT,
+                metric_name TEXT,
+                metric_value REAL,
+                source_system TEXT,
+                ingest_run_id INTEGER
+            );
+
+            CREATE TABLE IF NOT EXISTS fact_mission_category (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                unit_rsid TEXT,
+                period_start TEXT,
+                period_end TEXT,
+                mission_category TEXT,
+                metric_name TEXT,
+                metric_value REAL,
+                source_system TEXT,
+                ingest_run_id INTEGER
+            );
+
+            CREATE TABLE IF NOT EXISTS fact_emm (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                unit_rsid TEXT,
+                period_start TEXT,
+                period_end TEXT,
+                metric_name TEXT,
+                metric_value REAL,
+                source_system TEXT,
+                ingest_run_id INTEGER
+            );
+
             -- Ensure provenance columns exist for processed state (safe to run repeatedly)
             -- Older DB files may not have these columns; attempt to add them if missing.
             PRAGMA user_version;
@@ -359,6 +786,418 @@ def init_schema() -> None:
                 entity TEXT,
                 entity_id INTEGER,
                 meta_json TEXT,
+                created_at TEXT
+            );
+
+            -- Mission Feasibility tables
+            CREATE TABLE IF NOT EXISTS mission_target (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                unit_rsid TEXT NOT NULL,
+                fy INTEGER NOT NULL,
+                annual_contract_mission INTEGER NOT NULL,
+                created_at TEXT,
+                updated_at TEXT,
+                UNIQUE(unit_rsid, fy)
+            );
+
+            CREATE TABLE IF NOT EXISTS recruiter_strength (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                unit_rsid TEXT NOT NULL,
+                month TEXT NOT NULL,
+                recruiters_assigned INTEGER NOT NULL,
+                recruiters_available INTEGER NOT NULL,
+                created_at TEXT,
+                updated_at TEXT,
+                UNIQUE(unit_rsid, month)
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_recruiter_strength_unit_month ON recruiter_strength(unit_rsid, month);
+
+            CREATE TABLE IF NOT EXISTS market_capacity (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                unit_rsid TEXT NOT NULL,
+                fy INTEGER NOT NULL,
+                baseline_contract_capacity INTEGER NOT NULL,
+                market_burden_factor REAL NOT NULL DEFAULT 1.0,
+                notes TEXT,
+                created_at TEXT,
+                updated_at TEXT,
+                UNIQUE(unit_rsid, fy)
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_market_capacity_unit_fy ON market_capacity(unit_rsid, fy);
+
+            CREATE TABLE IF NOT EXISTS feasibility_snapshot (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                unit_rsid TEXT NOT NULL,
+                fy INTEGER NOT NULL,
+                generated_at TEXT NOT NULL,
+                payload_json TEXT NOT NULL,
+                UNIQUE(unit_rsid, fy)
+            );
+
+            -- RBAC permission tables
+            CREATE TABLE IF NOT EXISTS permission (
+                key TEXT PRIMARY KEY,
+                description TEXT,
+                category TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS user_permission (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER,
+                permission_key TEXT,
+                granted INTEGER DEFAULT 1,
+                granted_by TEXT,
+                granted_at TEXT,
+                FOREIGN KEY(user_id) REFERENCES users(id),
+                FOREIGN KEY(permission_key) REFERENCES permission(key)
+            );
+
+            CREATE TABLE IF NOT EXISTS role_template (
+                key TEXT PRIMARY KEY,
+                name TEXT,
+                description TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS role_template_permission (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                role_key TEXT,
+                permission_key TEXT,
+                granted INTEGER DEFAULT 1,
+                FOREIGN KEY(role_key) REFERENCES role_template(key),
+                FOREIGN KEY(permission_key) REFERENCES permission(key)
+            );
+
+            -- Additional RBAC tables per TOR: user_account, role, role_permission, user_role, user_permission_override
+            CREATE TABLE IF NOT EXISTS user_account (
+                id TEXT PRIMARY KEY,
+                email TEXT UNIQUE NOT NULL,
+                display_name TEXT,
+                password_hash TEXT NOT NULL,
+                is_active INTEGER DEFAULT 1,
+                created_at TEXT,
+                updated_at TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS role (
+                role_key TEXT PRIMARY KEY,
+                display_name TEXT,
+                created_at TEXT,
+                updated_at TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS role_permission (
+                role_key TEXT,
+                permission_key TEXT,
+                granted INTEGER DEFAULT 1,
+                PRIMARY KEY(role_key, permission_key),
+                FOREIGN KEY(role_key) REFERENCES role(role_key),
+                FOREIGN KEY(permission_key) REFERENCES permission(key)
+            );
+
+            CREATE TABLE IF NOT EXISTS user_role (
+                user_id TEXT,
+                role_key TEXT,
+                PRIMARY KEY(user_id, role_key),
+                FOREIGN KEY(user_id) REFERENCES user_account(id),
+                FOREIGN KEY(role_key) REFERENCES role(role_key)
+            );
+
+            CREATE TABLE IF NOT EXISTS user_permission_override (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id TEXT,
+                permission_key TEXT,
+                granted INTEGER,
+                reason TEXT,
+                created_at TEXT,
+                FOREIGN KEY(user_id) REFERENCES user_account(id),
+                FOREIGN KEY(permission_key) REFERENCES permission(key)
+            );
+
+            -- Data Hub registry and storage tables (canonical)
+            CREATE TABLE IF NOT EXISTS dataset_registry (
+                dataset_key TEXT PRIMARY KEY,
+                source_system TEXT,
+                display_name TEXT,
+                enabled INTEGER DEFAULT 1,
+                file_types TEXT,
+                sheet_hints TEXT,
+                detection_keywords TEXT,
+                required_columns TEXT,
+                optional_columns TEXT,
+                primary_date_column TEXT,
+                unit_columns TEXT,
+                target_table TEXT,
+                normalizer_key TEXT,
+                version INTEGER DEFAULT 1,
+                created_at TEXT,
+                updated_at TEXT
+            );
+
+            -- Seed dataset_registry with common USAREC datasets (idempotent)
+            INSERT OR IGNORE INTO dataset_registry (dataset_key, source_system, display_name, enabled, file_types, sheet_hints, detection_keywords, required_columns, optional_columns, primary_date_column, unit_columns, target_table, normalizer_key, version, created_at, updated_at) VALUES
+            ('EMM_PORTAL_EVENTS','EMM','EMM Portal - Events',1,'["xlsx","csv"]','["events","mac"]','["emm","events","mac"]','["event_name","start_date","end_date"]','[]',NULL,'["unit_rsid","bde","bn","co","stn"]','emm_event','emm_events_normalizer',1, datetime('now'), datetime('now')),
+            ('EMM_MAC_ASSIGNMENTS','EMM','EMM MAC Assignments',1,'["xlsx","csv"]','["macs","assignments"]','["mac","assignment"]','["mac_id","mac_name"]','[]',NULL,'["unit_rsid"]','emm_mac','emm_macs_normalizer',1, datetime('now'), datetime('now')),
+            ('USAREC_G2_ENLISTMENTS_BY_BDE','USAREC_G2','USAREC G2 - Enlistments by BDE',1,'["xlsx","csv"]','["enlistments","bde"]','["g2","enlist","bde"]','["bde","enlistments"]','[]',NULL,'["bde","bn"]','fact_enlistments','g2_enlistments_normalizer',1, datetime('now'), datetime('now')),
+            ('USAREC_G2_ENLISTMENTS_BY_BN','USAREC_G2','USAREC G2 - Enlistments by BN',1,'["xlsx","csv"]','["enlistments","bn"]','["g2","enlist","bn"]','["bn","enlistments"]','[]',NULL,'["bn","co"]','fact_enlistments','g2_enlistments_normalizer',1, datetime('now'), datetime('now')),
+            ('USAREC_G2_ENLISTMENTS_BY_CBSA','USAREC_G2','USAREC G2 - Enlistments by CBSA',1,'["xlsx","csv"]','["cbsa","enlist"]','["g2","cbsa","enlist"]','["cbsa","enlistments"]','[]',NULL,'["cbsa"]','fact_enlistments','g2_cbsa_normalizer',1, datetime('now'), datetime('now')),
+            ('USAREC_G2_URBANICITY_BY_CBSA','USAREC_G2','USAREC G2 - Urbanicity by CBSA',1,'["xlsx","csv"]','["urbanicity","cbsa"]','["urbanicity","cbsa"]','["cbsa","urbanicity"]','[]',NULL,'["cbsa"]','g2_market_metric','g2_urbanicity_normalizer',1, datetime('now'), datetime('now')),
+            ('ALRL_ZIP_CATEGORY_REPORT','ALRL','ALRL - ZIP Category Report',1,'["xlsx","csv"]','["zip","category","sama"]','["alrl","zip","sama"]','["zip","zip_category"]','[]',NULL,'["zip"]','alrl_school','alrl_zip_normalizer',1, datetime('now'), datetime('now')),
+            ('ALRL_SAMA_ZIP_REPORT','ALRL','ALRL - SAMA ZIP Report',1,'["xlsx","csv"]','["sama","zip"]','["alrl","sama","zip"]','["zip","sama_category"]','[]',NULL,'["zip"]','alrl_school','alrl_sama_normalizer',1, datetime('now'), datetime('now')),
+            ('SCHOOL_CONTACTS','ALRL','School Contacts',1,'["xlsx","csv"]','["schools","contacts"]','["school","contact","email"]','["school_name","contact_name","email"]','[]',NULL,'["unit_rsid"]','fact_school_contacts','school_contacts_normalizer',1, datetime('now'), datetime('now')),
+            ('SCHOOL_CONTRACTS','ALRL','School Contracts',1,'["xlsx","csv"]','["contracts","schools"]','["contract","school"]','["school_id","contract_date"]','[]',NULL,'["unit_rsid"]','fact_school_contracts','school_contracts_normalizer',1, datetime('now'), datetime('now')),
+            ('FSTS_DASHBOARD_EXPORT','FSTS','FSTS Dashboard Export',1,'["csv"]','[]','["fsts","dashboard"]','[]','[]',NULL,'[]','fstsm_metric','fsts_normalizer',1, datetime('now'), datetime('now')),
+            ('VANTAGE_THOR_LEADS_EXPORT','VANTAGE','Vantage Thor Leads',1,'["csv","xlsx"]','[]','["vantage","thor","leads"]','["lead_id","created_at"]','[]',NULL,'["unit_rsid"]','lead_journey_fact','vantage_normalizer',1, datetime('now'), datetime('now')),
+            ('AIE_LEADS_EXPORT','AIE','AIE Leads Export',1,'["csv","xlsx"]','[]','["aie","leads","person"]','["person_key","lead_created_dt"]','[]',NULL,'["unit_rsid"]','lead_journey_fact','aie_normalizer',1, datetime('now'), datetime('now'));
+
+            CREATE TABLE IF NOT EXISTS raw_file_storage (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                run_id TEXT,
+                storage_path TEXT,
+                sha256 TEXT,
+                bytes INTEGER,
+                created_at TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS import_run_v2 (
+                run_id TEXT PRIMARY KEY,
+                dataset_key TEXT,
+                filename TEXT,
+                uploaded_by TEXT,
+                status TEXT,
+                detected_confidence REAL,
+                detected_notes TEXT,
+                rows_in INTEGER DEFAULT 0,
+                rows_loaded INTEGER DEFAULT 0,
+                warnings_count INTEGER DEFAULT 0,
+                errors_count INTEGER DEFAULT 0,
+                started_at TEXT,
+                ended_at TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS import_run_error_v2 (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                run_id TEXT,
+                row_num INTEGER,
+                column_name TEXT,
+                error_code TEXT,
+                message TEXT
+            );
+
+            -- Mission Feasibility tables
+            CREATE TABLE IF NOT EXISTS mission_target (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                unit_rsid TEXT,
+                fy INTEGER,
+                qtr INTEGER,
+                month TEXT,
+                mission_contracts INTEGER,
+                created_at TEXT,
+                updated_at TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS recruiter_strength (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                unit_rsid TEXT,
+                month TEXT,
+                recruiters_assigned INTEGER,
+                producers_available INTEGER,
+                created_at TEXT,
+                updated_at TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS market_capacity (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                unit_rsid TEXT,
+                cbsa TEXT,
+                zip TEXT,
+                market_index REAL,
+                urbanicity TEXT,
+                snapshot_month TEXT,
+                created_at TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS agg_mission_feasibility (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                unit_rsid TEXT,
+                start_date TEXT,
+                end_date TEXT,
+                fy INTEGER,
+                compare_mode TEXT,
+                mission_annual INTEGER,
+                recruiters_avg REAL,
+                wr_required REAL,
+                wr_actual REAL,
+                market_capacity_est REAL,
+                market_support_index REAL,
+                market_burden_ratio REAL,
+                recruiters_needed REAL,
+                recruiter_delta REAL,
+                status TEXT,
+                drivers TEXT,
+                narrative TEXT,
+                recommendations TEXT,
+                computed_at TEXT
+            );
+
+            -- user-role mapping by role template key (string)
+            CREATE TABLE IF NOT EXISTS user_role_template (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER,
+                role_key TEXT,
+                assigned_at TEXT,
+                FOREIGN KEY(user_id) REFERENCES users(id),
+                FOREIGN KEY(role_key) REFERENCES role_template(key)
+            );
+
+            -- Seed permission registry (idempotent)
+            INSERT OR IGNORE INTO permission(key, description, category) VALUES
+            ('pages.command_center.view','View Command Center pages','pages'),
+            ('pages.market_intel.view','View Market Intelligence pages','pages'),
+            ('pages.operations.view','View Operations pages','pages'),
+            ('pages.roi.view','View ROI pages','pages'),
+            ('pages.planning.view','View Planning pages','pages'),
+            ('pages.schools.view','View Schools pages','pages'),
+            ('pages.budget.view','View Budget pages','pages'),
+            ('pages.datahub.view','View Data Hub pages','pages'),
+            ('pages.resources.view','View Resources pages','pages'),
+            ('pages.training.view','View Training pages','pages'),
+            ('pages.helpdesk.view','View Helpdesk pages','pages'),
+            ('pages.system_status.view','View System Status','pages'),
+            ('pages.admin.view','View Admin pages','pages'),
+
+            ('dashboards.view','View dashboards','dashboards'),
+            ('dashboards.export','Export dashboards','dashboards'),
+            ('dashboards.share','Share dashboards','dashboards'),
+            ('dashboards.configure','Configure dashboards','dashboards'),
+
+            ('datahub.upload','Upload to Data Hub','datahub'),
+            ('datahub.view_registry','View Data Hub registry','datahub'),
+            ('datahub.view_runs','View Data Hub runs','datahub'),
+            ('datahub.manage_registry','Manage Data Hub registry','datahub'),
+            ('datahub.delete_run','Delete Data Hub run','datahub'),
+
+            ('planning.view','View planning','planning'),
+            ('planning.edit','Edit planning','planning'),
+            ('planning.publish','Publish planning','planning'),
+            ('twg.view','TWG view','planning'),
+            ('twg.edit','TWG edit','planning'),
+            ('twg.close_issue','TWG close issue','planning'),
+
+            ('roi.view','View ROI','roi'),
+            ('roi.edit_costs','Edit ROI costs','roi'),
+            ('roi.edit_notes','Edit ROI notes','roi'),
+            ('roi.edit_attribution_rules','Edit ROI attribution rules','roi'),
+
+            ('schools.view','View schools','schools'),
+            ('schools.edit_contacts','Edit school contacts','schools'),
+            ('schools.edit_engagements','Edit school engagements','schools'),
+            ('schools.edit_notes','Edit school notes','schools'),
+
+            ('helpdesk.submit','Submit helpdesk tickets','helpdesk'),
+            ('helpdesk.view_own','View own tickets','helpdesk'),
+            ('helpdesk.view_unit','View unit tickets','helpdesk'),
+            ('helpdesk.manage','Manage helpdesk','helpdesk'),
+
+            ('admin.users.manage','Manage users (admin)','admin'),
+            ('admin.permissions.manage','Manage permissions (admin)','admin'),
+            ('admin.thresholds.manage','Manage thresholds (admin)','admin'),
+            ('admin.datasets.manage','Manage datasets (admin)','admin'),
+            ('admin.audit.view','View audit logs','admin');
+
+            -- Additional canonical keys requested by product RBAC spec
+            INSERT OR IGNORE INTO permission(key, description, category) VALUES
+            ('app.read','Baseline: read access to the app (alias)','baseline'),
+            ('app.export','Baseline: export capability (alias)','baseline'),
+            ('datahub.view','View Data Hub (alternate alias)','datahub'),
+            ('datahub.upload_raw','Upload raw data to Data Hub (alias)','datahub'),
+            ('datahub.manage_registry','Manage Data Hub registry (alias)','datahub');
+
+            -- Also insert canonical uppercase permission keys for frontend/backend mapping
+            INSERT OR IGNORE INTO permission(key, description, category) VALUES
+            ('DASHBOARDS_READ','Read dashboards (alias for dashboards.view)','dashboards'),
+            ('EXPORT_DATA','Export dashboards/data (alias for dashboards.export)','dashboards'),
+            ('DATAHUB_READ','Read Data Hub (alias for datahub.view_registry)','datahub'),
+            ('DATAHUB_UPLOAD','Upload to Data Hub (alias for datahub.upload)','datahub'),
+            ('ROI_READ','Read ROI data (alias for roi.view)','roi'),
+            ('ROI_EDIT','Edit ROI data (alias for roi.edit_costs)','roi'),
+            ('PLANNING_READ','Read planning (alias for planning.view)','planning'),
+            ('PLANNING_EDIT','Edit planning (alias for planning.edit)','planning'),
+            ('TWG_READ','Read TWG (alias for twg.view)','planning'),
+            ('TWG_EDIT','Edit TWG (alias for twg.edit)','planning'),
+            ('SCHOOLS_READ','Read schools (alias for schools.view)','schools'),
+            ('SCHOOLS_EDIT','Edit schools (alias for schools.edit_contacts)','schools'),
+            ('BUDGET_READ','Read budgets (alias for budget.view)','budget'),
+            ('BUDGET_EDIT','Edit budgets (alias for budget.write)','budget'),
+            ('HELPDESK_READ','Read helpdesk (alias for helpdesk.view_unit)','helpdesk'),
+            ('HELPDESK_CREATE_TICKET','Create helpdesk ticket (alias for helpdesk.submit)','helpdesk'),
+            ('HELPDESK_ADMIN','Manage helpdesk (alias for helpdesk.manage)','helpdesk'),
+            ('ADMIN_READ','Read admin (alias for admin.users.manage)','admin'),
+            ('ADMIN_MANAGE_USERS','Manage users (alias for admin.users.manage)','admin'),
+            ('ADMIN_MANAGE_ROLES','Manage roles (alias for admin.permissions.manage)','admin'),
+            ('ADMIN_AUDIT_READ','Read audit logs (alias for admin.audit.view)','admin');
+
+            -- Seed role templates (idempotent)
+            INSERT OR IGNORE INTO role_template(key, name, description) VALUES
+            ('ADMIN','Administrator','Full system administrator'),
+            ('TECH','Technical','Technical operator with write access'),
+            ('COMMAND','Command','Command-level user with read access'),
+            ('READONLY','Read Only','Read-only user'),
+            ('420T_FULL','420T Full','Full 420T non-admin access (exports + uploads)'),
+            ('COMMAND_READONLY','Command Readonly','Command-level readonly (view + export)'),
+            ('STAFF_PLANNER','Staff Planner','Planning and Events editors (planning.events.assets edit)'),
+            ('STAFF_ANALYST','Staff Analyst','Analytics focused: view + export'),
+            ('USER','User','Baseline user: read + export');
+
+            -- Invite tokens for onboarding flow
+            CREATE TABLE IF NOT EXISTS invite_token (
+                token TEXT PRIMARY KEY,
+                user_id INTEGER,
+                email TEXT,
+                created_by TEXT,
+                created_at TEXT,
+                used_at TEXT,
+                expires_at TEXT
+            );
+
+            -- Export job tables
+            CREATE TABLE IF NOT EXISTS export_job (
+                id TEXT PRIMARY KEY,
+                requested_by INTEGER,
+                status TEXT,
+                source_page TEXT,
+                dashboard_key TEXT,
+                widget_key TEXT,
+                query_key TEXT,
+                scope_json TEXT,
+                filters_json TEXT,
+                render_json TEXT,
+                format_json TEXT,
+                error_summary TEXT,
+                created_at TEXT,
+                started_at TEXT,
+                ended_at TEXT,
+                updated_at TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS export_file (
+                id TEXT PRIMARY KEY,
+                export_id TEXT,
+                kind TEXT,
+                format TEXT,
+                filename TEXT,
+                storage_path TEXT,
+                size_bytes INTEGER,
+                created_at TEXT,
+                FOREIGN KEY(export_id) REFERENCES export_job(id)
+            );
+
+            CREATE TABLE IF NOT EXISTS export_audit (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                export_id TEXT,
+                event TEXT,
+                message TEXT,
                 created_at TEXT
             );
 
@@ -516,6 +1355,74 @@ def init_schema() -> None:
                 p2p_value REAL,
                 ingested_at TEXT NOT NULL
             );
+            -- Data Hub canonical tables and ROI facts
+            CREATE TABLE IF NOT EXISTS data_upload (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                dataset_key TEXT,
+                source_system TEXT,
+                filename TEXT,
+                file_hash TEXT,
+                uploaded_by TEXT,
+                uploaded_at TEXT,
+                status TEXT DEFAULT 'received',
+                row_count INTEGER DEFAULT 0,
+                error_json TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS lead_journey_fact (
+                lead_id TEXT PRIMARY KEY,
+                person_key TEXT,
+                unit_rsid TEXT,
+                source_type TEXT,
+                source_detail TEXT,
+                event_id TEXT,
+                mac_id TEXT,
+                lead_created_dt TEXT,
+                contact_made_dt TEXT,
+                appointment_dt TEXT,
+                applicant_dt TEXT,
+                contract_dt TEXT,
+                contract_flag INTEGER DEFAULT 0,
+                contract_type TEXT,
+                mos TEXT,
+                afqt_tier TEXT,
+                created_at TEXT,
+                updated_at TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS event_fact (
+                event_id TEXT PRIMARY KEY,
+                unit_rsid TEXT,
+                event_name TEXT,
+                event_type TEXT,
+                start_dt TEXT,
+                end_dt TEXT,
+                location TEXT,
+                mac_id TEXT,
+                requested_macs INTEGER,
+                assigned_macs INTEGER,
+                created_at TEXT,
+                updated_at TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS spend_fact (
+                spend_id TEXT PRIMARY KEY,
+                unit_rsid TEXT,
+                event_id TEXT,
+                spend_type TEXT,
+                amount REAL,
+                spend_dt TEXT,
+                notes TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS roi_thresholds (
+                metric_key TEXT PRIMARY KEY,
+                value REAL
+            );
+
+            -- Seed default thresholds if missing (idempotent)
+            INSERT OR IGNORE INTO roi_thresholds(metric_key, value) VALUES ('cpl_target', 100.0);
+            INSERT OR IGNORE INTO roi_thresholds(metric_key, value) VALUES ('cpc_target', 2500.0);
             CREATE TABLE IF NOT EXISTS geo_target_zones (
                 id TEXT PRIMARY KEY,
                 name TEXT NOT NULL,
@@ -1847,6 +2754,42 @@ def init_schema() -> None:
             """
         )
         # run lightweight schema migrations
+        # Seed minimal demo data for Mission Feasibility (idempotent)
+        try:
+            try:
+                cur.execute("SELECT COUNT(1) as c FROM mission_target WHERE unit_rsid=? AND fy=?", ('USAREC', 2025))
+                r = cur.fetchone()
+                c = 0
+                try:
+                    # sqlite3.Row may return mapping-like rows
+                    c = int(r['c'])
+                except Exception:
+                    try:
+                        c = int(r[0])
+                    except Exception:
+                        c = 0
+                if c == 0:
+                    now = datetime.utcnow().isoformat()
+                    # Insert an annual mission target for demo
+                    cur.execute('INSERT INTO mission_target (unit_rsid, fy, qtr, month, mission_contracts, created_at) VALUES (?,?,?,?,?,?)', ('USAREC', 2025, None, None, 1200, now))
+                    # Populate a 12-month recruiter strength history (simple demo values)
+                    months = [f"2024-{m:02d}-01" for m in range(1,13)]
+                    for m in months:
+                        cur.execute('INSERT INTO recruiter_strength (unit_rsid, month, recruiters_assigned, producers_available, created_at) VALUES (?,?,?,?,?)', ('USAREC', m, 50, 45, now))
+                    # Add a simple market capacity estimate row
+                    cur.execute('INSERT INTO market_capacity (unit_rsid, cbsa, zip, market_index, urbanicity, snapshot_month, created_at) VALUES (?,?,?,?,?,?,?)', ('USAREC', None, None, 1000.0, 'mixed', '2024-01-01', now))
+                    # Add a handful of demo contracts to lead_journey_fact to allow WR_actual computation
+                    for i in range(1,51):
+                        lead_id = f"demo-usarec-lead-{i}"
+                        contract_dt = f"2024-{((i-1)%12)+1:02d}-15"
+                        try:
+                            cur.execute('INSERT OR IGNORE INTO lead_journey_fact (lead_id, person_key, unit_rsid, contract_flag, contract_dt, created_at) VALUES (?,?,?,?,?,?)', (lead_id, f"person-{i}", 'USAREC', 1, contract_dt, now))
+                        except Exception:
+                            pass
+            except Exception:
+                pass
+        except Exception:
+            pass
         try:
             # inspect marketing_activities columns
             cur.execute("PRAGMA table_info(marketing_activities)")
@@ -1952,6 +2895,149 @@ def init_schema() -> None:
                         pass
         except Exception:
             pass
+
+        # Seed role_template_permission defaults based on the permission registry
+        try:
+            # ensure role_template rows exist (created earlier via INSERT OR IGNORE)
+            cur.execute("SELECT key FROM role_template")
+            existing_roles = [r[0] for r in cur.fetchall()]
+            # load permission keys
+            cur.execute('SELECT key FROM permission')
+            perms = [r[0] for r in cur.fetchall()]
+            now = datetime.utcnow().isoformat()
+            # ADMIN: grant all known permissions
+            if 'ADMIN' in existing_roles:
+                for p in perms:
+                    try:
+                        cur.execute('INSERT OR IGNORE INTO role_template_permission(role_key, permission_key, granted) VALUES (?,?,1)', ('ADMIN', p))
+                        # Also insert any canonical/alias permission keys that reference this dotted key
+                        try:
+                            cur.execute('SELECT key FROM permission WHERE description LIKE ?', (f"%{p}%",))
+                            for ar in cur.fetchall():
+                                ak = ar[0]
+                                try:
+                                    cur.execute('INSERT OR IGNORE INTO role_template_permission(role_key, permission_key, granted) VALUES (?,?,1)', ('ADMIN', ak))
+                                except Exception:
+                                    pass
+                        except Exception:
+                            pass
+                    except Exception:
+                        pass
+            # READONLY: dashboards.view/export only
+            readonly_perms = ['dashboards.view', 'dashboards.export']
+            if 'READONLY' in existing_roles:
+                for p in readonly_perms:
+                    if p in perms:
+                        try:
+                            cur.execute('INSERT OR IGNORE INTO role_template_permission(role_key, permission_key, granted) VALUES (?,?,1)', ('READONLY', p))
+                            try:
+                                cur.execute('SELECT key FROM permission WHERE description LIKE ?', (f"%{p}%",))
+                                for ar in cur.fetchall():
+                                    ak = ar[0]
+                                    try:
+                                        cur.execute('INSERT OR IGNORE INTO role_template_permission(role_key, permission_key, granted) VALUES (?,?,1)', ('READONLY', ak))
+                                    except Exception:
+                                        pass
+                            except Exception:
+                                pass
+                        except Exception:
+                            pass
+            # COMMAND: read-only across core features
+            command_perms = ['dashboards.view', 'dashboards.export', 'planning.view', 'roi.view', 'events.view', 'schools.view', 'budget.view']
+            if 'COMMAND' in existing_roles:
+                for p in command_perms:
+                    if p in perms:
+                        try:
+                            cur.execute('INSERT OR IGNORE INTO role_template_permission(role_key, permission_key, granted) VALUES (?,?,1)', ('COMMAND', p))
+                            try:
+                                cur.execute('SELECT key FROM permission WHERE description LIKE ?', (f"%{p}%",))
+                                for ar in cur.fetchall():
+                                    ak = ar[0]
+                                    try:
+                                        cur.execute('INSERT OR IGNORE INTO role_template_permission(role_key, permission_key, granted) VALUES (?,?,1)', ('COMMAND', ak))
+                                    except Exception:
+                                        pass
+                            except Exception:
+                                pass
+                        except Exception:
+                            pass
+            # TECH: broader write privileges (no admin.manage_users)
+            tech_perms = ['dashboards.view','dashboards.export','planning.view','planning.edit','roi.view','roi.edit_costs','events.view','events.write','schools.view','schools.edit_contacts','budget.view','budget.write','datahub.upload']
+            if 'TECH' in existing_roles:
+                for p in tech_perms:
+                    if p in perms:
+                        try:
+                            cur.execute('INSERT OR IGNORE INTO role_template_permission(role_key, permission_key, granted) VALUES (?,?,1)', ('TECH', p))
+                            try:
+                                cur.execute('SELECT key FROM permission WHERE description LIKE ?', (f"%{p}%",))
+                                for ar in cur.fetchall():
+                                    ak = ar[0]
+                                    try:
+                                        cur.execute('INSERT OR IGNORE INTO role_template_permission(role_key, permission_key, granted) VALUES (?,?,1)', ('TECH', ak))
+                                    except Exception:
+                                        pass
+                            except Exception:
+                                pass
+                        except Exception:
+                            pass
+            # Seed new role templates per product RBAC specification
+            # 420T_FULL: all non-admin permissions + datahub.upload
+                        if '420T_FULL' in existing_roles:
+                            for p in perms:
+                                # skip admin.* permissions
+                                if p.startswith('admin.'):
+                                    continue
+                                try:
+                                    cur.execute('INSERT OR IGNORE INTO role_template_permission(role_key, permission_key, granted) VALUES (?,?,1)', ('420T_FULL', p))
+                                except Exception:
+                                    pass
+
+                        # COMMAND_READONLY: view + export only (core pages + dashboards)
+                        if 'COMMAND_READONLY' in existing_roles:
+                            cr_perms = ['dashboards.view', 'dashboards.export', 'pages.command_center.view', 'pages.market_intel.view', 'pages.operations.view', 'pages.roi.view']
+                            for p in cr_perms:
+                                if p in perms:
+                                    try:
+                                        cur.execute('INSERT OR IGNORE INTO role_template_permission(role_key, permission_key, granted) VALUES (?,?,1)', ('COMMAND_READONLY', p))
+                                    except Exception:
+                                        pass
+
+                        # STAFF_PLANNER: planning/events/assets edit; rest view
+                        if 'STAFF_PLANNER' in existing_roles:
+                            sp_perms = ['planning.view','planning.edit','events.view','events.edit','asset_catalog','asset_inventory']
+                            for p in sp_perms:
+                                # map friendly alias names where applicable
+                                if p in perms:
+                                    try:
+                                        cur.execute('INSERT OR IGNORE INTO role_template_permission(role_key, permission_key, granted) VALUES (?,?,1)', ('STAFF_PLANNER', p))
+                                    except Exception:
+                                        pass
+
+                        # STAFF_ANALYST: analytics/roi view; can export
+                        if 'STAFF_ANALYST' in existing_roles:
+                            sa_perms = ['dashboards.view','dashboards.export','roi.view','pages.market_intel.view','pages.operations.view']
+                            for p in sa_perms:
+                                if p in perms:
+                                    try:
+                                        cur.execute('INSERT OR IGNORE INTO role_template_permission(role_key, permission_key, granted) VALUES (?,?,1)', ('STAFF_ANALYST', p))
+                                    except Exception:
+                                        pass
+
+                        # USER: baseline read + export only
+                        if 'USER' in existing_roles:
+                            user_perms = ['dashboards.view','dashboards.export','pages.system_status.view']
+                            for p in user_perms:
+                                if p in perms:
+                                    try:
+                                        cur.execute('INSERT OR IGNORE INTO role_template_permission(role_key, permission_key, granted) VALUES (?,?,1)', ('USER', p))
+                                    except Exception:
+                                        pass
+            conn.commit()
+        except Exception:
+            try:
+                conn.rollback()
+            except Exception:
+                pass
 
         # Maintenance schedule / run history tables
         cur.executescript(
@@ -3041,6 +4127,38 @@ def init_db() -> str:
             pass
     except Exception:
         pass
+    
+    # Run mission-feasibility migrations to align legacy DB schemas to canonical columns
+    try:
+        conn = connect()
+        try:
+            _migrate_mission_feasibility_schema(conn)
+        except Exception:
+            pass
+        cur = conn.cursor()
+        now = datetime.utcnow().isoformat()
+        # mission_target
+        cur.execute('INSERT OR IGNORE INTO mission_target(unit_rsid,fy,annual_contract_mission,created_at) VALUES(?,?,?,?)', ('USAREC', 2026, 60000, now))
+        cur.execute('UPDATE mission_target SET annual_contract_mission = ?, updated_at = ? WHERE unit_rsid = ? AND fy = ?', (60000, now, 'USAREC', 2026))
+
+        # recruiter_strength: 12 months for FY2026
+        for m in range(1, 13):
+            month = f'2026-{m:02d}'
+            cur.execute('INSERT OR REPLACE INTO recruiter_strength(unit_rsid, month, recruiters_assigned, recruiters_available, created_at, updated_at) VALUES(?,?,?,?,?,?)', ('USAREC', month, 50, 45, now, now))
+
+        # market_capacity
+        cur.execute('INSERT OR IGNORE INTO market_capacity(unit_rsid, fy, baseline_contract_capacity, market_burden_factor, created_at) VALUES(?,?,?,?,?)', ('USAREC', 2026, 58000, 1.05, now))
+        cur.execute('UPDATE market_capacity SET baseline_contract_capacity = ?, market_burden_factor = ?, updated_at = ? WHERE unit_rsid = ? AND fy = ?', (58000, 1.05, now, 'USAREC', 2026))
+
+        conn.commit()
+    except Exception:
+        pass
+    finally:
+        try:
+            conn.close()
+        except Exception:
+            pass
+
     return get_db_path()
 
 

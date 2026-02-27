@@ -137,10 +137,31 @@ def compute_burden_snapshot(db: Session, scope_type: str, scope_value: str):
 def create_loe(db: Session, payload: dict):
     payload.pop('created_at', None)
     payload.pop('updated_at', None)
+    # If an LOE with the provided id already exists, return it (idempotent)
+    loe_id = payload.get('id')
+    if loe_id:
+        try:
+            existing = db.query(domain.Loe).filter(domain.Loe.id == loe_id).one_or_none()
+            if existing:
+                return existing
+        except Exception:
+            # fall through to create path
+            pass
     loe = domain.Loe(**payload)
-    db.add(loe)
-    db.commit()
-    return loe
+    try:
+        db.add(loe)
+        db.commit()
+        return loe
+    except Exception:
+        try:
+            db.rollback()
+        except Exception:
+            pass
+        # attempt to return existing row if concurrent insert happened
+        try:
+            return db.query(domain.Loe).filter(domain.Loe.id == loe_id).one_or_none()
+        except Exception:
+            raise
 
 
 def create_loe_metric(db: Session, payload: dict):
@@ -148,10 +169,29 @@ def create_loe_metric(db: Session, payload: dict):
     payload.pop('updated_at', None)
     payload.pop('ingested_at', None)
     payload['ingested_at'] = datetime.now(timezone.utc)
+    # Idempotent create: if metric id exists return it, otherwise create
+    mid = payload.get('id')
+    if mid:
+        try:
+            existing = db.query(domain.LoeMetric).filter(domain.LoeMetric.id == mid).one_or_none()
+            if existing:
+                return existing
+        except Exception:
+            pass
     lm = domain.LoeMetric(**payload)
-    db.add(lm)
-    db.commit()
-    return lm
+    try:
+        db.add(lm)
+        db.commit()
+        return lm
+    except Exception:
+        try:
+            db.rollback()
+        except Exception:
+            pass
+        try:
+            return db.query(domain.LoeMetric).filter(domain.LoeMetric.id == mid).one_or_none()
+        except Exception:
+            raise
 
 
 def evaluate_loe(db: Session, loe_id: str):

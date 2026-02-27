@@ -1,6 +1,6 @@
 import React from 'react'
-import PlaceholderPage from '../PlaceholderPage'
+import { NotLoadedPage } from '../PlaceholderPage'
 
 export default function UserManualPage(){
-  return <PlaceholderPage title="User Manual" subtitle="User manual and quickstart (coming soon)." />
+  return <NotLoadedPage title="User Manual" subtitle="Not loaded — user manual is not available until documentation datasets are imported." />
 }

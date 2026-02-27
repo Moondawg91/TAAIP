@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { Box, Typography, Card, CardContent, List, ListItem, ListItemText } from '@mui/material'
-import { getFunnelRollup } from '../../api/client'
+import { queryMetric } from '../../api/client'
 
 export default function FunnelMetricsPage(){
   const [stages, setStages] = useState([])
@@ -9,7 +9,7 @@ export default function FunnelMetricsPage(){
   useEffect(()=>{ load() }, [])
   async function load(){
     try{
-      const r = await getFunnelRollup()
+      const r = await queryMetric('funnel')
       const s = (r && r.data && r.data.stages) ? r.data.stages : []
       const conv = (r && r.data && r.data.conversion_rates) ? r.data.conversion_rates : []
       setStages(s || [])

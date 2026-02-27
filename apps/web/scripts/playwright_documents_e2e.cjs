@@ -9,14 +9,14 @@ const path = require('path');
   try{
     page.on('console', m=> console.log('PAGE_CONSOLE:', m.text()));
     page.on('pageerror', e=> console.log('PAGE_ERROR:', String(e.stack||e)));
-    // navigate to site root and click the Imports Center link to ensure client-side routing loads correctly
+    // navigate to site root and click the Data Hub link to ensure client-side routing loads correctly
     await page.goto(base, { waitUntil: 'networkidle' })
-    // click nav link 'Imports Center' if present
+    // click nav link 'Data Hub' if present
     try{
-      await page.click('text=Imports Center')
+      await page.click('text=Data Hub')
     }catch(e){
       // try alternate link text
-      try{ await page.click('text=Import Center') }catch(e2){}
+      try{ await page.click('text=Data Hub') }catch(e2){}
     }
     // wait for DocumentUploadPanel
     await page.waitForSelector('input[data-testid="document-file-input"]', { timeout: 20000 });

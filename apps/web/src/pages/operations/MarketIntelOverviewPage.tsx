@@ -18,7 +18,7 @@ export default function MarketIntelOverviewPage(){
   },[])
 
   return (
-    <div style={{background:'#121212', color:'#fff', padding:12, borderRadius:4}}>
+    <div style={{background:'#F4F6F9', color:'#0F1724', padding:12, borderRadius:4}}>
       <h2>Market Intelligence — Overview</h2>
       {missing && missing.length>0 && (
         <div style={{background:'#2b2b2b', padding:8, borderRadius:4, marginBottom:8}}>Dataset not loaded: {missing.join(', ')}</div>

@@ -1,11 +1,101 @@
 /* © 2026 TAAIP. Copyright pending. */
 
-const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:8000'
+import { loadOrgSelection } from '../store/orgSelection'
+
+function getApiBase(){
+  try{
+    if (typeof process !== 'undefined' && process.env && typeof process.env.REACT_APP_API_BASE !== 'undefined'){
+      return process.env.REACT_APP_API_BASE || ''
+    }
+  }catch(e){}
+  return ''
+}
+
+function baseForUrl(){
+  const b = getApiBase()
+  if (b && b.length) return b
+  if (typeof window !== 'undefined' && window.location && window.location.origin) return window.location.origin
+  return ''
+}
 
 function normalizeResponseJson(json) {
   if (!json) return null
   if (typeof json === 'object' && json.status && json.data !== undefined) return json.data
   return json
+}
+
+function attachOrgSelectionParams(urlObj){
+  try{
+    // Try canonical loader first
+    try{
+      const sel = loadOrgSelection()
+      const active = (sel && sel.active) ? sel.active : (sel && sel.effective_rsid ? { rsid: sel.effective_rsid } : null)
+      if (active && active.rsid) urlObj.searchParams.set('unit_rsid', active.rsid)
+      if (active && active.echelon) urlObj.searchParams.set('echelon', active.echelon)
+    }catch(e){
+      // fallback to reading legacy LS keys
+      try{
+        let raw = localStorage.getItem('taaip.unitSelection.v1')
+        if (!raw) raw = localStorage.getItem('taaip_org_selection_v1')
+        if (!raw) raw = localStorage.getItem('ta aip.unitSelection.v1')
+        if (!raw) raw = localStorage.getItem('taaip:selected_unit')
+        if (raw){
+          const sel = JSON.parse(raw)
+          const active = (sel && sel.active) ? sel.active : (sel && sel.effective_rsid ? { rsid: sel.effective_rsid } : null)
+          if (active && active.rsid) urlObj.searchParams.set('unit_rsid', active.rsid)
+          if (active && active.echelon) urlObj.searchParams.set('echelon', active.echelon)
+        }
+      }catch(e2){ /* ignore */ }
+    }
+
+    // attach persisted filters (fy/qtr/compare) if present
+    try{
+      const rawFilters = localStorage.getItem('taaip.filters.v1')
+      if (rawFilters){
+        const f = JSON.parse(rawFilters)
+        if (f && f.fy) urlObj.searchParams.set('fy', f.fy)
+        if (f && f.qtr) urlObj.searchParams.set('qtr', f.qtr)
+        if (f && f.compare) urlObj.searchParams.set('compare', f.compare)
+      }
+    }catch(e){}
+  }catch(e){}
+}
+
+// Fetch children units for a parent RSID and echelon. Falls back to units-summary if /children is unavailable.
+export async function getOrgChildren(parent_rsid, echelon){
+  try{
+    const path = `/api/v2/org/children?parent_rsid=${encodeURIComponent(parent_rsid)}&echelon=${encodeURIComponent(echelon)}`
+    const resp = await apiFetch(path, { includeUnit: false })
+    // expected shape: { data: { units: [...] } }
+    if (resp && resp.data && Array.isArray(resp.data.units)) return resp.data.units
+    // some implementations may return { data: { children: [...] } }
+    if (resp && resp.data && Array.isArray(resp.data.children)) return resp.data.children
+    return []
+  }catch(e){
+    // fallback to units-summary and filter locally
+    try{
+      const summary = await apiFetch('/api/v2/org/units-summary', { includeUnit: false })
+      const data = (summary && summary.data) ? summary.data : summary
+      // Collect all units into a single array and filter by parent and echelon
+      const all = []
+      if (Array.isArray(data.brigades)) all.push(...data.brigades)
+      if (Array.isArray(data.battalions)) all.push(...data.battalions)
+      if (Array.isArray(data.companies)) all.push(...data.companies)
+      if (Array.isArray(data.stations)) all.push(...data.stations)
+      // Some older shapes may use different key names
+      if (Array.isArray(data.bdes)) all.push(...data.bdes)
+      if (Array.isArray(data.bns)) all.push(...data.bns)
+      // Filter by parent and echelon
+      const filtered = all.filter(u => {
+        const matchParent = (!parent_rsid) || (u.parent_rsid === parent_rsid) || (u.parent_key === parent_rsid) || (u.parent === parent_rsid)
+        const matchEchelon = (!echelon) || (u.echelon === echelon) || (u.echelon_type === echelon) || (u.echelon_type === (echelon.toLowerCase && echelon.toLowerCase()))
+        return matchParent && matchEchelon
+      })
+      return filtered
+    }catch(err){
+      return []
+    }
+  }
 }
 
 // Safe fetch helper: returns a consistent error shape instead of throwing.
@@ -14,8 +104,14 @@ async function safeGet(path, opts = {}) {
     const token = localStorage.getItem('taaip_jwt')
     const headers = Object.assign({}, opts.headers || {})
     if (token) headers['Authorization'] = `Bearer ${token}`
-    const url = path.startsWith('http') ? path : `${API_BASE}${path}`
-    const res = await fetch(url, Object.assign({}, opts, { headers }))
+    const includeUnit = opts.includeUnit !== false
+    // remove internal flag before passing to fetch
+    const fetchOpts = Object.assign({}, opts)
+    delete fetchOpts.includeUnit
+    const urlObj = path.startsWith('http') ? new URL(path) : new URL(path, baseForUrl())
+    if (includeUnit) attachOrgSelectionParams(urlObj)
+    const url = urlObj.toString()
+    const res = await fetch(url, Object.assign({}, fetchOpts, { headers }))
     if (!res.ok) {
       return { status: 'error', http_status: res.status, path: url, message: `HTTP ${res.status}` }
     }
@@ -26,13 +122,18 @@ async function safeGet(path, opts = {}) {
   }
 }
 
-async function apiFetch(path, opts = {}) {
+export async function apiFetch(path, opts = {}) {
   const token = localStorage.getItem('taaip_jwt')
   const headers = Object.assign({'Accept': 'application/json'}, opts.headers || {})
   if (token) headers['Authorization'] = `Bearer ${token}`
+  const includeUnit = opts.includeUnit !== false
+  const fetchOpts = Object.assign({}, opts)
+  delete fetchOpts.includeUnit
+  const urlObj = path.startsWith('http') ? new URL(path) : new URL(path, baseForUrl())
+  if (includeUnit) attachOrgSelectionParams(urlObj)
 
-  const url = path.startsWith('http') ? path : `${API_BASE}${path}`
-  const res = await fetch(url, Object.assign({}, opts, {headers}))
+  const url = urlObj.toString()
+  const res = await fetch(url, Object.assign({}, fetchOpts, {headers}))
   const text = await res.text()
   let json = null
   try { json = text ? JSON.parse(text) : null } catch(e){ json = null }
@@ -63,6 +164,17 @@ function withScopeQs(scope, value){
   const qs = new URLSearchParams()
   if (scope) qs.set('scope', scope)
   if (value) qs.set('value', value)
+  // include selected unit_key when available
+  try{
+    let raw = localStorage.getItem('taaip.unitSelection.v1')
+    if (!raw) raw = localStorage.getItem('taaip_org_selection_v1')
+    if (!raw) raw = localStorage.getItem('ta aip.unitSelection.v1')
+    if (!raw) raw = localStorage.getItem('taaip:selected_unit')
+    if (raw){
+      const sel = JSON.parse(raw)
+      if (sel && sel.effective_rsid) qs.set('unit_rsid', sel.effective_rsid)
+    }
+  }catch(e){}
   const s = qs.toString()
   return s ? `?${s}` : ''
 }
@@ -88,6 +200,19 @@ export async function getCoverageSummary(scope, value){
 export async function getKpis(scope){
   const qs = new URLSearchParams()
   if (scope) qs.set('scope', scope)
+  // append deepest selected RSID (unit_rsid) + echelon when present
+  try{
+    let raw = localStorage.getItem('taaip.unitSelection.v1')
+    if (!raw) raw = localStorage.getItem('taaip_org_selection_v1')
+    if (!raw) raw = localStorage.getItem('ta aip.unitSelection.v1')
+    if (!raw) raw = localStorage.getItem('taaip:selected_unit')
+    if (raw){
+      const sel = JSON.parse(raw)
+      const active = (sel && sel.active) ? sel.active : (sel && sel.effective_rsid ? { rsid: sel.effective_rsid, echelon: sel.echelon } : null)
+      if (active && active.rsid) qs.set('unit_rsid', active.rsid)
+      if (active && active.echelon) qs.set('echelon', active.echelon)
+    }
+  }catch(e){}
   const path = `/api/powerbi/kpis?${qs.toString()}`
   try {
     return await apiFetch(path)
@@ -192,6 +317,74 @@ export async function getMe(){
   return resp
 }
 
+// Export API
+export async function createExport(payload){
+  return apiFetch('/api/v2/exports', { method: 'POST', body: JSON.stringify(payload), headers: {'Content-Type':'application/json'} })
+}
+
+export async function getExport(exportId){
+  return apiFetch(`/api/v2/exports/${encodeURIComponent(exportId)}`)
+}
+
+export async function listMyExports(){
+  return apiFetch('/api/v2/exports?mine=true')
+}
+
+export function downloadExportFile(exportId, fileId){
+  const token = localStorage.getItem('taaip_jwt')
+  const headers = {}
+  if (token) headers['Authorization'] = `Bearer ${token}`
+  return `${baseForUrl()}/api/v2/exports/${encodeURIComponent(exportId)}/files/${encodeURIComponent(fileId)}`
+}
+
+// Admin RBAC clients
+export async function getAdminPermissionsRegistry(){
+  return apiFetch('/api/v2/admin/permissions/registry')
+}
+
+export async function listAdminUsers(){
+  return apiFetch('/api/v2/admin/users')
+}
+
+export async function getAdminUserPermissions(userId){
+  return apiFetch(`/api/v2/admin/users/${userId}/permissions`)
+}
+
+export async function grantAdminPermission(userId, permissionKey){
+  return apiFetch(`/api/v2/admin/users/${userId}/permissions/grant`, { method: 'POST', body: JSON.stringify({ permission_key: permissionKey }), headers: {'Content-Type':'application/json'} })
+}
+
+export async function revokeAdminPermission(userId, permissionKey){
+  return apiFetch(`/api/v2/admin/users/${userId}/permissions/revoke`, { method: 'POST', body: JSON.stringify({ permission_key: permissionKey }), headers: {'Content-Type':'application/json'} })
+}
+
+export async function inviteAdminUser(payload){
+  return apiFetch('/api/v2/admin/users/invite', { method: 'POST', body: JSON.stringify(payload), headers: {'Content-Type':'application/json'} })
+}
+
+export async function importAdminUsers(file){
+  const token = localStorage.getItem('taaip_jwt')
+  const headers = {}
+  if (token) headers['Authorization'] = `Bearer ${token}`
+  const form = new FormData()
+  form.append('file', file)
+  const res = await fetch(`${baseForUrl()}/api/v2/admin/users/import`, { method: 'POST', body: form, headers })
+  if (!res.ok) throw new Error('import failed')
+  return res.json()
+}
+
+export async function setAdminUserRoles(userId, roles){
+  return apiFetch(`/api/v2/admin/users/${userId}/roles`, { method: 'PUT', body: JSON.stringify({ roles }), headers: {'Content-Type':'application/json'} })
+}
+
+export async function setAdminUserStatus(userId, status){
+  return apiFetch(`/api/v2/admin/users/${userId}/status`, { method: 'PUT', body: JSON.stringify({ status }), headers: {'Content-Type':'application/json'} })
+}
+
+export async function setAdminUserPermissionOverrides(userId, overrides){
+  return apiFetch(`/api/v2/admin/users/${userId}/permissions`, { method: 'PUT', body: JSON.stringify({ overrides }), headers: {'Content-Type':'application/json'} })
+}
+
 // Tactical/Command Center clients
 export async function getMissionAssessment(qs = {}){
   const params = new URLSearchParams(qs).toString()
@@ -208,7 +401,7 @@ export async function exportDashboard(type, format='csv', qs = {}){
     const token = localStorage.getItem('taaip_jwt')
     const headers = {}
     if (token) headers['Authorization'] = `Bearer ${token}`
-    const res = await fetch(`${API_BASE}${path}`, { headers })
+    const res = await fetch(`${baseForUrl()}${path}`, { headers })
     if (!res.ok) throw new Error('export failed')
     return res.text()
   }
@@ -221,7 +414,7 @@ export async function exportCommanderTargetsCsv(qs = {}){
   const token = localStorage.getItem('taaip_jwt')
   const headers = {}
   if (token) headers['Authorization'] = `Bearer ${token}`
-  const res = await fetch(`${API_BASE}${path}`, { headers })
+  const res = await fetch(`${baseForUrl()}${path}`, { headers })
   if (!res.ok) throw new Error('export failed')
   return res.text()
 }
@@ -250,7 +443,7 @@ export async function uploadImport(fd){
   const token = localStorage.getItem('taaip_jwt')
   const headers = {}
   if (token) headers['Authorization'] = `Bearer ${token}`
-  const res = await fetch(`${API_BASE}${url}`, { method: 'POST', body: fd, headers })
+  const res = await fetch(`${baseForUrl()}${url}`, { method: 'POST', body: fd, headers })
   if (!res.ok) throw new Error('upload failed')
   return res.json()
 }
@@ -259,7 +452,7 @@ export async function importUpload(fd){
   const token = localStorage.getItem('taaip_jwt')
   const headers = {}
   if (token) headers['Authorization'] = `Bearer ${token}`
-  const res = await fetch(`${API_BASE}/api/import/upload`, { method: 'POST', body: fd, headers })
+  const res = await fetch(`${baseForUrl()}/api/import/upload`, { method: 'POST', body: fd, headers })
   if (!res.ok) throw new Error('upload failed')
   return res.json()
 }
@@ -277,14 +470,57 @@ export async function importValidate(import_job_id){
 }
 
 export async function importCommit(import_job_id, mode='append'){
-  return apiFetch('/api/import/commit', { method: 'POST', body: JSON.stringify({ import_job_id, mode }), headers: {'Content-Type':'application/json'} })
+  try {
+    return await apiFetch('/api/import/commit', { method: 'POST', body: JSON.stringify({ import_job_id, mode }), headers: {'Content-Type':'application/json'} })
+  } catch (err) {
+    // If v3 commit fails (route/validation), attempt compat endpoint that invokes legacy commit
+    try {
+      return await apiFetch('/api/import/compat/commit_v3', { method: 'POST', body: JSON.stringify({ import_job_id, mode }), headers: {'Content-Type':'application/json'} })
+    } catch (err2) {
+      throw err
+    }
+  }
+}
+
+// Orchestrate a simple import flow for an existing v3 import job.
+export async function runImportFlow(import_job_id = null, mapping = null, mode = 'append'){
+  // If no import_job_id provided, pick the most recent v3 job
+  try{
+    if (!import_job_id){
+      const jobs = await apiFetch('/api/import/jobs')
+      if (Array.isArray(jobs) && jobs.length>0) import_job_id = jobs[0].id
+    }
+    if (!import_job_id) throw new Error('no import_job_id available')
+
+    // parse (idempotent if already parsed)
+    await importParse(import_job_id)
+
+    // apply mapping if provided, otherwise try to reuse existing mapping by fetching job details
+    if (!mapping){
+      try{
+        const job = await apiFetch(`/api/import/jobs/${import_job_id}`)
+        const maps = job && job.mappings ? job.mappings : []
+        if (maps && maps.length>0) mapping = JSON.parse(maps[0].mapping_json)
+      }catch(e){}
+    }
+
+    if (mapping){
+      await importMap(import_job_id, mapping, mapping.dataset_key || (mapping.dataset_key===undefined? null: mapping.dataset_key), mapping.source_system || 'ui', mapping.scope_org_unit_id || null)
+    }
+
+    await importValidate(import_job_id)
+    const res = await importCommit(import_job_id, mode)
+    return res
+  }catch(e){
+    throw e
+  }
 }
 
 export async function previewMiImport(formData){
   const token = localStorage.getItem('taaip_jwt')
   const headers = {}
   if (token) headers['Authorization'] = `Bearer ${token}`
-  const res = await fetch((process.env.REACT_APP_API_BASE || 'http://localhost:8000') + '/api/imports/mi/preview', { method: 'POST', body: formData, headers })
+  const res = await fetch(`${baseForUrl()}/api/imports/mi/preview`, { method: 'POST', body: formData, headers })
   if (!res.ok) throw new Error('preview failed')
   return res.json()
 }
@@ -293,7 +529,7 @@ export async function commitMiImport(formData){
   const token = localStorage.getItem('taaip_jwt')
   const headers = {}
   if (token) headers['Authorization'] = `Bearer ${token}`
-  const res = await fetch((process.env.REACT_APP_API_BASE || 'http://localhost:8000') + '/api/imports/mi/commit', { method: 'POST', body: formData, headers })
+  const res = await fetch(`${baseForUrl()}/api/imports/mi/commit`, { method: 'POST', body: formData, headers })
   if (!res.ok) throw new Error('commit failed')
   return res.json()
 }
@@ -302,7 +538,7 @@ export async function previewFoundationImport(formData){
   const token = localStorage.getItem('taaip_jwt')
   const headers = {}
   if (token) headers['Authorization'] = `Bearer ${token}`
-  const res = await fetch((process.env.REACT_APP_API_BASE || 'http://localhost:8000') + '/api/imports/foundation/preview', { method: 'POST', body: formData, headers })
+  const res = await fetch(`${baseForUrl()}/api/imports/foundation/preview`, { method: 'POST', body: formData, headers })
   if (!res.ok) throw new Error('preview failed')
   return res.json()
 }
@@ -311,7 +547,7 @@ export async function commitFoundationImport(formData){
   const token = localStorage.getItem('taaip_jwt')
   const headers = {}
   if (token) headers['Authorization'] = `Bearer ${token}`
-  const res = await fetch((process.env.REACT_APP_API_BASE || 'http://localhost:8000') + '/api/imports/foundation/commit', { method: 'POST', body: formData, headers })
+  const res = await fetch(`${baseForUrl()}/api/imports/foundation/commit`, { method: 'POST', body: formData, headers })
   if (!res.ok) throw new Error('commit failed')
   return res.json()
 }
@@ -321,7 +557,7 @@ export async function uploadDocumentForm(formData){
   const token = localStorage.getItem('taaip_jwt')
   const headers = {}
   if (token) headers['Authorization'] = `Bearer ${token}`
-  const res = await fetch((process.env.REACT_APP_API_BASE || 'http://localhost:8000') + '/api/documents/upload', { method: 'POST', body: formData, headers })
+  const res = await fetch(`${baseForUrl()}/api/documents/upload`, { method: 'POST', body: formData, headers })
   if (!res.ok) throw new Error('upload failed')
   return res.json()
 }
@@ -331,7 +567,7 @@ export async function listDocuments(){
 }
 
 export function documentDownloadUrl(docId){
-  return (process.env.REACT_APP_API_BASE || 'http://localhost:8000') + `/api/documents/${docId}/download`
+  return `${baseForUrl()}/api/documents/${docId}/download`
 }
 
 export async function getSchoolProgramReadiness(){
@@ -341,6 +577,49 @@ export async function getSchoolProgramReadiness(){
 export async function getSchoolProgramSummary(qs = {}){
   const params = new URLSearchParams(qs).toString()
   return apiFetch(`/api/school-program/summary?${params}`)
+}
+
+export async function getSchoolSummary(qs = {}){
+  const params = new URLSearchParams(qs).toString()
+  return apiFetch(`/api/school/summary?${params}`)
+}
+
+export async function getSchoolCoverage(qs = {}){
+  const params = new URLSearchParams(qs).toString()
+  return apiFetch(`/api/school/coverage?${params}`)
+}
+
+export async function getSchoolMilestones(qs = {}){
+  const params = new URLSearchParams(qs).toString()
+  return apiFetch(`/api/school/milestones?${params}`)
+}
+
+export async function postSchoolMilestone(payload){
+  return apiFetch('/api/school/milestones', { method: 'POST', body: JSON.stringify(payload), headers: {'Content-Type':'application/json'} })
+}
+
+export async function getSchoolCompliance(qs = {}){
+  const params = new URLSearchParams(qs).toString()
+  return apiFetch(`/api/school/compliance?${params}`)
+}
+
+export async function getSchoolLeadflow(qs = {}){
+  const params = new URLSearchParams(qs).toString()
+  return apiFetch(`/api/school/leadflow?${params}`)
+}
+
+export async function getSchoolEvents(qs = {}){
+  const params = new URLSearchParams(qs).toString()
+  return apiFetch(`/api/school/events?${params}`)
+}
+
+export async function postSchoolEvent(payload){
+  return apiFetch('/api/school/events', { method: 'POST', body: JSON.stringify(payload), headers: {'Content-Type':'application/json'} })
+}
+
+export async function getSuggestWindow(qs = {}){
+  const params = new URLSearchParams(qs).toString()
+  return apiFetch(`/api/school/suggest_window?${params}`)
 }
 
 export async function getRegulatoryReferences(qs = {}){
@@ -449,6 +728,17 @@ export async function getFunnelStages(){
   return apiFetch('/api/funnel/stages')
 }
 
+export async function queryMetric(metric_id, params = {}){
+  const qs = new URLSearchParams()
+  if (params.fy) qs.set('fy', params.fy)
+  if (params.qtr) qs.set('qtr', params.qtr)
+  if (params.scope_type) qs.set('scope_type', params.scope_type)
+  if (params.scope_value) qs.set('scope_value', params.scope_value)
+  if (params.station_rsid) qs.set('station_rsid', params.station_rsid)
+  if (params.event_id) qs.set('event_id', params.event_id)
+  return apiFetch(`/api/metrics/query?metric_id=${encodeURIComponent(metric_id)}&${qs.toString()}`)
+}
+
 // PowerBI / feeds
 export async function getFactProduction(qs = {}){
   const params = new URLSearchParams(qs).toString()
@@ -475,6 +765,14 @@ export async function getLatestMissionAssessment(period_type, scope){
   if (period_type) qs.set('period_type', period_type)
   if (scope) qs.set('scope', scope)
   return apiFetch(`/api/mission_assessments/latest?${qs.toString()}`)
+}
+
+export async function getMissionFeasibilitySummary(params = {}){
+  const qs = new URLSearchParams()
+  if (params.unit_rsid) qs.set('unit_rsid', params.unit_rsid)
+  if (params.fy) qs.set('fy', params.fy)
+  if (params.compare_mode) qs.set('compare_mode', params.compare_mode)
+  return apiFetch(`/api/v2/mission-feasibility/summary?${qs.toString()}`)
 }
 
 export async function saveMissionAssessment(payload){
@@ -573,7 +871,10 @@ export async function getMarketIntelSummary(params = {}){
   if (params.fy) qs.set('fy', params.fy)
   if (params.qtr) qs.set('qtr', params.qtr)
   if (params.month) qs.set('month', params.month)
-  if (params.rsid_prefix) qs.set('rsid_prefix', params.rsid_prefix)
+  if (params.unit_key) {
+    qs.set('unit_key', params.unit_key)
+    try { if (params.unit_key) qs.set('rsid_prefix', String(params.unit_key).slice(0, Math.min(4, String(params.unit_key).length))) } catch(e){}
+  } else if (params.rsid_prefix) qs.set('rsid_prefix', params.rsid_prefix)
   return apiFetch(`/api/market-intel/summary?${qs.toString()}`)
 }
 
@@ -582,7 +883,10 @@ export async function getMarketIntelZipRankings(params = {}){
   if (params.fy) qs.set('fy', params.fy)
   if (params.qtr) qs.set('qtr', params.qtr)
   if (params.month) qs.set('month', params.month)
-  if (params.rsid_prefix) qs.set('rsid_prefix', params.rsid_prefix)
+  if (params.unit_key) {
+    qs.set('unit_key', params.unit_key)
+    try { if (params.unit_key) qs.set('rsid_prefix', String(params.unit_key).slice(0, Math.min(4, String(params.unit_key).length))) } catch(e){}
+  } else if (params.rsid_prefix) qs.set('rsid_prefix', params.rsid_prefix)
   if (params.limit) qs.set('limit', params.limit)
   return apiFetch(`/api/market-intel/zip-rankings?${qs.toString()}`)
 }
@@ -591,7 +895,10 @@ export async function getMarketIntelCbsaRollup(params = {}){
   const qs = new URLSearchParams()
   if (params.fy) qs.set('fy', params.fy)
   if (params.qtr) qs.set('qtr', params.qtr)
-  if (params.rsid_prefix) qs.set('rsid_prefix', params.rsid_prefix)
+  if (params.unit_key) {
+    qs.set('unit_key', params.unit_key)
+    try { if (params.unit_key) qs.set('rsid_prefix', String(params.unit_key).slice(0, Math.min(4, String(params.unit_key).length))) } catch(e){}
+  } else if (params.rsid_prefix) qs.set('rsid_prefix', params.rsid_prefix)
   if (params.limit) qs.set('limit', params.limit)
   return apiFetch(`/api/market-intel/cbsa-rollup?${qs.toString()}`)
 }
@@ -600,7 +907,10 @@ export async function getMarketIntelTargets(params = {}){
   const qs = new URLSearchParams()
   if (params.fy) qs.set('fy', params.fy)
   if (params.qtr) qs.set('qtr', params.qtr)
-  if (params.rsid_prefix) qs.set('rsid_prefix', params.rsid_prefix)
+  if (params.unit_key) {
+    qs.set('unit_key', params.unit_key)
+    try { if (params.unit_key) qs.set('rsid_prefix', String(params.unit_key).slice(0, Math.min(4, String(params.unit_key).length))) } catch(e){}
+  } else if (params.rsid_prefix) qs.set('rsid_prefix', params.rsid_prefix)
   return apiFetch(`/api/market-intel/targets?${qs.toString()}`)
 }
 
@@ -608,15 +918,65 @@ export async function getMarketIntelImportTemplates(){
   return apiFetch('/api/market-intel/import-templates')
 }
 
+// Data Hub client helpers
+export async function dataHubUpload(fd, dry_run = true){
+  const token = localStorage.getItem('taaip_jwt')
+  const headers = {}
+  if (token) headers['Authorization'] = `Bearer ${token}`
+  const res = await fetch(`${baseForUrl()}/api/v2/datahub/uploads?dry_run=${dry_run?1:0}`, { method: 'POST', body: fd, headers })
+  if (!res.ok) throw new Error('upload failed')
+  return res.json()
+}
+
+export async function dataHubListImports(){
+  return apiFetch('/api/v2/datahub/imports')
+}
+
+export async function dataHubListRegistry(){
+  return apiFetch('/api/v2/datahub/supported')
+}
+
+// ROI client helpers
+export async function getRoiKpis(params = {}){
+  const qs = new URLSearchParams(params).toString()
+  return apiFetch(`/api/v2/roi/kpis?${qs}`)
+}
+
+export async function getRoiBreakdown(params = {}){
+  const qs = new URLSearchParams(params).toString()
+  return apiFetch(`/api/v2/roi/breakdown?${qs}`)
+}
+
+export async function getRoiFunnel(params = {}){
+  const qs = new URLSearchParams(params).toString()
+  return apiFetch(`/api/v2/roi/funnel?${qs}`)
+}
+
+export async function getRoiEvent(eventId, params = {}){
+  const qs = new URLSearchParams(params).toString()
+  return apiFetch(`/api/v2/roi/event/${encodeURIComponent(eventId)}?${qs}`)
+}
+
 export async function getMarketIntelReadiness(){
   return apiFetch('/api/market-intel/readiness')
+}
+
+export async function getPhoneticsReadiness(){
+  return apiFetch('/api/phonetics/readiness')
+}
+
+export async function getSystemSelfCheck(){
+  return apiFetch('/api/system/self-check')
 }
 
 export async function getMarketIntelDemographics(params = {}){
   const qs = new URLSearchParams()
   if (params.fy) qs.set('fy', params.fy)
   if (params.qtr) qs.set('qtr', params.qtr)
-  if (params.rsid_prefix) qs.set('rsid_prefix', params.rsid_prefix)
+  if (params.unit_key) {
+    qs.set('unit_key', params.unit_key)
+    try { if (params.unit_key) qs.set('rsid_prefix', String(params.unit_key).slice(0, Math.min(4, String(params.unit_key).length))) } catch(e){}
+  } else if (params.rsid_prefix) qs.set('rsid_prefix', params.rsid_prefix)
   return apiFetch(`/api/market-intel/demographics?${qs.toString()}`)
 }
 
@@ -639,7 +999,7 @@ export async function exportMarketIntelTargetsCsv(params = {}){
   const token = localStorage.getItem('taaip_jwt')
   const headers = {}
   if (token) headers['Authorization'] = `Bearer ${token}`
-  const res = await fetch(`${API_BASE}${path}`, { headers })
+  const res = await fetch(`${baseForUrl()}${path}`, { headers })
   if (!res.ok) throw new Error('export failed')
   const text = await res.text()
   return text
@@ -833,28 +1193,23 @@ export async function getMarketPotential(scope, value){
 
 // Tactical rollup clients (PHASE-13)
 export async function getBudgetRollup(qs = {}){
-  const params = new URLSearchParams(qs).toString()
-  return apiFetch(`/api/rollups/budget?${params}`)
+  return queryMetric('budget', qs)
 }
 
 export async function getEventsRollup(qs = {}){
-  const params = new URLSearchParams(qs).toString()
-  return apiFetch(`/api/rollups/events?${params}`)
+  return queryMetric('events', qs)
 }
 
 export async function getMarketingRollup(qs = {}){
-  const params = new URLSearchParams(qs).toString()
-  return apiFetch(`/api/rollups/marketing?${params}`)
+  return queryMetric('marketing', qs)
 }
 
 export async function getFunnelRollup(qs = {}){
-  const params = new URLSearchParams(qs).toString()
-  return apiFetch(`/api/rollups/funnel?${params}`)
+  return queryMetric('funnel', qs)
 }
 
 export async function getCommandRollup(qs = {}){
-  const params = new URLSearchParams(qs).toString()
-  return apiFetch(`/api/rollups/command?${params}`)
+  return queryMetric('command', qs)
 }
 
 // Command Center clients (PHASE-14)

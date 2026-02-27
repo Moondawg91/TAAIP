@@ -14,7 +14,7 @@ System Readiness sources:
 - GET /api/phonetics/readiness
 
 Blocking UI behavior:
-- Show missing dataset keys and provide direct link to Imports Center and import templates.
+ - Show missing dataset keys and provide direct link to Data Hub and import templates.
 
 Design constraints:
 - Dark PowerBI-style look preserved

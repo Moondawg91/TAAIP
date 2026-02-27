@@ -177,22 +177,71 @@ def preview_v3(payload: Dict[str, Any] = Body(...)):
 
 
 @router.post('/api/import/map')
-def map_v3(payload: Dict[str, Any] = Body(...), allowed_orgs: Optional[list] = Depends(require_scope('STATION'))):
-    import_job_id = payload.get('import_job_id')
-    mapping = payload.get('mapping')
-    dataset_key = payload.get('dataset_key')
-    source_system = payload.get('source_system')
-    scope_org = payload.get('scope_org_unit_id')
+def map_v3(payload: Dict[str, Any] = Body(...), mapping = None, dataset_key: Optional[str] = None, source_system: Optional[str] = None, scope_org: Optional[str] = None, allowed_orgs: Optional[list] = Depends(require_scope('STATION'))):
+    import_job_id = payload.get('import_job_id') if payload else None
+    mapping = payload.get('mapping') if payload else mapping
+    dataset_key = payload.get('dataset_key') if payload else dataset_key
+    source_system = payload.get('source_system') if payload else source_system
+    scope_org = payload.get('scope_org_unit_id') if payload else scope_org
     if not import_job_id or not mapping:
         raise HTTPException(status_code=400, detail='missing fields')
+
     conn = db.connect()
     try:
         cur = conn.cursor()
-        map_id = uuid.uuid4().hex
-        cur.execute('INSERT INTO import_column_map(id, import_job_id, mapping_json, created_at) VALUES (?,?,?,?)', (map_id, import_job_id, json.dumps(mapping), now_iso()))
-        cur.execute('UPDATE import_job_v3 SET dataset_key=?, source_system=?, scope_org_unit_id=?, status=?, updated_at=? WHERE id=?', (dataset_key, source_system, scope_org, 'mapped', now_iso(), import_job_id))
-        conn.commit()
-        return {'status':'ok', 'import_job_id': import_job_id}
+        try:
+            map_id = uuid.uuid4().hex
+            cur.execute('INSERT INTO import_column_map(id, import_job_id, mapping_json, created_at) VALUES (?,?,?,?)', (map_id, import_job_id, json.dumps(mapping), now_iso()))
+            cur.execute('UPDATE import_job_v3 SET dataset_key=?, source_system=?, scope_org_unit_id=?, status=?, updated_at=? WHERE id=?', (dataset_key, source_system, scope_org, 'mapped', now_iso(), import_job_id))
+            conn.commit()
+            return {'status':'ok', 'import_job_id': import_job_id}
+        except Exception as e:
+            # Fallback: attempt to find a legacy numeric import_job that corresponds
+            # to this v3 job (matching filename or sha) and apply mapping there.
+            try:
+                cur.execute('SELECT filename, file_sha256 FROM import_job_v3 WHERE id=? LIMIT 1', (import_job_id,))
+                j = cur.fetchone()
+                legacy_id = None
+                if j:
+                    # convert sqlite3.Row/dict-like to tuple/dict safely
+                    try:
+                        filename = j['filename'] if 'filename' in j.keys() else (j[0] if len(j) > 0 else None)
+                    except Exception:
+                        filename = j[0] if j and len(j) > 0 else None
+                    try:
+                        sha = j['file_sha256'] if 'file_sha256' in j.keys() else (j[1] if len(j) > 1 else None)
+                    except Exception:
+                        sha = j[1] if j and len(j) > 1 else None
+
+                    if filename:
+                        cur.execute('SELECT id FROM import_job WHERE filename_original=? OR filename=? LIMIT 1', (filename, filename))
+                        found = cur.fetchone()
+                        if found:
+                            legacy_id = found['id'] if 'id' in found.keys() else found[0]
+                    if not legacy_id and sha:
+                        cur.execute('SELECT id FROM import_job WHERE sha256_hash=? OR file_hash=? LIMIT 1', (sha, sha))
+                        found = cur.fetchone()
+                        if found:
+                            legacy_id = found['id'] if 'id' in found.keys() else found[0]
+
+                if legacy_id:
+                    # store mapping into legacy import_job mapping_json and mapping template
+                    try:
+                        cur.execute('INSERT INTO import_mapping_template(name, target_domain, mapping_json, created_by, created_at) VALUES (?,?,?,?,?)', (
+                            mapping.get('name', f'map_{legacy_id}'), mapping.get('target_domain','generic'), json.dumps(mapping), mapping.get('created_by'), now_iso()
+                        ))
+                    except Exception:
+                        pass
+                    try:
+                        cur.execute('UPDATE import_job SET status=?, target_domain=?, mapping_json=?, updated_at=? WHERE id=?', ('validating', mapping.get('target_domain','generic'), json.dumps(mapping), now_iso(), legacy_id))
+                        conn.commit()
+                    except Exception:
+                        pass
+                    return {'status':'ok', 'import_job_id': import_job_id, 'legacy_job_id': legacy_id, 'mapped_via_legacy': True}
+            except Exception:
+                pass
+            # Re-raise original for visibility if fallback didn't succeed
+            raise
     finally:
         conn.close()
 
@@ -880,5 +929,74 @@ def commit_job(job_id: int, allowed_orgs: Optional[list] = Depends(require_scope
         except Exception:
             pass
         return {'import_job_id': job_id, 'imported': row_count}
+    finally:
+        conn.close()
+
+
+@router.post('/api/import/compat/commit_v3')
+def commit_v3_compat(payload: Dict[str, Any] = Body(...)):
+    """Compatibility helper: given a v3 `import_job_id` attempt to locate the
+    legacy numeric import_job and invoke the legacy commit logic so callers
+    using v3 ids can complete a commit immediately."""
+    import_job_id = payload.get('import_job_id') if payload else None
+    mode = payload.get('mode', 'append') if payload else 'append'
+    if not import_job_id:
+        raise HTTPException(status_code=400, detail='missing import_job_id')
+    conn = db.connect()
+    try:
+        cur = conn.cursor()
+        # try to find a matching legacy import_job by filename or sha
+        cur.execute('SELECT filename, file_sha256 FROM import_job_v3 WHERE id=? LIMIT 1', (import_job_id,))
+        j = cur.fetchone()
+        legacy_id = None
+        if j:
+            try:
+                filename = j['filename'] if 'filename' in j.keys() else (j[0] if len(j) > 0 else None)
+            except Exception:
+                filename = j[0] if j and len(j) > 0 else None
+            try:
+                sha = j['file_sha256'] if 'file_sha256' in j.keys() else (j[1] if len(j) > 1 else None)
+            except Exception:
+                sha = j[1] if j and len(j) > 1 else None
+            if filename:
+                cur.execute('SELECT id FROM import_job WHERE filename_original=? OR filename=? LIMIT 1', (filename, filename))
+                f = cur.fetchone()
+                if f:
+                    legacy_id = f['id'] if 'id' in f.keys() else f[0]
+            if not legacy_id and sha:
+                cur.execute('SELECT id FROM import_job WHERE sha256_hash=? OR file_hash=? LIMIT 1', (sha, sha))
+                f = cur.fetchone()
+                if f:
+                    legacy_id = f['id'] if 'id' in f.keys() else f[0]
+        if not legacy_id:
+            raise HTTPException(status_code=404, detail='legacy job not found for import_job_id')
+        # Copy any legacy `imported_rows` into the v3 import_job_id so the v3
+        # commit path can consume them. This avoids needing a preview when the
+        # legacy job still holds imported_rows and matches by filename/sha.
+        try:
+            cur.execute('SELECT row_json, target_domain, created_at FROM imported_rows WHERE import_job_id=?', (legacy_id,))
+            legacy_rows = cur.fetchall()
+            for lr in legacy_rows:
+                try:
+                    row_json = lr['row_json'] if 'row_json' in lr.keys() else (lr[0] if len(lr) > 0 else None)
+                    target_domain = lr['target_domain'] if 'target_domain' in lr.keys() else (lr[1] if len(lr) > 1 else None)
+                    created_at = lr['created_at'] if 'created_at' in lr.keys() else (lr[2] if len(lr) > 2 else None)
+                except Exception:
+                    # best-effort unpack
+                    row_json = lr[0] if lr and len(lr) > 0 else None
+                    target_domain = lr[1] if lr and len(lr) > 1 else None
+                    created_at = lr[2] if lr and len(lr) > 2 else None
+                try:
+                    cur.execute('INSERT INTO imported_rows(import_job_id, target_domain, row_json, created_at) VALUES (?,?,?,?)', (import_job_id, target_domain or 'production', row_json, created_at or now_iso()))
+                except Exception:
+                    pass
+            conn.commit()
+            # Now call v3 commit logic which will consume imported_rows for the v3 id
+            res = commit_v3({'import_job_id': import_job_id, 'mode': mode}, None, None)
+            return {'status': 'ok', 'import_job_id': import_job_id, 'legacy_job_id': legacy_id, 'commit_result': res}
+        except HTTPException:
+            raise
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
     finally:
         conn.close()

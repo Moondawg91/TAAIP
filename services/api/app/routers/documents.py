@@ -26,6 +26,11 @@ async def upload_document(file: UploadFile = File(...), title: str = Form(None),
         with open(stored_path, 'wb') as fh:
             fh.write(content)
     except Exception as e:
+        # Debug: surface storage errors during tests
+        try:
+            print('documents.upload: failed to store file:', repr(e))
+        except Exception:
+            pass
         raise HTTPException(status_code=500, detail=f"Failed to store file: {e}")
 
     conn = connect()
@@ -45,6 +50,11 @@ async def upload_document(file: UploadFile = File(...), title: str = Form(None),
         # attempt to remove stored file on DB failure
         try:
             os.remove(stored_path)
+        except Exception:
+            pass
+        # Debug: surface DB insert errors during tests
+        try:
+            print('documents.upload: DB insert failed:', repr(e))
         except Exception:
             pass
         raise HTTPException(status_code=500, detail=f"DB insert failed: {e}")

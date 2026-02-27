@@ -1,6 +1,6 @@
 import React from 'react'
-import PlaceholderPage from '../PlaceholderPage'
+import { NotLoadedPage } from '../PlaceholderPage'
 
 export default function HistoricalDataPage(){
-  return <PlaceholderPage title="Historical Data" subtitle="Archived exports and historical datasets." />
+  return <NotLoadedPage title="Historical Data" />
 }

@@ -19,7 +19,7 @@ export default function CommandCenterPage(){
   return (
     <div style={{padding:20}}>
       <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12}}>
-        <h2 style={{color:'#fff', margin:0}}>Command Center</h2>
+        <h2 style={{color:'#0F1724', margin:0}}>Command Center</h2>
         <ExportMenuButton onExportCsv={()=>{ window.alert('CSV export not implemented yet') }} onExportJson={()=>{ window.alert('JSON export not implemented yet') }} />
       </div>
 
@@ -32,15 +32,15 @@ export default function CommandCenterPage(){
             <LoeEditorPanel />
           </section>
           <section>
-            <h4 style={{color:'#fff'}}>Mission Assessment</h4>
-            {assessment ? <pre style={{color:'#fff'}}>{JSON.stringify(assessment, null, 2)}</pre> : <ZeroStatePanel title='No assessment' message='Mission assessment not available yet.' />}
+            <h4 style={{color:'#0F1724'}}>Mission Assessment</h4>
+            {assessment ? <pre style={{color:'#0F1724'}}>{JSON.stringify(assessment, null, 2)}</pre> : <ZeroStatePanel title='No assessment' message='Mission assessment not available yet.' />}
           </section>
         </div>
 
         <aside>
           <div style={{marginBottom:12}}>
-            <h4 style={{color:'#fff'}}>Overview</h4>
-            {overview ? <pre style={{color:'#fff'}}>{JSON.stringify(overview.summary || overview, null, 2)}</pre> : <ZeroStatePanel title='Overview empty' message='No summary data available.' />}
+            <h4 style={{color:'#0F1724'}}>Overview</h4>
+            {overview ? <pre style={{color:'#0F1724'}}>{JSON.stringify(overview.summary || overview, null, 2)}</pre> : <ZeroStatePanel title='Overview empty' message='No summary data available.' />}
           </div>
         </aside>
       </div>

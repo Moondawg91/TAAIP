@@ -1,8 +1,15 @@
 import React, { useEffect } from 'react'
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom'
 
 import ShellLayout from './layout/ShellLayout'
+import { AuthProvider } from './contexts/AuthContext'
+import RequireAdmin from './components/RequireAdmin'
 import { ScopeProvider } from './contexts/ScopeContext'
+import { UnitFilterProvider } from './contexts/UnitFilterContext'
+import { FilterProvider } from './contexts/FilterContext'
+import { OrgUnitStoreProvider } from './state/orgUnitStore'
+import { OrgSelectionProvider } from './contexts/OrgSelectionContext'
+// Unit cascade moved to TopHeader to avoid duplicate renders
 import MaintenanceGuard from './components/MaintenanceGuard'
 import MaintenancePage from './pages/MaintenancePage'
 import ObservationsPage from './pages/system/ObservationsPage'
@@ -12,6 +19,7 @@ import SystemAlertsPage from './pages/system/SystemAlertsPage'
 import SystemProposalsPage from './pages/system/SystemProposalsPage'
 
 import HomePage from './pages/HomePage'
+import OperationsPage from './pages/OperationsPage'
 import QBRPage from './pages/QBRPage'
 import CommandCenterPage from './pages/CommandCenterPage'
 import ProjectsPage from './pages/ProjectsPage'
@@ -24,10 +32,9 @@ import ImportCenterPage from './pages/ImportCenterPage'
 import OpsCalendarPage from './pages/ops/CalendarPage'
 import OpsProjectsPage from './pages/ops/ProjectsPage'
 import OpsEventsPage from './pages/ops/EventsPage'
-import OpsFusionPage from './pages/ops/FusionPage'
-import OpsTWGPage from './pages/ops/TWGPage'
 import OpsBudgetPage from './pages/ops/BudgetPage'
 import OpsRoiPage from './pages/ops/RoiPage'
+import RoiPage from './pages/RoiPage'
 
 import DocsSharepoint from './pages/docs/SharepointPage'
 import DocsLibrary from './pages/docs/LibraryPage'
@@ -43,6 +50,7 @@ import CommandCenterPageNew from './pages/command/CommandCenterPage'
 import LinesOfEffortPage from './pages/command/LinesOfEffortPage'
 import CommandPrioritiesPage from './pages/command/CommandPrioritiesPage'
 import MissionAssessmentPage from './pages/command/MissionAssessmentPage'
+import MissionFeasibilityPage from './pages/command/MissionFeasibilityPage'
 import TWGPageNew from './pages/command/TWGPage'
 import FusionCellPage from './pages/command/FusionCellPage'
 import MissionAnalysisPage from './pages/operations/MissionAnalysisPage'
@@ -64,20 +72,29 @@ import ProjectsEventsPage from './pages/projects/ProjectsEventsPage'
 
 import MarketSegmentationPage from './pages/operations/MarketSegmentationPage'
 
+import { Navigate } from 'react-router-dom'
 import SchoolLandingPage from './pages/school/SchoolLandingPage'
 import SchoolProgramPage from './pages/school/SchoolProgramPage'
+import OverviewPage from './pages/school/OverviewPage'
+import CoveragePage from './pages/school/CoveragePage'
+import CompliancePage from './pages/school/CompliancePage'
+import EventsPageSchool from './pages/school/EventsPage'
+import LeadsPage from './pages/school/LeadsPage'
+import RoiPageSchool from './pages/school/RoiPage'
+import IwPageSchool from './pages/school/IwPage'
+import SchoolDataPage from './pages/school/DataPage'
 
 import BudgetTrackerPage from './pages/budget/BudgetTrackerPage'
 import ProjectsDashboardPage from './pages/dash/ProjectsDashboardPage'
 import EventsDashboardPage from './pages/dash/EventsDashboardPage'
-import PlaceholderPage from './pages/PlaceholderPage'
+import { NotLoadedPage } from './pages/PlaceholderPage'
 import CommandIntelPage from './pages/command/IntelPage'
 import RecruitingOpsPage from './pages/command/RecruitingOpsPage'
 import RecruitingAnalyticsPage from './pages/performance/RecruitingAnalyticsPage'
 import RoiOverviewPage from './pages/budget/RoiOverviewPage'
 import FundingAllocationsPage from './pages/budget/FundingAllocationsPage'
 import SystemConfigPage from './pages/admin/SystemConfigPage'
-import DataImportsPage from './pages/admin/DataImportsPage'
+// DataImportsPage removed from Admin; Data Hub will be a top-level resource
 import ManualsPage from './pages/resources/ManualsPage'
 import SopsPage from './pages/resources/SopsPage'
 import TrainingModulesPage from './pages/resources/TrainingModulesPage'
@@ -98,7 +115,9 @@ import AdminRolesPage from './pages/admin/AdminRolesPage'
 import RoleDetailPage from './pages/admin/RoleDetailPage'
 import AdminMaintenancePage from './pages/admin/AdminMaintenancePage'
 import AdminRbacPage from './pages/admin/AdminRbacPage'
+import PermissionsPage from './pages/admin/PermissionsPage'
 import SystemSelfCheckPage from './pages/admin/SystemSelfCheckPage'
+import ProtectedRoute from './components/ProtectedRoute'
 import DocLibraryPage from './pages/resources/DocLibraryPage'
 import ResourcesRegulationsPage from './pages/resources/ResourcesRegulationsPage'
 import TrainingPage from './pages/resources/TrainingPage'
@@ -106,10 +125,18 @@ import UploadsPage from './pages/resources/UploadsPage'
 import HistoricalDataPage from './pages/resources/HistoricalDataPage'
 import RegulatoryPage from './pages/resources/RegulatoryPage'
 import TraceabilityMatrixPage from './pages/resources/TraceabilityMatrixPage'
+import DataHubOverview from './pages/datahub/OverviewPage'
+import DataHubImports from './pages/datahub/ImportsPage'
+import DataHubSchemas from './pages/datahub/SchemasPage'
+import DataHubStorage from './pages/datahub/StoragePage'
+import DashboardLayout from './layouts/DashboardLayout'
 import SubmitTicketPage from './pages/help/SubmitTicketPage'
 import TicketStatusPage from './pages/help/TicketStatusPage'
 import SystemStatusPage from './pages/help/SystemStatusPage'
 import HelpDeskLandingPage from './pages/help/HelpDeskLandingPage'
+import AccessDeniedPage from './pages/AccessDeniedPage'
+import UnauthorizedPage from './pages/UnauthorizedPage'
+import DebugAccessPage from './pages/DebugAccessPage'
 
 export default function App() {
   useEffect(() => {
@@ -127,27 +154,32 @@ export default function App() {
   }, [])
   return (
     <Router>
+      <AuthProvider>
       <ScopeProvider>
-        <MaintenanceGuard>
-          <ShellLayout>
+        <FilterProvider>
+        <UnitFilterProvider>
+        <OrgUnitStoreProvider>
+        <OrgSelectionProvider>
+          <MaintenanceGuard>
+            <ShellLayout>
+          {/* unit cascade is rendered in TopHeader for dashboard routes */}
           <Routes>
-          <Route path="/" element={<HomePage />} />
+          <Route path="/" element={<DashboardLayout><HomePage /></DashboardLayout>} />
           <Route path="/qbr" element={<QBRPage />} />
           <Route path="/dashboards/command-center" element={<CommandCenterPage />} />
           <Route path="/projects" element={<ProjectsPage />} />
           <Route path="/projects/:id" element={<ProjectDetailPage />} />
           <Route path="/meetings" element={<MeetingsPage />} />
           <Route path="/calendar" element={<CalendarPage />} />
-          <Route path="/import-center" element={<ImportCenterPage />} />
 
           {/* new ops routes (legacy kept) */}
           <Route path="/ops/calendar" element={<OpsCalendarPage />} />
           <Route path="/ops/projects" element={<OpsProjectsPage />} />
           <Route path="/ops/events" element={<OpsEventsPage />} />
-          <Route path="/ops/fusion" element={<OpsFusionPage />} />
-          <Route path="/ops/twg" element={<OpsTWGPage />} />
           <Route path="/ops/budget" element={<OpsBudgetPage />} />
           <Route path="/ops/roi" element={<OpsRoiPage />} />
+          <Route path="/roi" element={<RoiPage />} />
+          <Route path="/roi/events" element={<NotLoadedPage title="ROI Events" subtitle="Placeholder" />} />
 
           {/* documents */}
           <Route path="/docs/sharepoint" element={<DocsSharepoint />} />
@@ -165,6 +197,7 @@ export default function App() {
           <Route path="/command-center/lines-of-effort" element={<LinesOfEffortPage />} />
           <Route path="/command-center/priorities" element={<CommandPrioritiesPage />} />
           <Route path="/command-center/mission-assessment" element={<MissionAssessmentPage />} />
+          <Route path="/command-center/feasibility" element={<MissionFeasibilityPage />} />
           <Route path="/command-center/420t" element={<Command420TPage />} />
           <Route path="/command-center/mdmp" element={<MDMPWorkspacePage />} />
           <Route path="/command-center/intel" element={<CommandIntelPage />} />
@@ -178,6 +211,7 @@ export default function App() {
 
           {/* planning */}
           <Route path="/planning/targeting-board" element={<TargetingBoardPage />} />
+          <Route path="/ops" element={<OperationsPage />} />
 
           {/* Operations / Planning / Performance / Admin / Resources routes (placeholders) */}
           <Route path="/operations/mission-analysis" element={<MissionAnalysisPage />} />
@@ -203,16 +237,23 @@ export default function App() {
           <Route path="/performance/recruiting-analytics" element={<RecruitingAnalyticsPage />} />
           <Route path="/performance/mission-assessment" element={<MissionAssessmentPage />} />
 
-          <Route path="/admin/users" element={<AdminUsersPage />} />
-          <Route path="/admin/roles" element={<AdminRolesPage />} />
-          <Route path="/admin/roles/:id" element={<RoleDetailPage />} />
-          <Route path="/admin/maintenance" element={<AdminMaintenancePage />} />
-          <Route path="/admin/rbac" element={<AdminRbacPage />} />
-          <Route path="/admin/system-self-check" element={<SystemSelfCheckPage />} />
-          <Route path="/admin/config" element={<SystemConfigPage />} />
-          <Route path="/admin/data-imports" element={<DataImportsPage />} />
+          <Route path="/admin/users" element={<ProtectedRoute path="/admin"><AdminUsersPage /></ProtectedRoute>} />
+          <Route path="/admin/roles" element={<ProtectedRoute path="/admin"><AdminRolesPage /></ProtectedRoute>} />
+          <Route path="/admin/roles/:id" element={<ProtectedRoute path="/admin"><RoleDetailPage /></ProtectedRoute>} />
+          <Route path="/admin/maintenance" element={<ProtectedRoute path="/admin"><AdminMaintenancePage /></ProtectedRoute>} />
+          <Route path="/admin/rbac" element={<ProtectedRoute path="/admin"><AdminRbacPage /></ProtectedRoute>} />
+          <Route path="/admin/permissions" element={<ProtectedRoute path="/admin"><PermissionsPage /></ProtectedRoute>} />
+          <Route path="/admin/system-self-check" element={<ProtectedRoute path="/admin"><SystemSelfCheckPage /></ProtectedRoute>} />
+          <Route path="/admin/config" element={<ProtectedRoute path="/admin"><SystemConfigPage /></ProtectedRoute>} />
 
           <Route path="/resources/doc-library" element={<DocLibraryPage />} />
+          <Route path="/data-hub" element={<DataHubOverview />} />
+          <Route path="/data-hub/imports" element={<DataHubImports />} />
+          <Route path="/data-hub/schemas" element={<DataHubSchemas />} />
+          <Route path="/data-hub/storage" element={<DataHubStorage />} />
+          <Route path="/access-denied" element={<AccessDeniedPage />} />
+          <Route path="/unauthorized" element={<UnauthorizedPage />} />
+          <Route path="/debug/access" element={<DebugAccessPage />} />
           <Route path="/resources/regulations" element={<ResourcesRegulationsPage />} />
           <Route path="/resources/regulatory" element={<RegulatoryPage />} />
           <Route path="/resources/traceability" element={<TraceabilityMatrixPage />} />
@@ -258,18 +299,43 @@ export default function App() {
           <Route path="/operations/market-segmentation" element={<MarketSegmentationPage />} />
           <Route path="/operations/market-intelligence" element={<MarketIntelligencePage />} />
 
-          {/* school recruiting */}
+          {/* school recruiting (legacy kept) */}
           <Route path="/school-recruiting" element={<SchoolLandingPage />} />
-          <Route path="/school-recruiting/program" element={<SchoolProgramPage />} />
+          {/* legacy program route redirects to new dashboard to avoid breaking existing links */}
+          <Route path="/school-recruiting/program" element={<Navigate to="/school/dashboard" replace />} />
+          <Route path="/school-recruiting/overview" element={<OverviewPage />} />
+          <Route path="/school-recruiting/coverage" element={<CoveragePage />} />
+          <Route path="/school-recruiting/compliance" element={<CompliancePage />} />
+          <Route path="/school-recruiting/events" element={<Navigate to="/planning/projects-events?category=school" replace />} />
+          <Route path="/school-recruiting/leads" element={<LeadsPage />} />
+          <Route path="/school-recruiting/roi" element={<RoiPageSchool />} />
+          <Route path="/school-recruiting/iw" element={<IwPageSchool />} />
+
+          {/* new School Recruiting routes (phase B) */}
+          <Route path="/school/dashboard" element={<SchoolLandingPage />} />
+          <Route path="/school/coverage" element={<CoveragePage />} />
+          <Route path="/school/calendar" element={<EventsPageSchool />} />
+          <Route path="/school/compliance" element={<CompliancePage />} />
+          <Route path="/school/leadflow" element={<LeadsPage />} />
+          <Route path="/school/events" element={<Navigate to="/planning/projects-events?category=school" replace />} />
+          {/* Compatibility redirects: move school events under Planning -> Project & Event Management */}
+          <Route path="/school/events" element={<Navigate to="/planning/projects-events?category=school" replace />} />
+          <Route path="/school-recruiting/events" element={<Navigate to="/planning/projects-events?category=school" replace />} />
+          <Route path="/school/data" element={<SchoolDataPage />} />
 
           {/* budget */}
           <Route path="/budget/tracker" element={<BudgetTrackerPage />} />
           <Route path="/dash/projects" element={<ProjectsDashboardPage />} />
           <Route path="/dash/events" element={<EventsDashboardPage />} />
           </Routes>
-        </ShellLayout>
-        </MaintenanceGuard>
+            </ShellLayout>
+          </MaintenanceGuard>
+        </OrgSelectionProvider>
+        </OrgUnitStoreProvider>
+        </UnitFilterProvider>
+        </FilterProvider>
       </ScopeProvider>
+      </AuthProvider>
     </Router>
   )
 }

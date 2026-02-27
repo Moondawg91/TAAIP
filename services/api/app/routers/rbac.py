@@ -13,6 +13,30 @@ from typing import Any, Dict, Optional
 from fastapi import Request, HTTPException, Depends, APIRouter
 from ..db import connect
 
+# Permission alias map: allow uppercase canonical keys to map to existing dotted keys
+PERM_ALIASES = {
+    'DASHBOARDS_READ': 'dashboards.view',
+    'EXPORT_DATA': 'dashboards.export',
+    'DATAHUB_READ': 'datahub.view_registry',
+    'DATAHUB_UPLOAD': 'datahub.upload',
+    'ROI_READ': 'roi.view',
+    'ROI_EDIT': 'roi.edit_costs',
+    'PLANNING_READ': 'planning.view',
+    'PLANNING_EDIT': 'planning.edit',
+    'TWG_READ': 'twg.view',
+    'TWG_EDIT': 'twg.edit',
+    'SCHOOLS_READ': 'schools.view',
+    'SCHOOLS_EDIT': 'schools.edit_contacts',
+    'BUDGET_READ': 'budget.view',
+    'BUDGET_EDIT': 'budget.write',
+    'HELPDESK_READ': 'helpdesk.view_unit',
+    'HELPDESK_CREATE_TICKET': 'helpdesk.submit',
+    'HELPDESK_ADMIN': 'helpdesk.manage',
+    'ADMIN_READ': 'admin.users.manage',
+    'ADMIN_MANAGE_USERS': 'admin.users.manage',
+    'ADMIN_MANAGE_ROLES': 'admin.permissions.manage',
+    'ADMIN_AUDIT_READ': 'admin.audit.view'
+}
 
 def _b64url_decode(inp: str) -> bytes:
     s = inp.replace("-", "+").replace("_", "/")
@@ -291,6 +315,62 @@ def require_scope(min_level: str = 'STATION'):
             return list(allowed)
         finally:
             conn.close()
+
+    return _dep
+
+
+def require_perm(permission_key: str):
+    """Dependency factory: require that the effective user has a specific permission."""
+    def _dep(user: Dict = Depends(get_current_user)):
+        # dev bypass
+        if os.getenv('LOCAL_DEV_AUTH_BYPASS', '0').lower() in ('1', 'true'):
+            return user
+        # if permissions present in token and wildcard or key present, allow
+        perms = user.get('permissions') if isinstance(user, dict) else []
+        try:
+            if isinstance(perms, list) and ('*' in perms or permission_key in perms):
+                return user
+            # if the requested key is an alias, allow if the mapped dotted key is present in token perms
+            mapped = PERM_ALIASES.get(permission_key)
+            if mapped and isinstance(perms, list) and mapped in perms:
+                return user
+        except Exception:
+            pass
+        # system_admin role bypass
+        roles = [r.lower() for r in (user.get('roles') or [])]
+        if 'system_admin' in roles:
+            return user
+        # fallback: check DB user_permission entries
+        try:
+            conn = connect()
+            cur = conn.cursor()
+            uname = user.get('username') if isinstance(user, dict) else user
+            cur.execute('SELECT id FROM users WHERE username=?', (uname,))
+            u = cur.fetchone()
+            if not u:
+                raise HTTPException(status_code=403, detail='Forbidden')
+            uid = u[0]
+            cur.execute('SELECT granted FROM user_permission WHERE user_id=? AND permission_key=?', (uid, permission_key))
+            r = cur.fetchone()
+            if r and r[0] == 1:
+                return user
+            # check alias mapping in DB grants
+            mapped = PERM_ALIASES.get(permission_key)
+            if mapped:
+                cur.execute('SELECT granted FROM user_permission WHERE user_id=? AND permission_key=?', (uid, mapped))
+                r2 = cur.fetchone()
+                if r2 and r2[0] == 1:
+                    return user
+        except HTTPException:
+            raise
+        except Exception:
+            pass
+        finally:
+            try:
+                conn.close()
+            except Exception:
+                pass
+        raise HTTPException(status_code=403, detail='Forbidden: missing permission')
 
     return _dep
 

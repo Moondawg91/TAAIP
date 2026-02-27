@@ -13,16 +13,16 @@ const path = require('path');
   page.on('pageerror', err => console.error('PAGE_ERROR:', err));
 
   try {
-    // Navigate to the site root and open the Import Center via the app navigation
+    // Navigate to the site root and open the Data Hub via the app navigation
     await page.goto(`${BASE}/`, { waitUntil: 'networkidle' });
-    // Click the app nav link to trigger client-side routing to the Import Center
+    // Click the app nav link to trigger client-side routing to the Data Hub
     // Try multiple strategies to find the nav link
-    const navByHref = await page.$('a[href="/import-center"]');
+    const navByHref = await page.$('a[href="/data-hub"]');
     if (navByHref) {
       await navByHref.click();
     } else {
       // Fallback to link text
-      const navByText = await page.$('text=Import Center');
+      const navByText = await page.$('text=Data Hub');
       if (navByText) await navByText.click();
     }
     // Wait for SPA to finish routing and client code to render the upload input

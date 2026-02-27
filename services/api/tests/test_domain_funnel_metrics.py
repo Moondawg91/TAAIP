@@ -31,10 +31,15 @@ def create_org(db):
     db.add(bn); db.commit()
     co = models.Company(company_prefix='1A1', display='Co', battalion_id=bn.id)
     db.add(co); db.commit()
-    st = models.Station(rsid='1A1D', display='St1', company_id=co.id)
-    db.add(st); db.commit()
-    u = models.User(username='usarec_admin', role=models.UserRole.USAREC, scope='USAREC')
-    db.add(u); db.commit()
+    # idempotent station insert
+    st = db.query(models.Station).filter(models.Station.rsid == '1A1D').first()
+    if not st:
+        st = models.Station(rsid='1A1D', display='St1', company_id=co.id)
+        db.add(st); db.commit()
+    u = db.query(models.User).filter(models.User.username == 'usarec_admin').first()
+    if not u:
+        u = models.User(username='usarec_admin', role=models.UserRole.USAREC, scope='USAREC')
+        db.add(u); db.commit()
 
 
 def token_for(db, username):

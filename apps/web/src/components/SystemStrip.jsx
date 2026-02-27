@@ -1,6 +1,7 @@
 import React, {useEffect, useState, useRef} from 'react'
 import {Box, Chip, Typography, Button, Badge} from '@mui/material'
 import {useTheme} from '@mui/material/styles'
+import tokens from '../theme/tokens'
 import {getSystemFreshness, getSystemAlerts, getSystemStatus} from '../api/client'
 import {useNavigate} from 'react-router-dom'
 
@@ -35,8 +36,9 @@ export default function SystemStrip(){
     return ()=> clearInterval(timer.current)
   },[])
 
-  const bg = theme.palette.mode === 'dark' ? (theme.palette.background.paper || '#111') : '#0f1720'
-  const textColor = theme.palette.text.primary || '#fff'
+  // keep strip anchored to the dark frame background
+  const bg = tokens.colors.frameBg
+  const textColor = tokens.colors.surface
 
   const rawMode = (status && status.mode) || 'normal'
   // determine effective mode per spec
@@ -55,22 +57,22 @@ export default function SystemStrip(){
   const totalAlerts = alerts && alerts.total ? alerts.total : 0
 
   return (
-    <Box sx={{height:44, display:'flex', alignItems:'center', px:2, gap:2, backgroundColor:bg, color:textColor, borderRadius:'4px'}}>
+    <Box sx={{height:44, display:'flex', alignItems:'center', px:2, gap:2, backgroundColor:bg, color:textColor, borderRadius: tokens.radius}}>
       <Chip size="small" label={modeLabel.charAt(0).toUpperCase()+modeLabel.slice(1)} sx={{borderRadius:'4px', bgcolor: modeLabel==='maintenance'? 'error.main' : (modeLabel==='degraded'? 'warning.main' : 'success.main'), color:'white'}} />
       <Typography variant="body2" sx={{flex:1, color:'text.secondary'}}>
         {fresh && fresh.data_as_of ? `Data as of ${fresh.data_as_of}` : 'Data not loaded'}
       </Typography>
       <Badge badgeContent={totalAlerts} color="error">
-        <Button variant="outlined" size="small" onClick={()=>nav('/system/alerts')} sx={{borderRadius:'4px', color:textColor, borderColor:'rgba(255,255,255,0.08)'}}>Alerts</Button>
+        <Button variant="outlined" size="small" onClick={()=>nav('/system/alerts')} sx={{borderRadius: tokens.radius, color:textColor, borderColor: tokens.colors.borderSubtle}}>Alerts</Button>
       </Badge>
       {proposalsPending>0 && (
-        <Button variant="contained" size="small" onClick={()=>nav('/system/proposals')} sx={{ml:1, borderRadius:'4px'}}>
+        <Button variant="contained" size="small" onClick={()=>nav('/system/proposals')} sx={{ml:1, borderRadius: tokens.radius}}>
           Updates Ready ({proposalsPending})
         </Button>
       )}
       <Box sx={{ml:2, display:'flex', gap:1}}>
-        <Button size="small" onClick={()=>nav('/system/status')} sx={{borderRadius:'4px', color:textColor}}>Status</Button>
-        <Button size="small" onClick={()=>nav('/helpdesk')} sx={{borderRadius:'4px', color:textColor}}>Help Desk</Button>
+        <Button size="small" onClick={()=>nav('/system/status')} sx={{borderRadius: tokens.radius, color:textColor}}>Status</Button>
+        <Button size="small" onClick={()=>nav('/helpdesk')} sx={{borderRadius: tokens.radius, color:textColor}}>Help Desk</Button>
       </Box>
     </Box>
   )

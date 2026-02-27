@@ -204,24 +204,11 @@ export const BulkDataUpload: React.FC = () => {
         onDragOver={handleDrag}
         onDrop={handleDrop}
       >
-        <input
-          type="file"
-          id="fileInput"
-          accept=".csv,.xlsx,.xls"
-          onChange={handleFileInput}
-          className="hidden"
-          disabled={uploading}
-        />
-        
-        <label htmlFor="fileInput" className="cursor-pointer">
+        <div className="text-center">
           <FileText className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-          <p className="text-lg font-semibold text-gray-700 mb-2">
-            {uploading ? 'Uploading...' : 'Drop your file here or click to browse'}
-          </p>
-          <p className="text-sm text-gray-500">
-            CSV or Excel files only (.csv, .xlsx, .xls)
-          </p>
-        </label>
+          <p className="text-lg font-semibold text-gray-700 mb-2">Uploads are centralized in the Data Hub.</p>
+          <a href="/datahub/imports" className="inline-block px-4 py-2 bg-blue-600 text-white rounded-lg">Open Data Hub Imports</a>
+        </div>
       </div>
 
       {/* Results */}

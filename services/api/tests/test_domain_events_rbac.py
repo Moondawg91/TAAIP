@@ -33,10 +33,15 @@ def create_org(db):
     co = models.Company(company_prefix='1A1', display='Co', battalion_id=bn.id)
     db.add(co)
     db.commit()
-    st1 = models.Station(rsid='1A1D', display='St1', company_id=co.id)
-    st2 = models.Station(rsid='1B1D', display='St2', company_id=co.id)
-    db.add_all([st1, st2])
-    db.commit()
+    # insert stations idempotently to avoid UNIQUE constraint on rsid
+    st1 = db.query(models.Station).filter(models.Station.rsid == '1A1D').first()
+    if not st1:
+        st1 = models.Station(rsid='1A1D', display='St1', company_id=co.id)
+        db.add(st1); db.commit()
+    st2 = db.query(models.Station).filter(models.Station.rsid == '1B1D').first()
+    if not st2:
+        st2 = models.Station(rsid='1B1D', display='St2', company_id=co.id)
+        db.add(st2); db.commit()
 
 
 def create_users(db):
@@ -46,7 +51,9 @@ def create_users(db):
         models.User(username='station_view', role=models.UserRole.STATION_VIEW, scope='1A1D'),
     ]
     for u in users:
-        db.add(u)
+        existing = db.query(models.User).filter(models.User.username == u.username).first()
+        if not existing:
+            db.add(u)
     db.commit()
 
 

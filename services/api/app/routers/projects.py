@@ -3,7 +3,7 @@ from typing import Optional, List, Dict, Any
 from ..db import connect, row_to_dict
 from datetime import datetime
 import json
-from .rbac import require_scope, require_roles, require_any_role, get_current_user
+from .rbac import require_scope, require_roles, require_any_role, get_current_user, require_perm
 from uuid import uuid4
 
 router = APIRouter(prefix="/projects", tags=["projects"])
@@ -20,7 +20,7 @@ def write_audit(conn, who, action, entity, entity_id, meta=None):
     conn.commit()
 
 
-@router.post("/", summary="Create project")
+@router.post("/", summary="Create project", dependencies=[Depends(require_perm('planning.edit'))])
 def create_project(payload: Dict[str, Any]):
     conn = connect()
     try:
@@ -88,7 +88,7 @@ def list_domain_projects(limit: int = 100, owner: Optional[str] = None):
         conn.close()
 
 
-@router.post('/projects', summary='Create domain project (Phase-7)')
+@router.post('/projects', summary='Create domain project (Phase-7)', dependencies=[Depends(require_perm('planning.edit'))])
 def create_domain_project(payload: Dict[str, Any], current_user: Dict = Depends(get_current_user)):
     conn = connect()
     try:
@@ -119,7 +119,7 @@ def get_domain_project(project_id: str):
         conn.close()
 
 
-@router.post('/tasks', summary='Create domain task (Phase-7)')
+@router.post('/tasks', summary='Create domain task (Phase-7)', dependencies=[Depends(require_perm('planning.edit'))])
 def create_domain_task(payload: Dict[str, Any], current_user: Dict = Depends(get_current_user)):
     conn = connect()
     try:
@@ -152,7 +152,7 @@ def list_domain_events(project_id: Optional[str] = None, limit: int = 200):
         conn.close()
 
 
-@router.post('/events', summary='Create calendar event (Phase-7)')
+@router.post('/events', summary='Create calendar event (Phase-7)', dependencies=[Depends(require_perm('planning.edit'))])
 def create_domain_event(payload: Dict[str, Any], current_user: Dict = Depends(get_current_user)):
     conn = connect()
     try:

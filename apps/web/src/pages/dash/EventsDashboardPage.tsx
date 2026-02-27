@@ -4,7 +4,7 @@ import DrillBreadcrumbs from '../../components/DrillBreadcrumbs'
 import DetailDrawer from '../../components/DetailDrawer'
 import api from '../../api/client'
 import DualModeTabs from '../../components/DualModeTabs'
-import DashboardFilterBar from '../../components/DashboardFilterBar'
+// TopFilterBar is rendered centrally by the shell when route policy enables it
 import ExportMenu from '../../components/ExportMenu'
 
 export default function EventsDashboardPage(){
@@ -25,7 +25,6 @@ export default function EventsDashboardPage(){
         </Box>
       </Box>
       <DualModeTabs />
-      <DashboardFilterBar />
       {loading ? <Typography>Loading...</Typography> : (
         <Grid container spacing={2}>
           <Grid item xs={12} md={4}>

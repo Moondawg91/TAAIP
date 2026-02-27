@@ -43,11 +43,11 @@ export default function DocumentUploadPanel(){
     <Paper sx={{ p:2, mb:2, bgcolor:'background.paper', borderRadius:'4px' }}>
       <Typography variant="h6">Documents</Typography>
       <Typography variant="body2" sx={{ color:'text.secondary' }}>Upload manuals, regulations or dataset files for traceability.</Typography>
-      <Box sx={{ mt:2, display:'flex', gap:2, alignItems:'center', flexWrap:'wrap' }}>
-        <input data-testid="document-file-input" type="file" onChange={onFileChange} />
-        <TextField size="small" label="Description" value={description} onChange={e=>setDescription(e.target.value)} />
-        <TextField size="small" label="Tags (comma)" value={tags} onChange={e=>setTags(e.target.value)} />
-        <Button variant="contained" onClick={doUpload} disabled={!file}>Upload</Button>
+      <Box sx={{ mt:2 }}>
+        <Typography variant="body2">Document uploads have been centralized in the Data Hub. Use the Data Hub imports page to upload new documents and datasets.</Typography>
+        <Box sx={{ mt:2 }}>
+          <Button variant="contained" onClick={()=>{ window.location.href = '/data-hub/imports' }}>Open Data Hub Imports</Button>
+        </Box>
       </Box>
       {status && <Typography variant="caption" sx={{ display:'block', mt:1 }}>{status}</Typography>}
 
