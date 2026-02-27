@@ -18,7 +18,7 @@ const ROUTE_POLICIES: RoutePolicy[] = [
   { path: '/command-center', requiredAny: [permissions.DASHBOARD_READ], dashboardPage: true, showTopFilters: true, filters: { unit: true, fy: true, qtr: true }, navSection: 'command' },
   { path: '/planning', requiredAny: [permissions.DASHBOARD_READ], dashboardPage: true, showTopFilters: true, filters: { unit: true, fy: true, qtr: true }, navSection: 'planning' },
   { path: '/planning/calendar', requiredAny: [permissions.DASHBOARD_READ], dashboardPage: true, showTopFilters: true, filters: { unit: true, fy: true, qtr: true }, navSection: 'planning' },
-  { path: '/planning/twg', requiredAny: [permissions.DASHBOARD_READ], dashboardPage: true, showTopFilters: true, filters: { unit: true, fy: true, qtr: true }, navSection: 'planning' },
+  { path: '/command-center/twg', requiredAny: [permissions.DASHBOARD_READ], dashboardPage: true, showTopFilters: true, filters: { unit: true, fy: true, qtr: true }, navSection: 'command' },
   { path: '/roi', requiredAny: [permissions.DASHBOARD_READ], dashboardPage: true, showTopFilters: true, filters: { unit: true, fy: true, qtr: true, compare: true }, navSection: 'roi' },
   { path: '/roi/events', requiredAny: [permissions.DASHBOARD_READ], dashboardPage: true, showTopFilters: true, filters: { unit: true, fy: true, qtr: true, compare: true }, navSection: 'roi' },
   { path: '/operations/funnel', requiredAny: [permissions.DASHBOARD_READ], dashboardPage: true, showTopFilters: true, filters: { unit: true, fy: true, qtr: true }, navSection: 'ops' },
