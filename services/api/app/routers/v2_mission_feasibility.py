@@ -1,8 +1,9 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Request
 from .. import db as _db
 from .rbac import require_perm
 from datetime import datetime
 from typing import Optional
+import json
 
 router = APIRouter(prefix='/v2/mission-feasibility', tags=['mission-feasibility'])
 
@@ -11,14 +12,105 @@ def _now_iso():
     return datetime.utcnow().isoformat()
 
 
-@router.get('/summary')
-def summary(unit_rsid: str = 'USAREC', fy: Optional[int] = None, compare_mode: str = 'C', user: dict = Depends(require_perm('dashboards.view'))):
-    # default FY: current year, fallback 2026
+def _scenario_for_target(inputs, computed, target_wr_assumption=1.0, weights=None):
+    # compute recruiters_required, recruiter_strength_gap, WR_gap, MSI, FS
     try:
-        if fy is None:
-            fy = datetime.utcnow().year or 2026
+        M = inputs.get('annual_mission_contracts') or 0
+        R = inputs.get('recruiters_available_avg') or inputs.get('recruiters_assigned_avg') or 0
+        market_baseline = inputs.get('market_capacity_baseline') or 0
+        mbf = inputs.get('market_burden_factor') or 1.0
+
+        recruiters_required = None
+        if target_wr_assumption and target_wr_assumption > 0:
+            recruiters_required = M / (target_wr_assumption * 12.0) if M else None
+
+        wr_required = None
+        if R and R > 0:
+            wr_required = (M / 12.0) / float(R) if M else 0.0
+
+        # WR_actual estimation from computed if available
+        wr_actual = None
+        try:
+            if computed.get('expected_wr_per_recruiter') is not None:
+                wr_actual = float(computed.get('expected_wr_per_recruiter'))
+        except Exception:
+            wr_actual = None
+
+        # MSI
+        market_capacity_estimate = market_baseline * (mbf or 1.0) if market_baseline is not None else None
+        msi = None
+        if market_capacity_estimate and M:
+            try:
+                msi = float(market_capacity_estimate) / float(M) if M else None
+            except Exception:
+                msi = None
+
+        # gaps
+        wr_gap = None
+        if wr_actual is not None and wr_required is not None and wr_required > 0:
+            wr_gap = max(0.0, min(1.0, wr_actual / float(wr_required)))
+
+        recruiter_strength_gap = None
+        if recruiters_required and R:
+            recruiter_strength_gap = max(0.0, min(1.0, float(R) / float(recruiters_required)))
+
+        # weights
+        if weights is None:
+            weights = {'wr': 0.45, 'msi': 0.35, 'rs': 0.20}
+
+        # normalized components
+        wr_comp = wr_gap if wr_gap is not None else 0.0
+        msi_comp = max(0.0, min(1.0, msi)) if msi is not None else 0.0
+        rs_comp = recruiter_strength_gap if recruiter_strength_gap is not None else 0.0
+
+        fs = int(round(100.0 * (weights['wr'] * wr_comp + weights['msi'] * msi_comp + weights['rs'] * rs_comp)))
+
+        return {
+            'target_wr_assumption': target_wr_assumption,
+            'recruiters_required': None if recruiters_required is None else round(recruiters_required,2),
+            'wr_required': None if wr_required is None else round(wr_required,3),
+            'wr_actual': None if wr_actual is None else round(wr_actual,3),
+            'msi': None if msi is None else round(msi,3),
+            'feasibility_score': fs,
+            'wr_gap': None if wr_gap is None else round(wr_gap,3),
+            'recruiter_strength_gap': None if recruiter_strength_gap is None else round(recruiter_strength_gap,3)
+        }
     except Exception:
-        fy = 2026
+        return {}
+
+
+@router.get('/summary')
+def summary(request: Request = None, unit_rsid: str = 'USAREC', fy: Optional[int] = None, qtr_num: Optional[int] = None, rsm_month: Optional[str] = None, rollup: Optional[int] = None, compare_mode: str = 'C', user: dict = Depends(require_perm('dashboards.view'))):
+    # apply scope defaults
+    try:
+        from .. import scope as scope_mod
+        qp = {}
+        if request is not None:
+            qp = dict(request.query_params)
+        # merge explicit args
+        if unit_rsid is not None:
+            qp['unit_rsid'] = unit_rsid
+        if fy is not None:
+            qp['fy'] = str(fy)
+        if qtr_num is not None:
+            qp['qtr_num'] = str(qtr_num)
+        if rsm_month is not None:
+            qp['rsm_month'] = rsm_month
+        if rollup is not None:
+            qp['rollup'] = str(rollup)
+        scope = scope_mod.parse_scope_params(qp)
+        unit_rsid = scope['unit_rsid']
+        fy = scope['fy']
+        qtr_num = scope['qtr_num']
+        rsm_month = scope['rsm_month']
+        rollup = scope['rollup']
+    except Exception:
+        # fall back to basic defaults
+        try:
+            if fy is None:
+                fy = datetime.utcnow().year or 2026
+        except Exception:
+            fy = 2026
 
     conn = _db.connect()
     try:
@@ -50,7 +142,20 @@ def summary(unit_rsid: str = 'USAREC', fy: Optional[int] = None, compare_mode: s
         recruiters_assigned_avg = None
         recruiters_available_avg = None
         try:
-            cur.execute('SELECT AVG(recruiters_assigned) as avg_assigned FROM recruiter_strength WHERE unit_rsid = ? AND month LIKE ?', (unit_rsid, f"{fy}-%"))
+            # when rollup requested, resolve descendant rsids
+            rsids = [unit_rsid]
+            if rollup:
+                try:
+                    from .. import org_utils
+                    rsids = org_utils.get_descendant_units(conn, unit_rsid)
+                except Exception:
+                    rsids = [unit_rsid]
+            placeholders = ','.join('?' for _ in rsids)
+            params = list(rsids)
+            if rsm_month:
+                cur.execute(f"SELECT AVG(recruiters_assigned) as avg_assigned FROM recruiter_strength WHERE month = ? AND org_unit_id IN ({placeholders})", [rsm_month] + params)
+            else:
+                cur.execute(f"SELECT AVG(recruiters_assigned) as avg_assigned FROM recruiter_strength WHERE month LIKE ? AND org_unit_id IN ({placeholders})", [f"{fy}-%"] + params)
             r = cur.fetchone()
             if r and r.get('avg_assigned') is not None:
                 recruiters_assigned_avg = float(r['avg_assigned'])
@@ -174,8 +279,24 @@ def summary(unit_rsid: str = 'USAREC', fy: Optional[int] = None, compare_mode: s
             'unit_rsid': unit_rsid,
             'unit_display_name': unit_display,
             'fy': fy,
+            'applied_scope': {
+                'unit_rsid': unit_rsid,
+                'fy': fy,
+                'qtr_num': qtr_num,
+                'rsm_month': rsm_month,
+                'rollup': rollup
+            },
             'inputs': inputs,
             'computed': computed,
+            # missionProduction: totals + bySegment (compatibility shape)
+            'missionProduction': {
+                'totals': {},
+                'bySegment': []
+            },
+            # depLoss: byBucket
+            'depLoss': {
+                'byBucket': []
+            },
             'status': {
                 'overall': overall,
                 'reasons': reasons
@@ -192,12 +313,149 @@ def summary(unit_rsid: str = 'USAREC', fy: Optional[int] = None, compare_mode: s
             'computed_at': _now_iso()
         }
 
-        return out
+        # Populate missionProduction and depLoss from fact tables when present
+        try:
+            # resolve rsids for rollup if requested
+            rsids = [unit_rsid]
+            if rollup:
+                try:
+                    from .. import org_utils
+                    rsids = org_utils.get_descendant_units(conn, unit_rsid)
+                except Exception:
+                    rsids = [unit_rsid]
+            placeholders = ','.join('?' for _ in rsids)
+
+            # mission totals for components and metrics
+            comps = ['RA', 'AR']
+            metrics = ['MISSION', 'PROD', 'NET_CONTRACTS']
+            totals = {c: {m: 0 for m in metrics} for c in comps}
+            cur.execute(f"SELECT component, metric, SUM(value) as v FROM fact_mission_production WHERE rsid IN ({placeholders}) GROUP BY component, metric", tuple(rsids))
+            for r in cur.fetchall():
+                try:
+                    comp = r.get('component') if isinstance(r, dict) else r[0]
+                    metric = r.get('metric') if isinstance(r, dict) else r[1]
+                    val = r.get('v') if isinstance(r, dict) else r[2]
+                    if comp in totals and metric in totals[comp]:
+                        totals[comp][metric] = float(val or 0)
+                except Exception:
+                    continue
+
+            # bySegment
+            byseg = []
+            cur.execute(f"SELECT component, segment, metric, SUM(value) as v FROM fact_mission_production WHERE rsid IN ({placeholders}) GROUP BY component, segment, metric", tuple(rsids))
+            seg_rows = cur.fetchall()
+            seg_map = {}
+            for r in seg_rows:
+                try:
+                    comp = r.get('component') if isinstance(r, dict) else r[0]
+                    seg = r.get('segment') if isinstance(r, dict) else r[1]
+                    metric = r.get('metric') if isinstance(r, dict) else r[2]
+                    val = r.get('v') if isinstance(r, dict) else r[3]
+                    key = (comp, seg)
+                    if key not in seg_map:
+                        seg_map[key] = {m: 0 for m in metrics}
+                    if metric in seg_map[key]:
+                        seg_map[key][metric] = float(val or 0)
+                except Exception:
+                    continue
+            for (comp, seg), vals in seg_map.items():
+                rec = {'component': comp, 'segment': seg}
+                rec.update(vals)
+                byseg.append(rec)
+
+            # depLoss by bucket
+            dep_buckets = []
+            try:
+                cur.execute(f"SELECT bucket, SUM(dep_losses) as losses FROM fact_dep_loss WHERE rsid IN ({placeholders}) GROUP BY bucket ORDER BY bucket", tuple(rsids))
+                for r in cur.fetchall():
+                    try:
+                        bucket = r.get('bucket') if isinstance(r, dict) else r[0]
+                        losses = r.get('losses') if isinstance(r, dict) else r[1]
+                        dep_buckets.append({'bucket': bucket, 'losses': int(losses or 0)})
+                    except Exception:
+                        continue
+            except Exception:
+                dep_buckets = []
+
+            # attach to out
+            out['missionProduction']['totals'] = totals
+            out['missionProduction']['bySegment'] = byseg
+            out['depLoss']['byBucket'] = dep_buckets or [{'bucket': '0-9_Days', 'losses': 0}, {'bucket': '10-19_Days', 'losses': 0}]
+        except Exception:
+            # leave defaults (zeros)
+            try:
+                out['missionProduction']['totals'] = { 'RA': {'MISSION': 0, 'PROD': 0, 'NET_CONTRACTS': 0}, 'AR': {'MISSION': 0, 'PROD': 0, 'NET_CONTRACTS': 0} }
+                out['missionProduction']['bySegment'] = [
+                    {'component':'RA','segment':'GA','MISSION':0,'PROD':0,'NET_CONTRACTS':0},
+                    {'component':'RA','segment':'SA','MISSION':0,'PROD':0,'NET_CONTRACTS':0},
+                    {'component':'RA','segment':'OTH','MISSION':0,'PROD':0,'NET_CONTRACTS':0},
+                    {'component':'RA','segment':'PS','MISSION':0,'PROD':0,'NET_CONTRACTS':0}
+                ]
+                out['depLoss']['byBucket'] = [{'bucket':'0-9_Days','losses':0},{'bucket':'10-19_Days','losses':0}]
+            except Exception:
+                pass
+
+            return out
     finally:
         try:
             conn.close()
         except Exception:
             pass
+@router.get('/scenarios')
+def scenarios(request: Request = None, unit_rsid: str = 'USAREC', fy: Optional[int] = None, qtr_num: Optional[int] = None, rsm_month: Optional[str] = None, rollup: Optional[int] = None, user: dict = Depends(require_perm('dashboards.view'))):
+    # produce scenario A (1.0) and B (0.7)
+    # pass through request/query params to summary so applied_scope is consistent
+    summary_out = summary(request=request, unit_rsid=unit_rsid, fy=fy, qtr_num=qtr_num, rsm_month=rsm_month, rollup=rollup, user=user)
+    inputs = summary_out.get('inputs', {})
+    computed = summary_out.get('computed', {})
+    sc1 = _scenario_for_target(inputs, computed, target_wr_assumption=1.0)
+    sc2 = _scenario_for_target(inputs, computed, target_wr_assumption=0.7)
+    recommended = None
+    try:
+        # recommend higher feasibility score
+        if sc1.get('feasibility_score',0) >= sc2.get('feasibility_score',0):
+            recommended = {'recommended_wr': sc1['target_wr_assumption'], 'reason': 'Higher feasibility score'}
+        else:
+            recommended = {'recommended_wr': sc2['target_wr_assumption'], 'reason': 'Higher feasibility score'}
+    except Exception:
+        recommended = None
+    return {'unit_rsid': unit_rsid, 'fy': summary_out.get('fy'), 'applied_scope': summary_out.get('applied_scope'), 'scenario_A': sc1, 'scenario_B': sc2, 'recommended': recommended}
+
+
+@router.get('/drivers')
+def drivers(unit_rsid: str = 'USAREC', fy: Optional[int] = None, user: dict = Depends(require_perm('dashboards.view'))):
+    s = summary(unit_rsid=unit_rsid, fy=fy, user=user)
+    return {'unit_rsid': unit_rsid, 'fy': s.get('fy'), 'drivers': s.get('drivers', []), 'reasons': s.get('status', {}).get('reasons', [])}
+
+
+@router.post('/narrative')
+def narrative(payload: dict, user: dict = Depends(require_perm('dashboards.view'))):
+    """Generate a short structured narrative for the provided summary/scenario payload and persist it."""
+    try:
+        from ..ai import feasibility_narrative as _fn
+    except Exception:
+        _fn = None
+    summary_json = payload.get('summary') or {}
+    drivers_list = payload.get('drivers') or []
+    gaps = payload.get('gaps') or []
+    unit = summary_json.get('unit_rsid') or payload.get('unit_rsid') or 'USAREC'
+    fy = summary_json.get('fy') or payload.get('fy') or None
+    narrative_text = None
+    structured = None
+    if _fn:
+        structured = _fn.generate(summary_json, drivers_list, gaps)
+        narrative_text = structured.get('narrative')
+    # persist
+    conn = _db.connect()
+    try:
+        cur = conn.cursor()
+        now = _now_iso()
+        cur.execute('INSERT INTO mission_feasibility_narrative(unit_rsid, fy, payload, created_at) VALUES (?,?,?,?)', (unit, fy, json.dumps(structured or {'text': narrative_text}), now))
+        conn.commit()
+    finally:
+        try: conn.close()
+        except Exception: pass
+    return {'status': 'ok', 'narrative': structured}
 
 
 @router.post('/inputs')
