@@ -218,6 +218,7 @@ def connect() -> sqlite3.Connection:
         print(f"connect: opened new sqlite3 conn for path={path}")
     except Exception:
         pass
+    return conn
 
 
 def _column_exists(cur: sqlite3.Cursor, table: str, column: str) -> bool:
@@ -236,6 +237,42 @@ def _add_column_if_missing(cur: sqlite3.Cursor, table: str, column: str, ddl: st
         except Exception:
             # best-effort, non-fatal
             pass
+
+
+def column_exists(conn: sqlite3.Connection, table: str, column: str) -> bool:
+    """Public helper: return True if `column` exists on `table`.
+
+    Uses PRAGMA table_info and is safe to call repeatedly.
+    """
+    try:
+        cur = conn.cursor()
+        cur.execute(f"PRAGMA table_info({table})")
+        cols = [r[1] for r in cur.fetchall()]
+        return column in cols
+    except Exception:
+        return False
+
+
+def safe_add_column(conn: sqlite3.Connection, table: str, column: str, ddl: str) -> bool:
+    """Idempotently add a column to a table.
+
+    Returns True if column was added or already existed, False on error.
+    This will not drop or modify existing data.
+    """
+    try:
+        cur = conn.cursor()
+        if column in [r[1] for r in cur.execute(f"PRAGMA table_info({table})").fetchall()]:
+            return True
+        cur.execute("BEGIN")
+        cur.execute(f"ALTER TABLE {table} ADD COLUMN {column} {ddl}")
+        conn.commit()
+        return True
+    except Exception:
+        try:
+            conn.rollback()
+        except Exception:
+            pass
+        return False
 
 
 def _migrate_mission_feasibility_schema(conn: sqlite3.Connection) -> None:
@@ -376,6 +413,19 @@ def init_schema() -> None:
                 updated_at TEXT,
                 record_status TEXT DEFAULT 'active'
             );
+
+            -- Canonical unit table: represent all echelons as nodes
+            CREATE TABLE IF NOT EXISTS unit (
+                unit_code TEXT PRIMARY KEY,
+                echelon TEXT NOT NULL CHECK (echelon IN ('MACOM','BDE','BN','CO','STN')),
+                unit_name TEXT NOT NULL,
+                parent_code TEXT NULL REFERENCES unit(unit_code),
+                created_at TEXT NOT NULL DEFAULT (datetime('now')),
+                updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_unit_parent ON unit(parent_code);
+            CREATE INDEX IF NOT EXISTS idx_unit_echelon ON unit(echelon);
 
             CREATE TABLE IF NOT EXISTS users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -525,6 +575,31 @@ def init_schema() -> None:
                 message TEXT,
                 raw_row_json TEXT
             );
+
+            -- DEP Loss fact table (station-level)
+            CREATE TABLE IF NOT EXISTS fact_dep_loss (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+                -- joins
+                station_rsid TEXT NOT NULL,
+
+                -- dimensions
+                time_period TEXT NOT NULL,
+                cmpnt_cd TEXT NOT NULL,
+                loss_bucket TEXT NOT NULL,
+
+                -- measures
+                dep_losses INTEGER NOT NULL DEFAULT 0,
+                cancellation_rcm_number TEXT NULL,
+
+                -- traceability
+                source_primary_key TEXT NULL,
+                ingested_at TEXT NOT NULL DEFAULT (datetime('now'))
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_dep_loss_station ON fact_dep_loss(station_rsid);
+            CREATE INDEX IF NOT EXISTS idx_dep_loss_station_tp ON fact_dep_loss(station_rsid, time_period);
+            CREATE INDEX IF NOT EXISTS idx_dep_loss_station_tp_cmpnt ON fact_dep_loss(station_rsid, time_period, cmpnt_cd);
 
             -- Normalized Data Hub tables
             CREATE TABLE IF NOT EXISTS emm_event (
@@ -950,6 +1025,12 @@ def init_schema() -> None:
             ('FSTS_DASHBOARD_EXPORT','FSTS','FSTS Dashboard Export',1,'["csv"]','[]','["fsts","dashboard"]','[]','[]',NULL,'[]','fstsm_metric','fsts_normalizer',1, datetime('now'), datetime('now')),
             ('VANTAGE_THOR_LEADS_EXPORT','VANTAGE','Vantage Thor Leads',1,'["csv","xlsx"]','[]','["vantage","thor","leads"]','["lead_id","created_at"]','[]',NULL,'["unit_rsid"]','lead_journey_fact','vantage_normalizer',1, datetime('now'), datetime('now')),
             ('AIE_LEADS_EXPORT','AIE','AIE Leads Export',1,'["csv","xlsx"]','[]','["aie","leads","person"]','["person_key","lead_created_dt"]','[]',NULL,'["unit_rsid"]','lead_journey_fact','aie_normalizer',1, datetime('now'), datetime('now'));
+            -- Ensure USAREC org hierarchy dataset is present (idempotent)
+            INSERT OR IGNORE INTO dataset_registry (dataset_key, source_system, display_name, enabled, file_types, sheet_hints, detection_keywords, required_columns, optional_columns, primary_date_column, unit_columns, target_table, normalizer_key, version, created_at, updated_at) VALUES
+            ('USAREC_ORG_HIERARCHY','USAREC','USAREC Org Hierarchy (RSID Tree)',1,'["xlsx"]','["org","hierarchy"]','["rsid","cmd","bde","bn","co","stn","usarec"]','["CMD","BDE","BN","CO","STN"]','[]',NULL,'["unit_rsid"]','org_unit','usarec_org_normalizer',1, datetime('now'), datetime('now'));
+
+            -- Verification SQL (run manually):
+            -- SELECT dataset_key, display_name, enabled FROM dataset_registry WHERE dataset_key='USAREC_ORG_HIERARCHY';
 
             CREATE TABLE IF NOT EXISTS raw_file_storage (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
