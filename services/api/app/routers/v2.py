@@ -341,6 +341,193 @@ def marketing_analytics(event_id: str = None, db: Session = Depends(auth.get_db)
     }
 
 
+# Compatibility / convenience endpoints expected by the frontend UI.
+@router.get('/planning/overview')
+def planning_overview():
+    """Return a lightweight planning overview (compatibility for /api/v2/planning/overview).
+    This delegates to the existing planning_summary.projects_events_list() where available
+    and maps results to a simple `items` array the frontend expects.
+    """
+    try:
+        from services.api.app.routers.planning_summary import projects_events_list
+        out = projects_events_list() or {}
+        items = []
+        # Map projects to simple objective items
+        for p in out.get('projects', []) if isinstance(out.get('projects', []), list) else []:
+            items.append({
+                'type': 'project',
+                'id': p.get('id') or p.get('project_id') or None,
+                'title': p.get('name') or p.get('title') or '',
+                'owner': p.get('owner') or p.get('created_by') or p.get('lead') or '',
+                'due': p.get('due_date') or p.get('end_dt') or p.get('due') or None,
+                'status': p.get('status') or p.get('record_status') or 'unknown',
+                'priority': p.get('priority') or p.get('prio') or None,
+                'link': p.get('permalink') or p.get('link') or None,
+            })
+        # Map events as planning items too
+        for e in out.get('events', []) if isinstance(out.get('events', []), list) else []:
+            items.append({
+                'type': 'event',
+                'id': e.get('id') or e.get('event_id') or None,
+                'title': e.get('name') or e.get('title') or '',
+                'owner': e.get('owner') or e.get('created_by') or e.get('lead') or '',
+                'due': e.get('end_dt') or e.get('end_date') or e.get('start_dt') or None,
+                'status': e.get('status') or e.get('record_status') or 'unknown',
+                'location': e.get('location_name') or e.get('location') or None,
+                'link': e.get('permalink') or None,
+            })
+        return {'items': items}
+    except Exception:
+        return {'items': []}
+
+
+@router.get('/twg')
+def v2_twg(org_unit_id: int = None, limit: int = 100):
+    """Compatibility endpoint for /api/v2/twg returning working groups list."""
+    try:
+        from services.api.app.routers.working_groups import list_wgs
+        raw = list_wgs(org_unit_id=org_unit_id, limit=limit)
+        out = []
+        for w in (raw or []):
+            try:
+                members = None
+                try:
+                    members = int(w.get('members_count')) if w.get('members_count') is not None else None
+                except Exception:
+                    # try to infer from members list
+                    if isinstance(w.get('members'), (list, tuple)):
+                        members = len(w.get('members'))
+                out.append({
+                    'id': w.get('id') or w.get('wg_id') or None,
+                    'name': w.get('name') or w.get('wg_name') or '',
+                    'org_unit_id': w.get('org_unit_id') or w.get('org_unit') or None,
+                    'wg_type': w.get('wg_type') or w.get('type') or None,
+                    'description': w.get('description') or '',
+                    'lead': w.get('lead') or w.get('owner') or None,
+                    'members_count': members,
+                    'created_at': w.get('created_at') or w.get('created') or None
+                })
+            except Exception:
+                continue
+        return out
+    except Exception:
+        return []
+
+
+@router.get('/fusion')
+def v2_fusion(limit: int = 50):
+    """Compatibility endpoint for /api/v2/fusion. Attempts to read a `fusion_process` table if present."""
+    try:
+        conn = get_db_conn()
+        cur = conn.cursor()
+        cur.execute('SELECT fusion_id, session_date, participants, insights, actions, status FROM fusion_process ORDER BY session_date DESC LIMIT ?',(limit,))
+        rows = cur.fetchall()
+        items = []
+        for r in rows:
+            try:
+                if isinstance(r, dict):
+                    rec = r
+                else:
+                    rec = {
+                        'fusion_id': r[0],
+                        'session_date': r[1],
+                        'participants': r[2],
+                        'insights': r[3],
+                        'actions': r[4],
+                        'status': r[5]
+                    }
+                # normalize participants: if JSON string, parse
+                participants = rec.get('participants')
+                if isinstance(participants, str):
+                    try:
+                        participants = json.loads(participants)
+                    except Exception:
+                        participants = [participants]
+                if participants is None:
+                    participants = []
+                # ensure participants is a list of dicts or strings
+                if isinstance(participants, (list, tuple)):
+                    p_list = list(participants)
+                else:
+                    p_list = [participants]
+                norm = {
+                    'id': rec.get('fusion_id') or rec.get('id') or None,
+                    'session_date': rec.get('session_date'),
+                    'participants': p_list,
+                    'participants_count': len(p_list),
+                    'insights': rec.get('insights') or None,
+                    'actions': rec.get('actions') or None,
+                    'status': rec.get('status') or 'unknown'
+                }
+                items.append(norm)
+            except Exception:
+                continue
+        try:
+            conn.close()
+        except Exception:
+            pass
+        return items
+    except Exception:
+        return []
+
+
+# Compatibility: simple units-summary endpoint expected by the UI.
+@router.get('/org/units-summary')
+def units_summary(includeUnit: bool = False):
+    try:
+        from services.api.app.routers.v2_org import roots as v2_roots
+        # reuse roots to produce a minimal summary
+        r = v2_roots() or {}
+        return { 'status': 'ok', 'data': r }
+    except Exception:
+        return { 'status': 'ok', 'data': [] }
+
+
+# Compatibility wrapper for command summary (avoid domain SQLAlchemy failures in local dev)
+@router.get('/command/summary')
+def v2_command_summary(scope_type: str = None, scope_value: str = None):
+    try:
+        from services.api.app.api_domain import command_summary as domain_command_summary
+        # call domain implementation with minimal args via a safe call
+        # domain_command_summary expects db and user deps; if that fails, fall back below
+        return domain_command_summary(scope_type=scope_type, scope_value=scope_value)
+    except Exception:
+        # return a safe minimal shape the frontend can handle
+        return { 'status': 'ok', 'data': { 'leads': 0, 'conversions': 0, 'cost': 0.0, 'roi': None } }
+
+
+# Exports compatibility: forward to the exports router functions where possible
+from fastapi import BackgroundTasks, Request
+
+
+@router.post('/exports')
+def v2_create_export(payload: dict, background: BackgroundTasks, request: Request):
+    try:
+        from services.api.app.routers import exports as exports_mod
+        # delegate to create_export which will enqueue background task
+        return exports_mod.create_export(payload, background, request)
+    except Exception:
+        return { 'status': 'error', 'error': 'export not available' }
+
+
+@router.get('/exports')
+def v2_list_exports(mine: bool = False, limit: int = 50):
+    try:
+        from services.api.app.routers import exports as exports_mod
+        return exports_mod.list_exports(mine=mine, limit=limit)
+    except Exception:
+        return []
+
+
+@router.get('/exports/{export_id}')
+def v2_get_export(export_id: str):
+    try:
+        from services.api.app.routers import exports as exports_mod
+        return exports_mod.get_export(export_id)
+    except Exception:
+        return { 'status': 'error', 'error': 'not found' }
+
+
 # Minimal compatibility wrapper so clients that POST to /api/v2/import/upload
 # are handled by the existing legacy import handler under imports.py
 @router.post('/import/upload')

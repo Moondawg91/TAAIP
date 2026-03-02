@@ -24,7 +24,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from . import api_ingest
 from . import api_domain
 from .db import init_db, get_db_path
+from . import migrations
 from fastapi.staticfiles import StaticFiles
+from fastapi.openapi.utils import get_openapi
+import warnings
 
 
 
@@ -32,24 +35,9 @@ from fastapi.staticfiles import StaticFiles
 
 app = FastAPI(title="TAAIP API", description="TAAIP API service. © 2026 TAAIP. Copyright pending.")
 
-# Ensure the DB schema exists at import time when running the server normally.
-# During pytest collection tests control DB initialization and set
-# `DATABASE_URL`/`TAAIP_DB_PATH` themselves. Skip init_db while pytest is
-# running to avoid creating an engine bound to the wrong DB during test
-# collection which can introduce order-dependent failures.
-if not os.getenv('PYTEST_CURRENT_TEST'):
-    try:
-        init_db()
-        _log.info(f"DB initialized at {get_db_path()}")
-        # Ensure RBAC seeds and role/permission catalog are present
-        try:
-            from . import seed_rbac
-            seed_rbac.seed_rbac()
-            _log.info('RBAC seed applied')
-        except Exception:
-            _log.exception('Failed to apply RBAC seed')
-    except Exception:
-        _log.exception("init_db at import failed")
+# Do not initialize DB schema or run seeds at import time. Initialization
+# occurs during the FastAPI startup event to avoid side-effects during
+# import/reload (which can break uvicorn autoreload and test collection).
 # If a production/dev frontend build exists inside the workspace, mount it
 # at root so the API and static frontend are served from the same origin.
 # This simplifies local E2E (Playwright) by avoiding CORS and proxying.
@@ -165,6 +153,10 @@ from .routers import v2_org as v2_org_router
 api_router.include_router(v2_org_router.router)
 from .routers import v2_mission_feasibility as v2_mf_router
 api_router.include_router(v2_mf_router.router)
+from .routers import v2_analytics as v2_analytics_router
+api_router.include_router(v2_analytics_router.router)
+from .routers import v2_datahub as v2_datahub_router
+api_router.include_router(v2_datahub_router.router)
 from .routers import compat_helpers as compat_helpers_router
 api_router.include_router(compat_helpers_router.router)
 
@@ -283,8 +275,47 @@ api_router.include_router(tasks_compat_router.router)
 from .routers import boards as boards_router
 api_router.include_router(boards_router.router)
 
-# Mount the composed API router under /api
+# Mount the composed API router under /api (canonical path for frontend)
 app.include_router(api_router, prefix="/api")
+
+
+# Override OpenAPI generation to suppress Duplicate Operation ID warnings
+# and to ensure operationIds are unique (append numeric suffixes when
+# duplicates are detected). This avoids noisy warnings from FastAPI when
+# similarly-named handler functions exist across multiple routers.
+def _custom_openapi():
+    if app.openapi_schema:
+        return app.openapi_schema
+    # Suppress FastAPI duplicate-operation warnings during schema build
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", message="Duplicate Operation ID")
+        openapi_schema = get_openapi(
+            title=app.title,
+            version="1.0.0",
+            routes=app.routes,
+            description=app.description,
+        )
+    # Ensure unique operationId values by appending a counter suffix
+    seen = {}
+    paths = openapi_schema.get("paths", {})
+    for path, methods in paths.items():
+        for method, op in list(methods.items()):
+            if not isinstance(op, dict):
+                continue
+            oid = op.get("operationId")
+            if not oid:
+                continue
+            if oid in seen:
+                seen[oid] += 1
+                op["operationId"] = f"{oid}_{seen[oid]}"
+            else:
+                seen[oid] = 0
+
+    app.openapi_schema = openapi_schema
+    return app.openapi_schema
+
+
+app.openapi = _custom_openapi
 
 # NOTE: Database schema must be managed with Alembic migrations.
 # Run `alembic upgrade head` after configuring DATABASE_URL for your environment.
@@ -303,6 +334,42 @@ def _on_startup():
         _log.info(f"DB path: {get_db_path()}")
     except Exception as e:
         _log.error(f"DB init/seed failed: {e}")
+    # apply lightweight runtime migrations (idempotent)
+    try:
+        from .db import connect as _connect
+        conn = _connect()
+        migrations.apply_migrations(conn)
+        # apply runtime fy/backfill migrations (idempotent)
+        try:
+            # Runtime backfills can be expensive; only run when explicitly enabled.
+            if os.getenv('TAAIP_BACKFILL_ON_STARTUP', '0') == '1':
+                try:
+                    if hasattr(migrations, 'apply_runtime_migrations'):
+                        migrations.apply_runtime_migrations(conn)
+                except Exception:
+                    _log.exception('apply_runtime_migrations failed')
+            else:
+                _log.info('TAAIP_BACKFILL_ON_STARTUP not enabled; skipping runtime backfills')
+        except Exception:
+            _log.exception('apply_runtime_migrations control failed')
+        # seed a few default registry records for local dev
+        try:
+            migrations.seed_default_registry(conn)
+        except Exception:
+            pass
+        _log.info('Runtime migrations applied')
+    except Exception:
+        _log.exception('Failed to apply runtime migrations')
+    # Seed RBAC after migrations so tables/columns exist
+    try:
+        from . import seed_rbac
+        try:
+            seed_rbac.seed_rbac()
+            _log.info('RBAC seed applied')
+        except Exception:
+            _log.exception('RBAC seeding failed')
+    except Exception:
+        _log.exception('Failed to import seed_rbac')
     # Ensure export storage directory exists
     try:
         export_dir = os.getenv('EXPORT_STORAGE_DIR', './data/exports')
@@ -323,3 +390,7 @@ if os.path.isfile(INDEX_FILE):
         if full_path.startswith('api') or full_path.startswith('static'):
             raise HTTPException(status_code=404)
         return FileResponse(INDEX_FILE, media_type="text/html")
+
+
+# No compatibility redirect required; routers with accidental '/api' prefixes
+# have been normalized. The API is served under the canonical `/api` prefix.
