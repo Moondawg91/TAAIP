@@ -2,7 +2,7 @@ import React from 'react'
 import { Box, Typography, Button } from '@mui/material'
 import ZeroState from '../../components/ZeroState'
 import { exportToCsv } from '../../utils/exportCsv'
-// TopFilterBar rendered centrally by shell when route policy enables it
+// Filters rendered centrally by the shell when route policy enables them
 
 export default function IwPage(){
   return (
@@ -18,7 +18,7 @@ export default function IwPage(){
           exportToCsv(`iw_${ts}.csv`, [], cols)
         }}>Export CSV</Button>
       </Box>
-      {/* TopFilterBar rendered by shell */}
+      {/* Filters rendered by shell */}
       <ZeroState title="Data not loaded" message="I&W indicators unavailable — no source data present." />
     </Box>
   )

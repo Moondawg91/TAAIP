@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { Box, Typography } from '@mui/material'
 import ZeroState from '../../components/ZeroState'
-// TopFilterBar rendered centrally by shell when route policy enables it
+// Filters are rendered centrally by the shell when route policy enables them
 import EmptyStateWithReadiness from '../../components/EmptyStateWithReadiness'
 import { getSchoolSummary } from '../../api/client'
 import { exportToCsv } from '../../utils/exportCsv'
@@ -25,7 +25,7 @@ export default function OverviewPage(){
         </Box>
         <ExportMenu data={summary ? Object.keys(summary).map(k=>({ metric: k, value: summary[k] })) : []} filename="school_overview" />
       </Box>
-      {/* TopFilterBar rendered by shell */}
+      {/* Filters rendered by shell */}
       <Box sx={{ display:'grid', gridTemplateColumns: '1fr', gap:8, mt:1 }}>
         <EmptyStateWithReadiness title="Program Readiness" purpose="Program-level readiness checks" requiredDatasets={[ 'mi_zip_fact', 'mi_school_fact' ]} templateLinks={[]} primaryActions={[]} />
         <Box>

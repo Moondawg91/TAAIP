@@ -19,16 +19,14 @@ export default function ProtectedRoute({ path, perm, required, children }: Props
   // If explicit `required` or `perm` props are provided, evaluate them first.
   if (required || perm) {
     const want = Array.isArray(required) ? required as string[] : (required ? [required as string] : (perm ? [perm] : []))
-    const permsSet = (auth && auth.permissionsObj && Object.keys(auth.permissionsObj).length) ? Object.keys(auth.permissionsObj) : auth.permissions
-    const have = Array.isArray(permsSet) ? permsSet : Object.keys(permsSet || {})
     if (!want || want.length===0) return <>{children}</>
-    const allowed = want.some(w => have.includes(w) || have.includes(w.toLowerCase()) || have.includes(w.toUpperCase())) || Boolean(auth.isAdmin)
+    const allowed = want.some(w => (auth.hasPerm && auth.hasPerm(w)) || Boolean(auth.isAdmin))
     if (!allowed) return <Navigate to="/unauthorized" replace state={{ missing: want }} />
     return <>{children}</>
   }
 
   // Fallback to path-based policy checks
   const ap = accessHelper.canAccessForPath(auth.permissionsObj && Object.keys(auth.permissionsObj).length ? Object.keys(auth.permissionsObj) : auth.permissions, path)
-  if (!ap.allowed) return <Navigate to="/unauthorized" replace state={{ missing: ap.missing }} />
+  if (!ap.allowed && !(auth.hasPerm && ap.missing && ap.missing.some(m => auth.hasPerm(m)))) return <Navigate to="/unauthorized" replace state={{ missing: ap.missing }} />
   return <>{children}</>
 }

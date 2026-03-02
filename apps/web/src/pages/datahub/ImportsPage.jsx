@@ -1,5 +1,6 @@
 import React, {useEffect, useState} from 'react'
-import { getMe } from '../../api/client'
+import { getMe, dataHubUpload, dataHubListRegistry, dataHubListRuns, dataHubGetRun, dataHubDownloadErrors } from '../../api/client'
+import { useAuth } from '../../contexts/AuthContext'
 
 export default function DataHubImports(){
   const [importers, setImporters] = useState([])
@@ -15,25 +16,31 @@ export default function DataHubImports(){
   const [validResult, setValidResult] = useState(null)
   const [commitResult, setCommitResult] = useState(null)
   const [canUpload, setCanUpload] = useState(false)
+  const [runs, setRuns] = useState([])
 
   useEffect(()=>{
     let mounted = true
-    fetch('/api/v1/importers')
-      .then(r => r.ok ? r.json() : Promise.reject(r))
-      .then(j => { if(mounted) setImporters(j.importers || []) })
-      .catch(()=>{ if(mounted) setImporters([]) })
-      .finally(()=>{ if(mounted) setLoading(false) })
+    ;(async ()=>{
+      try{
+        const registry = await dataHubListRegistry()
+        const items = Array.isArray(registry) ? registry : (registry && registry.specs) ? registry.specs : (registry && registry.importers) ? registry.importers : []
+        if (mounted) setImporters(items)
+        const runsResp = await dataHubListRuns()
+        if (mounted) setRuns(runsResp || [])
+      }catch(e){ if (mounted) { setImporters([]); setRuns([]) } }
+      finally{ if (mounted) setLoading(false) }
+    })()
     return ()=>{ mounted = false }
   },[])
 
+  const { hasPerm } = useAuth()
   useEffect(()=>{
     let canceled = false
-    getMe().then((me)=>{
-      if(canceled) return
-      if(me && me.permissions && me.permissions['datahub.upload']) setCanUpload(true)
-    }).catch(()=>{} )
+    try{
+      if(!canceled && hasPerm && hasPerm('datahub.upload')) setCanUpload(true)
+    }catch(e){}
     return ()=>{ canceled = true }
-  },[])
+  },[hasPerm])
 
   async function handleUpload(e){
     e.preventDefault()
@@ -43,38 +50,64 @@ export default function DataHubImports(){
     try{
       const fd = new FormData()
       fd.append('file', file)
-      // optional: uploaded_by/current user will be inferred in dev
-      const res = await fetch('/api/import/upload', { method: 'POST', body: fd })
-      if(!res.ok){ throw new Error('upload failed') }
-      const j = await res.json()
-      setJobId(j.import_job_id || j.import_job_id || j.import_job_id)
-      setLegacyJobId(j.legacy_job_id || null)
-      setStatusMessage('Uploaded — parsing preview…')
-      // parse/preview using v3 parse endpoint
-      const prs = await fetch('/api/import/parse', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ import_job_id: j.import_job_id }) })
-      if(!prs.ok){
-        const t = await prs.json().catch(()=>({detail:prs.statusText}))
-        setStatusMessage('Parse failed: ' + (t.detail || prs.statusText))
-        return
+      // dry-run preview via v2 endpoint
+      const j = await dataHubUpload(fd, true)
+      const jid = j && (j.run_id || j.runId || j.run_id || j.id)
+      setJobId(jid || null)
+      // use preview returned directly from upload when available
+      const previewRows = j && (j.preview_rows || j.preview || j.previewRows)
+      if(previewRows && Array.isArray(previewRows)){
+        setPreview(previewRows)
+        const cols = previewRows.length>0 ? Object.keys(previewRows[0]) : []
+        setColumns(cols)
+        setStatusMessage(`Preview ready — ${previewRows.length} rows`)
+      } else {
+        setStatusMessage('Upload complete — preview not available')
       }
-      const pj = await prs.json()
-      setColumns(pj.columns || [])
-      setPreview(pj.preview_rows || [])
-      setStatusMessage(`Preview ready — ${pj.row_count || (pj.preview_rows||[]).length} rows`)
+      // refresh runs list
+      try{ const runsResp = await dataHubListRuns(); setRuns(runsResp || []) }catch(e){}
     }catch(err){
+      // If backend returned structured JSON, render a readable error summary
+      try{
+        if(err && err.body){
+          const b = err.body
+          if (b && b.errors && Array.isArray(b.errors)){
+            setStatusMessage('Upload validation errors: ' + b.errors.length)
+            setPreview([])
+            setColumns([])
+            // expose structured validation object for UI if needed
+            setValidResult(b)
+            return
+          }
+          if (b && (b.error || b.message)){
+            setStatusMessage('Upload error: ' + (b.error || b.message))
+            return
+          }
+        }
+      }catch(e){}
       setStatusMessage('Upload error: ' + String(err))
     }
+  }
+
+  
+
+  async function refreshRunDetail(runId){
+    try{
+      const detail = await dataHubGetRun(runId)
+      return detail
+    }catch(e){ return null }
   }
 
   async function handleValidate(){
     if(!jobId){ setStatusMessage('No job to validate'); return }
     setStatusMessage('Validating…')
     try{
-      const res = await fetch('/api/import/validate', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ import_job_id: jobId }) })
-      if(!res.ok){ throw new Error('validate failed') }
-      const j = await res.json()
-      setValidResult(j)
-      setStatusMessage(`Validation complete — errors: ${j.errors || 0}`)
+      const res = await fetch(`/api/v2/datahub/runs/${encodeURIComponent(jobId)}/validate`, { method: 'POST' })
+      let body = null
+      try{ body = await res.json() }catch(e){ body = null }
+      if(!res.ok){ setStatusMessage('Validate error: ' + (body && (body.error || body.message) ? (body.error || body.message) : 'validate failed')); return }
+      setValidResult(body)
+      setStatusMessage(`Validation complete — errors: ${body && body.errors ? body.errors : 0}`)
     }catch(err){ setStatusMessage('Validate error: ' + String(err)) }
   }
 
@@ -82,12 +115,17 @@ export default function DataHubImports(){
     if(!jobId){ setStatusMessage('No job to commit'); return }
     setStatusMessage('Committing…')
     try{
-      const res = await fetch('/api/import/commit', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ import_job_id: jobId }) })
-      if(!res.ok){ throw new Error('commit failed') }
-      const j = await res.json()
-      setCommitResult(j)
-      setStatusMessage(`Commit complete — imported: ${j.imported || j.committed_rows || 0}`)
-    }catch(err){ setStatusMessage('Commit error: ' + String(err)) }
+      // call v2 commit endpoint which will process the previously uploaded file
+      const res = await fetch(`/api/v2/datahub/runs/${encodeURIComponent(jobId)}/commit`, { method: 'POST' })
+      let body = null
+      try{ body = await res.json() }catch(e){ body = null }
+      if(!res.ok){
+        setStatusMessage('Commit error: ' + (body && (body.error || body.message) ? (body.error || body.message) : 'commit failed'))
+        return
+      }
+      setCommitResult(body)
+      setStatusMessage(`Commit complete — imported: ${body.rows_loaded || 0}`)
+    }catch(err){ setStatusMessage('Commit error: ' + (err && err.message ? err.message : String(err))) }
   }
 
   return (
@@ -112,6 +150,33 @@ export default function DataHubImports(){
           <button onClick={handleCommit} disabled={!jobId} style={{marginLeft:8}}>Commit</button>
         </div>
       </section>
+      {validResult && validResult.errors && Array.isArray(validResult.errors) && (
+        <section style={{marginBottom:24}}>
+          <h3>Upload Validation — Errors</h3>
+          <div style={{overflowX:'auto'}}>
+            <table style={{width:'100%', borderCollapse:'collapse'}}>
+              <thead>
+                <tr>
+                  <th style={{padding:6}}>row_num</th>
+                  <th style={{padding:6}}>column_name</th>
+                  <th style={{padding:6}}>error_code</th>
+                  <th style={{padding:6}}>message</th>
+                </tr>
+              </thead>
+              <tbody>
+                {validResult.errors.map((err, idx) => (
+                  <tr key={idx}>
+                    <td style={{padding:6}}>{err.row_num || err.row || ''}</td>
+                    <td style={{padding:6}}>{err.column_name || err.column || ''}</td>
+                    <td style={{padding:6}}>{err.error_code || err.code || ''}</td>
+                    <td style={{padding:6}}>{err.message || err.msg || JSON.stringify(err)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
 
       <section style={{marginBottom:24}}>
         <h3>Preview</h3>
@@ -135,17 +200,46 @@ export default function DataHubImports(){
           </div>
         )}
       </section>
-
       <h3>Available Importers</h3>
       {loading && <div>Loading importers…</div>}
       {!loading && importers.length === 0 && <div>No importers found.</div>}
       <ul>
         {importers.map(i => (
-          <li key={i.id} style={{marginBottom:8}}>
-            <strong>{i.displayName || i.id}</strong> — <em>{i.sourceSystem}</em>
+          <li key={i.dataset_key || i.id} style={{marginBottom:8}}>
+            <strong>{i.display_name || i.displayName || i.dataset_key || i.id}</strong> — <em>{i.source_system || i.sourceSystem}</em>
           </li>
         ))}
       </ul>
+
+      <section style={{marginTop:24}}>
+        <h3>Recent Runs</h3>
+        {runs.length === 0 && <div>No recent runs.</div>}
+        {runs.length > 0 && (
+          <table style={{width:'100%', borderCollapse:'collapse'}}>
+            <thead>
+              <tr>
+                <th>run_id</th><th>dataset_key</th><th>status</th><th>rows_in</th><th>rows_loaded</th><th>error_summary</th><th>actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {runs.map(r => (
+                <tr key={r.run_id}>
+                  <td style={{padding:6}}>{r.run_id}</td>
+                  <td style={{padding:6}}>{r.dataset_key}</td>
+                  <td style={{padding:6}}>{r.status}</td>
+                  <td style={{padding:6}}>{r.rows_in}</td>
+                  <td style={{padding:6}}>{r.rows_loaded}</td>
+                  <td style={{padding:6}}>{r.error_summary}</td>
+                  <td style={{padding:6}}>
+                    <button onClick={async ()=>{ const d = await refreshRunDetail(r.run_id); if(d) alert(JSON.stringify(d, null, 2)) }}>View</button>
+                    {r.error_summary && <a style={{marginLeft:8}} href={dataHubDownloadErrors(r.run_id)}>Download Errors</a>}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </section>
     </div>
   )
 }

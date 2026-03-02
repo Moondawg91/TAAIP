@@ -18,9 +18,17 @@ const ROUTE_POLICIES: RoutePolicy[] = [
   { path: '/command-center', requiredAny: [permissions.DASHBOARD_READ], dashboardPage: true, showTopFilters: true, filters: { unit: true, fy: true, qtr: true }, navSection: 'command' },
   { path: '/planning', requiredAny: [permissions.DASHBOARD_READ], dashboardPage: true, showTopFilters: true, filters: { unit: true, fy: true, qtr: true }, navSection: 'planning' },
   { path: '/planning/calendar', requiredAny: [permissions.DASHBOARD_READ], dashboardPage: true, showTopFilters: true, filters: { unit: true, fy: true, qtr: true }, navSection: 'planning' },
-  { path: '/command-center/twg', requiredAny: [permissions.DASHBOARD_READ], dashboardPage: true, showTopFilters: true, filters: { unit: true, fy: true, qtr: true }, navSection: 'command' },
+  // TWG is a text/workflow experience — use sidebar filters, not top filters
+  { path: '/command-center/twg', requiredAny: [permissions.DASHBOARD_READ], dashboardPage: false, showTopFilters: false, filters: { unit: true, fy: true, qtr: true }, navSection: 'command' },
+  // Planning TWG and Fusion are text/workflow pages — use sidebar filters
+  { path: '/planning/twg', requiredAny: [permissions.DASHBOARD_READ], dashboardPage: false, showTopFilters: false, filters: { unit: true, fy: true, qtr: true }, navSection: 'planning', hideFromNav: true },
+  { path: '/planning/fusion', requiredAny: [permissions.DASHBOARD_READ], dashboardPage: false, showTopFilters: false, filters: { unit: true, fy: true, qtr: true }, navSection: 'planning', hideFromNav: true },
+  { path: '/command-center/fusion-cell', requiredAny: [permissions.DASHBOARD_READ], dashboardPage: false, showTopFilters: false, filters: { unit: true, fy: true, qtr: true }, navSection: 'command' },
+  { path: '/command/mission-feasibility', requiredAny: [permissions.DASHBOARD_READ], dashboardPage: true, showTopFilters: true, filters: { unit: true, fy: true, qtr: true }, navSection: 'command' },
   { path: '/roi', requiredAny: [permissions.DASHBOARD_READ], dashboardPage: true, showTopFilters: true, filters: { unit: true, fy: true, qtr: true, compare: true }, navSection: 'roi' },
   { path: '/roi/events', requiredAny: [permissions.DASHBOARD_READ], dashboardPage: true, showTopFilters: true, filters: { unit: true, fy: true, qtr: true, compare: true }, navSection: 'roi' },
+  { path: '/roi/marketing', requiredAny: [permissions.DASHBOARD_READ], dashboardPage: true, showTopFilters: true, filters: { unit: true, fy: true, qtr: true, compare: true }, navSection: 'roi' },
+  { path: '/roi/mac', requiredAny: [permissions.DASHBOARD_READ], dashboardPage: true, showTopFilters: true, filters: { unit: true, fy: true, qtr: true, compare: true }, navSection: 'roi' },
   { path: '/operations/funnel', requiredAny: [permissions.DASHBOARD_READ], dashboardPage: true, showTopFilters: true, filters: { unit: true, fy: true, qtr: true }, navSection: 'ops' },
   { path: '/operations/productivity', requiredAny: [permissions.DASHBOARD_READ], dashboardPage: true, showTopFilters: true, filters: { unit: true, fy: true, qtr: true }, navSection: 'ops' },
   { path: '/operations/processing', requiredAny: [permissions.DASHBOARD_READ], dashboardPage: true, showTopFilters: true, filters: { unit: true, fy: true, qtr: true }, navSection: 'ops' },
@@ -32,6 +40,10 @@ const ROUTE_POLICIES: RoutePolicy[] = [
   { path: '/help/submit-ticket', requiredAny: [permissions.HELP_TICKET_CREATE], dashboardPage: false, showTopFilters: false, navSection: 'helpdesk' },
   { path: '/help/ticket-status', requiredAny: [permissions.HELP_TICKET_READ], dashboardPage: false, showTopFilters: false, navSection: 'helpdesk' },
   { path: '/system-status', requiredAny: [permissions.DASHBOARD_READ], dashboardPage: false, showTopFilters: false, navSection: 'helpdesk' },
+  // Docs / resources / training should not show global TopFilterBar
+  { path: '/docs', dashboardPage: false, showTopFilters: false, navSection: 'resources' },
+  { path: '/resources', dashboardPage: false, showTopFilters: false, navSection: 'resources' },
+  { path: '/resources/training', dashboardPage: false, showTopFilters: false, navSection: 'resources' },
   { path: '/admin', requiredAny: [permissions.ADMIN_USERS], dashboardPage: false, showTopFilters: false, navSection: 'administration' },
   { path: '/admin/users', requiredAny: [permissions.ADMIN_USERS], dashboardPage: false, showTopFilters: false, navSection: 'administration' },
 ]

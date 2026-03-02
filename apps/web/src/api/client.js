@@ -48,18 +48,29 @@ function attachOrgSelectionParams(urlObj){
       }catch(e2){ /* ignore */ }
     }
 
-    // attach persisted filters (fy/qtr/compare) if present
+    // attach persisted filters (fy/qtr/rsm_month/compare) if present
     try{
       const rawFilters = localStorage.getItem('taaip.filters.v1')
       if (rawFilters){
         const f = JSON.parse(rawFilters)
         if (f && f.fy) urlObj.searchParams.set('fy', f.fy)
         if (f && f.qtr) urlObj.searchParams.set('qtr', f.qtr)
+        // add numeric quarter for APIs that expect 1-4
+        try{ if (f && f.qtr){ const qn = Number(String(f.qtr).replace(/^Q/,'')); if (!isNaN(qn)) urlObj.searchParams.set('qtr_num', qn) } }catch(e){}
+        if (f && f.rsm_month) { urlObj.searchParams.set('rsm_month', f.rsm_month); urlObj.searchParams.set('month', f.rsm_month) }
         if (f && f.compare) urlObj.searchParams.set('compare', f.compare)
       }
     }catch(e){}
   }catch(e){}
+
+      // If no unit was attached above, default to USAREC as global default
+      try{
+        if (!urlObj.searchParams.get('unit_rsid')) {
+          urlObj.searchParams.set('unit_rsid', 'USAREC')
+        }
+      }catch(e){}
 }
+
 
 // Fetch children units for a parent RSID and echelon. Falls back to units-summary if /children is unavailable.
 export async function getOrgChildren(parent_rsid, echelon){
@@ -133,6 +144,13 @@ export async function apiFetch(path, opts = {}) {
   if (includeUnit) attachOrgSelectionParams(urlObj)
 
   const url = urlObj.toString()
+  // If body is FormData, let the browser set Content-Type (remove any manual Content-Type)
+  try{
+    if (fetchOpts && fetchOpts.body && (typeof FormData !== 'undefined') && fetchOpts.body instanceof FormData){
+      if (headers['Content-Type']) delete headers['Content-Type']
+    }
+  }catch(e){}
+
   const res = await fetch(url, Object.assign({}, fetchOpts, {headers}))
   const text = await res.text()
   let json = null
@@ -316,6 +334,7 @@ export async function getMe(){
   if (!resp || resp.status === 'error') return null
   return resp
 }
+
 
 // Export API
 export async function createExport(payload){
@@ -935,17 +954,54 @@ export async function dataHubUpload(fd, dry_run = true){
   const token = localStorage.getItem('taaip_jwt')
   const headers = {}
   if (token) headers['Authorization'] = `Bearer ${token}`
-  const res = await fetch(`${baseForUrl()}/api/v2/datahub/uploads?dry_run=${dry_run?1:0}`, { method: 'POST', body: fd, headers })
-  if (!res.ok) throw new Error('upload failed')
-  return res.json()
+  try {
+    if (typeof fd === 'object' && fd instanceof FormData) {
+      try {
+        for (const entry of fd.entries()) console.debug('dataHubUpload FormData:', entry[0], entry[1])
+      } catch (e) { console.debug('dataHubUpload: unable to enumerate FormData', e) }
+    }
+  } catch (e) { /* ignore */ }
+
+  const res = await fetch(`${baseForUrl()}/api/v2/datahub/upload?dry_run=${dry_run?1:0}`, { method: 'POST', body: fd, headers })
+  let body = null
+  try{
+    body = await res.json()
+  }catch(e){
+    if(!res.ok) throw new Error('upload failed')
+    return null
+  }
+  if (!res.ok) {
+    // surface JSON error message when available
+    const msg = body && (body.error || body.message || JSON.stringify(body)) || 'upload failed'
+    const err = new Error(msg)
+    err.body = body
+    throw err
+  }
+  return body
 }
 
-export async function dataHubListImports(){
-  return apiFetch('/api/v2/datahub/imports')
+export async function dataHubListRuns(){
+  return apiFetch('/api/v2/datahub/runs')
+}
+
+export async function dataHubGetRun(runId){
+  return apiFetch(`/api/v2/datahub/runs/${encodeURIComponent(runId)}`)
+}
+
+export function dataHubDownloadErrors(runId){
+  return `${baseForUrl()}/api/v2/datahub/runs/${encodeURIComponent(runId)}/errors.csv`
 }
 
 export async function dataHubListRegistry(){
-  return apiFetch('/api/v2/datahub/supported')
+  return apiFetch('/api/v2/datahub/registry')
+}
+
+export async function dataHubStorage(){
+  return apiFetch('/api/v2/datahub/storage')
+}
+
+export async function dataHubHealth(){
+  return apiFetch('/api/v2/datahub/health')
 }
 
 // ROI client helpers

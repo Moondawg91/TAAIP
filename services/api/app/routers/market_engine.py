@@ -3,7 +3,7 @@ from typing import Optional, List, Dict, Any
 from services.api.app.db import connect
 from datetime import datetime
 
-router = APIRouter(prefix="/api/ops/market/compute", tags=["ops-market-compute"])
+router = APIRouter(prefix="/ops/market/compute", tags=["ops-market-compute"])
 
 
 def _now_iso():

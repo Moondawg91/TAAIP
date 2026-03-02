@@ -1,5 +1,8 @@
 import json
-from .db import connect
+import logging
+from . import db
+
+_log = logging.getLogger("seed_rbac")
 
 # Permissions and roles as requested
 PERMISSIONS = [
@@ -97,9 +100,65 @@ ROLE_PERMS = {
 
 
 def seed_rbac():
-    conn = connect()
+    """Seed RBAC tables idempotently and robustly.
+
+    This function is safe to call multiple times. It uses the `db.connect()`
+    helper and will not raise on failure; errors are logged and the server
+    startup continues so local-dev remains usable.
+    """
+    try:
+        conn = db.connect()
+    except Exception as e:
+        _log.exception('seed_rbac: failed to acquire DB connection')
+        return
+
+    if conn is None:
+        _log.warning('seed_rbac: connect() returned None - skipping RBAC seed until DB available')
+        return
+
     cur = conn.cursor()
     try:
+        cur.execute('BEGIN')
+        # Migrate legacy `permission` table schema if present but missing expected columns.
+        try:
+            cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='permission'")
+            if cur.fetchone():
+                cur.execute("PRAGMA table_info(permission);")
+                existing_cols = [r[1] for r in cur.fetchall()]
+                # Ensure canonical columns exist on permission table
+                for needed_col, ddl in (('permission_key','TEXT'), ('display_name','TEXT'), ('description','TEXT')):
+                    if needed_col not in existing_cols:
+                        try:
+                            db.safe_add_column(conn, 'permission', needed_col, ddl)
+                        except Exception:
+                            _log.exception('seed_rbac: failed to add column %s to permission', needed_col)
+
+                if 'permission_key' not in existing_cols:
+                    # Best-effort migration: if legacy table has `key` column, add
+                    # `permission_key` and copy values over. Avoid DROP/RENAME to
+                    # prevent FK constraint failures.
+                    if 'key' in existing_cols:
+                        try:
+                            try:
+                                cur.execute("ALTER TABLE permission ADD COLUMN permission_key TEXT;")
+                            except Exception:
+                                # older sqlite versions or locked DB may fail; ignore
+                                pass
+                            try:
+                                cur.execute("UPDATE permission SET permission_key = key WHERE permission_key IS NULL AND key IS NOT NULL")
+                            except Exception:
+                                pass
+                            try:
+                                cur.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_permission_key ON permission(permission_key)")
+                            except Exception:
+                                pass
+                        except Exception:
+                            _log.exception('seed_rbac: failed to migrate legacy permission table via safe ALTER')
+                    else:
+                        _log.warning('seed_rbac: permission table missing expected columns; manual intervention may be required')
+        except Exception:
+            _log.exception('seed_rbac: error checking permission table')
+
         # create tables idempotently
         cur.executescript("""
         CREATE TABLE IF NOT EXISTS user_account (
@@ -145,50 +204,157 @@ def seed_rbac():
             PRIMARY KEY (user_id, permission_id)
         );
         """)
-        conn.commit()
 
-        # insert permissions
+        # insert permissions (handle both new and legacy permission table schemas)
+        try:
+            cur.execute("PRAGMA table_info(permission);")
+            perm_cols = [r[1] for r in cur.fetchall()]
+        except Exception:
+            perm_cols = []
+
         for key, name, desc in PERMISSIONS:
-            cur.execute('INSERT OR IGNORE INTO permission(permission_key, display_name, description) VALUES (?,?,?)', (key, name, desc))
-        conn.commit()
+            try:
+                # Prefer canonical columns if present
+                if all(c in perm_cols for c in ('permission_key', 'display_name', 'description')):
+                    cur.execute('INSERT OR IGNORE INTO permission(permission_key, display_name, description) VALUES (?,?,?)', (key, name, desc))
+                elif 'key' in perm_cols and 'description' in perm_cols and 'category' in perm_cols:
+                    cur.execute('INSERT OR IGNORE INTO permission(key, description, category) VALUES (?,?,?)', (key, desc, ''))
+                elif 'key' in perm_cols and 'description' in perm_cols:
+                    cur.execute('INSERT OR IGNORE INTO permission(key, description) VALUES (?,?)', (key, desc))
+                elif 'permission_key' in perm_cols:
+                    # best-effort: insert minimal data
+                    try:
+                        cur.execute('INSERT OR IGNORE INTO permission(permission_key) VALUES (?)', (key,))
+                    except Exception:
+                        _log.exception('seed_rbac: failed to insert minimal permission %s', key)
+                else:
+                    # last-resort: try a generic insert and ignore failures
+                    try:
+                        cur.execute('INSERT OR IGNORE INTO permission(permission_key, display_name, description) VALUES (?,?,?)', (key, name, desc))
+                    except Exception:
+                        _log.exception('seed_rbac: failed to insert permission %s with fallback', key)
+            except Exception:
+                _log.exception('seed_rbac: error inserting permission %s', key)
 
-        # insert roles
+        # insert roles (tolerant of legacy schemas)
+        try:
+            cur.execute("PRAGMA table_info(role);")
+            role_cols = [r[1] for r in cur.fetchall()]
+        except Exception:
+            role_cols = []
+        has_description = 'description' in role_cols
+        has_is_system = 'is_system' in role_cols
         for key, name, desc in ROLES:
-            cur.execute('INSERT OR IGNORE INTO role(role_key, display_name, description, is_system) VALUES (?,?,?,1)', (key, name, desc))
-        conn.commit()
+            try:
+                if has_description and has_is_system:
+                    cur.execute('INSERT OR IGNORE INTO role(role_key, display_name, description, is_system) VALUES (?,?,?,1)', (key, name, desc))
+                elif has_description:
+                    cur.execute('INSERT OR IGNORE INTO role(role_key, display_name, description) VALUES (?,?,?)', (key, name, desc))
+                else:
+                    try:
+                        cur.execute('INSERT OR IGNORE INTO role(role_key, display_name) VALUES (?,?)', (key, name))
+                    except Exception:
+                        _log.exception('seed_rbac: failed to insert role %s', key)
+            except Exception:
+                _log.exception('seed_rbac: error inserting role %s', key)
 
-        # map role -> permission
+        # map role -> permission (handle legacy role/permission schemas)
+        try:
+            cur.execute("PRAGMA table_info(role);")
+            role_cols = [r[1] for r in cur.fetchall()]
+        except Exception:
+            role_cols = []
+        try:
+            cur.execute("PRAGMA table_info(permission);")
+            perm_cols = [r[1] for r in cur.fetchall()]
+        except Exception:
+            perm_cols = []
+        role_has_id = 'id' in role_cols
+        perm_has_id = 'id' in perm_cols
         for rk, perms in ROLE_PERMS.items():
-            cur.execute('SELECT id FROM role WHERE role_key=?', (rk,))
-            r = cur.fetchone()
-            if not r:
-                continue
-            role_id = r[0]
-            for pk in perms:
-                cur.execute('SELECT id FROM permission WHERE permission_key=?', (pk,))
-                p = cur.fetchone()
-                if not p:
-                    continue
-                perm_id = p[0]
-                try:
-                    cur.execute('INSERT OR IGNORE INTO role_permission(role_id, permission_id) VALUES (?,?)', (role_id, perm_id))
-                except Exception:
-                    pass
-        conn.commit()
+            try:
+                if role_has_id:
+                    cur.execute('SELECT id FROM role WHERE role_key=?', (rk,))
+                    r = cur.fetchone()
+                    if not r:
+                        continue
+                    role_id = r[0]
+                else:
+                    role_id = rk
+                for pk in perms:
+                    try:
+                        if perm_has_id and 'permission_key' in perm_cols:
+                            cur.execute('SELECT id FROM permission WHERE permission_key=?', (pk,))
+                            p = cur.fetchone()
+                            if not p:
+                                continue
+                            perm_id = p[0]
+                        else:
+                            perm_id = pk
+                        if role_has_id and perm_has_id:
+                            cur.execute('INSERT OR IGNORE INTO role_permission(role_id, permission_id) VALUES (?,?)', (role_id, perm_id))
+                        elif not role_has_id and not perm_has_id:
+                            cur.execute('INSERT OR IGNORE INTO role_permission(role_key, permission_key, granted) VALUES (?,?,1)', (role_id, perm_id))
+                        elif not role_has_id and perm_has_id:
+                            cur.execute('INSERT OR IGNORE INTO role_permission(role_key, permission_id, granted) VALUES (?,?,1)', (role_id, perm_id))
+                        elif role_has_id and not perm_has_id:
+                            cur.execute('INSERT OR IGNORE INTO role_permission(role_id, permission_key, granted) VALUES (?,?,1)', (role_id, perm_id))
+                    except Exception:
+                        _log.exception('seed_rbac: failed to map permission %s for role %s', pk, rk)
+            except Exception:
+                _log.exception('seed_rbac: failed processing role %s', rk)
 
-        # ensure BASELINE role assigned to all existing users
-        cur.execute('SELECT id FROM role WHERE role_key=?', ('BASELINE',))
-        br = cur.fetchone()
-        if br:
-            baseline_role_id = br[0]
-            cur.execute('SELECT id FROM users')
-            for row in cur.fetchall():
+        # ensure BASELINE role assigned to all existing users (handle legacy schemas)
+        try:
+            cur.execute("PRAGMA table_info(role);")
+            role_cols = [r[1] for r in cur.fetchall()]
+        except Exception:
+            role_cols = []
+        try:
+            cur.execute("PRAGMA table_info(user_role);")
+            user_role_cols = [r[1] for r in cur.fetchall()]
+        except Exception:
+            user_role_cols = []
+        role_has_id = 'id' in role_cols
+        # fetch baseline identifier depending on schema
+        if role_has_id:
+            cur.execute('SELECT id FROM role WHERE role_key=?', ('BASELINE',))
+            br = cur.fetchone()
+            if br:
+                baseline_role_id = br[0]
+            else:
+                baseline_role_id = None
+        else:
+            # legacy uses role_key as identifier
+            baseline_role_id = 'BASELINE'
+        if baseline_role_id:
+            try:
+                cur.execute('SELECT id FROM users')
+                rows = cur.fetchall()
+            except Exception:
+                rows = []
+            for row in rows:
                 uid = row[0]
                 try:
-                    cur.execute('INSERT OR IGNORE INTO user_role(user_id, role_id) VALUES (?,?)', (uid, baseline_role_id))
+                    if role_has_id and 'role_id' in user_role_cols:
+                        cur.execute('INSERT OR IGNORE INTO user_role(user_id, role_id) VALUES (?,?)', (uid, baseline_role_id))
+                    elif not role_has_id and 'role_key' in user_role_cols:
+                        cur.execute('INSERT OR IGNORE INTO user_role(user_id, role_key) VALUES (?,?)', (uid, baseline_role_id))
+                    else:
+                        try:
+                            cur.execute('INSERT OR IGNORE INTO user_role(user_id, role_id) VALUES (?,?)', (uid, baseline_role_id))
+                        except Exception:
+                            _log.exception('seed_rbac: failed to assign baseline role to user %s', uid)
                 except Exception:
-                    pass
-        conn.commit()
+                    _log.exception('seed_rbac: error assigning baseline role to user %s', uid)
+
+        cur.execute('COMMIT')
+    except Exception:
+        try:
+            cur.execute('ROLLBACK')
+        except Exception:
+            pass
+        _log.exception('seed_rbac: unexpected error')
     finally:
         try:
             conn.close()

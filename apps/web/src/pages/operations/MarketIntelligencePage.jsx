@@ -62,7 +62,7 @@ export default function MarketIntelligencePage(){
     <Container maxWidth="xl" sx={{py:2}}>
       <Typography variant="h5" sx={{mb:2}}>Market Intelligence</Typography>
 
-      {/* Filters are provided globally via TopFilterBar on dashboard pages */}
+      
 
       {/* Uploads are centralized in Data Hub - remove local upload UI */}
 

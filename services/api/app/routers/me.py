@@ -55,6 +55,29 @@ def me(effective=Depends(auth.get_effective_user)):
                 perms_map.setdefault('DATAHUB_UPLOAD', True)
             if perms_map.get('datahub.view_registry') or perms_map.get('datahub.view_runs'):
                 perms_map.setdefault('DATAHUB_READ', True)
+            # frontend-friendly canonical aliases (legacy frontend constants)
+            if perms_map.get('dashboards.view'):
+                perms_map.setdefault('DASHBOARD_READ', True)
+            if perms_map.get('dashboards.export'):
+                perms_map.setdefault('DASHBOARD_EXPORT', True)
+            if perms_map.get('datahub.upload'):
+                perms_map.setdefault('DATA_UPLOAD', True)
+            if perms_map.get('helpdesk.submit'):
+                perms_map.setdefault('HELP_TICKET_CREATE', True)
+            if perms_map.get('helpdesk.view_unit') or perms_map.get('helpdesk.view_own'):
+                perms_map.setdefault('HELP_TICKET_READ', True)
+            if perms_map.get('admin.users.manage'):
+                perms_map.setdefault('ADMIN_USERS', True)
+            if perms_map.get('admin.audit.view'):
+                perms_map.setdefault('ADMIN_AUDIT', True)
+            if perms_map.get('admin.thresholds.manage'):
+                perms_map.setdefault('ADMIN_THRESHOLDS', True)
+            if perms_map.get('admin.datasets.manage'):
+                perms_map.setdefault('ADMIN_DATASETS', True)
+            if perms_map.get('planning.edit'):
+                perms_map.setdefault('PLANNING_EDIT', True)
+            if perms_map.get('roi.edit_costs'):
+                perms_map.setdefault('ROI_EDIT', True)
             # ROI/planning aliases
             if perms_map.get('roi.view'):
                 perms_map.setdefault('ROI_READ', True)

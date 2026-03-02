@@ -1,7 +1,7 @@
 import React from 'react'
 import { Box, Typography } from '@mui/material'
 import ZeroState from '../../components/ZeroState'
-// TopFilterBar rendered centrally by shell
+// Filters rendered centrally by the shell
 import EmptyStateWithReadiness from '../../components/EmptyStateWithReadiness'
 import { exportToCsv } from '../../utils/exportCsv'
 import ExportMenu from '../../components/ExportMenu'
@@ -16,7 +16,7 @@ export default function CompliancePage(){
         </Box>
         <ExportMenu data={[]} filename="school_compliance" />
       </Box>
-      {/* TopFilterBar rendered by shell */}
+      {/* Filters rendered by shell */}
       <Box sx={{ mt:1 }}>
         <EmptyStateWithReadiness title="Compliance" purpose="Regulatory references and compliance checks" requiredDatasets={[ 'regulatory_references' ]} templateLinks={[{ href: '/resources/regulatory', label: 'Regulatory Registry' }]} />
         <ZeroState title="Data not loaded" message="Compliance dashboards unavailable until regulatory references are imported." actionLabel="Regulatory Registry" actionHref="/resources/regulatory" />

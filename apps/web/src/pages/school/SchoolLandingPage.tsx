@@ -2,7 +2,7 @@ import React from 'react'
 import { Box, Typography } from '@mui/material'
 import ZeroState from '../../components/ZeroState'
 import DualModeTabs from '../../components/DualModeTabs'
-// TopFilterBar rendered centrally by shell
+// Filters rendered centrally by the shell
 import ExportMenu from '../../components/ExportMenu'
 
 export default function SchoolLandingPage(){

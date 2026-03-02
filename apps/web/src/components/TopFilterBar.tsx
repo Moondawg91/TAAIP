@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom'
 import { Box, Typography, FormControl, InputLabel, Select, MenuItem } from '@mui/material'
 import UnitCascadePicker from './UnitCascadePicker'
 import { useFilters } from '../contexts/FilterContext'
+import dateScopes from '../utils/dateScopes'
 import useRoutePolicy from '../auth/useRoutePolicy'
 
 type Props = {
@@ -20,11 +21,11 @@ const getFyOptions = () => {
 
 export default function TopFilterBar({ showUnit = true, showFy = true, showQtr = true, extraControls, title }: Props){
   const loc = useLocation()
-  // Determine dashboard pages from canonical route policy
+  // Determine whether TopFilterBar should be shown based on canonical route policy
   const policy = useRoutePolicy()
-  const isDashboard = Boolean(policy && policy.dashboardPage) || loc.pathname === '/'
-  if (!isDashboard) return null
-  const { filters, setUnit, setFy, setQtr } = useFilters()
+  // Only render when the route policy explicitly enables top filters
+  if (!policy || !policy.showTopFilters) return null
+  const { filters, setUnit, setFy, setQtr, setRsmMonth } = useFilters()
   const [isSticky, setIsSticky] = useState(false)
   const elRef = useRef<HTMLDivElement | null>(null)
 
@@ -88,8 +89,28 @@ export default function TopFilterBar({ showUnit = true, showFy = true, showQtr =
               </Select>
             </FormControl>
           )}
+          {/* RSM Month selector: shows months for the currently selected FY/QTR */}
+          <FormControl size="small" sx={{ minWidth:160 }}>
+            <InputLabel>Month</InputLabel>
+            <Select value={filters.rsm_month || ''} label="Month" onChange={(e)=>{ try{ setRsmMonth(String(e.target.value)) }catch(e){} }}>
+              {(() => {
+                try{
+                  const fy = Number(filters.fy) || dateScopes.getCurrentFY()
+                  const q = String(filters.qtr || 'Q1').replace(/^Q/,'')
+                  const qn = Number(q) as 1|2|3|4
+                  const months = dateScopes.getQuarterMonths(fy, qn)
+                  // render months (show first by default)
+                  return months.map(m => <MenuItem key={m} value={m}>{m}</MenuItem>)
+                }catch(e){ return null }
+              })()}
+            </Select>
+          </FormControl>
           {extraControls}
         </Box>
+      </Box>
+      {/* Applied scope debug line */}
+      <Box sx={{ mt: 0.5, px: 1 }}>
+        <Typography variant="caption" color="text.secondary">Applied: {filters.unit_rsid || 'USAREC'} | FY {filters.fy} | {String(filters.qtr || '')} | RSM {filters.rsm_month}</Typography>
       </Box>
     </Box>
   )

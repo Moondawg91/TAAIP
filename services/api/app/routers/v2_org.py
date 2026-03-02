@@ -1,264 +1,84 @@
-from fastapi import APIRouter
+
+from typing import Optional
+from fastapi import APIRouter, HTTPException, Depends
 from ..db import connect
+from .. import org_utils
+from .rbac import require_perm
 
-router = APIRouter(prefix="/v2/org", tags=["org"])
-
-
-def _rows_to_list(rows):
-    return [dict(r) for r in rows]
+router = APIRouter(prefix="/v2/org", tags=["v2_org"])
 
 
-def _build_tree(rows):
-    # rows: list of dicts with id, name, type, parent_id, rsid
-    by_id = {r['id']: dict(r, children=[]) for r in rows}
-    roots = []
-    for r in by_id.values():
-        pid = r.get('parent_id')
-        if pid and pid in by_id:
-            by_id[pid]['children'].append(r)
-        else:
-            roots.append(r)
-    return roots
-
-
-def _first_station_rsid(node):
-    # DFS to find a station rsid in subtree
-    if node.get('rsid'):
-        return node['rsid']
-    for c in node.get('children', []):
-        v = _first_station_rsid(c)
-        if v:
-            return v
-    return None
-
-
-def _canonical_unit_key(rsid, echelon_hint=None):
-    """Return a canonical unit_key for the UI while preserving the original rsid.
-
-    - For brigade rsids that are simple integers (e.g. '1'), return 'B001'.
-    - If rsid already looks canonical (starts with 'B' followed by digits), return as-is.
-    - Otherwise return the rsid unchanged.
-    """
-    if not rsid:
-        return None
-    s = str(rsid).upper()
-    # already canonical brigade form like B001
-    if s.startswith('B') and s[1:].isdigit():
-        return s
-    # if echelon explicitly BDE, and rsid is numeric, format as B###
-    if echelon_hint and echelon_hint.upper() == 'BDE' and s.isdigit():
-        return f"B{int(s):03d}"
-    # fallback: if rsid is a single digit and likely a brigade, format it
-    if s.isdigit() and len(s) <= 2:
-        return f"B{int(s):03d}"
-    return s
-
-
-@router.get('/units-summary')
-def units_summary():
+@router.get('/node')
+def node(unit_rsid: str = 'USAREC', user: dict = Depends(require_perm('dashboards.view'))):
     conn = connect()
     try:
         cur = conn.cursor()
-        cur.execute('SELECT id, name, display_name, type, echelon, parent_id, parent_rsid, rsid FROM org_unit')
-        rows = cur.fetchall()
-        data = _rows_to_list(rows)
-        tree = _build_tree(data)
-
-        brigades = []
-        battalions = []
-        companies = []
-        stations = []
-        root = None
-
-        # flatten and categorize by rsid-derived prefixes when possible
-        for node in data:
-            # prefer explicit `echelon` column, fall back to legacy `type`
-            t = (node.get('echelon') or node.get('type') or '').upper()
-            rsid = node.get('rsid')
-            # prefer display_name when present
-            label = node.get('display_name') or node.get('name') or (rsid or str(node.get('id')))
-            # compute a canonical unit_key for UI while preserving original rsid
-            unit_key = _canonical_unit_key(rsid, t) or f"id:{node.get('id')}"
-            parent_key = node.get('parent_rsid') or None
-            echelon_type = None
-            # Detect root (command-level) explicitly and keep it out of other lists
-            if t == 'CMD' or (rsid and str(rsid).upper() == 'USAREC'):
-                echelon_type = 'CMD'
-                root = {'id': node['id'], 'unit_key': unit_key, 'rsid': rsid, 'display_name': label, 'echelon_type': echelon_type, 'parent_key': parent_key}
-                # don't append to other category lists
-                continue
-
-            if t.startswith('BRIG') or t == 'BDE' or (rsid and rsid.startswith('B')):
-                echelon_type = 'BDE'
-                brigades.append({'id': node['id'], 'unit_key': unit_key, 'rsid': rsid, 'display_name': label, 'echelon_type': echelon_type, 'parent_key': parent_key})
-            elif t.startswith('BATT') or t == 'BN' or (rsid and len(rsid) >= 2 and rsid[1].isdigit()):
-                echelon_type = 'BN'
-                battalions.append({'id': node['id'], 'unit_key': unit_key, 'rsid': rsid, 'display_name': label, 'echelon_type': echelon_type, 'parent_key': parent_key})
-            elif t.startswith('COMP') or t == 'CO' or (rsid and len(rsid) >= 3 and rsid[2].isdigit()):
-                    echelon_type = 'CO'
-                    companies.append({'id': node['id'], 'unit_key': unit_key, 'rsid': rsid, 'display_name': label, 'echelon_type': echelon_type, 'parent_key': parent_key})
-            else:
-                # Treat explicit STN/Station echelon as stations; otherwise default to station
-                if t.startswith('STN') or t == 'STN':
-                    echelon_type = 'STN'
-                    stations.append({'id': node['id'], 'unit_key': unit_key, 'rsid': rsid, 'display_name': label, 'echelon_type': echelon_type, 'parent_key': parent_key})
-                else:
-                    # fallback: treat as station if nothing else matches, but ensure USAREC was handled above
-                    echelon_type = 'STN'
-                    stations.append({'id': node['id'], 'unit_key': unit_key, 'rsid': rsid, 'display_name': label, 'echelon_type': echelon_type, 'parent_key': parent_key})
-
-        # dedupe and filter None scopes
-        def uniq_by_unitkey(lst):
-            conn = connect()
-            try:
-                cur = conn.cursor()
-                try:
-                    cur.execute("SELECT rsid, display_name, echelon FROM org_unit WHERE rsid = 'USAREC' LIMIT 1")
-                    r = cur.fetchone()
-                    if not r:
-                        cur.execute("SELECT rsid, display_name, echelon FROM org_unit WHERE echelon = 'CMD' LIMIT 1")
-                        r = cur.fetchone()
-                    if not r:
-                        return { 'ok': False, 'error': 'no root unit found' }
-                    node = dict(r)
-                    return { 'ok': True, 'data': { 'rsid': node.get('rsid'), 'display_name': node.get('display_name'), 'echelon': node.get('echelon') } }
-                except Exception:
-                    cur.execute("SELECT rsid, name as display_name, type as echelon FROM org_unit WHERE rsid = 'USAREC' LIMIT 1")
-                    r = cur.fetchone()
-                    if not r:
-                        cur.execute("SELECT rsid, name as display_name, type as echelon FROM org_unit WHERE type = 'CMD' LIMIT 1")
-                        r = cur.fetchone()
-                    if not r:
-                        return { 'ok': False, 'error': 'no root unit found' }
-                    node = dict(r)
-                    return { 'ok': True, 'data': { 'rsid': node.get('rsid'), 'display_name': node.get('display_name'), 'echelon': node.get('echelon') } }
-            finally:
-                conn.close()
-        # normalize `root` to an rsid string for subsequent queries
-        if isinstance(root, dict):
-            root_rsid = root.get('rsid')
-        else:
-            root_rsid = root
-        if not root_rsid:
-            root_rsid = 'USAREC'
-
-        cur.execute('SELECT rsid, display_name, echelon, parent_rsid, unit_key FROM org_unit WHERE rsid = ? LIMIT 1', (root_rsid,))
-        r = cur.fetchone()
-        if not r:
-            return {"status": "error", "message": f"root {root_rsid} not found"}
-        root_node = dict(r)
-
-        # fetch direct children of the root (likely BDEs)
-        cur.execute('SELECT rsid, display_name, echelon, parent_rsid, unit_key, id FROM org_unit WHERE parent_rsid = ? ORDER BY id ASC', (root_rsid,))
-        children = [dict(x) for x in cur.fetchall()]
-
-        # heuristics for BDE detection similar to units_summary
-        def is_bde(node):
-            t = (node.get('echelon') or '').upper()
-            rsid = node.get('rsid') or ''
-            return t == 'BDE' or t.startswith('BRIG') or (rsid and rsid.isdigit()) or (rsid and rsid.upper().startswith('B'))
-
-        bdes = [ { 'rsid': c.get('rsid'), 'unit_key': c.get('unit_key'), 'display_name': c.get('display_name'), 'echelon': c.get('echelon'), 'parent_rsid': c.get('parent_rsid') } for c in children if is_bde(c) ]
-
-        # sort BDEs by numeric part of unit_key if present, else by rsid
-        def bde_sort_key(x):
-            uk = (x.get('unit_key') or '').upper()
-            if uk.startswith('B') and uk[1:].isdigit():
-                return int(uk[1:])
-            try:
-                return int(x.get('rsid'))
-            except Exception:
-                return x.get('rsid') or ''
-
-        bdes = sorted(bdes, key=bde_sort_key)
-
-        resp = {
-            'status': 'ok',
-            'data': {
-                'root': { 'rsid': root_node.get('rsid'), 'display_name': root_node.get('display_name'), 'echelon': root_node.get('echelon') },
-                'levels': { 'bde': bdes, 'bn': [], 'co': [], 'stn': [] },
-                'selected': { 'root_rsid': root_node.get('rsid'), 'bde_rsid': None, 'bn_rsid': None, 'co_rsid': None, 'stn_rsid': None }
-            }
+        cur.execute('SELECT id, rsid, name, type, parent_id FROM org_unit WHERE rsid = ? OR upper(rsid)=? LIMIT 1', (unit_rsid, unit_rsid.upper()))
+        row = cur.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail='Org unit not found')
+        r = dict(row)
+        cid = r.get('id')
+        cur.execute('SELECT COUNT(1) as cnt FROM org_unit WHERE parent_id = ? AND record_status != "deleted"', (cid,))
+        cnt = cur.fetchone()
+        cntv = dict(cnt).get('cnt') if cnt else 0
+        return {
+            'unit_rsid': r.get('rsid'),
+            'unit_name': r.get('name'),
+            'echelon': r.get('type'),
+            'parent_id': r.get('parent_id'),
+            'children_count': cntv
         }
-        return resp
     finally:
         conn.close()
 
 
-def _compute_sort_order(row):
-    # Prefer numeric ordering for canonical brigade unit_keys like B001
-    uk = (row.get('unit_key') or '').upper()
-    rsid = row.get('rsid') or ''
-    if uk.startswith('B') and uk[1:].isdigit():
-        try:
-            return int(uk[1:])
-        except Exception:
-            pass
-    # fallback to numeric rsid if possible
-    if rsid.isdigit():
-        try:
-            return int(rsid)
-        except Exception:
-            pass
-    # final fallback: alphabetical by display_name
-    return (row.get('display_name') or '').upper()
-
-
 @router.get('/children')
-def children(parent_key: str = None, parent_rsid: str = None, echelon: str = None):
-    """Return children for a given parent. Backwards compatible with `parent_rsid`.
-
-    New preferred parameter is `parent_key` (the canonical `unit_key`). If provided
-    we resolve it to the parent's `rsid` and query children by `parent_rsid`.
-    Responses include `sort_order` which callers can use for deterministic ordering.
-    """
+def children(unit_rsid: str = 'USAREC', user: dict = Depends(require_perm('dashboards.view'))):
     conn = connect()
     try:
-        cur = conn.cursor()
+        kids = org_utils.get_children(conn, unit_rsid)
+        return {'unit_rsid': unit_rsid, 'children': kids}
+    finally:
+        conn.close()
 
-        # resolve parent_rsid if caller provided parent_key
-        if parent_key and not parent_rsid:
-            cur.execute('SELECT rsid FROM org_unit WHERE unit_key = ? LIMIT 1', (parent_key,))
-            p = cur.fetchone()
-            if p:
-                parent_rsid = dict(p).get('rsid')
 
-        if not parent_rsid:
-            return { 'status': 'error', 'message': 'missing parent_key or parent_rsid' }
+@router.get('/descendants')
+def descendants(unit_rsid: str = 'USAREC', depth: int = 50, user: dict = Depends(require_perm('dashboards.view'))):
+    conn = connect()
+    try:
+        rs = org_utils.get_descendant_units(conn, unit_rsid, max_depth=depth)
+        return {'unit_rsid': unit_rsid, 'descendants': rs}
+    finally:
+        conn.close()
 
-        try:
-            cur.execute('SELECT rsid, display_name, echelon, parent_rsid, unit_key, id FROM org_unit WHERE parent_rsid = ? ORDER BY id ASC', (parent_rsid,))
-            rows = [dict(r) for r in cur.fetchall()]
-        except Exception:
-            # Fallback for legacy schema where `display_name` or `parent_rsid` column may not exist.
-            # Resolve parent_rsid -> parent_id first, then query by parent_id and map `name` -> `display_name`.
-            try:
-                cur.execute('SELECT id FROM org_unit WHERE rsid = ? LIMIT 1', (parent_rsid,))
-                p = cur.fetchone()
-                pid = dict(p).get('id') if p else None
-                if pid:
-                    cur.execute('SELECT rsid, name as display_name, type as echelon, parent_id FROM org_unit WHERE parent_id = ? ORDER BY name COLLATE NOCASE ASC', (pid,))
-                    rows = [dict(r) for r in cur.fetchall()]
-                else:
-                    rows = []
-            except Exception:
-                rows = []
 
-        # compute sort_order per row and then sort
-        for r in rows:
-            r['sort_order'] = _compute_sort_order(r)
+@router.get('/tree')
+def tree(unit_rsid: str = 'USAREC', depth: int = 4, user: dict = Depends(require_perm('dashboards.view'))):
+    """Return nested tree up to depth (basic nested list)."""
+    conn = connect()
+    try:
+        def build(node_rsid, cur_depth):
+            cur = conn.cursor()
+            cur.execute('SELECT id, rsid, name, type FROM org_unit WHERE rsid = ? OR upper(rsid)=? LIMIT 1', (node_rsid, node_rsid.upper()))
+            rrow = cur.fetchone()
+            if not rrow:
+                return None
+            r = dict(rrow)
+            node = {'unit_rsid': r.get('rsid'), 'unit_name': r.get('name'), 'echelon': r.get('type')}
+            if cur_depth <= 0:
+                return node
+            cur.execute('SELECT rsid FROM org_unit WHERE parent_id = (SELECT id FROM org_unit WHERE rsid=? LIMIT 1) AND record_status != "deleted"', (r.get('rsid'),))
+            children = [dict(c).get('rsid') for c in cur.fetchall() if dict(c).get('rsid')]
+            node['children'] = []
+            for c in children:
+                child_node = build(c, cur_depth-1)
+                if child_node:
+                    node['children'].append(child_node)
+            return node
 
-        # if numeric sort_order present, sort numerically then by display_name
-        def sort_key(x):
-            so = x.get('sort_order')
-            if isinstance(so, int):
-                return (0, so, (x.get('display_name') or '').upper())
-            return (1, str(so), (x.get('display_name') or '').upper())
-
-        rows_sorted = sorted(rows, key=sort_key)
-
-        items = [ { 'rsid': r.get('rsid'), 'unit_key': r.get('unit_key'), 'display_name': r.get('display_name'), 'echelon': r.get('echelon'), 'parent_key': r.get('parent_rsid'), 'sort_order': r.get('sort_order') } for r in rows_sorted ]
-        return { 'status': 'ok', 'parent_key': parent_key or parent_rsid, 'children': items }
+        root = build(unit_rsid, depth)
+        return {'unit_rsid': unit_rsid, 'tree': root}
     finally:
         conn.close()
 
@@ -266,6 +86,22 @@ def children(parent_key: str = None, parent_rsid: str = None, echelon: str = Non
 @router.get('/roots')
 def roots():
     """Return top-level roots (units without a parent)."""
+    def _compute_sort_order(r: dict):
+        # Best-effort sort order: prefer explicit sort_order, then numeric id, then rsid
+        try:
+            if r is None:
+                return 0
+            if isinstance(r.get('sort_order'), int):
+                return r.get('sort_order')
+            if r.get('id') is not None:
+                try:
+                    return int(r.get('id'))
+                except Exception:
+                    pass
+            # fallback to rsid string sort weight
+            return 0
+        except Exception:
+            return 0
     conn = connect()
     try:
         cur = conn.cursor()

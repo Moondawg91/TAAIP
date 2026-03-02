@@ -2,7 +2,7 @@ import React from 'react'
 import { Box, Typography, Grid, Button } from '@mui/material'
 import EmptyState from '../../components/common/EmptyState'
 import DualModeTabs from '../../components/DualModeTabs'
-// TopFilterBar is rendered centrally by the shell when enabled via route policy
+// Filters are rendered centrally by the shell when enabled via route policy
 import ExportMenu from '../../components/ExportMenu'
 import api from '../../api/client'
 import DashboardToolbar from '../../components/dashboard/DashboardToolbar'

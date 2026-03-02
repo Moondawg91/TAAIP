@@ -5,6 +5,7 @@ import TopHeader from '../components/TopHeader'
 import SystemStrip from '../components/SystemStrip'
 import TopFilterBar from '../components/TopFilterBar'
 import useRoutePolicy from '../auth/useRoutePolicy'
+import RequirePermission from '../auth/RequirePermission'
 import tokens from '../theme/tokens'
 
 export default function ShellLayout({ children }: { children?: React.ReactNode }) {
@@ -60,7 +61,9 @@ export default function ShellLayout({ children }: { children?: React.ReactNode }
         })()}
         <Box component="main" sx={{ p: { xs: 1, md: 1 }, flex: 1, background: tokens.colors.canvasBg, width: '100%', minWidth: 0, overflowY: 'auto' }}>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: tokens.spacing.xs, width: '100%' }}>
-            {children}
+            <RequirePermission>
+              {children}
+            </RequirePermission>
           </Box>
         </Box>
         {/* Footer removed from default shell to avoid persistent bottom spacing. Render per-page if needed. */}

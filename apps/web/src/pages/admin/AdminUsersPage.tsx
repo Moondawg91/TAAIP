@@ -94,7 +94,7 @@ export default function AdminUsersPage(){
     }catch(e){ console.error(e); alert('save failed') }
   }
 
-  const canManage = (!auth.loading && (Boolean(auth.permissions && (auth.permissions['ADMIN_MANAGE_USERS'] || auth.permissions['admin.permissions.manage'])) || auth.isAdmin))
+  const canManage = (!auth.loading && (Boolean(auth.hasPerm && (auth.hasPerm('ADMIN_MANAGE_USERS') || auth.hasPerm('admin.permissions.manage'))) || auth.isAdmin))
   if (!canManage){
     return (
       <Box sx={{ p:3 }}>

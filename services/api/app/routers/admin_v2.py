@@ -4,7 +4,7 @@ import json
 from ..routers import rbac
 from ..db import connect
 
-router = APIRouter(prefix="/api/v2/admin", tags=["admin"])
+router = APIRouter(prefix="/v2/admin", tags=["admin"])
 
 
 def _is_admin_user(user: Dict[str, Any]) -> bool:

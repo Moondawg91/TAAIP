@@ -25,7 +25,9 @@ const sections = [
     items: [
       { to: '/command-center', label: 'Overview', icon: AssessmentIcon },
       { to: '/command-center/targeting-data', label: 'Targeting', icon: MapIcon },
+      { to: '/command-center/twg', label: 'Targeting (TWG)', icon: MapIcon },
       { to: '/command-center/fusion-cell', label: 'Fusion Cell', icon: AssessmentIcon },
+      { to: '/command/mission-feasibility', label: 'Mission Feasibility', icon: AssessmentIcon },
     ],
   },
   {
@@ -37,10 +39,18 @@ const sections = [
     ],
   },
   {
-    title: 'Planning & Resources',
+    title: 'Planning',
     items: [
-      { to: '/budgets', label: 'Budgets', icon: StorageIcon },
-      { to: '/reports', label: 'Reports (QBR)', icon: AssessmentIcon },
+      { to: '/planning', label: 'Planning Home', icon: StorageIcon },
+      { to: '/planning/twg', label: 'TWG', icon: MapIcon },
+      { to: '/planning/fusion', label: 'Fusion Cell', icon: AssessmentIcon },
+    ],
+  },
+  {
+    title: 'ROI',
+    items: [
+      { to: '/roi/marketing', label: 'Marketing ROI', icon: AssessmentIcon },
+      { to: '/roi/mac', label: 'MAC ROI', icon: AssessmentIcon },
     ],
   },
   {
@@ -61,8 +71,8 @@ const sections = [
 
 export default function NavSidebar(){
   const location = useLocation()
-  const { roles, loading, permissions } = useAuth()
-  const isAdmin = !loading && roles && roles.some(r=>['system_admin','usarec_admin','sysadmin','admin','420t_admin'].includes(r))
+  const { roles, loading, permissions, permissionsObj, hasPerm, isAdmin: ctxIsAdmin } = useAuth()
+  const isAdmin = !loading && (ctxIsAdmin || (roles && roles.some(r=>['system_admin','usarec_admin','sysadmin','admin','420t_admin'].includes(r))))
 
   // determine visibility per-item using route->permission map and admin flag
   const visibleSections = sections.map(s => {
@@ -74,7 +84,8 @@ export default function NavSidebar(){
         return true
       }
       // if there is a permission mapping, require that permission or admin status
-      return Boolean((!loading && ((permissions && permissions[perm]) || isAdmin)))
+      const allowed = (!loading && (hasPerm && hasPerm(perm))) || isAdmin
+      return Boolean((!loading && allowed))
     })
     return { ...s, items }
   }).filter(s => (s.items || []).length > 0)

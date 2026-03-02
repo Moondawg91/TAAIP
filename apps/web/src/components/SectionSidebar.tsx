@@ -124,7 +124,8 @@ export default function SectionSidebar(){
                     const path = it.path || ''
                     const permsSource = (auth && auth.permissionsObj && Object.keys(auth.permissionsObj).length) ? Object.keys(auth.permissionsObj) : auth.permissions
                     const access = accessHelper.canAccessForPath(permsSource, path)
-                    const disabledForUser = !access.allowed
+                    // respect auth.hasPerm for fine-grained gating; allow if accessHelper allows or if any missing perms are granted via hasPerm
+                    const disabledForUser = !(access.allowed || (auth && auth.hasPerm && access.missing && access.missing.some((m:any)=> auth.hasPerm(m))))
                     return (
                       <Tooltip key={it.path || it.id} title={!open ? it.label : ''} placement="right">
                               <ListItemButton

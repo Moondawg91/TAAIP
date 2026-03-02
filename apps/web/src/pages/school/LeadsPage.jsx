@@ -1,6 +1,6 @@
 import React from 'react'
 import { Box, Typography } from '@mui/material'
-// TopFilterBar rendered centrally by shell
+// Filters rendered centrally by the shell
 import EmptyStateWithReadiness from '../../components/EmptyStateWithReadiness'
 import { exportToCsv } from '../../utils/exportCsv'
 import ExportMenu from '../../components/ExportMenu'
@@ -15,7 +15,7 @@ export default function LeadsPage(){
         </Box>
         <ExportMenu data={[]} filename="school_leads" />
       </Box>
-      {/* TopFilterBar rendered by shell */}
+      {/* Filters rendered by shell */}
       <Box sx={{ mt:1 }}>
         <EmptyStateWithReadiness title="Leads" purpose="Lead capture and funnel" requiredDatasets={[ 'leads' ]} templateLinks={[]} />
       </Box>

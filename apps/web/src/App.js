@@ -54,6 +54,7 @@ import MissionFeasibilityPage from './pages/command/MissionFeasibilityPage'
 import FsLossPage from './pages/command/FsLossPage'
 import TWGPageNew from './pages/command/TWGPage'
 import FusionCellPage from './pages/command/FusionCellPage'
+import PlanningLandingPage from './pages/planning/PlanningLandingPage'
 import MissionAnalysisPage from './pages/operations/MissionAnalysisPage'
 import MissionPlanningPage from './pages/operations/MissionPlanningPage'
 import MarketIntelligencePage from './pages/operations/MarketIntelligencePage'
@@ -181,6 +182,8 @@ export default function App() {
           <Route path="/ops/roi" element={<OpsRoiPage />} />
           <Route path="/roi" element={<RoiPage />} />
           <Route path="/roi/events" element={<NotLoadedPage title="ROI Events" subtitle="Placeholder" />} />
+          <Route path="/roi/marketing" element={<RoiPage />} />
+          <Route path="/roi/mac" element={<RoiPage />} />
 
           {/* documents */}
           <Route path="/docs/sharepoint" element={<DocsSharepoint />} />
@@ -210,6 +213,11 @@ export default function App() {
           <Route path="/command-center/targeting-data" element={<TargetingDataPage />} />
           <Route path="/command-center/twg" element={<TWGPageNew />} />
           <Route path="/command-center/fusion-cell" element={<FusionCellPage />} />
+
+          {/* planning aliases and direct links for TWG/Fusion per TOR */}
+          <Route path="/planning" element={<PlanningLandingPage />} />
+          <Route path="/planning/twg" element={<TWGPageNew />} />
+          <Route path="/planning/fusion" element={<FusionCellPage />} />
 
           {/* planning */}
           <Route path="/planning/targeting-board" element={<TargetingBoardPage />} />

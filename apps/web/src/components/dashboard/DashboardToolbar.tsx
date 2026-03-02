@@ -19,7 +19,7 @@ export default function DashboardToolbar({ title, subtitle, filters, onFiltersCh
       </Box>
 
       <Box sx={{ flex:1, display:'flex', justifyContent:'center' }}>
-        <FilterBar filters={filters} onChange={(f)=> onFiltersChange ? onFiltersChange(f) : null} />
+        <FilterBar />
       </Box>
 
       <Box sx={{ display:'flex', alignItems:'center', justifyContent:'flex-end' }}>

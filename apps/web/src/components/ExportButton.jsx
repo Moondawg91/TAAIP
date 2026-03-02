@@ -16,11 +16,10 @@ const profiles = [
 export default function ExportButton(){
   const [open, setOpen] = useState(false)
   const [profile, setProfile] = useState('commander_packet')
-  const { permissions, permissionsObj } = useAuth()
+  const { hasPerm } = useAuth()
   const loc = useLocation()
-  const permSet = (permissionsObj && Object.keys(permissionsObj).length) ? Object.keys(permissionsObj) : permissions
-  const canRaw = (permSet && (permSet.includes('datahub.runs.view') || permSet.includes('datahub.view_runs') || permSet.includes('datahub.runs.view'))) || false
-  const canExport = (permSet && (permSet.includes('export.any') || permSet.includes('EXPORT_DATA') || permSet.includes('*'))) || false
+  const canRaw = (hasPerm && (hasPerm('datahub.runs.view') || hasPerm('datahub.view_runs') || hasPerm('datahub.runs.view'))) || false
+  const canExport = (hasPerm && (hasPerm('export.any') || hasPerm('EXPORT_DATA') || hasPerm('*'))) || false
 
   const onConfirm = async () => {
     const p = profiles.find(x=>x.key===profile)

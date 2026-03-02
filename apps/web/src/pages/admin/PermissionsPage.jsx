@@ -4,7 +4,7 @@ import { listAdminUsers, getAdminPermissionsRegistry, getAdminUserPermissions, g
 import { useAuth } from '../../contexts/AuthContext'
 
 export default function PermissionsPage(){
-  const { isAdmin, permissions } = useAuth()
+  const { isAdmin, hasPerm } = useAuth()
   const [users, setUsers] = useState([])
   const [registry, setRegistry] = useState([])
   const [selectedUser, setSelectedUser] = useState(null)
@@ -12,7 +12,7 @@ export default function PermissionsPage(){
 
   useEffect(()=>{
     let mounted = true
-    if(!isAdmin && !permissions['admin.permissions.manage']) return
+    if(!isAdmin && !hasPerm('admin.permissions.manage')) return
     Promise.all([listAdminUsers(), getAdminPermissionsRegistry()]).then(([u, r])=>{
       if(!mounted) return
       setUsers(u || [])
@@ -45,7 +45,7 @@ export default function PermissionsPage(){
     }catch(e){ console.error(e) }
   }
 
-  if(!isAdmin && !permissions['admin.permissions.manage']){
+  if(!isAdmin && !hasPerm('admin.permissions.manage')){
     return (
       <Box sx={{ p:3 }}>
         <Typography variant="h5">Access denied</Typography>

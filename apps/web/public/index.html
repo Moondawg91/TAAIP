@@ -7,5 +7,26 @@
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      (function(){
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.getRegistrations()
+            .then(function(regs){
+              if (regs && regs.length) {
+                Promise.all(regs.map(function(r){ return r.unregister(); }))
+                  .then(function(){
+                    console.log('Unregistered service workers; reloading to avoid cached bundles.');
+                    // Force reload; use cache-bypass by appending a timestamp
+                    var url = window.location.href.split('#')[0];
+                    var sep = url.indexOf('?') === -1 ? '?' : '&';
+                    window.location.replace(url + sep + '_swrefresh=' + Date.now());
+                  })
+                  .catch(function(err){ console.error('SW unregister failed', err); });
+              }
+            })
+            .catch(function(err){ console.error('Error getting service worker registrations', err); });
+        }
+      })();
+    </script>
   </body>
 </html>

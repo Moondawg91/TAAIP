@@ -11,6 +11,16 @@ def _add(spec: dict):
     IMPORTERS.append(spec)
     return spec
 
+# USAREC RSID Hierarchy (dataset registry hint)
+_add({
+    'dataset_key': 'USAREC_ORG_HIERARCHY',
+    'display_name': 'USAREC RSID Hierarchy',
+    'importer': 'usarec_org_hierarchy',
+    'target_tables': ['org_unit'],
+    'accepts': {'fileTypes': ['xlsx']},
+    'fingerprint': {'requiredColumnsAnyOf': [['CMD','BDE','BN','CO','STN']]}
+})
+
 # USAREC G2 — Enlistments by BDE
 _add({
     'id': 'usarec_g2_enlistments_bde_v1',
@@ -332,6 +342,32 @@ _add({
     'columns': [],
     'transforms': [],
     'target': {'table': 'stg_raw_dataset', 'mode': 'append', 'primaryKey': []},
+})
+
+
+# FS Loss events (basic importer)
+_add({
+    'id': 'fs_loss_events_v1',
+    'displayName': 'FS Loss — Events',
+    'sourceSystem': 'FS_MGMT',
+    'accepts': {'fileTypes': ['xlsx', 'csv']},
+    'fingerprint': {
+        'sourceSystem': 'FS_MGMT',
+        'sheetNameHints': ['Loss', 'FS Loss', 'Losses'],
+        'requiredColumnsAnyOf': [['LOSS_CODE', 'LOSS'], ['RSID', 'LOSS_CODE', 'LOSS']],
+    },
+    'sheets': [{'nameIncludes': ['Loss', 'FS Loss', 'Losses'], 'headerRow': 0}],
+    'columns': [
+        {'canonical': 'unit_name', 'required': False, 'aliases': ['RSID', 'STATION', 'UNIT', 'STN'], 'type': 'string', 'clean': ['trim', 'upper', 'empty_to_null']},
+        {'canonical': 'loss_code', 'required': True, 'aliases': ['LOSS_CODE', 'LOSS'], 'type': 'string', 'clean': ['trim', 'upper']},
+        {'canonical': 'description', 'required': False, 'aliases': ['DESCRIPTION', 'DETAILS'], 'type': 'string', 'clean': ['trim', 'empty_to_null']},
+        {'canonical': 'reported_at', 'required': False, 'aliases': ['DATE', 'REPORTED_AT'], 'type': 'date', 'clean': ['trim', 'empty_to_null']},
+    ],
+    'transforms': [
+        {'fn': 'normalize_unit', 'args': {'from': 'unit_name', 'to': 'unit_rsid'}},
+        {'fn': 'normalize_dates', 'args': {'from': 'reported_at', 'to': ['reported_at']}},
+    ],
+    'target': {'table': 'fs_loss_event', 'mode': 'append', 'primaryKey': []},
 })
 
 

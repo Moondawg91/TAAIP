@@ -4,7 +4,7 @@ import DrillBreadcrumbs from '../../components/DrillBreadcrumbs'
 import DetailDrawer from '../../components/DetailDrawer'
 import api from '../../api/client'
 import DualModeTabs from '../../components/DualModeTabs'
-// TopFilterBar is rendered centrally by the shell when route policy enables it
+// (Filters rendered by shell)
 import ExportMenu from '../../components/ExportMenu'
 
 export default function EventsDashboardPage(){

@@ -24,9 +24,7 @@ const ROUTES_REGISTRY = [
       { id: 'mission-analysis', label: 'Mission Analysis', path: '/operations/mission-analysis', icon: 'ManageSearch' },
       { id: 'mission-planning', label: 'Mission Planning', path: '/operations/mission-planning', icon: 'Map' },
       { id: 'targeting-method', label: 'USAREC Targeting Methodology', path: '/operations/targeting-methodology', icon: 'MilitaryTech' },
-      { id: 'targeting-data', label: 'Targeting Data', path: '/operations/targeting-data', icon: 'Storage' },
       { id: 'phonetics', label: 'Processing', path: '/operations/phonetics', icon: 'RecordVoiceOver' },
-      { id: 'marketing-roi', label: 'Marketing & Advertisement ROI', path: '/operations/marketing-roi', icon: 'Campaign' },
       { id: 'event-performance', label: 'Event Performance', path: '/operations/event-performance', icon: 'Event' }
     ]
   },
@@ -36,6 +34,12 @@ const ROUTES_REGISTRY = [
     icon: 'Build',
     items: [
       { id: 'projects-events', label: 'Project & Event Management', path: '/planning/projects-events', icon: 'PlaylistAddCheck' },
+      { id: 'planning-home', label: 'Planning Home', path: '/planning', icon: 'Build' },
+      // TWG and Fusion are surfaced under Command Center per TOR; planning keeps aliases hidden
+      { id: 'roi-overview-planning', label: 'ROI Overview', path: '/roi', icon: 'TrendingUp' },
+      { id: 'roi-events', label: 'ROI Events', path: '/roi/events', icon: 'Event' },
+      { id: 'roi-marketing', label: 'ROI — Marketing', path: '/roi/marketing', icon: 'Campaign' },
+      { id: 'roi-mac', label: 'ROI — MAC', path: '/roi/mac', icon: 'Analytics' },
       { id: 'asset-management', label: 'Asset Management', path: '/planning/asset-management', icon: 'Inventory' },
       { id: 'community-engagement', label: 'Community Engagement', path: '/planning/community-engagement', icon: 'Handshake' },
       { id: 'env-reco', label: 'Environmental Recommendation Engine', path: '/planning/env-recommendation', icon: 'AutoMode' },

@@ -162,8 +162,8 @@ api_router.include_router(compat_helpers_router.router)
 
 from .routers import health as health_router
 api_router.include_router(health_router.router)
-from .routers import exports as exports_router
-api_router.include_router(exports_router.router)
+# exports router (mounted after compatibility routers to avoid
+# shadowing legacy /api/v2/exports/* compatibility endpoints)
 
 # System/self-check router
 from .routers import system as system_router
@@ -260,6 +260,11 @@ from .routers import v1 as v1_router
 from .routers import v2 as v2_router
 api_router.include_router(v1_router.router)
 api_router.include_router(v2_router.router)
+
+# include exports router after v1/v2 so legacy v2 compatibility
+# endpoints in v2 router take precedence over generic exports handler
+from .routers import exports as exports_router
+api_router.include_router(exports_router.router)
 
 # include domain router after compatibility routers so legacy /api/v2 compatibility
 # endpoints (used by tests) take precedence over SQLAlchemy domain routes

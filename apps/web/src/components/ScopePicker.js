@@ -4,6 +4,6 @@ import UnitCascadePicker from './UnitCascadePicker'
 import { useFilters } from '../contexts/FilterContext'
 
 export default function ScopePicker(){
-  // ScopePicker intentionally renders nothing — use TopFilterBar on dashboard pages for unit selection
+  // ScopePicker intentionally renders nothing — unit selection provided by global filters
   return null
 }

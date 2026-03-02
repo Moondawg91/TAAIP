@@ -1,6 +1,6 @@
 import React from 'react'
 import { Box, Typography } from '@mui/material'
-// TopFilterBar rendered centrally by shell
+// Filters rendered centrally by the shell
 import EmptyStateWithReadiness from '../../components/EmptyStateWithReadiness'
 import { exportToCsv } from '../../utils/exportCsv'
 import ExportMenu from '../../components/ExportMenu'
@@ -15,7 +15,7 @@ export default function RoiPage(){
         </Box>
         <ExportMenu data={[]} filename="school_roi" />
       </Box>
-      {/* TopFilterBar rendered by shell */}
+      {/* Filters rendered by shell */}
       <Box sx={{ mt:1 }}>
         <EmptyStateWithReadiness title="ROI" purpose="Return on investment for school events" requiredDatasets={[ 'event_roi' ]} templateLinks={[]} />
       </Box>

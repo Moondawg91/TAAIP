@@ -4,6 +4,7 @@ CRUD helpers for Phase 2 canonical domain models. Queries are composable so RBAC
 
 from sqlalchemy.orm import Session
 from sqlalchemy import func
+from sqlalchemy.exc import OperationalError
 from . import models_domain as domain
 from . import rbac
 from typing import Optional, Dict
@@ -107,8 +108,25 @@ def create_funnel_transition(db: Session, payload: dict):
     pfx = _prefixes_from_rsid(payload.get('station_rsid'))
     ft = domain.FunnelTransition(**payload, **pfx)
     db.add(ft)
-    db.commit()
-    return ft
+    # Commit with retry to tolerate transient sqlite 'database is locked' errors
+    retries = 5
+    delay = 0.02
+    for attempt in range(retries):
+        try:
+            db.commit()
+            return ft
+        except OperationalError as e:
+            msg = str(e).lower()
+            if 'locked' in msg and attempt < retries - 1:
+                try:
+                    db.rollback()
+                except Exception:
+                    pass
+                from time import sleep
+                sleep(delay)
+                delay = min(delay * 2, 0.5)
+                continue
+            raise
 
 
 def burden_input_create(db: Session, payload: dict):

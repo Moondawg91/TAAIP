@@ -1,6 +1,6 @@
 import React from 'react'
 import { Box, Typography } from '@mui/material'
-// TopFilterBar is now rendered centrally by the shell when enabled by route policy
+// Filters are now rendered centrally by the shell when enabled by route policy
 import EmptyStateWithReadiness from '../../components/EmptyStateWithReadiness'
 import { exportToCsv } from '../../utils/exportCsv'
 import ExportMenu from '../../components/ExportMenu'
@@ -15,7 +15,7 @@ export default function EventsPage(){
         </Box>
         <ExportMenu data={[]} filename="school_events" />
       </Box>
-      {/* TopFilterBar rendered by shell */}
+      {/* Filters rendered by shell */}
       <Box sx={{ mt:1 }}>
         <EmptyStateWithReadiness title="Events" purpose="Event listings and planned engagements" requiredDatasets={[ 'events' ]} templateLinks={[]} />
       </Box>

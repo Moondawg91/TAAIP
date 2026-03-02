@@ -18,23 +18,26 @@ export default function MissionAssessmentPage(){
   const [editing, setEditing] = useState(false)
   const [narrative, setNarrative] = useState('')
   const [periodType, setPeriodType] = useState('FY')
-  const [periodValue, setPeriodValue] = useState('2026')
   const { filters } = useFilters()
-  const [scopeVal, setScopeVal] = useState(filters?.unit_rsid || '')
+  // period value (FY/QTR/month) and scope are derived from global filters
+  const derivedPeriodValue = (() => {
+    if (!filters) return ''
+    if (periodType === 'FY') return filters.fy || ''
+    if (periodType === 'Quarter' || periodType === 'QTR') return filters.qtr || ''
+    if (periodType === 'Month' || periodType === 'RSM' || periodType === 'Month') return filters.rsm_month || ''
+    return ''
+  })()
 
   useEffect(()=>{ load() }, [])
-  useEffect(()=>{ setScopeVal(filters?.unit_rsid || '') }, [filters?.unit_rsid])
   async function load(){
     try{
       const s = await getAnalyticsSummary({})
       setSummary(s || [])
-      const a = await getLatestMissionAssessment('FY', filters?.unit_rsid || '')
+      const a = await getLatestMissionAssessment(periodType || 'FY', filters?.unit_rsid || '')
       setAssessment(a || null)
       if(a){
         setNarrative(a.narrative || '')
         setPeriodType(a.period_type || 'FY')
-        setPeriodValue(a.period_value || String(new Date().getFullYear()))
-        setScopeVal(a.scope || '')
       }
     }catch(e){ console.error('load analytics summary', e) }
   }
@@ -76,16 +79,16 @@ export default function MissionAssessmentPage(){
                 <Typography variant="body2" sx={{ color:'text.secondary', mt:1 }}>Baseline metrics will appear here.</Typography>
                 <Box sx={{ mt:2 }}>
                   <TextField label="Period Type" size="small" value={periodType} onChange={(e)=>setPeriodType(e.target.value)} sx={{ mr:1 }} />
-                  <TextField label="Period Value" size="small" value={periodValue} onChange={(e)=>setPeriodValue(e.target.value)} sx={{ mr:1 }} />
-                  <TextField label="Scope" size="small" value={scopeVal} disabled sx={{ mr:1 }} />
+                  <TextField label="Period Value" size="small" value={derivedPeriodValue} disabled sx={{ mr:1 }} />
+                  <TextField label="Scope" size="small" value={filters?.unit_rsid || ''} disabled sx={{ mr:1 }} />
                 </Box>
                 <Box sx={{ mt:2 }}>
                   <TextField label="Narrative" multiline fullWidth minRows={4} value={narrative} onChange={(e)=>setNarrative(e.target.value)} />
                 </Box>
                 <Box sx={{ display:'flex', gap:1, mt:2 }}>
-                  <Button variant="contained" onClick={async ()=>{
+                    <Button variant="contained" onClick={async ()=>{
                     try{
-                      const payload = { id: assessment && assessment.id, period_type: periodType, period_value: periodValue, scope: scopeVal, narrative, metrics: assessment && assessment.metrics_json };
+                      const payload = { id: assessment && assessment.id, period_type: periodType, period_value: derivedPeriodValue, scope: filters?.unit_rsid || '', narrative, metrics: assessment && assessment.metrics_json };
                       const saved = await saveMissionAssessment(payload)
                       setAssessment(saved)
                       setEditing(false)

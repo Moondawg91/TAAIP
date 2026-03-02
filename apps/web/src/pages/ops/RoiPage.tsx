@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { Box, Typography, Chip, Button, Menu, MenuItem, TextField, FormControl, InputLabel, Select, Accordion, AccordionSummary, AccordionDetails } from '@mui/material'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
-// TopFilterBar rendered centrally by shell
+// Filters rendered centrally by the shell
 import { useFilters } from '../../contexts/FilterContext'
 import PageFrame from '../../components/layout/PageFrame'
 import Panel from '../../components/layout/Panel'
@@ -62,7 +62,7 @@ export default function OpsRoiPage(){
         </Box>
       </Box>
 
-      {/* TopFilterBar rendered by shell */}
+      {/* Filters rendered by shell */}
       <Box sx={{ mt:2 }}>
         {summary ? (
           <Panel>

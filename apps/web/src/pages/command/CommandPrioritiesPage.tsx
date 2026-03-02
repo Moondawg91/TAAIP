@@ -125,7 +125,7 @@ export default function CommandPrioritiesPage(){
         </Box>
       </Box>
       <DualModeTabs roles={userRoles} />
-          {/* <TopFilterBar title="Command Priorities" /> */}
+          {/* Filters rendered by shell */}
 
       <Grid container spacing={2}>
         {(!loading && (!priorities || priorities.length===0)) ? (

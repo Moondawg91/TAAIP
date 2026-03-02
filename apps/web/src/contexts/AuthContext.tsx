@@ -6,10 +6,11 @@ type AuthState = {
   permissions: string[]
   permissionsObj: Record<string, boolean>
   isAdmin: boolean
+  hasPerm: (key: string)=>boolean
   loading: boolean
 }
 
-const AuthContext = createContext<AuthState>({ roles: [], permissions: [], permissionsObj: {}, isAdmin: false, loading: true })
+const AuthContext = createContext<AuthState>({ roles: [], permissions: [], permissionsObj: {}, isAdmin: false, hasPerm: ()=>false, loading: true })
 
 export function AuthProvider({ children }: { children?: React.ReactNode }){
   const [roles, setRoles] = useState<string[]>([])
@@ -18,10 +19,35 @@ export function AuthProvider({ children }: { children?: React.ReactNode }){
   const [isAdmin, setIsAdmin] = useState<boolean>(false)
   const [loading, setLoading] = useState(true)
 
+  function hasPerm(key: string){
+    try{
+      if (!key) return false
+      if (isAdmin) return true
+      if(!permissionsObj && !permissions) return false
+      if (permissionsObj && permissionsObj['*'] === true) return true
+      if (Array.isArray(permissions)) return permissions.includes(key) || permissions.includes(String(key).toLowerCase())
+      return Boolean(permissionsObj && (permissionsObj[key] || permissionsObj[String(key).toLowerCase()]))
+    }catch(e){
+      return false
+    }
+  }
+
   useEffect(()=>{
     let canceled = false
     const baseline = ['dashboards.view','export.any']
     const devExtras = ['admin.full']
+    const urlParams = new URLSearchParams(window.location.search)
+    const devUser = urlParams.get('dev_user')
+
+    // If dev_user=viewer is present, short-circuit and simulate a viewer-only user
+    if (process.env.NODE_ENV === 'development' && devUser === 'viewer') {
+      const perms = ['dashboards.view']
+      setPermissions(perms)
+      setPermissionsObj(perms.reduce((acc:any,p:any)=>{ acc[p]=true; return acc }, {}))
+      setLoading(false)
+      return
+    }
+
     getMe().then((me: any)=>{
       if(canceled) return
       if(!me) {
@@ -68,7 +94,7 @@ export function AuthProvider({ children }: { children?: React.ReactNode }){
   },[])
 
   return (
-    <AuthContext.Provider value={{ roles, permissions, permissionsObj, isAdmin, loading }}>
+    <AuthContext.Provider value={{ roles, permissions, permissionsObj, isAdmin, hasPerm, loading }}>
       {children}
     </AuthContext.Provider>
   )

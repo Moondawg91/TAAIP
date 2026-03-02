@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { Box, Typography, Chip, Button, Menu, MenuItem, TextField, FormControl, InputLabel, Select, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Accordion, AccordionSummary, AccordionDetails } from '@mui/material'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
-// TopFilterBar rendered centrally by shell
+// Filters rendered centrally by the shell
 import { useFilters } from '../../contexts/FilterContext'
 import PageFrame from '../../components/layout/PageFrame'
 import Panel from '../../components/layout/Panel'

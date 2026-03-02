@@ -3,7 +3,7 @@ import { Box, Typography, Tab, Tabs } from '@mui/material'
 import ZeroState from '../../components/ZeroState'
 import { useState } from 'react'
 import DualModeTabs from '../../components/DualModeTabs'
-// TopFilterBar centrally rendered by shell when route policy enables it
+// Filters are centrally rendered by the shell when route policy enables them
 import ExportMenu from '../../components/ExportMenu'
 
 export default function PerformanceAssessment(){

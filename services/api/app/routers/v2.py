@@ -1,5 +1,7 @@
 from fastapi import APIRouter, Depends, Request, Header, HTTPException, UploadFile, File
 from services.api.app.db import get_db_conn, init_db, execute_with_retry
+from services.api.app.database import SessionLocal
+from services.api.app import crud_domain as crud_domain
 from services.api.app.routers.rbac import get_current_user, require_not_role, require_roles
 from services.api.app import auth
 from datetime import datetime
@@ -737,8 +739,22 @@ def funnel_stages():
 def funnel_transition(payload: dict = None):
     payload = payload or {}
     tid = "ft_" + uuid.uuid4().hex[:10]
-    conn = get_db_conn()
-    cur = conn.cursor()
+    # Prefer SQLAlchemy-backed create path which includes commit retry
+    # semantics; fall back to raw sqlite path for compatibility if needed.
+    try:
+        db = SessionLocal()
+        try:
+            obj = crud_domain.create_funnel_transition(db, payload or {})
+            return {"status": "ok", "data": {"id": getattr(obj, 'id', tid)}}
+        finally:
+            try:
+                db.close()
+            except Exception:
+                pass
+    except Exception:
+        # Fall back to raw sqlite insert for older DB variants
+        conn = get_db_conn()
+        cur = conn.cursor()
     # be tolerant of legacy schema variants: some DBs use `lead_key`, others `lead_id`.
     try:
         cur.execute('PRAGMA table_info(funnel_transitions)')
@@ -771,7 +787,7 @@ def funnel_transition(payload: dict = None):
             cur.execute('PRAGMA foreign_keys=OFF')
         except Exception:
             pass
-        execute_with_retry(cur, f"INSERT INTO funnel_transitions({col_list}) VALUES({placeholders})", tuple(vals))
+        execute_with_retry(cur, f"INSERT INTO funnel_transitions({col_list}) VALUES({placeholders})", tuple(vals), retries=20, backoff=0.02)
         try:
             cur.execute('PRAGMA foreign_keys=ON')
         except Exception:
@@ -782,8 +798,8 @@ def funnel_transition(payload: dict = None):
         # zip_metrics row to satisfy the FK, then retry the insert once.
         if 'foreign key' in msg and payload.get('station_rsid'):
             try:
-                execute_with_retry(cur, 'INSERT OR IGNORE INTO zip_metrics(station_rsid, zip, metric_key, metric_value, scope, as_of) VALUES(?,?,?,?,?,?)', (payload.get('station_rsid'), None, None, None, None, None))
-                execute_with_retry(cur, f"INSERT INTO funnel_transitions({col_list}) VALUES({placeholders})", tuple(vals))
+                execute_with_retry(cur, 'INSERT OR IGNORE INTO zip_metrics(station_rsid, zip, metric_key, metric_value, scope, as_of) VALUES(?,?,?,?,?,?)', (payload.get('station_rsid'), None, None, None, None, None), retries=20, backoff=0.02)
+                execute_with_retry(cur, f"INSERT INTO funnel_transitions({col_list}) VALUES({placeholders})", tuple(vals), retries=20, backoff=0.02)
             except Exception:
                 raise
         else:
@@ -793,7 +809,7 @@ def funnel_transition(payload: dict = None):
                 reduced_vals = [v for i, v in enumerate(vals) if cols[i] in reduced_cols]
                 placeholders2 = ','.join(['?'] * len(reduced_cols))
                 col_list2 = ','.join(reduced_cols)
-                execute_with_retry(cur, f"INSERT INTO funnel_transitions({col_list2}) VALUES({placeholders2})", tuple(reduced_vals))
+                execute_with_retry(cur, f"INSERT INTO funnel_transitions({col_list2}) VALUES({placeholders2})", tuple(reduced_vals), retries=20, backoff=0.02)
             except Exception:
                 raise
     conn.commit()

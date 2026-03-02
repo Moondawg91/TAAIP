@@ -6,7 +6,7 @@ export default function RequirePerm({ perm, children }: { perm: string, children
   const auth = useAuth()
   const navigate = useNavigate()
   if (auth.loading) return null
-  const allowed = Boolean(auth.permissions && auth.permissions[perm]) || Boolean(auth.isAdmin)
+  const allowed = Boolean((auth.hasPerm && auth.hasPerm(perm)) || auth.isAdmin)
   if (!allowed){
     navigate('/access-denied')
     return null

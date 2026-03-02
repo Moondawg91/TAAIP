@@ -3,7 +3,7 @@ from typing import Optional
 from .. import db
 from .rbac import require_perm
 
-router = APIRouter(prefix='/api/v2/fs-loss', tags=['fs-loss'])
+router = APIRouter(prefix='/v2/fs-loss', tags=['fs-loss'])
 
 
 @router.get('/summary')

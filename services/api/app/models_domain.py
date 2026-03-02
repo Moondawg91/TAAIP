@@ -183,3 +183,15 @@ class AuditLog(Base):
     after_json = Column(JSON, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
+class FsLossEvent(Base):
+    __tablename__ = "fs_loss_event"
+    id = Column(String, primary_key=True)
+    unit_rsid = Column(String(4), ForeignKey("stations.rsid"), nullable=True)
+    loss_code = Column(String, nullable=False)
+    description = Column(Text, nullable=True)
+    reported_at = Column(DateTime(timezone=True), nullable=True)
+    source_file = Column(String, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())

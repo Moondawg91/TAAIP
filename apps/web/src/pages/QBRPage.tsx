@@ -21,18 +21,6 @@ export default function QBRPage(){
     <Box sx={{p:3}}>
       <Typography variant="h4">QBR / Boards</Typography>
       <Paper sx={{p:2, mt:2}}>
-        <FormControl sx={{mr:2}} size="small">
-          <InputLabel>FY</InputLabel>
-          <Select value={filters.fy || String(new Date().getFullYear())} label="FY" onChange={(e)=>setFy(String((e.target as any).value))}>
-            {[String(new Date().getFullYear()-1), String(new Date().getFullYear()), String(new Date().getFullYear()+1)].map(y=> <MenuItem key={y} value={y}>{y}</MenuItem>)}
-          </Select>
-        </FormControl>
-        <FormControl sx={{mr:2}} size="small">
-          <InputLabel>Quarter</InputLabel>
-          <Select value={filters.qtr || 'Q1'} label="Quarter" onChange={(e)=>setQtr(String((e.target as any).value))}>
-            {['Q1','Q2','Q3','Q4'].map(q=> <MenuItem key={q} value={q}>{q}</MenuItem>)}
-          </Select>
-        </FormControl>
         <Button onClick={fetch}>Refresh</Button>
       </Paper>
       <Paper sx={{p:2, mt:2}}>

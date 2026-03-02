@@ -1,6 +1,6 @@
 import React from 'react'
 import { Box, Typography } from '@mui/material'
-// TopFilterBar rendered centrally by shell
+// Filters rendered centrally by the shell
 import EmptyStateWithReadiness from '../../components/EmptyStateWithReadiness'
 import { exportToCsv } from '../../utils/exportCsv'
 import ExportMenu from '../../components/ExportMenu'
@@ -15,7 +15,7 @@ export default function CoveragePage(){
         </Box>
         <ExportMenu data={[]} filename="school_coverage" />
       </Box>
-      {/* TopFilterBar rendered by shell */}
+      
       <Box sx={{ mt:1 }}>
         <EmptyStateWithReadiness title="Coverage" purpose="Geographic coverage for school recruiting" requiredDatasets={[ 'mi_zip_fact' ]} templateLinks={[{ href: '/api/market-intel/import-templates', label: 'Market Intel templates' }]} primaryActions={[]} />
       </Box>

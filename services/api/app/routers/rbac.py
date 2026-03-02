@@ -325,18 +325,44 @@ def require_perm(permission_key: str):
         # dev bypass
         if os.getenv('LOCAL_DEV_AUTH_BYPASS', '0').lower() in ('1', 'true'):
             return user
+
+        def _perm_truthy(v):
+            if v is True:
+                return True
+            if v is None:
+                return False
+            if isinstance(v, (int, float)):
+                try:
+                    return int(v) != 0
+                except Exception:
+                    return False
+            try:
+                s = str(v).strip().lower()
+                return s in ('1', 'true', 't', 'yes', 'y')
+            except Exception:
+                return False
+
         # if permissions present in token and wildcard or key present, allow
-        perms = user.get('permissions') if isinstance(user, dict) else []
+        perms = user.get('permissions') if isinstance(user, dict) else None
         try:
-            if isinstance(perms, list) and ('*' in perms or permission_key in perms):
-                return user
-            # if the requested key is an alias, allow if the mapped dotted key is present in token perms
             mapped = PERM_ALIASES.get(permission_key)
-            if mapped and isinstance(perms, list) and mapped in perms:
-                return user
+            # handle dict shape: {"*": true} or {"datahub.upload": true}
+            if isinstance(perms, dict):
+                if _perm_truthy(perms.get('*')):
+                    return user
+                if _perm_truthy(perms.get(permission_key)):
+                    return user
+                if mapped and _perm_truthy(perms.get(mapped)):
+                    return user
+            # handle list/tuple shape
+            if isinstance(perms, (list, tuple)):
+                if '*' in perms or permission_key in perms or (mapped and mapped in perms):
+                    return user
         except Exception:
             pass
-        # system_admin role bypass
+        # system_admin role bypass or explicit is_admin flag
+        if isinstance(user, dict) and user.get('is_admin'):
+            return user
         roles = [r.lower() for r in (user.get('roles') or [])]
         if 'system_admin' in roles:
             return user
