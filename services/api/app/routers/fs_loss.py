@@ -56,3 +56,83 @@ def fs_loss_codes():
         {'code': 'L99', 'label': 'Other'}
     ]
     return {'status': 'ok', 'codes': codes}
+
+
+@router.get('/station/{station_rsid}/dep-loss-by-bucket')
+def station_dep_loss_by_bucket(station_rsid: str, time_period: str):
+    """Aggregate dep_loss by loss_bucket and component code for a station and time period.
+
+    SQL equivalent:
+      select dl.loss_bucket, dl.cmpnt_cd, sum(dl.dep_losses) as dep_losses
+      from fact_dep_loss dl
+      where dl.station_rsid = ? and dl.time_period = ?
+      group by dl.loss_bucket, dl.cmpnt_cd
+      order by dl.cmpnt_cd, dl.loss_bucket;
+    """
+    conn = db.connect()
+    try:
+        cur = conn.cursor()
+        try:
+            cur.execute(
+                "SELECT loss_bucket, cmpnt_cd, SUM(dep_losses) as dep_losses FROM fact_dep_loss WHERE station_rsid=? AND time_period=? GROUP BY loss_bucket, cmpnt_cd ORDER BY cmpnt_cd, loss_bucket",
+                (station_rsid, time_period),
+            )
+            rows = cur.fetchall()
+            out = []
+            for r in rows:
+                try:
+                    lb = r['loss_bucket']
+                    cc = r['cmpnt_cd']
+                    val = r['dep_losses']
+                except Exception:
+                    lb, cc, val = r[0], r[1], r[2]
+                out.append({'loss_bucket': lb, 'cmpnt_cd': cc, 'dep_losses': val})
+            return {'status': 'ok', 'rows': out}
+        except Exception:
+            return {'status': 'ok', 'rows': []}
+    finally:
+        try:
+            conn.close()
+        except Exception:
+            pass
+
+
+@router.get('/unit/{unit_code}/ancestors')
+def unit_ancestors(unit_code: str):
+    """Return ancestor chain for a unit using a recursive CTE.
+
+    SQL equivalent:
+      with recursive tree as (
+        select u.unit_code, u.unit_name, u.echelon, u.parent_code
+        from unit u
+        where u.unit_code = ?
+        union all
+        select p.unit_code, p.unit_name, p.echelon, p.parent_code
+        from unit p
+        join tree t on t.parent_code = p.unit_code
+      )
+      select * from tree;
+    """
+    conn = db.connect()
+    try:
+        cur = conn.cursor()
+        try:
+            cur.execute(
+                "WITH RECURSIVE tree(unit_code, unit_name, echelon, parent_code) AS (SELECT unit_code, unit_name, echelon, parent_code FROM unit WHERE unit_code = ? UNION ALL SELECT p.unit_code, p.unit_name, p.echelon, p.parent_code FROM unit p JOIN tree t ON t.parent_code = p.unit_code) SELECT unit_code, unit_name, echelon, parent_code FROM tree",
+                (unit_code,)
+            )
+            rows = cur.fetchall()
+            out = []
+            for r in rows:
+                try:
+                    out.append({'unit_code': r['unit_code'], 'unit_name': r['unit_name'], 'echelon': r['echelon'], 'parent_code': r['parent_code']})
+                except Exception:
+                    out.append({'unit_code': r[0], 'unit_name': r[1], 'echelon': r[2], 'parent_code': r[3]})
+            return {'status': 'ok', 'tree': out}
+        except Exception:
+            return {'status': 'ok', 'tree': []}
+    finally:
+        try:
+            conn.close()
+        except Exception:
+            pass

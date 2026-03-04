@@ -260,6 +260,10 @@ from .routers import v1 as v1_router
 from .routers import v2 as v2_router
 api_router.include_router(v1_router.router)
 api_router.include_router(v2_router.router)
+from .routers import v2_station_ingest as v2_station_ingest_router
+from .routers import v2_station_dashboard as v2_station_dashboard_router
+api_router.include_router(v2_station_ingest_router.router)
+api_router.include_router(v2_station_dashboard_router.router)
 
 # include exports router after v1/v2 so legacy v2 compatibility
 # endpoints in v2 router take precedence over generic exports handler

@@ -390,6 +390,11 @@ def apply_runtime_migrations(conn: sqlite3.Connection) -> None:
                 safe_add_column(conn, 'import_run_v2', 'scope_qtr', 'INTEGER')
             except Exception:
                 pass
+            # ensure storage_path exists for older DBs that predate this column
+            try:
+                safe_add_column(conn, 'import_run_v2', 'storage_path', 'TEXT')
+            except Exception:
+                pass
     except Exception:
         pass
 
@@ -532,6 +537,40 @@ def apply_runtime_migrations(conn: sqlite3.Connection) -> None:
             pass
     except Exception:
         # swallow errors to avoid stopping server startup
+        pass
+
+    # Ensure fact_station_dep_loss exists (runtime migration)
+    try:
+        cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='fact_station_dep_loss'")
+        if not cur.fetchone():
+            try:
+                cur.executescript('''
+                CREATE TABLE fact_station_dep_loss (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    station_rsid TEXT NOT NULL,
+                    fy INTEGER,
+                    qtr_num INTEGER,
+                    rsm_month TEXT,
+                    period_key TEXT NOT NULL,
+                    cmpnt_cd TEXT NOT NULL,
+                    loss_code TEXT NOT NULL,
+                    loss_count INTEGER NOT NULL DEFAULT 0,
+                    source TEXT NOT NULL DEFAULT 'VANTAGE_MANUAL',
+                    ingest_run_id TEXT,
+                    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+                    updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+                    UNIQUE (station_rsid, period_key, rsm_month, cmpnt_cd, loss_code)
+                );
+                CREATE INDEX IF NOT EXISTS idx_fact_station_dep_loss_station_period ON fact_station_dep_loss(station_rsid, period_key);
+                CREATE INDEX IF NOT EXISTS idx_fact_station_dep_loss_station_month ON fact_station_dep_loss(station_rsid, rsm_month);
+                CREATE INDEX IF NOT EXISTS idx_fact_station_dep_loss_station_fy_qtr ON fact_station_dep_loss(station_rsid, fy, qtr_num);
+                ''')
+            except Exception:
+                try:
+                    conn.rollback()
+                except Exception:
+                    pass
+    except Exception:
         pass
 
     # Ensure a minimal dev org tree is present (best-effort, idempotent)

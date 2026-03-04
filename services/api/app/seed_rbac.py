@@ -236,6 +236,14 @@ def seed_rbac():
             except Exception:
                 _log.exception('seed_rbac: error inserting permission %s', key)
 
+        # Ensure legacy `key` column contains canonical keys when present
+        # (some DBs keep canonical value in `permission_key` while FK refs
+        # point to `permission.key`). Copy over where safe.
+        try:
+            cur.execute("UPDATE permission SET key = permission_key WHERE (key IS NULL OR key = '') AND permission_key IS NOT NULL")
+        except Exception:
+            _log.exception('seed_rbac: failed to sync permission.key from permission.permission_key')
+
         # insert roles (tolerant of legacy schemas)
         try:
             cur.execute("PRAGMA table_info(role);")
@@ -259,46 +267,16 @@ def seed_rbac():
                 _log.exception('seed_rbac: error inserting role %s', key)
 
         # map role -> permission (handle legacy role/permission schemas)
-        try:
-            cur.execute("PRAGMA table_info(role);")
-            role_cols = [r[1] for r in cur.fetchall()]
-        except Exception:
-            role_cols = []
-        try:
-            cur.execute("PRAGMA table_info(permission);")
-            perm_cols = [r[1] for r in cur.fetchall()]
-        except Exception:
-            perm_cols = []
-        role_has_id = 'id' in role_cols
-        perm_has_id = 'id' in perm_cols
+        # Force canonical key-based RBAC schema
+        # role.role_key -> permission.permission_key
         for rk, perms in ROLE_PERMS.items():
             try:
-                if role_has_id:
-                    cur.execute('SELECT id FROM role WHERE role_key=?', (rk,))
-                    r = cur.fetchone()
-                    if not r:
-                        continue
-                    role_id = r[0]
-                else:
-                    role_id = rk
                 for pk in perms:
                     try:
-                        if perm_has_id and 'permission_key' in perm_cols:
-                            cur.execute('SELECT id FROM permission WHERE permission_key=?', (pk,))
-                            p = cur.fetchone()
-                            if not p:
-                                continue
-                            perm_id = p[0]
-                        else:
-                            perm_id = pk
-                        if role_has_id and perm_has_id:
-                            cur.execute('INSERT OR IGNORE INTO role_permission(role_id, permission_id) VALUES (?,?)', (role_id, perm_id))
-                        elif not role_has_id and not perm_has_id:
-                            cur.execute('INSERT OR IGNORE INTO role_permission(role_key, permission_key, granted) VALUES (?,?,1)', (role_id, perm_id))
-                        elif not role_has_id and perm_has_id:
-                            cur.execute('INSERT OR IGNORE INTO role_permission(role_key, permission_id, granted) VALUES (?,?,1)', (role_id, perm_id))
-                        elif role_has_id and not perm_has_id:
-                            cur.execute('INSERT OR IGNORE INTO role_permission(role_id, permission_key, granted) VALUES (?,?,1)', (role_id, perm_id))
+                        cur.execute(
+                            "INSERT OR IGNORE INTO role_permission(role_key, permission_key, granted) VALUES (?,?,1)",
+                            (rk, pk),
+                        )
                     except Exception:
                         _log.exception('seed_rbac: failed to map permission %s for role %s', pk, rk)
             except Exception:
