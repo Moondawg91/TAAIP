@@ -227,7 +227,16 @@ def commit_run(run_id: str):
 
 
 @router.post('/v2/datahub/upload', dependencies=[Depends(require_perm('datahub.upload'))])
-async def upload_datahub(file: UploadFile = File(...), hint_dataset_key: Optional[str] = Form(None), scope_unit_rsid: Optional[str] = Form(None), scope_fy: Optional[int] = Form(None), scope_qtr: Optional[int] = Form(None), scope_rsm_month: Optional[str] = Form(None), dry_run: Optional[int] = 1):
+async def upload_datahub(
+    file: UploadFile = File(...),
+    dataset_key: Optional[str] = Form(None),
+    hint_dataset_key: Optional[str] = Form(None),
+    scope_unit_rsid: Optional[str] = Form(None),
+    scope_fy: Optional[int] = Form(None),
+    scope_qtr: Optional[int] = Form(None),
+    scope_rsm_month: Optional[str] = Form(None),
+    dry_run: Optional[int] = 1,
+):
     try:
         # save file
         stored = _storage_path_for(file.filename)
@@ -267,9 +276,12 @@ async def upload_datahub(file: UploadFile = File(...), hint_dataset_key: Optiona
         except Exception:
             preview_rows = []
 
-        # If the caller provided a hint, trust it (prefer hint over auto-detection)
-        if hint_dataset_key:
-            dataset_key = hint_dataset_key
+        # Prefer an explicit dataset_key (from form) over hint or auto-detection.
+        # Preserve the originally provided form value so we can permissively accept it later if not in registry.
+        provided_dataset_key = (dataset_key or '').strip() if dataset_key else None
+        provided_hint = provided_dataset_key or hint_dataset_key
+        if provided_hint:
+            dataset_key = provided_hint
             confidence = 1.0
             matched_on = 'hint:upload'
         else:
@@ -293,9 +305,9 @@ async def upload_datahub(file: UploadFile = File(...), hint_dataset_key: Optiona
                 entry = r
                 break
 
-        # If entry not found in DB but caller provided a hint_dataset_key, accept it as a permissive entry.
-        if not entry and hint_dataset_key:
-            entry = {'dataset_key': hint_dataset_key, 'display_name': hint_dataset_key, 'source_system': None, 'required_columns': '[]', 'optional_columns': '[]'}
+        # If entry not found in DB but caller provided an explicit dataset_key/hint, accept it as a permissive entry.
+        if not entry and provided_hint:
+            entry = {'dataset_key': provided_hint, 'display_name': provided_hint, 'source_system': None, 'required_columns': '[]', 'optional_columns': '[]'}
 
         if not entry:
             cur.execute('UPDATE import_run_v2 SET status=?, error_summary=? WHERE run_id=?', ('failed', 'could not detect dataset', run_id))
@@ -327,10 +339,29 @@ async def upload_datahub(file: UploadFile = File(...), hint_dataset_key: Optiona
                     except Exception:
                         pass
                 return JSONResponse(status_code=200, content={'run_id': run_id, 'status': 'validated', 'warnings': errors, 'dataset_key': dataset_key, 'rows_in': len(df.index) if hasattr(df, 'index') else 0, 'preview_rows': preview_rows})
-            # otherwise fail hard
-            cur.execute('UPDATE import_run_v2 SET status=?, error_summary=?, rows_in=? WHERE run_id=?', ('failed', 'missing required columns', len(df.index) if hasattr(df, 'index') else 0, run_id))
-            conn.commit()
-            return JSONResponse(status_code=400, content={'run_id': run_id, 'status': 'failed', 'errors': errors})
+            # otherwise fail hard -- but tolerate known USAREC CSV variants by mapping common columns
+            try:
+                hdrs_lower = [h.lower().strip() for h in (headers or [])]
+                if dataset_key == 'USAREC_ORG_HIERARCHY' and ('rsid' in hdrs_lower or 'parent_rsid' in hdrs_lower or 'display_name' in hdrs_lower):
+                    try:
+                        for c in list(df.columns):
+                            if str(c).lower().strip() == 'rsid':
+                                df['STN'] = df[c].astype(str)
+                            if str(c).lower().strip() == 'display_name':
+                                df['display_name'] = df[c].astype(str)
+                            if str(c).lower().strip() == 'parent_rsid':
+                                df['parent_rsid'] = df[c].astype(str)
+                    except Exception:
+                        pass
+                    errors = []
+                else:
+                    cur.execute('UPDATE import_run_v2 SET status=?, error_summary=?, rows_in=? WHERE run_id=?', ('failed', 'missing required columns', len(df.index) if hasattr(df, 'index') else 0, run_id))
+                    conn.commit()
+                    return JSONResponse(status_code=400, content={'run_id': run_id, 'status': 'failed', 'errors': errors})
+            except Exception:
+                cur.execute('UPDATE import_run_v2 SET status=?, error_summary=?, rows_in=? WHERE run_id=?', ('failed', 'missing required columns', len(df.index) if hasattr(df, 'index') else 0, run_id))
+                conn.commit()
+                return JSONResponse(status_code=400, content={'run_id': run_id, 'status': 'failed', 'errors': errors})
 
             # If required columns are satisfied only after aliasing, that will be reflected in headers/df
             headers = [h for h in headers]

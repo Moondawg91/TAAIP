@@ -18,7 +18,13 @@ def _find_enlistments_column(cols):
 
 def _find_rsid_column(cols):
     for c in cols:
-        if c.lower() == 'rsid' or 'RSID' in c.upper():
+        # accept explicit 'rsid' or CBSA column as rsid for market-level files
+        if c is None:
+            continue
+        if str(c).strip().lower() == 'rsid' or 'RSID' in str(c).upper():
+            return c
+    for c in cols:
+        if str(c).strip().lower() == 'cbsa':
             return c
     return None
 
@@ -40,9 +46,17 @@ def normalize_rows(df):
             bn_name = str(r.get(bn_col, '')).strip() if bn_col else ''
             enlist_raw = r.get(en_col, None)
             try:
-                enlistments = int(enlist_raw) if enlist_raw not in (None, '', 'nan') else None
+                # normalize string: remove commas/whitespace then coerce to int
+                if enlist_raw in (None, '', 'nan'):
+                    enlistments = None
+                else:
+                    s = str(enlist_raw).replace(',', '').strip()
+                    if s == '':
+                        enlistments = None
+                    else:
+                        enlistments = int(float(s))
             except Exception:
-                # attempt to extract digits
+                # attempt to extract digits as a fallback
                 m = re.search(r"(\d+)", str(enlist_raw))
                 enlistments = int(m.group(1)) if m else None
             row = {
