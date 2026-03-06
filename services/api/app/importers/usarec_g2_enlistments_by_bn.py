@@ -116,3 +116,12 @@ def process_and_load(df, ctx, conn, run_id):
         except Exception:
             pass
     return inserted
+
+
+def g2_cbsa_normalizer(df):
+    """Canonical normalizer for CBSA enlistments.
+
+    Returns: (rows, errors) where rows is list of dicts matching loader expectations.
+    This mirrors normalize_rows() behavior but is exposed for registry/normalizer wiring.
+    """
+    return normalize_rows(df)
