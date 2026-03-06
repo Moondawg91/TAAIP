@@ -10,6 +10,7 @@
     <string>/Users/ambermooney/Desktop/TAAIP/scripts/archive_staging.py</string>
     <string>--db-path</string>
     <string>/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3</string>
+    <string>--dry-run</string>
   </array>
   <key>StartCalendarInterval</key>
   <dict>
