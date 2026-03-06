@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.taaip.archive</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/usr/bin/python3</string>
+    <string>/Users/ambermooney/Desktop/TAAIP/scripts/archive_staging.py</string>
+    <string>--db-path</string>
+    <string>/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3</string>
+  </array>
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Hour</key>
+    <integer>3</integer>
+    <key>Minute</key>
+    <integer>0</integer>
+  </dict>
+  <key>StandardOutPath</key>
+  <string>/Users/ambermooney/Desktop/TAAIP/data/logs/archive_staging.out.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/ambermooney/Desktop/TAAIP/data/logs/archive_staging.err.log</string>
+  <key>RunAtLoad</key>
+  <false/>
+</dict>
+</plist>
