@@ -573,6 +573,84 @@ def apply_runtime_migrations(conn: sqlite3.Connection) -> None:
     except Exception:
         pass
 
+        # Ensure mission_allocation tables (runtime migration)
+        try:
+            cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='mission_allocation_runs'")
+            if not cur.fetchone():
+                try:
+                    cur.executescript('''
+                    CREATE TABLE mission_allocation_runs (
+                        run_id TEXT PRIMARY KEY,
+                        unit_rsid TEXT,
+                        mission_total INTEGER,
+                        status TEXT DEFAULT 'created',
+                        notes TEXT,
+                        created_at TEXT,
+                        started_at TEXT,
+                        completed_at TEXT
+                    );
+
+                    CREATE TABLE mission_allocation_inputs (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        run_id TEXT,
+                        company_id TEXT,
+                        recruiter_capacity INTEGER,
+                        historical_production INTEGER,
+                        funnel_health REAL,
+                        dep_loss INTEGER,
+                        school_access REAL,
+                        school_population INTEGER,
+                        ascope TEXT,
+                        pmesii TEXT,
+                        market_intel TEXT,
+                        extra_json TEXT,
+                        created_at TEXT
+                    );
+
+                    CREATE TABLE mission_allocation_company_scores (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        run_id TEXT,
+                        company_id TEXT,
+                        supportability_score REAL,
+                        risk_score REAL,
+                        confidence_score REAL,
+                        score_payload TEXT,
+                        created_at TEXT
+                    );
+
+                    CREATE TABLE mission_allocation_recommendations (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        run_id TEXT,
+                        company_id TEXT,
+                        recommended_mission INTEGER,
+                        rationale TEXT,
+                        confidence REAL,
+                        created_at TEXT
+                    );
+
+                    CREATE TABLE mission_allocation_evidence (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        run_id TEXT,
+                        company_id TEXT,
+                        evidence_type TEXT,
+                        evidence_uri TEXT,
+                        description TEXT,
+                        created_at TEXT
+                    );
+
+                    CREATE INDEX IF NOT EXISTS idx_mal_runs_unit ON mission_allocation_runs(unit_rsid);
+                    CREATE INDEX IF NOT EXISTS idx_mal_inputs_run ON mission_allocation_inputs(run_id);
+                    CREATE INDEX IF NOT EXISTS idx_mal_scores_run ON mission_allocation_company_scores(run_id);
+                    CREATE INDEX IF NOT EXISTS idx_mal_recs_run ON mission_allocation_recommendations(run_id);
+                    ''')
+                except Exception:
+                    try:
+                        conn.rollback()
+                    except Exception:
+                        pass
+        except Exception:
+            pass
+
     # Ensure a minimal dev org tree is present (best-effort, idempotent)
     try:
         try:
