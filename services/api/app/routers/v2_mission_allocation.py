@@ -97,3 +97,21 @@ def get_results(run_id: str) -> Any:
         })
 
     return {'status': 'ok', 'scores': scores, 'recommendations': canonical_recs, 'evidence': evidence}
+
+
+@router.get('/runs/{run_id}/details')
+def get_supporting_details(run_id: str) -> Any:
+    """Return lightweight supporting details for a run: top drivers,
+    limiting factors, evidence refs, and assumptions. This is a scaffolded
+    endpoint that returns evidence and empty placeholders for now.
+    """
+    conn = connect(); cur = conn.cursor()
+    cur.execute('SELECT * FROM mission_allocation_evidence WHERE run_id = ? ORDER BY id', (run_id,))
+    evidence = [row_to_dict(cur, r) for r in cur.fetchall()]
+
+    # Placeholder: top drivers and limiting factors can be computed later
+    drivers = []
+    limiting_factors = []
+    assumptions = []
+
+    return {'status': 'ok', 'drivers': drivers, 'limiting_factors': limiting_factors, 'evidence': evidence, 'assumptions': assumptions}
