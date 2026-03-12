@@ -98,8 +98,129 @@ def compute_run(run_id: str) -> Tuple[bool, str]:
         except Exception:
             pass
 
-    # For scaffold: do NOT compute allocations. Leave status as pending_compute.
-    cur.execute('UPDATE mission_allocation_runs SET status=?, updated_at=? WHERE run_id=?', ('pending_compute', now, run_id))
+    # Implement scoring skeleton: compute per-company scores and proportional recommendations.
+    # Load run and inputs
+    cur.execute('SELECT mission_total, unit_rsid FROM mission_allocation_runs WHERE run_id=? LIMIT 1', (run_id,))
+    r = cur.fetchone()
+    # sqlite3.Row does not implement .get(); use mapping access
+    mission_total = (r['mission_total'] if r and 'mission_total' in r.keys() else (r[0] if r else None))
+
+    inputs = get_inputs(run_id)
+    if not inputs:
+        # nothing to compute
+        cur.execute('UPDATE mission_allocation_runs SET status=?, updated_at=? WHERE run_id=?', ('no-inputs', now, run_id))
+        try:
+            conn.commit()
+        except Exception:
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+        return False, 'no-inputs'
+
+    # scoring helper functions
+    def _norm(v, vmax, vmin=0.0):
+        try:
+            vmax = float(vmax)
+            v = float(v) if v is not None else 0.0
+            if vmax <= vmin:
+                return 0.0
+            return max(0.0, min(1.0, (v - vmin) / (vmax - vmin)))
+        except Exception:
+            return 0.0
+
+    # derive population max for normalization
+    max_school_pop = max([ (i.get('school_population') or 0) for i in inputs ]) or 1
+    max_hist = max([ (i.get('historical_production') or 0) for i in inputs ]) or 1
+    max_recruiters = max([ (i.get('recruiter_capacity') or 0) for i in inputs ]) or 1
+
+    # weights (tunable)
+    weights = {
+        'recruiter_capacity': 0.25,
+        'historical_production': 0.20,
+        'funnel_health': 0.20,
+        'market_supportability': 0.15,
+        'school_access': 0.10,
+        'risk_penalty': -0.10
+    }
+
+    # compute intermediate scores per company
+    scores = []
+    for inp in inputs:
+        cid = inp.get('company_id')
+        rc = inp.get('recruiter_capacity') or 0
+        hp = inp.get('historical_production') or 0
+        fh = float(inp.get('funnel_health') or 0.0)
+        dl = float(inp.get('dep_loss') or 0)
+        sa = float(inp.get('school_access') or 0.0)
+        spop = int(inp.get('school_population') or 0)
+        # market_intel may be structured; for scaffold use presence as signal
+        mkt = inp.get('market_intel')
+
+        recruiter_score = _norm(rc, max_recruiters)
+        historical_score = _norm(hp, max_hist)
+        funnel_score = max(0.0, min(1.0, fh))
+        market_score = 0.5 if mkt else 0.5
+        school_score = 0.5 * _norm(spop, max_school_pop) + 0.5 * max(0.0, min(1.0, sa))
+        # risk penalty increases with dep_loss and low funnel
+        risk_penalty = min(1.0, (dl / max(1.0, hp)) if hp>0 else min(1.0, dl/10.0))
+
+        # weighted supportability (higher is better)
+        supportability = (
+            weights['recruiter_capacity'] * recruiter_score
+            + weights['historical_production'] * historical_score
+            + weights['funnel_health'] * funnel_score
+            + weights['market_supportability'] * market_score
+            + weights['school_access'] * school_score
+        )
+
+        # apply risk as penalty
+        risk = risk_penalty
+        final_score = max(0.0, min(1.0, supportability + weights['risk_penalty'] * risk))
+
+        # confidence heuristic: based on available inputs
+        available_fields = sum([1 for k in ('recruiter_capacity','historical_production','funnel_health','dep_loss','school_access','school_population','market_intel') if inp.get(k) is not None])
+        confidence = min(1.0, 0.3 + 0.12 * available_fields)
+
+        scores.append({
+            'company_id': cid,
+            'recruiter_score': recruiter_score,
+            'historical_score': historical_score,
+            'funnel_score': funnel_score,
+            'market_score': market_score,
+            'school_score': school_score,
+            'supportability_score': supportability,
+            'risk_score': risk,
+            'final_score': final_score,
+            'confidence': confidence
+        })
+
+    # persist scores
+    for s in scores:
+        save_company_score(run_id, s['company_id'], s['supportability_score'], s['risk_score'], s['confidence'], payload=s)
+
+    # allocate proportionally to final_score if mission_total provided
+    total_score = sum([s['final_score'] for s in scores])
+    recs = []
+    for s in scores:
+        alloc = None
+        if mission_total and total_score > 0:
+            alloc = int(round((s['final_score'] / total_score) * float(mission_total)))
+        rationale = f"Weighted score based on recruiter capacity, historical production, funnel health, market supportability, school access; risk penalty applied."
+        # save recommendation (alloc may be None)
+        save_recommendation(run_id, s['company_id'], alloc, rationale, s['confidence'])
+        recs.append({
+            'company': s['company_id'],
+            'recommended_allocation': alloc,
+            'supportability_score': s['supportability_score'],
+            'risk_score': s['risk_score'],
+            'confidence_score': s['confidence'],
+            'rationale': rationale,
+            'evidence_refs': []
+        })
+
+    # mark run completed
+    cur.execute('UPDATE mission_allocation_runs SET status=?, completed_at=? WHERE run_id=?', ('computed', _now_iso(), run_id))
     try:
         conn.commit()
     except Exception:
@@ -107,7 +228,8 @@ def compute_run(run_id: str) -> Tuple[bool, str]:
             conn.rollback()
         except Exception:
             pass
-    return False, 'compute-not-implemented'
+
+    return True, json.dumps({'results': recs})
 
 
 def save_company_score(run_id: str, company_id: str, supportability: Optional[float], risk: Optional[float], confidence: Optional[float], payload: Optional[Dict[str, Any]] = None):

@@ -46,4 +46,25 @@ def get_results(run_id: str) -> Any:
     recs = [row_to_dict(cur, r) for r in cur.fetchall()]
     cur.execute('SELECT * FROM mission_allocation_evidence WHERE run_id = ? ORDER BY id', (run_id,))
     evidence = [row_to_dict(cur, r) for r in cur.fetchall()]
-    return {'status': 'ok', 'scores': scores, 'recommendations': recs, 'evidence': evidence}
+    # build canonical recommendations shape expected by callers
+    scores_by_company = {s.get('company_id'): s for s in scores}
+    evidence_by_company = {}
+    for e in evidence:
+        cid = e.get('company_id') or '__global'
+        evidence_by_company.setdefault(cid, []).append({'type': e.get('evidence_type'), 'uri': e.get('evidence_uri'), 'description': e.get('description')})
+
+    canonical_recs = []
+    for r in recs:
+        cid = r.get('company_id')
+        score = scores_by_company.get(cid) or {}
+        canonical_recs.append({
+            'company': cid,
+            'recommended_allocation': r.get('recommended_mission'),
+            'supportability_score': score.get('supportability_score'),
+            'risk_score': score.get('risk_score'),
+            'confidence_score': r.get('confidence') if r.get('confidence') is not None else score.get('confidence_score'),
+            'rationale': r.get('rationale'),
+            'evidence_refs': evidence_by_company.get(cid, [])
+        })
+
+    return {'status': 'ok', 'scores': scores, 'recommendations': canonical_recs, 'evidence': evidence}

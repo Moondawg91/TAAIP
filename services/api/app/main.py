@@ -157,6 +157,8 @@ from .routers import v2_analytics as v2_analytics_router
 api_router.include_router(v2_analytics_router.router)
 from .routers import v2_datahub as v2_datahub_router
 api_router.include_router(v2_datahub_router.router)
+from .routers import v2_mission_allocation as v2_mission_allocation_router
+api_router.include_router(v2_mission_allocation_router.router)
 from .routers import compat_helpers as compat_helpers_router
 api_router.include_router(compat_helpers_router.router)
 
