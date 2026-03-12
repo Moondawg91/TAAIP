@@ -195,12 +195,26 @@ export default function MissionAllocationPage(){
               <Box>
                 <Typography variant="subtitle2">Top Drivers</Typography>
                 {supportDetails.drivers && supportDetails.drivers.length>0 ? (
-                  <ul>{supportDetails.drivers.map((d,i)=>(<li key={i}>{d}</li>))}</ul>
+                  <Box>
+                    {supportDetails.drivers.map((d)=>(
+                      <Box key={d.company_id} sx={{ mb:1 }}>
+                        <Typography variant="body2" sx={{ fontWeight: 600 }}>{d.company_id}</Typography>
+                        <ul style={{ margin: '6px 0 8px 18px' }}>{(d.top_drivers || []).map((td,i)=>(<li key={i}>{td}</li>))}</ul>
+                      </Box>
+                    ))}
+                  </Box>
                 ) : <Typography variant="caption" color="text.secondary">No drivers yet</Typography>}
 
                 <Typography variant="subtitle2" sx={{ mt:1 }}>Limiting Factors</Typography>
                 {supportDetails.limiting_factors && supportDetails.limiting_factors.length>0 ? (
-                  <ul>{supportDetails.limiting_factors.map((d,i)=>(<li key={i}>{d}</li>))}</ul>
+                  <Box>
+                    {supportDetails.limiting_factors.map((lf)=>(
+                      <Box key={lf.company_id} sx={{ mb:1 }}>
+                        <Typography variant="body2" sx={{ fontWeight: 600 }}>{lf.company_id}</Typography>
+                        <ul style={{ margin: '6px 0 8px 18px' }}>{(lf.factors || []).map((f,i)=>(<li key={i}>{f}</li>))}</ul>
+                      </Box>
+                    ))}
+                  </Box>
                 ) : <Typography variant="caption" color="text.secondary">No limiting factors yet</Typography>}
 
                 <Typography variant="subtitle2" sx={{ mt:1 }}>Assumptions</Typography>
