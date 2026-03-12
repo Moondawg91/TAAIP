@@ -228,6 +228,49 @@ def apply_migrations(conn: sqlite3.Connection):
         );
         ''')
 
+    # Targeting guidance blocks (Commander Guidance / Must Keep / Must Win)
+    if not _table_exists(cur, 'targeting_guidance'):
+        cur.executescript('''
+        CREATE TABLE targeting_guidance (
+            id TEXT PRIMARY KEY,
+            unit_rsid TEXT,
+            section TEXT,
+            payload TEXT,
+            created_at TEXT,
+            updated_at TEXT
+        );
+        CREATE INDEX IF NOT EXISTS idx_targeting_guidance_unit ON targeting_guidance(unit_rsid);
+        ''')
+        # Seed lightweight initial content for dev: unit_rsid=6L (editable)
+        try:
+            now = time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
+            sample_commander = json.dumps({
+                'battalion_priorities': ['Maintain current access', 'Increase school engagement'],
+                'command_emphasis': 'Focus on high-yield pipelines this quarter',
+                'risk_tolerance': 'Moderate',
+                'priority_markets': ['Market A', 'Market B'],
+                'constraints': ['No cross-state travel without approval']
+            })
+            sample_must_keep = json.dumps({
+                'producing_schools': ['School X', 'School Y'],
+                'critical_relationships': ['Partner Org 1', 'Employer Liaison'],
+                'proven_events': ['Open House', 'Job Fair'],
+                'high_value_access': ['Principal Intro', 'Career Center']
+            })
+            sample_must_win = json.dumps({
+                'underdeveloped_high_potential': ['School Z'],
+                'essential_markets': ['Market C'],
+                'gaps_to_close': ['Senior engagement pipeline'],
+                'priority_efforts': ['Targeted outreach campaign']
+            })
+            cur.execute('INSERT OR IGNORE INTO targeting_guidance (id, unit_rsid, section, payload, created_at, updated_at) VALUES (?,?,?,?,?,?)', ('tg_6L_commander', '6L', 'commander_guidance', sample_commander, now, now))
+            cur.execute('INSERT OR IGNORE INTO targeting_guidance (id, unit_rsid, section, payload, created_at, updated_at) VALUES (?,?,?,?,?,?)', ('tg_6L_must_keep', '6L', 'must_keep', sample_must_keep, now, now))
+            cur.execute('INSERT OR IGNORE INTO targeting_guidance (id, unit_rsid, section, payload, created_at, updated_at) VALUES (?,?,?,?,?,?)', ('tg_6L_must_win', '6L', 'must_win', sample_must_win, now, now))
+        except Exception:
+            try:
+                conn.rollback()
+            except Exception:
+                pass
     conn.commit()
 
 
