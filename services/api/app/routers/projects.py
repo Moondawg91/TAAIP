@@ -1,9 +1,9 @@
 from fastapi import APIRouter, HTTPException, Depends
 from typing import Optional, List, Dict, Any
-from ..db import connect
+from ..db import connect, row_to_dict
 from datetime import datetime
 import json
-from .rbac import require_scope, require_roles, require_any_role, get_current_user
+from .rbac import require_scope, require_roles, require_any_role, get_current_user, require_perm
 from uuid import uuid4
 
 router = APIRouter(prefix="/projects", tags=["projects"])
@@ -20,7 +20,7 @@ def write_audit(conn, who, action, entity, entity_id, meta=None):
     conn.commit()
 
 
-@router.post("/", summary="Create project")
+@router.post("/", summary="Create project", dependencies=[Depends(require_perm('planning.edit'))])
 def create_project(payload: Dict[str, Any]):
     conn = connect()
     try:
@@ -33,7 +33,7 @@ def create_project(payload: Dict[str, Any]):
         pid = cur.lastrowid
         write_audit(conn, payload.get('created_by') or 'system', 'create.project', 'project', pid, payload)
         cur.execute('SELECT * FROM project WHERE id=?', (pid,))
-        return dict(cur.fetchone())
+        return row_to_dict(cur, cur.fetchone())
     finally:
         conn.close()
 
@@ -66,7 +66,7 @@ def list_projects(org_unit_id: Optional[int] = None, status: Optional[str] = Non
             sql += ' AND status=?'; params.append(status)
         sql += ' ORDER BY created_at DESC LIMIT ?'; params.append(limit)
         cur.execute(sql, tuple(params))
-        return [dict(r) for r in cur.fetchall()]
+        return [row_to_dict(cur, r) for r in cur.fetchall()]
     finally:
         conn.close()
 
@@ -83,12 +83,12 @@ def list_domain_projects(limit: int = 100, owner: Optional[str] = None):
             sql += ' AND owner=?'; params.append(owner)
         sql += ' ORDER BY created_at DESC LIMIT ?'; params.append(limit)
         cur.execute(sql, tuple(params))
-        return [dict(r) for r in cur.fetchall()]
+        return [row_to_dict(cur, r) for r in cur.fetchall()]
     finally:
         conn.close()
 
 
-@router.post('/projects', summary='Create domain project (Phase-7)')
+@router.post('/projects', summary='Create domain project (Phase-7)', dependencies=[Depends(require_perm('planning.edit'))])
 def create_domain_project(payload: Dict[str, Any], current_user: Dict = Depends(get_current_user)):
     conn = connect()
     try:
@@ -100,12 +100,26 @@ def create_domain_project(payload: Dict[str, Any], current_user: Dict = Depends(
         ))
         conn.commit()
         cur.execute('SELECT project_id as id, title as name, description, owner, status, percent_complete, created_at, updated_at FROM projects WHERE project_id=?', (pid,))
-        return dict(cur.fetchone())
+        return row_to_dict(cur, cur.fetchone())
     finally:
         conn.close()
 
 
-@router.post('/tasks', summary='Create domain task (Phase-7)')
+@router.get('/projects/{project_id}', summary='Get domain project by project_id')
+def get_domain_project(project_id: str):
+    conn = connect()
+    try:
+        cur = conn.cursor()
+        cur.execute('SELECT project_id as id, title as name, description, owner, status, percent_complete, created_at, updated_at FROM projects WHERE project_id=?', (project_id,))
+        row = cur.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail='not found')
+        return row_to_dict(cur, row)
+    finally:
+        conn.close()
+
+
+@router.post('/tasks', summary='Create domain task (Phase-7)', dependencies=[Depends(require_perm('planning.edit'))])
 def create_domain_task(payload: Dict[str, Any], current_user: Dict = Depends(get_current_user)):
     conn = connect()
     try:
@@ -117,7 +131,7 @@ def create_domain_task(payload: Dict[str, Any], current_user: Dict = Depends(get
         ))
         conn.commit()
         cur.execute('SELECT task_id as id, project_id, title, description, owner, status, percent_complete, due_date, created_at, updated_at FROM tasks WHERE task_id=?', (tid,))
-        return dict(cur.fetchone())
+        return row_to_dict(cur, cur.fetchone())
     finally:
         conn.close()
 
@@ -133,12 +147,12 @@ def list_domain_events(project_id: Optional[str] = None, limit: int = 200):
             sql += ' AND project_id=?'; params.append(project_id)
         sql += ' ORDER BY start_dt DESC LIMIT ?'; params.append(limit)
         cur.execute(sql, tuple(params))
-        return [dict(r) for r in cur.fetchall()]
+        return [row_to_dict(cur, r) for r in cur.fetchall()]
     finally:
         conn.close()
 
 
-@router.post('/events', summary='Create calendar event (Phase-7)')
+@router.post('/events', summary='Create calendar event (Phase-7)', dependencies=[Depends(require_perm('planning.edit'))])
 def create_domain_event(payload: Dict[str, Any], current_user: Dict = Depends(get_current_user)):
     conn = connect()
     try:
@@ -150,7 +164,7 @@ def create_domain_event(payload: Dict[str, Any], current_user: Dict = Depends(ge
         ))
         conn.commit()
         cur.execute('SELECT event_id as id, org_unit_id, title as name, start_dt as start_date, end_dt as end_date, location, created_at FROM calendar_events WHERE event_id=?', (eid,))
-        return dict(cur.fetchone())
+        return row_to_dict(cur, cur.fetchone())
     finally:
         conn.close()
 
@@ -192,7 +206,7 @@ def list_loes(limit: int = 100, scope: Optional[str] = None):
         sql += ' ORDER BY id DESC LIMIT ?'
         params.append(limit)
         cur.execute(sql, tuple(params))
-        return [dict(r) for r in cur.fetchall()]
+        return [row_to_dict(cur, r) for r in cur.fetchall()]
     finally:
         conn.close()
 
@@ -211,7 +225,7 @@ def update_loe(loe_id: int, payload: Dict[str, Any], current_user: Dict = Depend
         row = cur.fetchone()
         if not row:
             raise HTTPException(status_code=404, detail='not found')
-        return dict(row)
+        return row_to_dict(cur, row)
     finally:
         conn.close()
 
@@ -250,7 +264,7 @@ def list_command_priorities(limit: int = 100, scope: Optional[str] = None):
         sql += ' ORDER BY rank ASC LIMIT ?'
         params.append(limit)
         cur.execute(sql, tuple(params))
-        return [dict(r) for r in cur.fetchall()]
+        return [row_to_dict(cur, r) for r in cur.fetchall()]
     finally:
         conn.close()
 
@@ -267,7 +281,7 @@ def create_command_priority(payload: Dict[str, Any], current_user: Dict = Depend
         conn.commit()
         pid = cur.lastrowid
         cur.execute('SELECT * FROM command_priorities WHERE id=?', (pid,))
-        return dict(cur.fetchone())
+        return row_to_dict(cur, cur.fetchone())
     finally:
         conn.close()
 
@@ -286,7 +300,7 @@ def update_command_priority(pid: int, payload: Dict[str, Any], current_user: Dic
         row = cur.fetchone()
         if not row:
             raise HTTPException(status_code=404, detail='not found')
-        return dict(row)
+        return row_to_dict(cur, row)
     finally:
         conn.close()
 
@@ -322,7 +336,7 @@ def list_priority_loes(pid: int, scope: Optional[str] = None):
             except Exception:
                 pass
         cur.execute(sql, tuple(params))
-        return [dict(r) for r in cur.fetchall()]
+        return [row_to_dict(cur, r) for r in cur.fetchall()]
     finally:
         conn.close()
 
@@ -343,7 +357,7 @@ def assign_loe_to_priority(pid: int, payload: Dict[str, Any], current_user: Dict
             pass
         # return currently assigned LOEs (ensure table name 'loe' used)
         cur.execute('SELECT l.* FROM loe l JOIN priority_loe p ON p.loe_id = l.id WHERE p.priority_id=?', (pid,))
-        return [dict(r) for r in cur.fetchall()]
+        return [row_to_dict(cur, r) for r in cur.fetchall()]
     finally:
         conn.close()
 
@@ -382,12 +396,12 @@ def command_baseline(scope: Optional[str] = None, limit: int = 100):
         sql += ' ORDER BY rank ASC LIMIT ?'
         params.append(3)
         cur.execute(sql, tuple(params))
-        priorities = [dict(r) for r in cur.fetchall()]
+        priorities = [row_to_dict(cur, r) for r in cur.fetchall()]
 
         # LOEs
         sql2 = 'SELECT * FROM loe ORDER BY id DESC LIMIT ?'
         cur.execute(sql2, (limit,))
-        loes = [dict(r) for r in cur.fetchall()]
+        loes = [row_to_dict(cur, r) for r in cur.fetchall()]
 
         # standards — not yet implemented, return empty
         standards = []
@@ -413,7 +427,7 @@ def get_project(project_id: int, allowed_orgs: Optional[list] = Depends(require_
                     raise HTTPException(status_code=403, detail='forbidden')
             except Exception:
                 pass
-        return dict(row)
+        return row_to_dict(cur, row)
     finally:
         conn.close()
 
@@ -424,6 +438,6 @@ def list_tasks(project_id: int):
     try:
         cur = conn.cursor()
         cur.execute('SELECT * FROM task WHERE project_id=? ORDER BY due_dt', (project_id,))
-        return [dict(r) for r in cur.fetchall()]
+        return [row_to_dict(cur, r) for r in cur.fetchall()]
     finally:
         conn.close()

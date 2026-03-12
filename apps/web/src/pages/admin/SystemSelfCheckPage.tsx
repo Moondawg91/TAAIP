@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { getSystemSelfCheck } from '../../api/client'
 
 export default function SystemSelfCheckPage() {
   const [running, setRunning] = useState(false);
@@ -10,8 +11,7 @@ export default function SystemSelfCheckPage() {
     setError(null);
     setResult(null);
     try {
-      const res = await fetch('/api/system/self-check');
-      const j = await res.json();
+      const j = await getSystemSelfCheck()
       setResult(j);
     } catch (e: any) {
       setError(e.message || String(e));

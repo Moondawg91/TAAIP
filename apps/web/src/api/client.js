@@ -1,6 +1,22 @@
 /* © 2026 TAAIP. Copyright pending. */
 
-const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:8000'
+import { loadOrgSelection } from '../store/orgSelection'
+
+function getApiBase(){
+  try{
+    if (typeof process !== 'undefined' && process.env && typeof process.env.REACT_APP_API_BASE !== 'undefined'){
+      return process.env.REACT_APP_API_BASE || ''
+    }
+  }catch(e){}
+  return ''
+}
+
+function baseForUrl(){
+  const b = getApiBase()
+  if (b && b.length) return b
+  if (typeof window !== 'undefined' && window.location && window.location.origin) return window.location.origin
+  return ''
+}
 
 function normalizeResponseJson(json) {
   if (!json) return null
@@ -8,13 +24,134 @@ function normalizeResponseJson(json) {
   return json
 }
 
-async function apiFetch(path, opts = {}) {
+function attachOrgSelectionParams(urlObj){
+  try{
+    // Try canonical loader first
+    try{
+      const sel = loadOrgSelection()
+      const active = (sel && sel.active) ? sel.active : (sel && sel.effective_rsid ? { rsid: sel.effective_rsid } : null)
+      if (active && active.rsid) urlObj.searchParams.set('unit_rsid', active.rsid)
+      if (active && active.echelon) urlObj.searchParams.set('echelon', active.echelon)
+    }catch(e){
+      // fallback to reading legacy LS keys
+      try{
+        let raw = localStorage.getItem('taaip.unitSelection.v1')
+        if (!raw) raw = localStorage.getItem('taaip_org_selection_v1')
+        if (!raw) raw = localStorage.getItem('ta aip.unitSelection.v1')
+        if (!raw) raw = localStorage.getItem('taaip:selected_unit')
+        if (raw){
+          const sel = JSON.parse(raw)
+          const active = (sel && sel.active) ? sel.active : (sel && sel.effective_rsid ? { rsid: sel.effective_rsid } : null)
+          if (active && active.rsid) urlObj.searchParams.set('unit_rsid', active.rsid)
+          if (active && active.echelon) urlObj.searchParams.set('echelon', active.echelon)
+        }
+      }catch(e2){ /* ignore */ }
+    }
+
+    // attach persisted filters (fy/qtr/rsm_month/compare) if present
+    try{
+      const rawFilters = localStorage.getItem('taaip.filters.v1')
+      if (rawFilters){
+        const f = JSON.parse(rawFilters)
+        if (f && f.fy) urlObj.searchParams.set('fy', f.fy)
+        if (f && f.qtr) urlObj.searchParams.set('qtr', f.qtr)
+        // add numeric quarter for APIs that expect 1-4
+        try{ if (f && f.qtr){ const qn = Number(String(f.qtr).replace(/^Q/,'')); if (!isNaN(qn)) urlObj.searchParams.set('qtr_num', qn) } }catch(e){}
+        if (f && f.rsm_month) { urlObj.searchParams.set('rsm_month', f.rsm_month); urlObj.searchParams.set('month', f.rsm_month) }
+        if (f && f.compare) urlObj.searchParams.set('compare', f.compare)
+      }
+    }catch(e){}
+  }catch(e){}
+
+      // If no unit was attached above, default to USAREC as global default
+      try{
+        if (!urlObj.searchParams.get('unit_rsid')) {
+          urlObj.searchParams.set('unit_rsid', 'USAREC')
+        }
+      }catch(e){}
+}
+
+
+// Fetch children units for a parent RSID and echelon. Falls back to units-summary if /children is unavailable.
+export async function getOrgChildren(parent_rsid, echelon){
+  try{
+    const path = `/api/v2/org/children?parent_rsid=${encodeURIComponent(parent_rsid)}&echelon=${encodeURIComponent(echelon)}`
+    const resp = await apiFetch(path, { includeUnit: false })
+    // expected shape: { data: { units: [...] } }
+    if (resp && resp.data && Array.isArray(resp.data.units)) return resp.data.units
+    // some implementations may return { data: { children: [...] } }
+    if (resp && resp.data && Array.isArray(resp.data.children)) return resp.data.children
+    return []
+  }catch(e){
+    // fallback to units-summary and filter locally
+    try{
+      const summary = await apiFetch('/api/v2/org/units-summary', { includeUnit: false })
+      const data = (summary && summary.data) ? summary.data : summary
+      // Collect all units into a single array and filter by parent and echelon
+      const all = []
+      if (Array.isArray(data.brigades)) all.push(...data.brigades)
+      if (Array.isArray(data.battalions)) all.push(...data.battalions)
+      if (Array.isArray(data.companies)) all.push(...data.companies)
+      if (Array.isArray(data.stations)) all.push(...data.stations)
+      // Some older shapes may use different key names
+      if (Array.isArray(data.bdes)) all.push(...data.bdes)
+      if (Array.isArray(data.bns)) all.push(...data.bns)
+      // Filter by parent and echelon
+      const filtered = all.filter(u => {
+        const matchParent = (!parent_rsid) || (u.parent_rsid === parent_rsid) || (u.parent_key === parent_rsid) || (u.parent === parent_rsid)
+        const matchEchelon = (!echelon) || (u.echelon === echelon) || (u.echelon_type === echelon) || (u.echelon_type === (echelon.toLowerCase && echelon.toLowerCase()))
+        return matchParent && matchEchelon
+      })
+      return filtered
+    }catch(err){
+      return []
+    }
+  }
+}
+
+// Safe fetch helper: returns a consistent error shape instead of throwing.
+async function safeGet(path, opts = {}) {
+  try {
+    const token = localStorage.getItem('taaip_jwt')
+    const headers = Object.assign({}, opts.headers || {})
+    if (token) headers['Authorization'] = `Bearer ${token}`
+    const includeUnit = opts.includeUnit !== false
+    // remove internal flag before passing to fetch
+    const fetchOpts = Object.assign({}, opts)
+    delete fetchOpts.includeUnit
+    const urlObj = path.startsWith('http') ? new URL(path) : new URL(path, baseForUrl())
+    if (includeUnit) attachOrgSelectionParams(urlObj)
+    const url = urlObj.toString()
+    const res = await fetch(url, Object.assign({}, fetchOpts, { headers }))
+    if (!res.ok) {
+      return { status: 'error', http_status: res.status, path: url, message: `HTTP ${res.status}` }
+    }
+    const text = await res.text()
+    try { return text ? JSON.parse(text) : null } catch(e){ return { status: 'error', http_status: 0, path: url, message: String(e?.message || e) } }
+  } catch (e) {
+    return { status: 'error', http_status: 0, path, message: String(e?.message || e) }
+  }
+}
+
+export async function apiFetch(path, opts = {}) {
   const token = localStorage.getItem('taaip_jwt')
   const headers = Object.assign({'Accept': 'application/json'}, opts.headers || {})
   if (token) headers['Authorization'] = `Bearer ${token}`
+  const includeUnit = opts.includeUnit !== false
+  const fetchOpts = Object.assign({}, opts)
+  delete fetchOpts.includeUnit
+  const urlObj = path.startsWith('http') ? new URL(path) : new URL(path, baseForUrl())
+  if (includeUnit) attachOrgSelectionParams(urlObj)
 
-  const url = path.startsWith('http') ? path : `${API_BASE}${path}`
-  const res = await fetch(url, Object.assign({}, opts, {headers}))
+  const url = urlObj.toString()
+  // If body is FormData, let the browser set Content-Type (remove any manual Content-Type)
+  try{
+    if (fetchOpts && fetchOpts.body && (typeof FormData !== 'undefined') && fetchOpts.body instanceof FormData){
+      if (headers['Content-Type']) delete headers['Content-Type']
+    }
+  }catch(e){}
+
+  const res = await fetch(url, Object.assign({}, fetchOpts, {headers}))
   const text = await res.text()
   let json = null
   try { json = text ? JSON.parse(text) : null } catch(e){ json = null }
@@ -45,6 +182,17 @@ function withScopeQs(scope, value){
   const qs = new URLSearchParams()
   if (scope) qs.set('scope', scope)
   if (value) qs.set('value', value)
+  // include selected unit_key when available
+  try{
+    let raw = localStorage.getItem('taaip.unitSelection.v1')
+    if (!raw) raw = localStorage.getItem('taaip_org_selection_v1')
+    if (!raw) raw = localStorage.getItem('ta aip.unitSelection.v1')
+    if (!raw) raw = localStorage.getItem('taaip:selected_unit')
+    if (raw){
+      const sel = JSON.parse(raw)
+      if (sel && sel.effective_rsid) qs.set('unit_rsid', sel.effective_rsid)
+    }
+  }catch(e){}
   const s = qs.toString()
   return s ? `?${s}` : ''
 }
@@ -70,6 +218,19 @@ export async function getCoverageSummary(scope, value){
 export async function getKpis(scope){
   const qs = new URLSearchParams()
   if (scope) qs.set('scope', scope)
+  // append deepest selected RSID (unit_rsid) + echelon when present
+  try{
+    let raw = localStorage.getItem('taaip.unitSelection.v1')
+    if (!raw) raw = localStorage.getItem('taaip_org_selection_v1')
+    if (!raw) raw = localStorage.getItem('ta aip.unitSelection.v1')
+    if (!raw) raw = localStorage.getItem('taaip:selected_unit')
+    if (raw){
+      const sel = JSON.parse(raw)
+      const active = (sel && sel.active) ? sel.active : (sel && sel.effective_rsid ? { rsid: sel.effective_rsid, echelon: sel.echelon } : null)
+      if (active && active.rsid) qs.set('unit_rsid', active.rsid)
+      if (active && active.echelon) qs.set('echelon', active.echelon)
+    }
+  }catch(e){}
   const path = `/api/powerbi/kpis?${qs.toString()}`
   try {
     return await apiFetch(path)
@@ -79,7 +240,8 @@ export async function getKpis(scope){
 }
 
 export async function getHomeNews(limit = 50){
-  return apiFetch(`/api/v2/home/news?limit=${limit}`)
+  const resp = await safeGet(`/api/v2/home/news?limit=${limit}`)
+  return (resp && resp.status === 'error') ? { status: 'ok', items: [], warnings: [resp] } : resp
 }
 
 export async function getHomeUpdates(limit = 50){
@@ -92,7 +254,8 @@ export async function getHomeQuickLinks(limit = 50){
 
 // Home portal clients (PHASE-12)
 export async function getHomeStatusStrip(){
-  return apiFetch('/api/home/status-strip')
+  const resp = await safeGet('/api/home/status-strip')
+  return (resp && resp.status === 'error') ? { status: 'ok', data: [] } : resp
 }
 
 export async function getHomeAlerts(qs = {}){
@@ -106,20 +269,139 @@ export async function ackHomeAlert(alertId){
 
 export async function getHomeFlashes(qs = {}){
   const params = new URLSearchParams(qs).toString()
-  return apiFetch(`/api/home/flashes?${params}`)
+  const resp = await safeGet(`/api/home/flashes?${params}`)
+  return (resp && resp.status === 'error') ? { status: 'ok', items: [], warnings: [resp] } : resp
 }
 
-export async function getHomeUpcoming(qs = {}){
-  const params = new URLSearchParams(qs).toString()
-  return apiFetch(`/api/home/upcoming?${params}`)
+// New Home feed clients (Phase 15C awareness)
+export async function getHomeFlash(limit = 25){
+  const resp = await safeGet(`/api/home/flash?limit=${limit}`)
+  return (resp && resp.status === 'error') ? { status: 'ok', items: [], warnings: [resp] } : resp
 }
 
-export async function getHomeRecognition(){
-  return apiFetch('/api/home/recognition')
+export async function createHomeFlash(payload){
+  return apiFetch('/api/home/flash', { method: 'POST', body: JSON.stringify(payload), headers: {'Content-Type':'application/json'} })
 }
 
+export async function getHomeMessages(limit = 25){
+  const resp = await safeGet(`/api/home/messages?limit=${limit}`)
+  return (resp && resp.status === 'error') ? { status: 'ok', items: [], warnings: [resp] } : resp
+}
+
+export async function createHomeMessage(payload){
+  return apiFetch('/api/home/messages', { method: 'POST', body: JSON.stringify(payload), headers: {'Content-Type':'application/json'} })
+}
+
+export async function getHomeRecognitionItems(limit = 25){
+  const resp = await safeGet(`/api/home/recognition?limit=${limit}`)
+  return (resp && resp.status === 'error') ? { status: 'ok', items: [], warnings: [resp] } : resp
+}
+
+// Backwards-compatible aliases used elsewhere in the app
+export async function getHomeRecognition(limit = 25){
+  return getHomeRecognitionItems(limit)
+}
+
+export async function createHomeRecognition(payload){
+  return apiFetch('/api/home/recognition', { method: 'POST', body: JSON.stringify(payload), headers: {'Content-Type':'application/json'} })
+}
+
+export async function getHomeUpcoming(limit = 25){
+  const resp = await safeGet(`/api/home/upcoming?limit=${limit}`)
+  return (resp && resp.status === 'error') ? { status: 'ok', items: [], warnings: [resp] } : resp
+}
+
+export async function createHomeUpcoming(payload){
+  return apiFetch('/api/home/upcoming', { method: 'POST', body: JSON.stringify(payload), headers: {'Content-Type':'application/json'} })
+}
+
+export async function getHomeReferenceRails(){
+  const resp = await safeGet('/api/home/reference-rails')
+  return (resp && resp.status === 'error') ? { status: 'ok', items: [], warnings: [resp] } : resp
+}
+
+// Backwards-compatible alias
 export async function getHomeReferences(){
-  return apiFetch('/api/home/references')
+  return getHomeReferenceRails()
+}
+
+export async function createHomeReferenceRail(payload){
+  return apiFetch('/api/home/reference-rails', { method: 'POST', body: JSON.stringify(payload), headers: {'Content-Type':'application/json'} })
+}
+
+export async function getMe(){
+  const resp = await safeGet('/api/me')
+  if (!resp || resp.status === 'error') return null
+  return resp
+}
+
+
+// Export API
+export async function createExport(payload){
+  return apiFetch('/api/v2/exports', { method: 'POST', body: JSON.stringify(payload), headers: {'Content-Type':'application/json'} })
+}
+
+export async function getExport(exportId){
+  return apiFetch(`/api/v2/exports/${encodeURIComponent(exportId)}`)
+}
+
+export async function listMyExports(){
+  return apiFetch('/api/v2/exports?mine=true')
+}
+
+export function downloadExportFile(exportId, fileId){
+  const token = localStorage.getItem('taaip_jwt')
+  const headers = {}
+  if (token) headers['Authorization'] = `Bearer ${token}`
+  return `${baseForUrl()}/api/v2/exports/${encodeURIComponent(exportId)}/files/${encodeURIComponent(fileId)}`
+}
+
+// Admin RBAC clients
+export async function getAdminPermissionsRegistry(){
+  return apiFetch('/api/v2/admin/permissions/registry')
+}
+
+export async function listAdminUsers(){
+  return apiFetch('/api/v2/admin/users')
+}
+
+export async function getAdminUserPermissions(userId){
+  return apiFetch(`/api/v2/admin/users/${userId}/permissions`)
+}
+
+export async function grantAdminPermission(userId, permissionKey){
+  return apiFetch(`/api/v2/admin/users/${userId}/permissions/grant`, { method: 'POST', body: JSON.stringify({ permission_key: permissionKey }), headers: {'Content-Type':'application/json'} })
+}
+
+export async function revokeAdminPermission(userId, permissionKey){
+  return apiFetch(`/api/v2/admin/users/${userId}/permissions/revoke`, { method: 'POST', body: JSON.stringify({ permission_key: permissionKey }), headers: {'Content-Type':'application/json'} })
+}
+
+export async function inviteAdminUser(payload){
+  return apiFetch('/api/v2/admin/users/invite', { method: 'POST', body: JSON.stringify(payload), headers: {'Content-Type':'application/json'} })
+}
+
+export async function importAdminUsers(file){
+  const token = localStorage.getItem('taaip_jwt')
+  const headers = {}
+  if (token) headers['Authorization'] = `Bearer ${token}`
+  const form = new FormData()
+  form.append('file', file)
+  const res = await fetch(`${baseForUrl()}/api/v2/admin/users/import`, { method: 'POST', body: form, headers })
+  if (!res.ok) throw new Error('import failed')
+  return res.json()
+}
+
+export async function setAdminUserRoles(userId, roles){
+  return apiFetch(`/api/v2/admin/users/${userId}/roles`, { method: 'PUT', body: JSON.stringify({ roles }), headers: {'Content-Type':'application/json'} })
+}
+
+export async function setAdminUserStatus(userId, status){
+  return apiFetch(`/api/v2/admin/users/${userId}/status`, { method: 'PUT', body: JSON.stringify({ status }), headers: {'Content-Type':'application/json'} })
+}
+
+export async function setAdminUserPermissionOverrides(userId, overrides){
+  return apiFetch(`/api/v2/admin/users/${userId}/permissions`, { method: 'PUT', body: JSON.stringify({ overrides }), headers: {'Content-Type':'application/json'} })
 }
 
 // Tactical/Command Center clients
@@ -138,11 +420,22 @@ export async function exportDashboard(type, format='csv', qs = {}){
     const token = localStorage.getItem('taaip_jwt')
     const headers = {}
     if (token) headers['Authorization'] = `Bearer ${token}`
-    const res = await fetch(`${API_BASE}${path}`, { headers })
+    const res = await fetch(`${baseForUrl()}${path}`, { headers })
     if (!res.ok) throw new Error('export failed')
     return res.text()
   }
   return apiFetch(path)
+}
+
+export async function exportCommanderTargetsCsv(qs = {}){
+  const params = new URLSearchParams(qs)
+  const path = `/api/market-intel/exports/commander-targets.csv?${params.toString()}`
+  const token = localStorage.getItem('taaip_jwt')
+  const headers = {}
+  if (token) headers['Authorization'] = `Bearer ${token}`
+  const res = await fetch(`${baseForUrl()}${path}`, { headers })
+  if (!res.ok) throw new Error('export failed')
+  return res.text()
 }
 
 export async function getVirtualTechBrief(){
@@ -169,7 +462,7 @@ export async function uploadImport(fd){
   const token = localStorage.getItem('taaip_jwt')
   const headers = {}
   if (token) headers['Authorization'] = `Bearer ${token}`
-  const res = await fetch(`${API_BASE}${url}`, { method: 'POST', body: fd, headers })
+  const res = await fetch(`${baseForUrl()}${url}`, { method: 'POST', body: fd, headers })
   if (!res.ok) throw new Error('upload failed')
   return res.json()
 }
@@ -178,7 +471,7 @@ export async function importUpload(fd){
   const token = localStorage.getItem('taaip_jwt')
   const headers = {}
   if (token) headers['Authorization'] = `Bearer ${token}`
-  const res = await fetch(`${API_BASE}/api/import/upload`, { method: 'POST', body: fd, headers })
+  const res = await fetch(`${baseForUrl()}/api/import/upload`, { method: 'POST', body: fd, headers })
   if (!res.ok) throw new Error('upload failed')
   return res.json()
 }
@@ -196,7 +489,179 @@ export async function importValidate(import_job_id){
 }
 
 export async function importCommit(import_job_id, mode='append'){
-  return apiFetch('/api/import/commit', { method: 'POST', body: JSON.stringify({ import_job_id, mode }), headers: {'Content-Type':'application/json'} })
+  try {
+    return await apiFetch('/api/import/commit', { method: 'POST', body: JSON.stringify({ import_job_id, mode }), headers: {'Content-Type':'application/json'} })
+  } catch (err) {
+    // If v3 commit fails (route/validation), attempt compat endpoint that invokes legacy commit
+    try {
+      return await apiFetch('/api/import/compat/commit_v3', { method: 'POST', body: JSON.stringify({ import_job_id, mode }), headers: {'Content-Type':'application/json'} })
+    } catch (err2) {
+      throw err
+    }
+  }
+}
+
+// Orchestrate a simple import flow for an existing v3 import job.
+export async function runImportFlow(import_job_id = null, mapping = null, mode = 'append'){
+  // If no import_job_id provided, pick the most recent v3 job
+  try{
+    if (!import_job_id){
+      const jobs = await apiFetch('/api/import/jobs')
+      if (Array.isArray(jobs) && jobs.length>0) import_job_id = jobs[0].id
+    }
+    if (!import_job_id) throw new Error('no import_job_id available')
+
+    // parse (idempotent if already parsed)
+    await importParse(import_job_id)
+
+    // apply mapping if provided, otherwise try to reuse existing mapping by fetching job details
+    if (!mapping){
+      try{
+        const job = await apiFetch(`/api/import/jobs/${import_job_id}`)
+        const maps = job && job.mappings ? job.mappings : []
+        if (maps && maps.length>0) mapping = JSON.parse(maps[0].mapping_json)
+      }catch(e){}
+    }
+
+    if (mapping){
+      await importMap(import_job_id, mapping, mapping.dataset_key || (mapping.dataset_key===undefined? null: mapping.dataset_key), mapping.source_system || 'ui', mapping.scope_org_unit_id || null)
+    }
+
+    await importValidate(import_job_id)
+    const res = await importCommit(import_job_id, mode)
+    return res
+  }catch(e){
+    throw e
+  }
+}
+
+export async function previewMiImport(formData){
+  const token = localStorage.getItem('taaip_jwt')
+  const headers = {}
+  if (token) headers['Authorization'] = `Bearer ${token}`
+  const res = await fetch(`${baseForUrl()}/api/imports/mi/preview`, { method: 'POST', body: formData, headers })
+  if (!res.ok) throw new Error('preview failed')
+  return res.json()
+}
+
+export async function commitMiImport(formData){
+  const token = localStorage.getItem('taaip_jwt')
+  const headers = {}
+  if (token) headers['Authorization'] = `Bearer ${token}`
+  const res = await fetch(`${baseForUrl()}/api/imports/mi/commit`, { method: 'POST', body: formData, headers })
+  if (!res.ok) throw new Error('commit failed')
+  return res.json()
+}
+
+export async function previewFoundationImport(formData){
+  const token = localStorage.getItem('taaip_jwt')
+  const headers = {}
+  if (token) headers['Authorization'] = `Bearer ${token}`
+  const res = await fetch(`${baseForUrl()}/api/imports/foundation/preview`, { method: 'POST', body: formData, headers })
+  if (!res.ok) throw new Error('preview failed')
+  return res.json()
+}
+
+export async function commitFoundationImport(formData){
+  const token = localStorage.getItem('taaip_jwt')
+  const headers = {}
+  if (token) headers['Authorization'] = `Bearer ${token}`
+  const res = await fetch(`${baseForUrl()}/api/imports/foundation/commit`, { method: 'POST', body: formData, headers })
+  if (!res.ok) throw new Error('commit failed')
+  return res.json()
+}
+
+// Documents API
+export async function uploadDocumentForm(formData){
+  const token = localStorage.getItem('taaip_jwt')
+  const headers = {}
+  if (token) headers['Authorization'] = `Bearer ${token}`
+  const res = await fetch(`${baseForUrl()}/api/documents/upload`, { method: 'POST', body: formData, headers })
+  if (!res.ok) throw new Error('upload failed')
+  return res.json()
+}
+
+export async function listDocuments(){
+  return apiFetch('/api/documents')
+}
+
+export function documentDownloadUrl(docId){
+  return `${baseForUrl()}/api/documents/${docId}/download`
+}
+
+export async function getSchoolProgramReadiness(){
+  return apiFetch('/api/school-program/readiness')
+}
+
+export async function getSchoolProgramSummary(qs = {}){
+  const params = new URLSearchParams(qs).toString()
+  return apiFetch(`/api/school-program/summary?${params}`)
+}
+
+export async function getSchoolSummary(qs = {}){
+  const params = new URLSearchParams(qs).toString()
+  return apiFetch(`/api/school/summary?${params}`)
+}
+
+export async function getSchoolCoverage(qs = {}){
+  const params = new URLSearchParams(qs).toString()
+  return apiFetch(`/api/school/coverage?${params}`)
+}
+
+export async function getSchoolMilestones(qs = {}){
+  const params = new URLSearchParams(qs).toString()
+  return apiFetch(`/api/school/milestones?${params}`)
+}
+
+export async function postSchoolMilestone(payload){
+  return apiFetch('/api/school/milestones', { method: 'POST', body: JSON.stringify(payload), headers: {'Content-Type':'application/json'} })
+}
+
+export async function getSchoolCompliance(qs = {}){
+  const params = new URLSearchParams(qs).toString()
+  return apiFetch(`/api/school/compliance?${params}`)
+}
+
+export async function getSchoolLeadflow(qs = {}){
+  const params = new URLSearchParams(qs).toString()
+  return apiFetch(`/api/school/leadflow?${params}`)
+}
+
+export async function getSchoolEvents(qs = {}){
+  const params = new URLSearchParams(qs).toString()
+  return apiFetch(`/api/school/events?${params}`)
+}
+
+export async function postSchoolEvent(payload){
+  return apiFetch('/api/school/events', { method: 'POST', body: JSON.stringify(payload), headers: {'Content-Type':'application/json'} })
+}
+
+export async function getSuggestWindow(qs = {}){
+  const params = new URLSearchParams(qs).toString()
+  return apiFetch(`/api/school/suggest_window?${params}`)
+}
+
+export async function getRegulatoryReferences(qs = {}){
+  const params = new URLSearchParams(qs).toString()
+  return apiFetch(`/api/resources/regulatory?${params}`)
+}
+
+export async function getRegulatoryReference(id){
+  return apiFetch(`/api/resources/regulatory/${id}`)
+}
+
+export async function getTraceabilityLinks(qs = {}){
+  const params = new URLSearchParams(qs).toString()
+  return apiFetch(`/api/regulatory/traceability?${params}`)
+}
+
+export async function getModuleRegistry(){
+  return apiFetch(`/api/regulatory/modules`)
+}
+
+export async function getRegulatoryReferencesApi(qs = {}){
+  const params = new URLSearchParams(qs).toString()
+  return apiFetch(`/api/regulatory/references?${params}`)
 }
 
 export async function importJobs(){
@@ -282,6 +747,17 @@ export async function getFunnelStages(){
   return apiFetch('/api/funnel/stages')
 }
 
+export async function queryMetric(metric_id, params = {}){
+  const qs = new URLSearchParams()
+  if (params.fy) qs.set('fy', params.fy)
+  if (params.qtr) qs.set('qtr', params.qtr)
+  if (params.scope_type) qs.set('scope_type', params.scope_type)
+  if (params.scope_value) qs.set('scope_value', params.scope_value)
+  if (params.station_rsid) qs.set('station_rsid', params.station_rsid)
+  if (params.event_id) qs.set('event_id', params.event_id)
+  return apiFetch(`/api/metrics/query?metric_id=${encodeURIComponent(metric_id)}&${qs.toString()}`)
+}
+
 // PowerBI / feeds
 export async function getFactProduction(qs = {}){
   const params = new URLSearchParams(qs).toString()
@@ -308,6 +784,26 @@ export async function getLatestMissionAssessment(period_type, scope){
   if (period_type) qs.set('period_type', period_type)
   if (scope) qs.set('scope', scope)
   return apiFetch(`/api/mission_assessments/latest?${qs.toString()}`)
+}
+
+export async function getMissionFeasibilitySummary(params = {}){
+  const qs = new URLSearchParams()
+  if (params.unit_rsid) qs.set('unit_rsid', params.unit_rsid)
+  if (params.fy) qs.set('fy', params.fy)
+  if (params.compare_mode) qs.set('compare_mode', params.compare_mode)
+  return apiFetch(`/api/v2/mission-feasibility/summary?${qs.toString()}`)
+}
+
+export async function getFsLossSummary(params = {}){
+  const qs = new URLSearchParams()
+  if (params.unit_rsid) qs.set('unit_rsid', params.unit_rsid)
+  if (params.fy) qs.set('fy', params.fy)
+  if (params.qtr) qs.set('qtr', params.qtr)
+  return apiFetch(`/api/v2/fs-loss/summary?${qs.toString()}`)
+}
+
+export async function getFsLossCodes(){
+  return apiFetch(`/api/v2/fs-loss/codes`)
 }
 
 export async function saveMissionAssessment(payload){
@@ -386,6 +882,223 @@ export async function submitProposal(id){
 
 export async function reviewProposal(id, payload){
   return apiFetch(`/api/system/proposals/${id}/review`, { method: 'POST', body: JSON.stringify(payload), headers: {'Content-Type':'application/json'} })
+}
+
+export async function getSystemFreshness(){
+  return apiFetch('/api/system/freshness')
+}
+
+export async function getSystemAlerts(){
+  return apiFetch('/api/system/alerts')
+}
+
+export async function getSystemAlertsList(){
+  return apiFetch('/api/system/alerts/list')
+}
+
+// Market Intelligence clients (Phase 13)
+export async function getMarketIntelSummary(params = {}){
+  const qs = new URLSearchParams()
+  if (params.fy) qs.set('fy', params.fy)
+  if (params.qtr) qs.set('qtr', params.qtr)
+  if (params.month) qs.set('month', params.month)
+  if (params.unit_key) {
+    qs.set('unit_key', params.unit_key)
+    try { if (params.unit_key) qs.set('rsid_prefix', String(params.unit_key).slice(0, Math.min(4, String(params.unit_key).length))) } catch(e){}
+  } else if (params.rsid_prefix) qs.set('rsid_prefix', params.rsid_prefix)
+  return apiFetch(`/api/market-intel/summary?${qs.toString()}`)
+}
+
+export async function getMarketIntelZipRankings(params = {}){
+  const qs = new URLSearchParams()
+  if (params.fy) qs.set('fy', params.fy)
+  if (params.qtr) qs.set('qtr', params.qtr)
+  if (params.month) qs.set('month', params.month)
+  if (params.unit_key) {
+    qs.set('unit_key', params.unit_key)
+    try { if (params.unit_key) qs.set('rsid_prefix', String(params.unit_key).slice(0, Math.min(4, String(params.unit_key).length))) } catch(e){}
+  } else if (params.rsid_prefix) qs.set('rsid_prefix', params.rsid_prefix)
+  if (params.limit) qs.set('limit', params.limit)
+  return apiFetch(`/api/market-intel/zip-rankings?${qs.toString()}`)
+}
+
+export async function getMarketIntelCbsaRollup(params = {}){
+  const qs = new URLSearchParams()
+  if (params.fy) qs.set('fy', params.fy)
+  if (params.qtr) qs.set('qtr', params.qtr)
+  if (params.unit_key) {
+    qs.set('unit_key', params.unit_key)
+    try { if (params.unit_key) qs.set('rsid_prefix', String(params.unit_key).slice(0, Math.min(4, String(params.unit_key).length))) } catch(e){}
+  } else if (params.rsid_prefix) qs.set('rsid_prefix', params.rsid_prefix)
+  if (params.limit) qs.set('limit', params.limit)
+  return apiFetch(`/api/market-intel/cbsa-rollup?${qs.toString()}`)
+}
+
+export async function getMarketIntelTargets(params = {}){
+  const qs = new URLSearchParams()
+  if (params.fy) qs.set('fy', params.fy)
+  if (params.qtr) qs.set('qtr', params.qtr)
+  if (params.unit_key) {
+    qs.set('unit_key', params.unit_key)
+    try { if (params.unit_key) qs.set('rsid_prefix', String(params.unit_key).slice(0, Math.min(4, String(params.unit_key).length))) } catch(e){}
+  } else if (params.rsid_prefix) qs.set('rsid_prefix', params.rsid_prefix)
+  return apiFetch(`/api/market-intel/targets?${qs.toString()}`)
+}
+
+export async function getMarketIntelImportTemplates(){
+  return apiFetch('/api/market-intel/import-templates')
+}
+
+// Data Hub client helpers
+export async function dataHubUpload(fd, dry_run = true){
+  const token = localStorage.getItem('taaip_jwt')
+  const headers = {}
+  if (token) headers['Authorization'] = `Bearer ${token}`
+  try {
+    if (typeof fd === 'object' && fd instanceof FormData) {
+      try {
+        for (const entry of fd.entries()) console.debug('dataHubUpload FormData:', entry[0], entry[1])
+      } catch (e) { console.debug('dataHubUpload: unable to enumerate FormData', e) }
+    }
+  } catch (e) { /* ignore */ }
+
+  const res = await fetch(`${baseForUrl()}/api/v2/datahub/upload?dry_run=${dry_run?1:0}`, { method: 'POST', body: fd, headers })
+  let body = null
+  try{
+    body = await res.json()
+  }catch(e){
+    if(!res.ok) throw new Error('upload failed')
+    return null
+  }
+  if (!res.ok) {
+    // surface JSON error message when available
+    const msg = body && (body.error || body.message || JSON.stringify(body)) || 'upload failed'
+    const err = new Error(msg)
+    err.body = body
+    throw err
+  }
+  return body
+}
+
+export async function dataHubListRuns(){
+  return apiFetch('/api/v2/datahub/runs')
+}
+
+export async function dataHubGetRun(runId){
+  return apiFetch(`/api/v2/datahub/runs/${encodeURIComponent(runId)}`)
+}
+
+export function dataHubDownloadErrors(runId){
+  return `${baseForUrl()}/api/v2/datahub/runs/${encodeURIComponent(runId)}/errors.csv`
+}
+
+export async function dataHubListRegistry(){
+  return apiFetch('/api/v2/datahub/registry')
+}
+
+export async function dataHubStorage(){
+  return apiFetch('/api/v2/datahub/storage')
+}
+
+export async function dataHubHealth(){
+  return apiFetch('/api/v2/datahub/health')
+}
+
+// ROI client helpers
+export async function getRoiKpis(params = {}){
+  const qs = new URLSearchParams(params).toString()
+  return apiFetch(`/api/v2/roi/kpis?${qs}`)
+}
+
+export async function getRoiBreakdown(params = {}){
+  const qs = new URLSearchParams(params).toString()
+  return apiFetch(`/api/v2/roi/breakdown?${qs}`)
+}
+
+export async function getRoiFunnel(params = {}){
+  const qs = new URLSearchParams(params).toString()
+  return apiFetch(`/api/v2/roi/funnel?${qs}`)
+}
+
+export async function getRoiEvent(eventId, params = {}){
+  const qs = new URLSearchParams(params).toString()
+  return apiFetch(`/api/v2/roi/event/${encodeURIComponent(eventId)}?${qs}`)
+}
+
+export async function getMarketIntelReadiness(){
+  return apiFetch('/api/market-intel/readiness')
+}
+
+export async function getPhoneticsReadiness(){
+  return apiFetch('/api/phonetics/readiness')
+}
+
+export async function getSystemSelfCheck(){
+  return apiFetch('/api/system/self-check')
+}
+
+export async function getMarketIntelDemographics(params = {}){
+  const qs = new URLSearchParams()
+  if (params.fy) qs.set('fy', params.fy)
+  if (params.qtr) qs.set('qtr', params.qtr)
+  if (params.unit_key) {
+    qs.set('unit_key', params.unit_key)
+    try { if (params.unit_key) qs.set('rsid_prefix', String(params.unit_key).slice(0, Math.min(4, String(params.unit_key).length))) } catch(e){}
+  } else if (params.rsid_prefix) qs.set('rsid_prefix', params.rsid_prefix)
+  return apiFetch(`/api/market-intel/demographics?${qs.toString()}`)
+}
+
+export async function getMarketIntelCategories(params = {}){
+  const qs = new URLSearchParams()
+  if (params.fy) qs.set('fy', params.fy)
+  if (params.qtr) qs.set('qtr', params.qtr)
+  if (params.rsid_prefix) qs.set('rsid_prefix', params.rsid_prefix)
+  if (params.limit) qs.set('limit', params.limit)
+  return apiFetch(`/api/market-intel/categories?${qs.toString()}`)
+}
+
+export async function exportMarketIntelTargetsCsv(params = {}){
+  const qs = new URLSearchParams()
+  if (params.fy) qs.set('fy', params.fy)
+  if (params.qtr) qs.set('qtr', params.qtr)
+  if (params.rsid_prefix) qs.set('rsid_prefix', params.rsid_prefix)
+  if (params.limit) qs.set('limit', params.limit)
+  const path = `/api/market-intel/export/targets.csv?${qs.toString()}`
+  const token = localStorage.getItem('taaip_jwt')
+  const headers = {}
+  if (token) headers['Authorization'] = `Bearer ${token}`
+  const res = await fetch(`${baseForUrl()}${path}`, { headers })
+  if (!res.ok) throw new Error('export failed')
+  const text = await res.text()
+  return text
+}
+
+export async function getMaintenance(){
+  return apiFetch('/api/system/maintenance')
+}
+
+export async function setMaintenance(payload){
+  return apiFetch('/api/system/maintenance', { method: 'POST', body: JSON.stringify(payload), headers: {'Content-Type':'application/json'} })
+}
+
+export async function approveProposal(id){
+  return apiFetch(`/api/system/proposals/${id}/decision`, { method: 'POST', body: JSON.stringify({ decision: 'approve' }), headers: {'Content-Type':'application/json'} })
+}
+
+export async function rejectProposal(id){
+  return apiFetch(`/api/system/proposals/${id}/decision`, { method: 'POST', body: JSON.stringify({ decision: 'reject' }), headers: {'Content-Type':'application/json'} })
+}
+
+export async function getSystemStatus(){
+  return apiFetch('/api/system/status')
+}
+
+export async function decideProposal(id, payload){
+  return apiFetch(`/api/system/proposals/${id}/decision`, { method: 'POST', body: JSON.stringify(payload), headers: {'Content-Type':'application/json'} })
+}
+
+export async function markProposalApplied(id){
+  return apiFetch(`/api/system/proposals/${id}/mark-applied`, { method: 'POST' })
 }
 
 // RBAC / admin
@@ -512,6 +1225,10 @@ export async function createTask(payload){
   return apiFetch('/api/projects/tasks', { method: 'POST', body: JSON.stringify(payload), headers: {'Content-Type':'application/json'} })
 }
 
+export async function getDomainProject(projectId){
+  return apiFetch(`/api/projects/projects/${projectId}`)
+}
+
 export async function createMeeting(payload){
   return apiFetch('/api/meetings/', { method: 'POST', body: JSON.stringify(payload), headers: {'Content-Type':'application/json'} })
 }
@@ -544,28 +1261,23 @@ export async function getMarketPotential(scope, value){
 
 // Tactical rollup clients (PHASE-13)
 export async function getBudgetRollup(qs = {}){
-  const params = new URLSearchParams(qs).toString()
-  return apiFetch(`/api/rollups/budget?${params}`)
+  return queryMetric('budget', qs)
 }
 
 export async function getEventsRollup(qs = {}){
-  const params = new URLSearchParams(qs).toString()
-  return apiFetch(`/api/rollups/events?${params}`)
+  return queryMetric('events', qs)
 }
 
 export async function getMarketingRollup(qs = {}){
-  const params = new URLSearchParams(qs).toString()
-  return apiFetch(`/api/rollups/marketing?${params}`)
+  return queryMetric('marketing', qs)
 }
 
 export async function getFunnelRollup(qs = {}){
-  const params = new URLSearchParams(qs).toString()
-  return apiFetch(`/api/rollups/funnel?${params}`)
+  return queryMetric('funnel', qs)
 }
 
 export async function getCommandRollup(qs = {}){
-  const params = new URLSearchParams(qs).toString()
-  return apiFetch(`/api/rollups/command?${params}`)
+  return queryMetric('command', qs)
 }
 
 // Command Center clients (PHASE-14)
@@ -617,6 +1329,71 @@ export async function getCommandCenterMissionAssessment(qs = {}){
   return apiFetch(`/api/command-center/mission-assessment?${params}`)
 }
 
+// Operations Market Intelligence clients (PHASE-13)
+export async function getMarketSummary(qs = {}){
+  const params = new URLSearchParams(qs).toString()
+  return apiFetch(`/api/ops/market/summary?${params}`)
+}
+
+export async function listMarketZips(qs = {}){
+  const params = new URLSearchParams(qs).toString()
+  return apiFetch(`/api/ops/market/zips?${params}`)
+}
+
+export async function listMarketCbsas(qs = {}){
+  const params = new URLSearchParams(qs).toString()
+  return apiFetch(`/api/ops/market/cbsa?${params}`)
+}
+
+export async function listMarketDemographics(qs = {}){
+  const params = new URLSearchParams(qs).toString()
+  return apiFetch(`/api/ops/market/demographics?${params}`)
+}
+
+export async function listGeoZones(qs = {}){
+  const params = new URLSearchParams(qs).toString()
+  return apiFetch(`/api/ops/market/geotargeting/zones?${params}`)
+}
+
+export async function createGeoZone(payload){
+  return apiFetch('/api/ops/market/geotargeting/zones', { method: 'POST', body: JSON.stringify(payload), headers: {'Content-Type':'application/json'} })
+}
+
+export async function updateGeoZone(id, payload){
+  return apiFetch(`/api/ops/market/geotargeting/zones/${id}`, { method: 'PUT', body: JSON.stringify(payload), headers: {'Content-Type':'application/json'} })
+}
+
+export async function exportTargetingList(qs = {}){
+  const params = new URLSearchParams(qs).toString()
+  return apiFetch(`/api/ops/market/targeting/export?${params}`)
+}
+
+// Market Intelligence compute + scoring clients
+export async function getP2PBand(qs = {}){
+  const params = new URLSearchParams(qs).toString()
+  return apiFetch(`/api/ops/market/compute/p2p-band?${params}`)
+}
+
+export async function classifyZip(qs = {}){
+  const params = new URLSearchParams(qs).toString()
+  return apiFetch(`/api/ops/market/compute/classify-zip?${params}`)
+}
+
+export async function getMarketCapacityScore(qs = {}){
+  const params = new URLSearchParams(qs).toString()
+  return apiFetch(`/api/command/scoring/market-capacity?${params}`)
+}
+
+export async function getMissionFeasibility(qs = {}){
+  const params = new URLSearchParams(qs).toString()
+  return apiFetch(`/api/command/scoring/mission-feasibility?${params}`)
+}
+
+export async function getCOARecommendations(qs = {}){
+  const params = new URLSearchParams(qs).toString()
+  return apiFetch(`/api/command/coa/recommendations?${params}`)
+}
+
 // Tactical dashboards clients
 export async function getEventsRoi(qs = {}){
   const params = new URLSearchParams(qs).toString()
@@ -635,7 +1412,7 @@ export async function getTacticalFunnel(qs = {}){
 
 const apiClient = {
   // home
-  getHomeNews, getHomeUpdates, getHomeQuickLinks,
+  getHomeNews, getHomeUpdates, getHomeQuickLinks, getHomeStatusStrip, getHomeAlerts, ackHomeAlert, getHomeFlashes, getHomeUpcoming, getHomeRecognition, getHomeReferences,
   // health / summary
   getHealth, getCommandSummary, getCoverageSummary, getMarketPotential, getKpis, getOrgUnitsSummary,
   // auth / user
@@ -667,7 +1444,8 @@ const apiClient = {
   // calendar
   createCalendarEvent, listCalendarEvents, updateCalendarEvent, deleteCalendarEvent,
   // market
-  getMarketPotential
+  getMarketPotential, getBudgetRollup, getEventsRollup, getMarketingRollup, getFunnelRollup, getCommandRollup
+  , getMarketSummary, listMarketZips, listMarketCbsas, listMarketDemographics, listGeoZones, createGeoZone, updateGeoZone, exportTargetingList
   // system CUS
   , listSystemObservations, postSystemObservation, listProposals, createProposal, submitProposal, reviewProposal
 }

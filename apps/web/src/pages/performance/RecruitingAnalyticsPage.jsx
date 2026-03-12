@@ -1,6 +1,6 @@
 import React from 'react'
-import PlaceholderPage from '../PlaceholderPage'
+import { NotLoadedPage } from '../PlaceholderPage'
 
 export default function RecruitingAnalyticsPage(){
-  return <PlaceholderPage title="Recruiting Analytics" subtitle="Recruiting analytics and reports (coming soon)." />
+  return <NotLoadedPage title="Recruiting Analytics" />
 }

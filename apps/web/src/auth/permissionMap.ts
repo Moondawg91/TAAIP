@@ -1,0 +1,26 @@
+const permissionMap: { [path: string]: string[] } = {
+  '/command-center': ['DASHBOARD_READ'],
+  '/command-center/': ['DASHBOARD_READ'],
+  '/command-center/fusion-cell': ['DASHBOARD_READ'],
+  '/command-center/twg': ['DASHBOARD_READ'],
+  '/ops': ['DASHBOARD_READ'],
+  '/operations': ['DASHBOARD_READ'],
+  '/operations/': ['DASHBOARD_READ'],
+  '/roi': ['DASHBOARD_READ'],
+  '/data-hub': ['DASHBOARD_READ'],
+  '/data-hub/imports': ['DATA_UPLOAD'],
+  '/data-hub/uploads': ['DATA_UPLOAD'],
+  '/data-hub/runs': ['DASHBOARD_READ'],
+  '/help/new': ['HELP_TICKET_CREATE'],
+  '/helpdesk/new': ['HELP_TICKET_CREATE'],
+  '/helpdesk/status': ['HELP_TICKET_READ'],
+  '/help/submit-ticket': ['HELP_TICKET_CREATE'],
+  '/help/ticket-status': ['HELP_TICKET_READ'],
+  '/admin': ['ADMIN_USERS'],
+  '/admin/': ['ADMIN_USERS'],
+  '/admin/users': ['ADMIN_USERS'],
+  '/admin/roles': ['ADMIN_USERS'],
+  '/admin/permissions': ['ADMIN_USERS'],
+}
+
+export default permissionMap

@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react'
-import { Box, Typography, Card, CardContent, List, ListItem, ListItemText, Divider } from '@mui/material'
+import { Box } from '@mui/material'
 import { importJobs } from '../../api/client'
 import DashboardToolbar from '../../components/dashboard/DashboardToolbar'
+import EmptyState from '../../components/EmptyState'
 
 export default function TargetingDataPage(){
   const [jobs, setJobs] = useState([])
@@ -19,27 +20,11 @@ export default function TargetingDataPage(){
   }
 
   return (
-    <Box sx={{ p:3, minHeight:'100vh', bgcolor:'background.default', color:'text.primary' }}>
-      <DashboardToolbar title="Targeting Data" subtitle="Import jobs & datasets" filters={{}} onFiltersChange={()=>{}} onExport={(t)=>{ alert(`Export ${t} coming soon`) }} />
-      <Typography variant="h5">Targeting Data</Typography>
-      <Typography variant="body2" sx={{ color:'text.secondary', mb:2 }}>Recent import jobs and datasets.</Typography>
-
-      <Card sx={{ bgcolor:'background.paper' }}>
-        <CardContent>
-          <Typography variant="h6">Recent Imports</Typography>
-          <List>
-            {(jobs || []).map((j:any)=> (
-              <React.Fragment key={j.id}>
-                <ListItem>
-                  <ListItemText primary={j.dataset_key || j.filename || `import ${j.id}`} secondary={`status: ${j.status} • rows: ${j.row_count || 0} • errors: ${j.error_count || 0}` } />
-                </ListItem>
-                <Divider />
-              </React.Fragment>
-            ))}
-            {(!jobs || jobs.length===0) && <ListItem><ListItemText primary={loading ? 'Loading...' : 'No recent imports'} /></ListItem>}
-          </List>
-        </CardContent>
-      </Card>
+    <Box sx={{ p:2, minHeight:'100vh', bgcolor:'background.default', color:'text.primary' }}>
+      <DashboardToolbar title="Targeting Data" subtitle="Import jobs & datasets" filters={{}} onFiltersChange={()=>{}} />
+      <Box sx={{ mt:2 }}>
+        <EmptyState title="Targeting Data" subtitle="View and manage import jobs here. Load datasets in Data Hub." />
+      </Box>
     </Box>
   )
 }

@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react'
 import { Box, Typography, Stepper, Step, StepLabel, Button, Paper, CircularProgress, TextField, Select, MenuItem, FormControl, InputLabel, Table, TableHead, TableRow, TableCell, TableBody, Divider } from '@mui/material'
 import * as api from '../api/client'
+import FoundationUploadPanel from '../components/imports/FoundationUploadPanel'
+import DocumentUploadPanel from '../components/imports/DocumentUploadPanel'
 
 const steps = ['Upload', 'Preview', 'Map', 'Validate', 'Commit']
 
 export default function ImportCenterPage(){
+  const [mode, setMode] = useState<'known'|'general'>('known')
   const [active, setActive] = useState(0)
   const [file, setFile] = useState(null)
   const [job, setJob] = useState(null)
@@ -28,9 +31,10 @@ export default function ImportCenterPage(){
   const mapFn = api.mapImport || api.importMap
   const validateFn = api.validateImport || api.importValidate
   const commitFn = api.commitImport || api.importCommit
+  const importJobsFn = api.importJobs || api.getImportJobsList || (()=>Promise.resolve([]))
 
   async function loadJobs(){
-    try{ const list = await api.importJobs(); setJobs(list || []) }catch(e){ console.error(e) }
+    try{ const list = await importJobsFn(); setJobs(list || []) }catch(e){ console.error(e) }
   }
 
   async function onFileChange(e){
@@ -40,10 +44,18 @@ export default function ImportCenterPage(){
     try{
       const fd = new FormData()
       fd.append('file', f)
+      // include selected dataset key; 'auto' triggers client-side auto-detect flow
+      fd.append('dataset', datasetKey)
       const res = await uploadFn(fd)
       setJob(res.import_job_id || res.import_job_id)
-      setStatus('uploaded')
-      setActive(1)
+      // if user selected general upload / auto -> mark pending classification
+      if (datasetKey === 'auto' || mode === 'general'){
+        setStatus('pending_classification')
+        setActive(1)
+      } else {
+        setStatus('uploaded')
+        setActive(1)
+      }
     }catch(e){ console.error('upload failed', e) }
   }
 
@@ -51,10 +63,16 @@ export default function ImportCenterPage(){
     if(!file) return
     const fd = new FormData()
     fd.append('file', file)
+    fd.append('dataset', datasetKey)
     const res = await uploadFn(fd)
     setJob(res.import_job_id || res.import_job_id)
-    setStatus('uploaded')
-    setActive(1)
+    if (datasetKey === 'auto' || mode === 'general'){
+      setStatus('pending_classification')
+      setActive(1)
+    } else {
+      setStatus('uploaded')
+      setActive(1)
+    }
   }
 
   async function doParse(){
@@ -100,12 +118,29 @@ export default function ImportCenterPage(){
   }
 
   return (
-    <Box sx={{ p:3, minHeight:'100vh', bgcolor:'background.default', color:'text.primary' }}>
-      <Typography variant="h5">Import Center</Typography>
+    <Box sx={{ p:3, bgcolor:'background.default', color:'text.primary' }}>
+      <Typography variant="h5">Data Hub</Typography>
       <Typography variant="body2" sx={{ color:'text.secondary' }}>Upload files, map columns, validate, and commit to the data warehouse.</Typography>
 
       <Box sx={{ mt:3 }}>
-        <Stepper activeStep={active} alternativeLabel>
+        <Box sx={{ display:'flex', gap:1, mb:2 }}>
+          <Button variant={mode==='known' ? 'contained' : 'outlined'} onClick={()=>setMode('known')}>Known Dataset</Button>
+          <Button variant={mode==='general' ? 'contained' : 'outlined'} onClick={()=>{ setMode('general'); setDatasetKey('auto') }}>General Upload (AI classify)</Button>
+        </Box>
+
+        {mode === 'known' && (
+          <>
+            <Box sx={{ p:2, mb:2, border:'1px dashed rgba(0,0,0,0.08)', borderRadius:1 }}>
+              <Typography variant="h6">Uploads moved to Data Hub</Typography>
+              <Typography variant="body2" sx={{ color:'text.secondary' }}>All file uploads are centralized in the Data Hub imports page.</Typography>
+              <Box sx={{ mt:2 }}>
+                <Button variant="contained" onClick={()=>{ window.location.href = '/data-hub/imports' }}>Open Data Hub Imports</Button>
+              </Box>
+            </Box>
+          </>
+        )}
+
+        <Stepper activeStep={active} alternativeLabel sx={{ mt:2 }}>
           {steps.map(s=> (
             <Step key={s}><StepLabel>{s}</StepLabel></Step>
           ))}
@@ -114,19 +149,26 @@ export default function ImportCenterPage(){
         <Paper sx={{ mt:2, p:2, bgcolor:'background.paper' }}>
           {active===0 && (
             <Box>
-              <input type="file" data-testid="file-input" onChange={onFileChange} />
-              <Box sx={{ mt:2 }}>
-                <Button variant="contained" onClick={doUpload} disabled={!file}>Upload</Button>
+              <Typography variant="body1">Uploads are centralized in the Data Hub. Please open the Data Hub Imports page to upload files.</Typography>
+                <Box sx={{ mt:2 }}>
+                <Button variant="contained" onClick={()=>{ window.location.href = '/data-hub/imports' }}>Open Data Hub Imports</Button>
               </Box>
             </Box>
           )}
 
           {active===1 && (
             <Box>
-              <Typography>Uploaded job: {job}</Typography>
+              <Typography>Job: {job}</Typography>
+              <Typography variant="caption" sx={{ color:'text.secondary' }}>Status: {status}</Typography>
               <Box sx={{ mt:2 }}>
-                <Button variant="contained" onClick={doParse}>Parse & Preview</Button>
+                {status !== 'pending_classification' && <Button variant="contained" onClick={doParse}>Parse & Preview</Button>}
               </Box>
+              {status === 'pending_classification' && (
+                <Box sx={{ mt:2, display:'flex', alignItems:'center', gap:1 }}>
+                  <CircularProgress size={18} />
+                  <Typography variant="body2">Queued for AI classification</Typography>
+                </Box>
+              )}
             </Box>
           )}
 
@@ -154,6 +196,7 @@ export default function ImportCenterPage(){
                     <MenuItem value="marketing">marketing</MenuItem>
                     <MenuItem value="org_units">org_units</MenuItem>
                     <MenuItem value="event_performance">event_performance</MenuItem>
+                    <MenuItem value="auto">Auto-detect (AI LMS)</MenuItem>
                   </Select>
                 </FormControl>
                 <Button variant="contained" sx={{ ml:2 }} onClick={()=>setActive(3)}>Go to Map</Button>
@@ -247,7 +290,7 @@ export default function ImportCenterPage(){
                 <Button variant="contained" color="primary" sx={{ ml:2 }} onClick={()=>doCommit('append')}>Commit</Button>
                 <Button variant="contained" color="secondary" sx={{ ml:2 }} onClick={()=>doCommit('append')}>Append</Button>
                 <Button variant="contained" color="error" sx={{ ml:2 }} onClick={()=>doCommit('replace')}>Replace</Button>
-                <Button variant="contained" color="warning" sx={{ ml:2 }} onClick={()=>doCommit('replace-scope')}>Replace Scope</Button>
+                <Button variant="contained" color="warning" sx={{ ml:2 }} onClick={()=>doCommit('replace-scope')}>Replace Echelon</Button>
               </Box>
               <Box sx={{ mt:2 }}>
                 <Typography>Errors</Typography>

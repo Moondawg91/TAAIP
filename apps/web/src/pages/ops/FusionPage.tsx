@@ -1,11 +1,12 @@
 import React from 'react'
-import { Box, Typography, Chip } from '@mui/material'
+import { Box, Typography } from '@mui/material'
+import ZeroState from '../../components/ZeroState'
 
 export default function OpsFusionPage(){
   return (
     <Box>
       <Typography variant="h4">Fusion Cell Operations</Typography>
-      <Chip label="Status: Coming soon" sx={{ mt:2 }} />
+      <ZeroState title="Feature available soon" message="This route exists but is not enabled yet." />
     </Box>
   )
 }

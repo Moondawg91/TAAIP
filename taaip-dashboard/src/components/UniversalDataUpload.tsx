@@ -318,22 +318,12 @@ export const UniversalDataUpload: React.FC = () => {
               <h2 className="text-xl font-bold text-gray-900 mb-4">Upload File</h2>
               
               <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-400 transition-colors">
-                <input
-                  type="file"
-                  id="file-upload"
-                  className="hidden"
-                  accept=".csv,.xlsx,.json,.txt"
-                  onChange={handleFileSelect}
-                />
-                <label htmlFor="file-upload" className="cursor-pointer">
-                  <FileText className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                  <p className="text-lg font-semibold text-gray-700 mb-2">
-                    {file ? file.name : 'Click to select file or drag and drop'}
-                  </p>
-                  <p className="text-sm text-gray-500">
-                    Supported formats: CSV, Excel, JSON
-                  </p>
-                </label>
+                <FileText className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                <p className="text-lg font-semibold text-gray-700 mb-2">Universal uploads are centralized in the Data Hub.</p>
+                <p className="text-sm text-gray-500">Use the Data Hub imports page to upload files and manage import runs.</p>
+                <div className="mt-4">
+                  <a href="/datahub/imports" className="inline-block px-4 py-2 bg-blue-600 text-white rounded-lg">Open Data Hub Imports</a>
+                </div>
               </div>
 
               {file && (

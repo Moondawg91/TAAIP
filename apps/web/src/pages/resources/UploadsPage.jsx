@@ -1,6 +1,6 @@
 import React from 'react'
-import PlaceholderPage from '../PlaceholderPage'
+import { NotLoadedPage } from '../PlaceholderPage'
 
 export default function UploadsPage(){
-  return <PlaceholderPage title="Uploads" subtitle="Uploaded resources and import history." />
+  return <NotLoadedPage title="Uploads" />
 }

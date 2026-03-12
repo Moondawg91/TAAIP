@@ -106,8 +106,8 @@ export default function AdminRolesPage(){
 
   return (
     <Box sx={{ p:3, minHeight:'100vh', bgcolor:'background.default', color:'text.primary' }}>
-      <Typography variant="h5">Role & Scope Control</Typography>
-      <Typography variant="body2" sx={{ color:'text.secondary', mb:2 }}>Define roles and scope access for users.</Typography>
+      <Typography variant="h5">Role & Echelon Control</Typography>
+      <Typography variant="body2" sx={{ color:'text.secondary', mb:2 }}>Define roles and echelon access for users.</Typography>
       <Card sx={{ bgcolor:'background.paper' }}>
         <CardContent>
           <Typography variant="h6">Roles</Typography>

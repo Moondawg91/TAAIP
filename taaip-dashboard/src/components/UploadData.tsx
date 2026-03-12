@@ -373,15 +373,10 @@ export const UploadData: React.FC = () => {
                 Drag and drop your file here
               </p>
               <p className="text-sm text-gray-500 mb-4">or</p>
-              <label className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer inline-block transition-colors font-medium">
-                Browse Files
-                <input
-                  type="file"
-                  accept=".csv,.xlsx,.xls"
-                  onChange={handleFileInput}
-                  className="hidden"
-                />
-              </label>
+              <div className="text-center">
+                <p className="mb-2">File uploads have been centralized in the Data Hub imports page.</p>
+                <a href="/datahub/imports" className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 inline-block">Open Data Hub Imports</a>
+              </div>
               <p className="text-xs text-gray-400 mt-4">
                 Supported formats: CSV, Excel (.xlsx, .xls)
               </p>

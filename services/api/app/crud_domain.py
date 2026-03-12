@@ -4,6 +4,7 @@ CRUD helpers for Phase 2 canonical domain models. Queries are composable so RBAC
 
 from sqlalchemy.orm import Session
 from sqlalchemy import func
+from sqlalchemy.exc import OperationalError
 from . import models_domain as domain
 from . import rbac
 from typing import Optional, Dict
@@ -107,8 +108,25 @@ def create_funnel_transition(db: Session, payload: dict):
     pfx = _prefixes_from_rsid(payload.get('station_rsid'))
     ft = domain.FunnelTransition(**payload, **pfx)
     db.add(ft)
-    db.commit()
-    return ft
+    # Commit with retry to tolerate transient sqlite 'database is locked' errors
+    retries = 5
+    delay = 0.02
+    for attempt in range(retries):
+        try:
+            db.commit()
+            return ft
+        except OperationalError as e:
+            msg = str(e).lower()
+            if 'locked' in msg and attempt < retries - 1:
+                try:
+                    db.rollback()
+                except Exception:
+                    pass
+                from time import sleep
+                sleep(delay)
+                delay = min(delay * 2, 0.5)
+                continue
+            raise
 
 
 def burden_input_create(db: Session, payload: dict):
@@ -137,10 +155,31 @@ def compute_burden_snapshot(db: Session, scope_type: str, scope_value: str):
 def create_loe(db: Session, payload: dict):
     payload.pop('created_at', None)
     payload.pop('updated_at', None)
+    # If an LOE with the provided id already exists, return it (idempotent)
+    loe_id = payload.get('id')
+    if loe_id:
+        try:
+            existing = db.query(domain.Loe).filter(domain.Loe.id == loe_id).one_or_none()
+            if existing:
+                return existing
+        except Exception:
+            # fall through to create path
+            pass
     loe = domain.Loe(**payload)
-    db.add(loe)
-    db.commit()
-    return loe
+    try:
+        db.add(loe)
+        db.commit()
+        return loe
+    except Exception:
+        try:
+            db.rollback()
+        except Exception:
+            pass
+        # attempt to return existing row if concurrent insert happened
+        try:
+            return db.query(domain.Loe).filter(domain.Loe.id == loe_id).one_or_none()
+        except Exception:
+            raise
 
 
 def create_loe_metric(db: Session, payload: dict):
@@ -148,10 +187,29 @@ def create_loe_metric(db: Session, payload: dict):
     payload.pop('updated_at', None)
     payload.pop('ingested_at', None)
     payload['ingested_at'] = datetime.now(timezone.utc)
+    # Idempotent create: if metric id exists return it, otherwise create
+    mid = payload.get('id')
+    if mid:
+        try:
+            existing = db.query(domain.LoeMetric).filter(domain.LoeMetric.id == mid).one_or_none()
+            if existing:
+                return existing
+        except Exception:
+            pass
     lm = domain.LoeMetric(**payload)
-    db.add(lm)
-    db.commit()
-    return lm
+    try:
+        db.add(lm)
+        db.commit()
+        return lm
+    except Exception:
+        try:
+            db.rollback()
+        except Exception:
+            pass
+        try:
+            return db.query(domain.LoeMetric).filter(domain.LoeMetric.id == mid).one_or_none()
+        except Exception:
+            raise
 
 
 def evaluate_loe(db: Session, loe_id: str):

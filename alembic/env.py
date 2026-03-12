@@ -15,7 +15,13 @@ fileConfig(config.config_file_name)
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 from services.api.app.models import Base
-from services.api.app.database import DATABASE_URL
+try:
+    # In some dev/test environments the application module may expose
+    # DATABASE_URL. Prefer that when available.
+    from services.api.app.database import DATABASE_URL
+except Exception:
+    # Fall back to environment or local data file path.
+    DATABASE_URL = os.getenv('DATABASE_URL') or f"sqlite:///{os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data', 'taaip.sqlite3'))}"
 
 config.set_main_option('sqlalchemy.url', DATABASE_URL)
 

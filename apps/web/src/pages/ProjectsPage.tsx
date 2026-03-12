@@ -62,7 +62,7 @@ export default function ProjectsPage(){
       <Paper sx={{p:2, mt:2}}>
         <Typography variant="subtitle1">Projects</Typography>
         <Box sx={{ display:'flex', gap:1, mb:1 }}>
-          <TextField size="small" placeholder="Filter by name or scope id" value={filter} onChange={e=>setFilter(e.target.value)} />
+          <TextField size="small" placeholder="Filter by name or unit id" value={filter} onChange={e=>setFilter(e.target.value)} />
           <Button size="small" onClick={loadProjects}>Refresh</Button>
         </Box>
         <Table size="small">

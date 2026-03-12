@@ -109,7 +109,16 @@ def post_marketing_activity(payload: schemas.MarketingActivityCreate, db: Sessio
     except HTTPException as e:
         crud.write_audit(db, {'id': f"audit-deny-ma-{payload.id}", 'actor': user.username, 'action': 'denied_create_marketing', 'entity_type': 'marketing_activity', 'entity_id': None, 'scope_type': 'STN', 'scope_value': payload.station_rsid, 'after_json': {'reason': e.detail}})
         raise
-    obj = crud.create_marketing_activity(db, payload.dict())
+    # Funding source enforcement (opt-in).
+    fs = payload.funding_source or payload.data_source
+    enforce = os.environ.get('ENFORCE_FUNDING')
+    if enforce and enforce.lower() in ('1', 'true', 'yes') and not fs:
+        crud.write_audit(db, {'id': f"audit-deny-ma-{payload.id}", 'actor': user.username, 'action': 'denied_create_marketing', 'entity_type': 'marketing_activity', 'entity_id': None, 'scope_type': 'STN', 'scope_value': payload.station_rsid, 'after_json': {'reason': 'funding_source required'}})
+        raise HTTPException(status_code=400, detail='funding_source is required')
+    # Remove funding_source before passing to domain CRUD (domain model doesn't include it)
+    d = payload.dict()
+    d.pop('funding_source', None)
+    obj = crud.create_marketing_activity(db, d)
     return {"status": "ok", "data": _format_datetimes({"id": obj.id})}
 
 

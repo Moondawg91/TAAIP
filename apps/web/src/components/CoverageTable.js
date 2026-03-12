@@ -23,7 +23,7 @@ export default function CoverageTable({rows}){
         <Typography variant="subtitle1">Coverage by Unit</Typography>
         {!hasRows ? (
           <Box sx={{p:2}}>
-            <Typography variant="body2" color="text.secondary">No sub-unit breakdown available for this scope. TODO: Import sub-unit coverage or implement sub-unit endpoint.</Typography>
+            <Typography variant="body2" color="text.secondary">No sub-unit breakdown available for this echelon. TODO: Import sub-unit coverage or implement sub-unit endpoint.</Typography>
           </Box>
         ) : (
           <div style={{height:420, width:'100%'}}>

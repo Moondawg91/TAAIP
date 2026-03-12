@@ -1,0 +1,517 @@
+---
+# TAAIP requirements spec (cleaned)
+requirements:
+- id: R001
+  title: Sidebar - Dashboard
+  description: Sidebar contains Dashboard link and page exists
+  type: frontend
+  priority: P0
+  checks:
+    - kind: frontend_route
+      path: /dashboard
+    - kind: nav_path
+      path: /dashboard
+
+- id: R002
+  title: Sidebar - Command Center
+  description: Sidebar contains Command Center and pages exist
+  type: frontend
+  priority: P0
+  checks:
+    - kind: frontend_route
+      path: /command-center
+    - kind: nav_path
+      path: /command-center
+
+- id: R003
+  title: Sidebar - Projects & Events
+  description: Planning projects-events route present
+  type: frontend
+  priority: P0
+  checks:
+    - kind: frontend_route
+      path: /planning/projects-events
+    - kind: nav_path
+      path: /planning/projects-events
+
+- id: R004
+  title: Budget Tracker
+  description: Budget tracker page and API
+  type: both
+  priority: P0
+  checks:
+    - kind: frontend_route
+      path: /budget/tracker
+    - kind: backend_route
+      path: /api/budget/dashboard
+
+- id: R005
+  title: Events ROI rollup
+  description: Tactical events rollup endpoint exists
+  type: backend
+  priority: P0
+  checks:
+    - kind: backend_route
+      path: /api/rollups/events
+
+- id: R006
+  title: Marketing rollup
+  description: Tactical marketing rollup endpoint exists
+  type: backend
+  priority: P0
+  checks:
+    - kind: backend_route
+      path: /api/rollups/marketing
+
+- id: R007
+  title: Funnel rollup
+  description: Tactical funnel rollup endpoint exists
+  type: backend
+  priority: P0
+  checks:
+    - kind: backend_route
+      path: /api/rollups/funnel
+
+- id: R008
+  title: Mission Assessment
+  description: Command center mission assessment endpoint and UI
+  type: both
+  priority: P0
+  checks:
+    - kind: backend_route
+      path: /api/command-center/mission-assessment
+    - kind: frontend_route
+      path: /command-center/mission-assessment
+
+- id: R009
+  title: Command Priorities API
+  description: API for command priorities exists
+  type: backend
+  priority: P0
+  checks:
+    - kind: backend_route
+      path: /api/command-center/priorities
+
+- id: R010
+  title: LOEs API
+  description: LOE CRUD endpoints exist
+  type: backend
+  priority: P0
+  checks:
+    - kind: backend_route
+      path: /api/command-center/loes
+
+- id: R011
+  title: Imports - upload endpoint
+  description: Import upload endpoint exists
+  type: backend
+  priority: P0
+  checks:
+    - kind: backend_route
+      path: /api/import/upload
+
+- id: R012
+  title: Imports - parse & map & validate & commit
+  description: Import parse/map/validate/commit endpoints exist
+  type: backend
+  priority: P0
+  checks:
+    - kind: backend_route
+      path: /api/import/parse
+    - kind: backend_route
+      path: /api/import/map
+    - kind: backend_route
+      path: /api/import/validate
+    - kind: backend_route
+      path: /api/import/commit
+
+- id: R013
+  title: RBAC helpers present
+  description: rbac utilities exist and local bypass supported
+  type: backend
+  priority: P0
+  checks:
+    - kind: file_glob
+      glob: "services/api/app/routers/rbac.py"
+    - kind: regex
+      glob: "services/api/app/routers/rbac.py"
+      pattern: 'LOCAL_DEV_AUTH_BYPASS'
+
+- id: R014
+  title: Audit logging utility
+  description: audit_log table and _log_audit present
+  type: backend
+  priority: P1
+  checks:
+    - kind: regex
+      glob: "services/api/app/routers/rbac.py"
+      pattern: 'audit_log'
+
+- id: R015
+  title: Exports - CSV endpoint
+  description: Export CSV endpoint for dashboards exists
+  type: backend
+  priority: P0
+  checks:
+    - kind: backend_route
+      path: /api/budget/dashboard/export.csv
+    - kind: regex
+      glob: "apps/web/src/**"
+      pattern: 'export'
+
+- id: R016
+  title: Exports - JSON endpoint
+  description: Export JSON support exists
+  type: backend
+  priority: P1
+  checks:
+    - kind: backend_route
+      path: /api/budget/dashboard
+
+- id: R017
+  title: Home - news/updates/quick links
+  description: Home Page shows news/updates/quick-links
+  type: frontend
+  priority: P0
+  checks:
+    - kind: frontend_route
+      path: /
+    - kind: regex
+      glob: "apps/web/src/pages/HomePage.tsx"
+      pattern: 'getHomeNews'
+
+- id: R018
+  title: No visible "Scope" wording
+  description: Forbidden word "Scope" must not appear in UI code
+  type: frontend
+  priority: P0
+  checks:
+    - kind: forbidden_word
+      word: Scope
+      glob: "apps/web/src/{components,pages}/**/*.{js,jsx,ts,tsx}"
+
+- id: R019
+  title: Dark theme present
+  description: MUI theme configured for dark mode
+  type: frontend
+  priority: P0
+  checks:
+    - kind: file_glob
+      glob: "apps/web/src/theme/muiTheme.ts"
+    - kind: regex
+      glob: "apps/web/src/theme/muiTheme.ts"
+      pattern: 'mode:.*dark'
+
+- id: R020
+  title: Funding source taxonomy
+  description: Funding source taxonomy placeholders exist
+  type: both
+  priority: P1
+  checks:
+    - kind: regex
+      glob: "apps/web/src/**"
+      pattern: 'ADVERTISING_FUNDS_NATIONAL|USAREC|BDE|BN'
+
+- id: R021
+  title: No demo operational data seeded
+  description: Repo contains no demo data scripts that seed ops data
+  type: both
+  priority: P0
+  checks:
+    - kind: forbidden_word
+      word: demo
+      glob: "populate_*.py"
+
+- id: R022
+  title: Drilldown dropdown filters present
+  description: Dashboards include dropdown filter components
+  type: frontend
+  priority: P1
+  checks:
+    - kind: regex
+      glob: "apps/web/src/components/**"
+      pattern: 'Select|DashboardFilterBar|FilterSidebar'
+
+- id: R023
+  title: Nav items route without runtime error
+  description: NavConfig entries have matching <Route> paths
+  type: frontend
+  priority: P0
+  checks:
+    - kind: nav_routes_match
+      nav: "apps/web/src/nav/navConfig.ts"
+      routes: "apps/web/src/App.js"
+
+- id: R024
+  title: System self-check endpoint
+  description: /api/system/self-check exists
+  type: backend
+  priority: P1
+  checks:
+    - kind: backend_route
+      path: /api/system/self-check
+
+- id: R025
+  title: Maintenance endpoints
+  description: system status and observations/proposals endpoints exist
+  type: backend
+  priority: P1
+  checks:
+    - kind: backend_route
+      path: /api/system/status
+    - kind: backend_route
+      path: /api/system/observations
+    - kind: backend_route
+      path: /api/system/proposals
+
+- id: R026
+  title: Command Center pages wired
+  description: Command priorities and LOE pages exist without runtime error
+  type: frontend
+  priority: P0
+  checks:
+    - kind: frontend_route
+      path: /command-center/priorities
+    - kind: frontend_route
+      path: /command-center/lines-of-effort
+
+- id: R027
+  title: Export buttons/pages present
+  description: Export menu UI present on dashboard pages
+  type: frontend
+  priority: P1
+  checks:
+    - kind: regex
+      glob: "apps/web/src/components/**"
+      pattern: 'ExportMenu'
+
+- id: R028
+  title: Budget API empty-safe
+  description: /api/budget/dashboard returns shape even with no data
+  type: backend
+  priority: P0
+  checks:
+    - kind: backend_route
+      path: /api/budget/dashboard
+    - kind: regex
+      glob: "services/api/app/routers/budget_dashboard.py"
+      pattern: 'missing_data'
+
+- id: R029
+  title: Maintenance guard implemented in frontend
+  description: App wraps routes with MaintenanceGuard and has /maintenance route
+  type: frontend
+  priority: P1
+  checks:
+    - kind: regex
+      glob: "apps/web/src/App.js"
+      pattern: 'MaintenanceGuard'
+    - kind: frontend_route
+      path: /maintenance
+
+- id: R030
+  title: API import check command present in docs
+  description: docs include python import check snippet
+  type: both
+  priority: P1
+  checks:
+    - kind: regex
+      glob: "**/DEPLOYMENT_*.md"
+      pattern: 'from services.api.app.main import app'
+
+- id: R031
+  title: Tactical rollups linked to budget
+  description: rollups have references to budget_line_item or budget APIs
+  type: backend
+  priority: P1
+  checks:
+    - kind: regex
+      glob: "services/api/app/routers/**"
+      pattern: 'budget_line_item|budget'
+
+- id: R032
+  title: Home status strip endpoint used
+  description: HomePage calls a status-strip endpoint
+  type: frontend
+  priority: P2
+  checks:
+    - kind: regex
+      glob: "apps/web/src/pages/HomePage.tsx"
+      pattern: 'getHomeStatusStrip'
+
+- id: R033
+  title: RBAC enforcement in routers
+  description: routers import require_any_role / require_scope
+  type: backend
+  priority: P0
+  checks:
+    - kind: regex
+      glob: "services/api/app/routers/**/*.py"
+      pattern: 'require_any_role|require_scope'
+
+- id: R034
+  title: Audit log table creation in codebase
+  description: code creates audit_log table if missing
+  type: backend
+  priority: P2
+  checks:
+    - kind: regex
+      glob: "services/api/app/routers/rbac.py"
+      pattern: 'CREATE TABLE IF NOT EXISTS audit_log'
+
+- id: R035
+  title: Exports placeholders for ppt/pdf/xlsx
+  description: Export endpoints or stubs exist for other formats
+  type: backend
+  priority: P2
+  checks:
+    - kind: regex
+      glob: "services/api/app/routers/**"
+      pattern: 'export|export.csv|export.xlsx|export.pdf|export.ppt'
+
+- id: R036
+  title: Navigation config exists
+  description: navConfig.ts contains navigation entries
+  type: frontend
+  priority: P0
+  checks:
+    - kind: file_glob
+      glob: "apps/web/src/nav/navConfig.ts"
+
+- id: R037
+  title: No improper rounded UI styles
+  description: global styles avoid large borderRadius uses
+  type: frontend
+  priority: P2
+  checks:
+    - kind: regex
+      glob: "apps/web/src/**"
+      pattern: 'borderRadius|border-radius'
+
+- id: R038
+  title: Help / system status page exists
+  description: /help/system-status route exists
+  type: frontend
+  priority: P1
+  checks:
+    - kind: frontend_route
+      path: /help/system-status
+
+- id: R039
+  title: System self-check UI exists (admin)
+  description: admin system-self-check page route exists
+  type: frontend
+  priority: P2
+  checks:
+    - kind: frontend_route
+      path: /admin/system-self-check
+
+- id: R040
+  title: Role management UI
+  description: Admin role pages exist
+  type: frontend
+  priority: P1
+  checks:
+    - kind: frontend_route
+      path: /admin/roles
+
+- id: R041
+  title: Events page exists
+  description: /ops/events route present and maps to EventsPage
+  type: frontend
+  priority: P1
+  checks:
+    - kind: frontend_route
+      path: /ops/events
+
+- id: R042
+  title: Command Priorities UI export
+  description: Command Priorities page supports export button (CSV/JSON)
+  type: frontend
+  priority: P2
+  checks:
+    - kind: regex
+      glob: "apps/web/src/pages/**"
+      pattern: 'ExportMenu|export'
+
+- id: R043
+  title: Mission assessment payload shape
+  description: API returns expected keys for mission assessment
+  type: backend
+  priority: P1
+  checks:
+    - kind: regex
+      glob: "services/api/app/routers/command_center.py"
+      pattern: '"tactical_rollup"|marketing|funnel'
+
+- id: R044
+  title: Budget breakdown endpoints
+  description: APIs provide breakdown_by_category and breakdown_by_project
+  type: backend
+  priority: P1
+  checks:
+    - kind: regex
+      glob: "services/api/app/routers/budget_dashboard.py"
+      pattern: 'breakdown_by_category|breakdown_by_project'
+
+- id: R045
+  title: Maintenance scheduler off by default
+  description: RUN_MAINT_SCHED default is 0 in main.py
+  type: backend
+  priority: P2
+  checks:
+    - kind: regex
+      glob: "services/api/app/main.py"
+      pattern: 'RUN_MAINT_SCHED'
+
+- id: R046
+  title: Route health meta endpoint
+  description: /api/meta/routes exists for route inspection
+  type: backend
+  priority: P2
+  checks:
+    - kind: backend_route
+      path: /api/meta/routes
+
+- id: R047
+  title: Top header component exists
+  description: TopHeader component present
+  type: frontend
+  priority: P2
+  checks:
+    - kind: file_glob
+      glob: "apps/web/src/components/TopHeader.tsx"
+
+- id: R048
+  title: Empty state components used
+  description: EmptyState component present and used
+  type: frontend
+  priority: P2
+  checks:
+    - kind: file_glob
+      glob: "apps/web/src/components/common/EmptyState.tsx"
+    - kind: regex
+      glob: "apps/web/src/**"
+      pattern: 'EmptyState'
+
+- id: R049
+  title: Tests or conftest exist for imports
+  description: tests referencing import endpoints present
+  type: backend
+  priority: P2
+  checks:
+    - kind: file_glob
+      glob: "services/api/tests/test_commit_fallback.py"
+
+- id: R050
+  title: 'Documentation: How to run build + import checks'
+  description: docs include build and python import check commands
+  type: both
+  priority: P1
+  checks:
+    - kind: regex
+      glob: "**/GETTING_STARTED*.md"
+      pattern: 'from services.api.app.main import app'
+    - kind: regex
+      glob: "**/DEPLOYMENT_*.md"
+      pattern: 'from services.api.app.main import app'

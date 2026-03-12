@@ -101,7 +101,7 @@ export default function CommandCenterPage(){
                 status !== 'online' ? (
                   <Typography variant="body2" color="text.secondary">API offline.</Typography>
                 ) : (
-                  <Typography variant="body2" color="text.secondary">No summary available for this scope/time window.</Typography>
+                  <Typography variant="body2" color="text.secondary">No summary available for this echelon/time window.</Typography>
                 )
               ) : (
                 <pre style={{whiteSpace:'pre-wrap'}}>{JSON.stringify(commandSummary, null, 2)}</pre>

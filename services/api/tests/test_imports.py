@@ -29,15 +29,25 @@ def create_org_fixture(db):
     db.add_all([co1, co2])
     db.commit()
 
-    st1 = models.Station(rsid='1A1D', display='Station1', company_id=co1.id)
-    st2 = models.Station(rsid='1B1D', display='Station2', company_id=co2.id)
-    db.add_all([st1, st2])
+    st1 = db.query(models.Station).filter(models.Station.rsid == '1A1D').first()
+    if not st1:
+        st1 = models.Station(rsid='1A1D', display='Station1', company_id=co1.id)
+        db.add(st1)
+    st2 = db.query(models.Station).filter(models.Station.rsid == '1B1D').first()
+    if not st2:
+        st2 = models.Station(rsid='1B1D', display='Station2', company_id=co2.id)
+        db.add(st2)
     db.commit()
 
     # add coverage
-    c1 = models.StationZipCoverage(station_rsid='1A1D', zip_code='12345', market_category=models.MarketCategory.MK)
-    c2 = models.StationZipCoverage(station_rsid='1B1D', zip_code='23456', market_category=models.MarketCategory.MW)
-    db.add_all([c1, c2])
+    c1 = db.query(models.StationZipCoverage).filter(models.StationZipCoverage.station_rsid == '1A1D', models.StationZipCoverage.zip_code == '12345').first()
+    if not c1:
+        c1 = models.StationZipCoverage(station_rsid='1A1D', zip_code='12345', market_category=models.MarketCategory.MK)
+        db.add(c1)
+    c2 = db.query(models.StationZipCoverage).filter(models.StationZipCoverage.station_rsid == '1B1D', models.StationZipCoverage.zip_code == '23456').first()
+    if not c2:
+        c2 = models.StationZipCoverage(station_rsid='1B1D', zip_code='23456', market_category=models.MarketCategory.MW)
+        db.add(c2)
     db.commit()
 
 

@@ -1,0 +1,84 @@
+name: Frontend Headless Smoke
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    - cron: '0 0 * * *' # daily at 00:00 UTC
+
+jobs:
+  headless-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install frontend deps (legacy-peer-deps)
+        run: npm --prefix apps/web install --legacy-peer-deps
+
+      - name: Build frontend
+        run: CI=true npm --prefix apps/web run build --silent
+
+      - name: Install Playwright
+        run: npm --prefix apps/web install --no-audit --no-fund playwright --legacy-peer-deps
+
+      - name: Start static server
+        run: |
+          npx --yes serve -s apps/web/build -l 5000 &
+          echo "waiting for server"
+          for i in {1..20}; do
+            if curl -sS http://127.0.0.1:5000/ >/dev/null 2>&1; then break; fi
+            sleep 1
+          done
+
+      - name: Run headless smoke (inline script)
+        env:
+          TEST_URL: http://127.0.0.1:5000/
+        run: |
+          node -e "(async()=>{const fs=require('fs');const { chromium }=require('playwright');const out=[];try{const browser=await chromium.launch();const page=await browser.newPage();page.on('console', m=>out.push({type:'console',text:m.text()}));page.on('pageerror', e=>out.push({type:'pageerror',message:String(e.stack||e)}));page.on('response', r=>{ if(r.status()>=400) out.push({type:'response',url:r.url(),status:r.status()}) }); await page.goto(process.env.TEST_URL,{waitUntil:'networkidle',timeout:20000}).catch(e=>out.push({type:'navigate_error',message:String(e)})); await page.waitForTimeout(1500); out.push({type:'title',title:await page.title().catch(()=>null)}); const shot='/tmp/gha_headless.png'; await page.screenshot({path:shot,fullPage:true}).catch(()=>{}); out.push({type:'screenshot',path:shot}); await browser.close();}catch(e){out.push({type:'error',message:String(e)});} fs.writeFileSync('headless_result.json',JSON.stringify(out,null,2)); console.log('wrote headless_result.json');})()"
+
+      - name: Upload headless artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: headless-smoke-results
+          path: |
+            headless_result.json
+            /tmp/gha_headless.png
+
+      - name: Install minimist for E2E script
+        run: npm --prefix apps/web install --no-audit --no-fund minimist --legacy-peer-deps
+
+      - name: Run Playwright mapping E2E script
+        env:
+          TEST_URL: http://127.0.0.1:5000/
+        run: |
+          node apps/web/scripts/playwright_mapping_e2e.cjs --url $TEST_URL --csv apps/web/test-fixtures/school_messy.csv || true
+          # upload results if produced
+          if [ -f playwright_mapping_result.json ]; then mv playwright_mapping_result.json playwright_mapping_result.json; fi
+          if [ -f /tmp/playwright_mapping_e2e.png ]; then cp /tmp/playwright_mapping_e2e.png /tmp/gha_playwright.png; fi
+      - name: Run Playwright documents E2E script
+        env:
+          TEST_URL: http://127.0.0.1:5000/
+        run: |
+          node apps/web/scripts/playwright_documents_e2e.cjs --url $TEST_URL || true
+          if [ -f /tmp/playwright_documents_e2e.png ]; then cp /tmp/playwright_documents_e2e.png /tmp/gha_playwright_documents.png; fi
+      - name: Upload playwright artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-mapping-results
+          path: |
+            playwright_mapping_result.json
+            /tmp/gha_playwright.png
+      - name: Upload playwright documents artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-documents-results
+          path: |
+            /tmp/gha_playwright_documents.png

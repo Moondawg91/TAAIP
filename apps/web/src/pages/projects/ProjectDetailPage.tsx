@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { Box, Typography, Card, CardContent, Table, TableHead, TableRow, TableCell, TableBody, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Button } from '@mui/material'
 import EditIcon from '@mui/icons-material/Edit'
-import { getProject, listTasks, updateTask, assignTask } from '../../api/client'
+import { getProject, getDomainProject, listTasks, updateTask, assignTask } from '../../api/client'
 
 function TaskEditDialog({ open, task, onClose, onSaved }:{open:boolean, task:any, onClose:()=>void, onSaved:()=>void}){
   const [form, setForm] = useState({ owner: '', status: '', percent_complete: 0 })
@@ -57,10 +57,18 @@ export default function ProjectDetailPage(){
   async function load(){
     setLoading(true)
     try{
-      const p = await getProject(Number(id))
+      let p = null
+      // handle numeric domain project ids and domain UUID project_ids
+      if (id && /^[0-9]+$/.test(String(id))) {
+        p = await getProject(Number(id))
+        const t = await listTasks(Number(id))
+        setTasks(t || [])
+      } else {
+        p = await getDomainProject(id)
+        const t = await listTasks(id)
+        setTasks(t || [])
+      }
       setProject(p)
-      const t = await listTasks(Number(id))
-      setTasks(t || [])
     }catch(e){ console.error('load project', e) }
     finally{ setLoading(false) }
   }

@@ -11,9 +11,9 @@ REACT_APP_API_BASE=http://localhost:8000 npm start
 Usage:
 - Open http://localhost:3000
 - Paste a JWT token from `/api/auth/login` into the "Paste JWT token" box and click Save Token.
-- Pick a scope and optionally a value, then click Apply to refresh data.
+ - Pick an echelon and optionally a unit value, then click Apply to refresh data.
 
-Example scopes/values:
+Example echelons/units:
 - USAREC (leave value blank)
 - BDE "1"
 - BN "1A"

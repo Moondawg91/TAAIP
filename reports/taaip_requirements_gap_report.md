@@ -2,76 +2,87 @@
 
 Total requirements: 50
 
-Missing: 24
+Missing: 0
 
 ## R001 - Sidebar - Dashboard
 
-Status: **MISSING**
+Status: **OK**
 
-- Check: frontend_route /dashboard — MISSING
-- Check: nav_path /dashboard — MISSING
+- Check: frontend_route /dashboard — OK
+  - Where: /Users/ambermooney/Desktop/TAAIP/apps/web/src/App.js
+- Check: nav_path /dashboard — OK
+  - Where: /Users/ambermooney/Desktop/TAAIP/apps/web/src/nav/navConfig.ts
 
 ## R002 - Sidebar - Command Center
 
-Status: **MISSING**
+Status: **OK**
 
 - Check: frontend_route /command-center — OK
+  - Where: /Users/ambermooney/Desktop/TAAIP/apps/web/src/App.js
+- Check: nav_path /command-center — OK
   - Where: /Users/ambermooney/Desktop/TAAIP/apps/web/src/nav/navConfig.ts
-- Check: nav_path /command-center — MISSING
 
 ## R003 - Sidebar - Projects & Events
 
-Status: **MISSING**
+Status: **OK**
 
 - Check: frontend_route /planning/projects-events — OK
+  - Where: /Users/ambermooney/Desktop/TAAIP/apps/web/src/App.js
+- Check: nav_path /planning/projects-events — OK
   - Where: /Users/ambermooney/Desktop/TAAIP/apps/web/src/nav/navConfig.ts
-- Check: nav_path /planning/projects-events — MISSING
 
 ## R004 - Budget Tracker
 
-Status: **MISSING**
+Status: **OK**
 
 - Check: frontend_route /budget/tracker — OK
-  - Where: /Users/ambermooney/Desktop/TAAIP/apps/web/src/nav/navConfig.ts
-- Check: backend_route /api/budget/dashboard — MISSING
+  - Where: /Users/ambermooney/Desktop/TAAIP/apps/web/src/App.js
+- Check: backend_route /api/budget/dashboard — OK
+  - Where: /Users/ambermooney/Desktop/TAAIP/services/api/app/routers/budget_dashboard.py
 
 ## R005 - Events ROI rollup
 
-Status: **MISSING**
+Status: **OK**
 
-- Check: backend_route /api/rollups/events — MISSING
+- Check: backend_route /api/rollups/events — OK
+  - Where: /Users/ambermooney/Desktop/TAAIP/services/api/app/routers/tactical_rollups.py
 
 ## R006 - Marketing rollup
 
-Status: **MISSING**
+Status: **OK**
 
-- Check: backend_route /api/rollups/marketing — MISSING
+- Check: backend_route /api/rollups/marketing — OK
+  - Where: /Users/ambermooney/Desktop/TAAIP/services/api/app/routers/tactical_rollups.py
 
 ## R007 - Funnel rollup
 
-Status: **MISSING**
+Status: **OK**
 
-- Check: backend_route /api/rollups/funnel — MISSING
+- Check: backend_route /api/rollups/funnel — OK
+  - Where: /Users/ambermooney/Desktop/TAAIP/services/api/app/routers/tactical_rollups.py
 
 ## R008 - Mission Assessment
 
-Status: **MISSING**
+Status: **OK**
 
-- Check: backend_route /api/command-center/mission-assessment — MISSING
+- Check: backend_route /api/command-center/mission-assessment — OK
+  - Where: /Users/ambermooney/Desktop/TAAIP/services/api/app/routers/command_center.py
 - Check: frontend_route /command-center/mission-assessment — OK
-  - Where: /Users/ambermooney/Desktop/TAAIP/apps/web/src/nav/navConfig.ts
+  - Where: /Users/ambermooney/Desktop/TAAIP/apps/web/src/App.js
 
 ## R009 - Command Priorities API
 
-Status: **MISSING**
+Status: **OK**
 
-- Check: backend_route /api/command-center/priorities — MISSING
+- Check: backend_route /api/command-center/priorities — OK
+  - Where: /Users/ambermooney/Desktop/TAAIP/services/api/app/routers/command_center.py
 
 ## R010 - LOEs API
 
-Status: **MISSING**
+Status: **OK**
 
-- Check: backend_route /api/command-center/loes — MISSING
+- Check: backend_route /api/command-center/loes — OK
+  - Where: /Users/ambermooney/Desktop/TAAIP/services/api/app/routers/command_center.py
 
 ## R011 - Imports - upload endpoint
 
@@ -111,41 +122,43 @@ Status: **OK**
 
 ## R015 - Exports - CSV endpoint
 
-Status: **MISSING**
+Status: **OK**
 
-- Check: backend_route /api/budget/dashboard/export.csv — MISSING
+- Check: backend_route /api/budget/dashboard/export.csv — OK
+  - Where: /Users/ambermooney/Desktop/TAAIP/services/api/app/routers/budget_dashboard.py
 - Check: regex apps/web/src/** — OK
   - Where: /Users/ambermooney/Desktop/TAAIP/apps/web/src/contexts/ScopeContext.tsx
 
 ## R016 - Exports - JSON endpoint
 
-Status: **MISSING**
+Status: **OK**
 
-- Check: backend_route /api/budget/dashboard — MISSING
+- Check: backend_route /api/budget/dashboard — OK
+  - Where: /Users/ambermooney/Desktop/TAAIP/services/api/app/routers/budget_dashboard.py
 
 ## R017 - Home - news/updates/quick links
 
 Status: **OK**
 
 - Check: frontend_route / — OK
-  - Where: /Users/ambermooney/Desktop/TAAIP/apps/web/src/nav/navConfig.ts
+  - Where: /Users/ambermooney/Desktop/TAAIP/apps/web/src/App.js
 - Check: regex apps/web/src/pages/HomePage.tsx — OK
   - Where: /Users/ambermooney/Desktop/TAAIP/apps/web/src/pages/HomePage.tsx
 
 ## R018 - No visible "Scope" wording
 
-Status: **MISSING**
+Status: **OK**
 
-- Check: forbidden_word apps/web/src/** — MISSING
-  - Where: ['/Users/ambermooney/Desktop/TAAIP/apps/web/src/contexts/ScopeContext.tsx', '/Users/ambermooney/Desktop/TAAIP/apps/web/src/components/ScopePicker.js', '/Users/ambermooney/Desktop/TAAIP/apps/web/src/components/SidebarFilters.js', '/Users/ambermooney/Desktop/TAAIP/apps/web/src/api/client.js', '/Users/ambermooney/Desktop/TAAIP/apps/web/src/pages/command/LinesOfEffortPage.tsx']
+- Check: forbidden_word apps/web/src/{components,pages}/**/*.{js,jsx,ts,tsx} — OK
 
 ## R019 - Dark theme present
 
-Status: **MISSING**
+Status: **OK**
 
 - Check: file_glob apps/web/src/theme/muiTheme.ts — OK
   - Where: ['/Users/ambermooney/Desktop/TAAIP/apps/web/src/theme/muiTheme.ts']
-- Check: regex apps/web/src/theme/muiTheme.ts — MISSING
+- Check: regex apps/web/src/theme/muiTheme.ts — OK
+  - Where: /Users/ambermooney/Desktop/TAAIP/apps/web/src/theme/muiTheme.ts
 
 ## R020 - Funding source taxonomy
 
@@ -156,10 +169,9 @@ Status: **OK**
 
 ## R021 - No demo operational data seeded
 
-Status: **MISSING**
+Status: **OK**
 
-- Check: forbidden_word populate_*.py — MISSING
-  - Where: ['/Users/ambermooney/Desktop/TAAIP/populate_twg_data.py']
+- Check: forbidden_word populate_*.py — OK
 
 ## R022 - Drilldown dropdown filters present
 
@@ -184,19 +196,23 @@ Status: **OK**
 
 ## R025 - Maintenance endpoints
 
-Status: **MISSING**
+Status: **OK**
 
-- Check: backend_route /api/system/status — MISSING
-- Check: backend_route /api/system/observations — MISSING
-- Check: backend_route /api/system/proposals — MISSING
+- Check: backend_route /api/system/status — OK
+  - Where: /Users/ambermooney/Desktop/TAAIP/services/api/app/routers/system.py
+- Check: backend_route /api/system/observations — OK
+  - Where: /Users/ambermooney/Desktop/TAAIP/services/api/app/routers/system.py
+- Check: backend_route /api/system/proposals — OK
+  - Where: /Users/ambermooney/Desktop/TAAIP/services/api/app/routers/system.py
 
 ## R026 - Command Center pages wired
 
-Status: **MISSING**
+Status: **OK**
 
 - Check: frontend_route /command-center/priorities — OK
-  - Where: /Users/ambermooney/Desktop/TAAIP/apps/web/src/nav/navConfig.ts
-- Check: frontend_route /command-center/lines-of-effort — MISSING
+  - Where: /Users/ambermooney/Desktop/TAAIP/apps/web/src/App.js
+- Check: frontend_route /command-center/lines-of-effort — OK
+  - Where: /Users/ambermooney/Desktop/TAAIP/apps/web/src/App.js
 
 ## R027 - Export buttons/pages present
 
@@ -207,25 +223,28 @@ Status: **OK**
 
 ## R028 - Budget API empty-safe
 
-Status: **MISSING**
+Status: **OK**
 
-- Check: backend_route /api/budget/dashboard — MISSING
+- Check: backend_route /api/budget/dashboard — OK
+  - Where: /Users/ambermooney/Desktop/TAAIP/services/api/app/routers/budget_dashboard.py
 - Check: regex services/api/app/routers/budget_dashboard.py — OK
   - Where: /Users/ambermooney/Desktop/TAAIP/services/api/app/routers/budget_dashboard.py
 
 ## R029 - Maintenance guard implemented in frontend
 
-Status: **MISSING**
+Status: **OK**
 
 - Check: regex apps/web/src/App.js — OK
   - Where: /Users/ambermooney/Desktop/TAAIP/apps/web/src/App.js
-- Check: frontend_route /maintenance — MISSING
+- Check: frontend_route /maintenance — OK
+  - Where: /Users/ambermooney/Desktop/TAAIP/apps/web/src/App.js
 
 ## R030 - API import check command present in docs
 
-Status: **MISSING**
+Status: **OK**
 
-- Check: regex **/DEPLOYMENT_*.md — MISSING
+- Check: regex **/DEPLOYMENT_*.md — OK
+  - Where: /Users/ambermooney/Desktop/TAAIP/DEPLOYMENT_QUICKSTART.md
 
 ## R031 - Tactical rollups linked to budget
 
@@ -236,9 +255,10 @@ Status: **OK**
 
 ## R032 - Home status strip endpoint used
 
-Status: **MISSING**
+Status: **OK**
 
-- Check: regex apps/web/src/pages/HomePage.tsx — MISSING
+- Check: regex apps/web/src/pages/HomePage.tsx — OK
+  - Where: /Users/ambermooney/Desktop/TAAIP/apps/web/src/pages/HomePage.tsx
 
 ## R033 - RBAC enforcement in routers
 
@@ -280,27 +300,28 @@ Status: **OK**
 Status: **OK**
 
 - Check: frontend_route /help/system-status — OK
-  - Where: /Users/ambermooney/Desktop/TAAIP/apps/web/src/nav/navConfig.ts
+  - Where: /Users/ambermooney/Desktop/TAAIP/apps/web/src/App.js
 
 ## R039 - System self-check UI exists (admin)
 
 Status: **OK**
 
 - Check: frontend_route /admin/system-self-check — OK
-  - Where: /Users/ambermooney/Desktop/TAAIP/apps/web/src/nav/navConfig.ts
+  - Where: /Users/ambermooney/Desktop/TAAIP/apps/web/src/App.js
 
 ## R040 - Role management UI
 
 Status: **OK**
 
 - Check: frontend_route /admin/roles — OK
-  - Where: /Users/ambermooney/Desktop/TAAIP/apps/web/src/nav/navConfig.ts
+  - Where: /Users/ambermooney/Desktop/TAAIP/apps/web/src/App.js
 
 ## R041 - Events page exists
 
-Status: **MISSING**
+Status: **OK**
 
-- Check: frontend_route /ops/events — MISSING
+- Check: frontend_route /ops/events — OK
+  - Where: /Users/ambermooney/Desktop/TAAIP/apps/web/src/App.js
 
 ## R042 - Command Priorities UI export
 
@@ -332,9 +353,10 @@ Status: **OK**
 
 ## R046 - Route health meta endpoint
 
-Status: **MISSING**
+Status: **OK**
 
-- Check: backend_route /api/meta/routes — MISSING
+- Check: backend_route /api/meta/routes — OK
+  - Where: /Users/ambermooney/Desktop/TAAIP/services/api/app/routers/meta.py
 
 ## R047 - Top header component exists
 
@@ -361,9 +383,10 @@ Status: **OK**
 
 ## R050 - Documentation: How to run build + import checks
 
-Status: **MISSING**
+Status: **OK**
 
-- Check: regex **/GETTING_STARTED*.md — MISSING
-- Check: regex **/DEPLOYMENT_*.md — MISSING
-- Check: regex **/LOCAL_SETUP.md — MISSING
+- Check: regex **/GETTING_STARTED*.md — OK
+  - Where: /Users/ambermooney/Desktop/TAAIP/GETTING_STARTED.md
+- Check: regex **/DEPLOYMENT_*.md — OK
+  - Where: /Users/ambermooney/Desktop/TAAIP/DEPLOYMENT_QUICKSTART.md
 

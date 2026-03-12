@@ -7,9 +7,10 @@ describe('ExportMenu', () => {
     // mock URL.createObjectURL and revokeObjectURL
     ;(global as any).URL.createObjectURL = jest.fn(() => 'blob:fake')
     ;(global as any).URL.revokeObjectURL = jest.fn()
-    // spy on anchor click
+    // spy on anchor click so download invocation doesn't throw
     jest.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function() {})
   })
+
   afterEach(() => {
     jest.restoreAllMocks()
   })

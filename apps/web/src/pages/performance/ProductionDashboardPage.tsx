@@ -26,7 +26,7 @@ export default function ProductionDashboardPage(){
         <CardContent>
           <Typography variant="h6">Recent Production Rows ({rows.length})</Typography>
           {( !loading && (!rows || rows.length===0) ) ? (
-            <EmptyState title="No production data" subtitle="No production rows available for your scope." actionLabel="Refresh" onAction={load} />
+            <EmptyState title="No production data" subtitle="No production rows available for your echelon." actionLabel="Refresh" onAction={load} />
           ) : (
             <Table size="small">
               <TableBody>

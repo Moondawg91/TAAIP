@@ -1,11 +1,14 @@
 import React from 'react'
-import { Box, Typography, Chip } from '@mui/material'
+import { Box, Typography } from '@mui/material'
+import EmptyState from '../../components/EmptyState'
 
 export default function DocsLibrary(){
   return (
     <Box>
       <Typography variant="h4">Document Library</Typography>
-      <Chip label="Status: Coming soon" sx={{ mt:2 }} />
+      <Box sx={{ mt:2 }}>
+        <EmptyState title="Document Library" subtitle="Upload and organize documents in the Data Hub." />
+      </Box>
     </Box>
   )
 }

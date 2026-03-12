@@ -124,9 +124,15 @@ def transactional_tests():
     # Ensure raw sqlite3 callers used by the app share the same DB-API
     # connection so commits are visible inside the active test transaction.
     try:
+        # Use a fresh sqlite3 connection with `check_same_thread=False` so
+        # TestClient can perform requests in separate threads without
+        # triggering SQLite same-thread errors. This avoids fragile
+        # reuse of SQLAlchemy's internal DB-API connection across threads.
         from services.api.app import db as app_db
-        raw_conn = conn.connection
-        app_db.set_test_raw_conn(raw_conn)
+        import sqlite3, os
+        db_path = os.environ.get('TAAIP_DB_PATH', './taaip_test.db')
+        fallback = sqlite3.connect(db_path, check_same_thread=False)
+        app_db.set_test_raw_conn(fallback)
     except Exception:
         pass
     # Create a single Session instance bound to the connection and ensure

@@ -1,24 +1,44 @@
-import React from 'react'
-import { Box, Typography, Button } from '@mui/material'
+import React, { useEffect, useState } from 'react'
+import { Box, Typography, Button, Paper, Grid, List, ListItem, ListItemText, Divider, Link } from '@mui/material'
+import { getHealth, getMe, listDocuments, importJobs } from '../api/client'
 
-export default function PlaceholderPage({ title = 'Coming Soon', subtitle = 'This page is wired and ready for future implementation.' }) {
+export default function NotLoadedPage({ title = 'Not Loaded', subtitle = 'Data not loaded. Load datasets in Data Hub.' }) {
   return (
-    <Box sx={{ minHeight: '100vh', px: 4, py: 6, bgcolor: 'background.default', color: 'text.primary', display: 'flex', flexDirection: 'column', gap: 2 }}>
-      <Box>
-        <Typography variant="h4" sx={{ fontWeight: 700 }}>{title}</Typography>
-        <Typography variant="subtitle1" sx={{ color: 'text.secondary', mt: 1 }}>{subtitle}</Typography>
-      </Box>
+    <Box sx={{ minHeight: '100vh', px: 4, py: 6, bgcolor: 'background.default', color: 'text.primary' }}>
+      <Typography variant="h4" sx={{ fontWeight: 700 }}>{title}</Typography>
+      <Typography variant="subtitle1" sx={{ color: 'text.secondary', mt: 1 }}>{subtitle}</Typography>
 
-      <Box sx={{ mt: 4, p:3, borderRadius: 2, bgcolor: 'background.paper', color: 'text.primary', maxWidth: 720 }}>
-        <Typography variant="h6" sx={{ fontWeight:600 }}>Status: Coming soon</Typography>
-        <Typography variant="body2" sx={{ color: 'text.secondary', mt: 1 }}>This page is a placeholder to ensure navigation works and maintain the dark UI. Implement Phase features here when ready.</Typography>
-      </Box>
+      <Grid container spacing={2} sx={{ mt: 3 }}>
+        <Grid item xs={12} md={8}>
+          <Paper sx={{ p:2 }}>
+            <Typography variant="h6">Not Loaded</Typography>
+            <Divider sx={{ my:1 }} />
+            <Typography variant="body2" sx={{ mb:1 }}>This page has no operational datasets available. Load datasets in the Data Hub to enable full functionality.</Typography>
+            <Link href="/data-hub" variant="button" sx={{ mr:1 }}>Go to Data Hub</Link>
+          </Paper>
+        </Grid>
 
-      <Box sx={{ flex:1 }} />
+        <Grid item xs={12} md={4}>
+          <Paper sx={{ p:2 }}>
+            <Typography variant="h6">Why you see this</Typography>
+            <Divider sx={{ my:1 }} />
+            <List dense>
+              <ListItem>
+                <ListItemText primary="No datasets imported" secondary="Required source tables are empty or missing." />
+              </ListItem>
+              <ListItem>
+                <ListItemText primary="RBAC" secondary="You may need proper permissions to view this page's data." />
+              </ListItem>
+            </List>
+          </Paper>
+        </Grid>
+      </Grid>
 
-      <Box>
-        <Button variant="contained" color="primary" href="#" onClick={(e)=>e.preventDefault()}>Acknowledged</Button>
+      <Box sx={{ mt:3 }}>
+        <Button variant="text" onClick={() => window.location.reload()}>Refresh</Button>
       </Box>
     </Box>
   )
 }
+
+  export { NotLoadedPage }

@@ -7,6 +7,8 @@ import StorageIcon from '@mui/icons-material/Storage'
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings'
 import HelpIcon from '@mui/icons-material/Help'
 import { Link as RouterLink, useLocation } from 'react-router-dom'
+import { useAuth } from '../contexts/AuthContext'
+import routePerms from '../rbac/routePerms'
 
 const drawerWidth = 220
 
@@ -15,8 +17,17 @@ const sections = [
     title: 'Dashboard',
     items: [
       { to: '/', label: 'Home', icon: DashboardIcon },
-      { to: '/command-center', label: 'Command Center', icon: AssessmentIcon },
       { to: '/scoreboard', label: 'Scoreboard', icon: AssessmentIcon },
+    ],
+  },
+  {
+    title: 'Command Center',
+    items: [
+      { to: '/command-center', label: 'Overview', icon: AssessmentIcon },
+      { to: '/command-center/targeting-data', label: 'Targeting', icon: MapIcon },
+      { to: '/command-center/twg', label: 'Targeting (TWG)', icon: MapIcon },
+      { to: '/command-center/fusion-cell', label: 'Fusion Cell', icon: AssessmentIcon },
+      { to: '/command/mission-feasibility', label: 'Mission Feasibility', icon: AssessmentIcon },
     ],
   },
   {
@@ -28,16 +39,24 @@ const sections = [
     ],
   },
   {
-    title: 'Planning & Resources',
+    title: 'Planning',
     items: [
-      { to: '/budgets', label: 'Budgets', icon: StorageIcon },
-      { to: '/reports', label: 'Reports (QBR)', icon: AssessmentIcon },
+      { to: '/planning', label: 'Planning Home', icon: StorageIcon },
+      { to: '/planning/twg', label: 'TWG', icon: MapIcon },
+      { to: '/planning/fusion', label: 'Fusion Cell', icon: AssessmentIcon },
+    ],
+  },
+  {
+    title: 'ROI',
+    items: [
+      { to: '/roi/marketing', label: 'Marketing ROI', icon: AssessmentIcon },
+      { to: '/roi/mac', label: 'MAC ROI', icon: AssessmentIcon },
     ],
   },
   {
     title: 'Data & Documents',
     items: [
-      { to: '/import-center', label: 'Import Center', icon: StorageIcon },
+      { to: '/data-hub', label: 'Data Hub', icon: StorageIcon },
       { to: '/docs', label: 'Document Library', icon: HelpIcon },
       { to: '/training', label: 'Training (LMS)', icon: AssessmentIcon },
     ],
@@ -52,6 +71,25 @@ const sections = [
 
 export default function NavSidebar(){
   const location = useLocation()
+  const { roles, loading, permissions, permissionsObj, hasPerm, isAdmin: ctxIsAdmin } = useAuth()
+  const isAdmin = !loading && (ctxIsAdmin || (roles && roles.some(r=>['system_admin','usarec_admin','sysadmin','admin','420t_admin'].includes(r))))
+
+  // determine visibility per-item using route->permission map and admin flag
+  const visibleSections = sections.map(s => {
+    const items = s.items.filter((it: any) => {
+      // keep admin section only for admin if no explicit permission map
+      const perm = routePerms[it.to]
+      if (!perm) {
+        if (s.title === 'Admin' && !isAdmin) return false
+        return true
+      }
+      // if there is a permission mapping, require that permission or admin status
+      const allowed = (!loading && (hasPerm && hasPerm(perm))) || isAdmin
+      return Boolean((!loading && allowed))
+    })
+    return { ...s, items }
+  }).filter(s => (s.items || []).length > 0)
+
   return (
     <Drawer variant="permanent" sx={{ width: drawerWidth, '& .MuiDrawer-paper': { width: drawerWidth, boxSizing: 'border-box' } }}>
       <Toolbar sx={{px:2}}>
@@ -62,7 +100,7 @@ export default function NavSidebar(){
       </Toolbar>
       <Divider />
       <List>
-        {sections.map((sec) => (
+        {visibleSections.map((sec) => (
           <Box key={sec.title} sx={{mb:1}}>
             <ListSubheader disableSticky sx={{bgcolor:'transparent'}}>
               <Typography variant="subtitle2" sx={{pl:1, color:'#666'}}>{sec.title}</Typography>

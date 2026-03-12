@@ -1,12 +1,14 @@
 import React from 'react'
-import {Box, Button, Divider, FormControl, InputLabel, MenuItem, Select, TextField, Typography, Switch, FormControlLabel} from '@mui/material'
+import {Box, Button, Divider, TextField, Typography, Switch, FormControlLabel, FormControl, InputLabel, Select, MenuItem} from '@mui/material'
+import UnitCascadePicker from './UnitCascadePicker'
+import { useFilters } from '../contexts/FilterContext'
+import dateScopes from '../utils/dateScopes'
 
-const SCOPES = ['USAREC','BDE','BN','CO','STN']
-
-export default function SidebarFilters({scope, value, onApply, onTokenSave, autoRefresh, setAutoRefresh, onRefresh, timeWindow, setTimeWindow}){
-  const [localScope, setLocalScope] = React.useState(scope || 'USAREC')
-  const [localValue, setLocalValue] = React.useState(value || '')
+export default function SidebarFilters({ scope, value, onApply, onTokenSave, autoRefresh, setAutoRefresh, onRefresh, timeWindow, setTimeWindow }){
+  const { filters, setUnit, setFy, setQtr, setRsmMonth } = useFilters()
   const [token, setToken] = React.useState(localStorage.getItem('taaip_jwt') || '')
+
+  React.useEffect(()=>{ try{ setToken(localStorage.getItem('taaip_jwt') || '') }catch(e){} }, [])
 
   function saveToken(){
     if(token) localStorage.setItem('taaip_jwt', token)
@@ -14,49 +16,60 @@ export default function SidebarFilters({scope, value, onApply, onTokenSave, auto
     onTokenSave && onTokenSave(token)
   }
 
+  const fyOptions = (()=>{ const y = dateScopes.getCurrentFY(); return [String(y-1), String(y), String(y+1)] })()
+  const qOptions = ['Q1','Q2','Q3','Q4']
+  const monthsForCurrent = (()=>{
+    try{ const fy = Number(filters.fy) || dateScopes.getCurrentFY(); const qn = Number(String(filters.qtr || 'Q1').replace(/^Q/,'')); return dateScopes.getQuarterMonths(fy, qn) }catch(e){ return [dateScopes.getCurrentRsmMonth()] }
+  })()
+
   return (
     <Box sx={{width:260, p:2}}>
-      <Typography variant="h6">Command Center</Typography>
-      <Typography variant="caption" color="text.secondary">Paste JWT Token</Typography>
-      <Box sx={{display:'flex', gap:1, mt:1}}>
-        <TextField size="small" fullWidth value={token} onChange={e=>setToken(e.target.value)} placeholder="Paste JWT token" />
-        <Button variant="contained" onClick={saveToken}>Save</Button>
-      </Box>
-
+      <Typography variant="h6">Filters</Typography>
+      <Typography variant="caption" color="text.secondary">Global filters (applies across pages)</Typography>
       <Divider sx={{my:2}} />
 
-      <Typography variant="subtitle2">Scope</Typography>
-      <FormControl fullWidth size="small" sx={{mt:1}}>
-        <InputLabel>Scope</InputLabel>
-        <Select value={localScope} label="Scope" onChange={e=>setLocalScope(e.target.value)}>
-          {SCOPES.map(s=> <MenuItem key={s} value={s}>{s}</MenuItem>)}
-        </Select>
-      </FormControl>
-      <TextField size="small" fullWidth sx={{mt:1}} placeholder="Value (prefix or RSID)" value={localValue} onChange={e=>setLocalValue(e.target.value)} />
-      <Box sx={{display:'flex', gap:1, mt:1}}>
-        <Button variant="outlined" onClick={()=>{ setLocalScope(scope); setLocalValue(value); onApply && onApply(scope, value); }}>Reset</Button>
-        <Button variant="contained" onClick={()=>onApply && onApply(localScope, localValue)}>Apply</Button>
+      <Typography variant="subtitle2">Unit (read-only)</Typography>
+      <Box sx={{mt:1, mb:1}}>
+        <Typography variant="body2">Command: <strong>{filters.unit_rsid || 'USAREC'}</strong></Typography>
+        <Typography variant="caption" color="text.secondary">Drilldown via Unit selector on dashboards.</Typography>
       </Box>
 
       <Divider sx={{my:2}} />
 
       <Typography variant="subtitle2">Time Window</Typography>
-      <Box sx={{display:'flex', gap:1, flexWrap:'wrap', mt:1}}>
-        {['7','30','90','FYTD'].map(t=> (
-          <Button key={t} size="small" variant={timeWindow===t? 'contained':'outlined'} onClick={()=>setTimeWindow(t)}>{t==='FYTD' ? 'FYTD' : `Last ${t}d`}</Button>
-        ))}
+      <Box sx={{mt:1, display:'flex', gap:1, flexDirection:'column'}}>
+        <FormControl size="small" fullWidth>
+          <InputLabel>FY</InputLabel>
+          <Select value={String(filters.fy || '')} label="FY" onChange={(e)=> setFy(Number(e.target.value))}>
+            {fyOptions.map(f=> <MenuItem key={f} value={f}>{f}</MenuItem>)}
+          </Select>
+        </FormControl>
+        <FormControl size="small" fullWidth sx={{mt:1}}>
+          <InputLabel>Quarter</InputLabel>
+          <Select value={String(filters.qtr || '')} label="Quarter" onChange={(e)=> setQtr(String(e.target.value))}>
+            {qOptions.map(q=> <MenuItem key={q} value={q}>{q}</MenuItem>)}
+          </Select>
+        </FormControl>
+        <FormControl size="small" fullWidth sx={{mt:1}}>
+          <InputLabel>Month</InputLabel>
+          <Select value={String(filters.rsm_month || '')} label="Month" onChange={(e)=> setRsmMonth(String(e.target.value))}>
+            {monthsForCurrent.map(m => <MenuItem key={m} value={m}>{m}</MenuItem>)}
+          </Select>
+        </FormControl>
       </Box>
 
       <Divider sx={{my:2}} />
 
-      <FormControlLabel control={<Switch checked={autoRefresh} onChange={e=>setAutoRefresh(e.target.checked)} />} label="Auto-refresh (15s)" />
       <Box sx={{display:'flex', gap:1, mt:1}}>
         <Button variant="contained" onClick={onRefresh}>Refresh</Button>
       </Box>
 
-      <Box sx={{mt:3}}>
-        <Typography variant="caption" color="text.secondary">Notes</Typography>
-        <Typography variant="body2" sx={{mt:1,color:'text.secondary'}}>This UI displays real data from the API. If no data is available for the selected scope, a clear empty state will be shown. No demo data is created.</Typography>
+      <Divider sx={{my:2}} />
+
+      <Typography variant="caption" color="text.secondary">Developer Token</Typography>
+      <Box sx={{display:'flex', gap:1, mt:1}}>
+        <TextField size="small" fullWidth value={token} onChange={e=>setToken(e.target.value)} placeholder="Paste JWT token" />
+        <Button variant="contained" onClick={saveToken}>Save</Button>
       </Box>
     </Box>
   )

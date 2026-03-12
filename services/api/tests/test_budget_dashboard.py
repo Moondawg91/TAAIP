@@ -46,10 +46,9 @@ def test_budget_dashboard_kpis_and_csv():
     CREATE TABLE IF NOT EXISTS expenses (id INTEGER PRIMARY KEY AUTOINCREMENT, project_id TEXT, event_id INTEGER, fy INTEGER, qtr INTEGER, org_unit_id INTEGER, amount REAL, created_at TEXT);
     ''')
     now = '2026-02-01T00:00:00Z'
-    # create org_unit
+    # create org_unit and use lastrowid to avoid name-based lookups
     cur.execute("INSERT INTO org_unit(name,type,created_at) VALUES (?,?,?)", ('Test Unit', 'Station', now))
-    cur.execute("SELECT id FROM org_unit WHERE name=?", ('Test Unit',))
-    org_id = cur.fetchone()[0]
+    org_id = cur.lastrowid
     # create fy_budget and line
     cur.execute("INSERT INTO fy_budget(org_unit_id,fy,total_allocated,created_at) VALUES (?,?,?,?)", (org_id, 2026, 10000.0, now))
     fy_id = cur.lastrowid

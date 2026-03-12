@@ -1,16 +1,19 @@
 import React from 'react'
-import { Box, Typography, Card, CardContent } from '@mui/material'
+import { Box, Typography, Card, CardContent, Button } from '@mui/material'
 
-export default function PlaceholderPage({ title, subtitle }: { title: string; subtitle?: string }){
+export default function NotLoadedPage({ title, subtitle }: { title: string; subtitle?: string }){
   return (
     <Box sx={{ p:3, minHeight:'100vh', bgcolor:'background.default', color:'text.primary' }}>
-      <Typography variant="h5">{title}</Typography>
+      <Typography variant="h5">{title || 'Not Loaded'}</Typography>
       {subtitle && <Typography variant="body2" sx={{ color:'text.secondary', mb:2 }}>{subtitle}</Typography>}
       <Card sx={{ bgcolor:'background.paper' }}>
         <CardContent>
-          <Typography variant="body2" sx={{ color:'text.secondary' }}>This page is a placeholder and will be implemented in Phase 2.</Typography>
+          <Typography variant="body2" sx={{ color:'text.secondary', mb:1 }}>No operational datasets are available for this page. Load datasets in the Data Hub.</Typography>
+          <a href="/data-hub" style={{ fontSize:13 }}>Data Hub</a>
         </CardContent>
       </Card>
     </Box>
   )
 }
+
+export { NotLoadedPage }

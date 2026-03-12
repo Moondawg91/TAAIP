@@ -6,7 +6,10 @@
   "type": "module",
   "scripts": {
     "start": "node api-gateway.js",
-    "dev": "node --watch api-gateway.js"
+    "dev": "node --watch api-gateway.js",
+    "api": "python -m uvicorn services.api.app.main:app --host 127.0.0.1 --port 8000 --reload",
+    "web": "cd apps/web && npm start",
+    "dev:all": "concurrently \"npm run api\" \"npm run web\""
   },
   "dependencies": {
     "@azure/msal-node": "^2.6.4",
@@ -17,6 +20,7 @@
     "puppeteer": "^24.33.0"
   },
   "devDependencies": {
-    "nodemon": "^3.0.1"
+    "nodemon": "^3.0.1",
+    "concurrently": "^8.0.1"
   }
 }

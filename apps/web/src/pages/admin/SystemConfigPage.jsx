@@ -1,6 +1,6 @@
 import React from 'react'
-import PlaceholderPage from '../PlaceholderPage'
+import { NotLoadedPage } from '../PlaceholderPage'
 
 export default function SystemConfigPage(){
-  return <PlaceholderPage title="System Configuration" subtitle="System configuration and settings (admin placeholder)." />
+  return <NotLoadedPage title="System Configuration" subtitle="Not loaded — system settings are available to admins once configuration datasets are present." />
 }

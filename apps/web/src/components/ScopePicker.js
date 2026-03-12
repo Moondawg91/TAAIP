@@ -1,19 +1,9 @@
 /* © 2026 TAAIP. Copyright pending. */
-import React, {useState} from 'react';
+import React from 'react'
+import UnitCascadePicker from './UnitCascadePicker'
+import { useFilters } from '../contexts/FilterContext'
 
-const SCOPES = ['USAREC','BDE','BN','CO','STN'];
-
-export default function ScopePicker({onApply, initialScope='USAREC', initialValue=''}){
-  const [scope, setScope] = useState(initialScope);
-  const [value, setValue] = useState(initialValue);
-
-  return (
-    <div className="scope-picker">
-      <select value={scope} onChange={e=>setScope(e.target.value)}>
-        {SCOPES.map(s=> <option key={s} value={s}>{s}</option>)}
-      </select>
-      <input placeholder="value (prefix or rsid)" value={value} onChange={e=>setValue(e.target.value)} />
-      <button onClick={()=>onApply(scope, value)}>Apply</button>
-    </div>
-  );
+export default function ScopePicker(){
+  // ScopePicker intentionally renders nothing — unit selection provided by global filters
+  return null
 }
