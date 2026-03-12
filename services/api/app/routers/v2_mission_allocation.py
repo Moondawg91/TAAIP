@@ -152,13 +152,52 @@ def get_supporting_details(run_id: str) -> Any:
         rec_row = next((r for r in recs if r.get('company_id') == cid), {})
         inp = inputs_by_company.get(cid, {})
 
-        # parse score_payload if present
+        # parse score_payload if present, otherwise derive from inputs
         payload = {}
         if score_row and score_row.get('score_payload'):
             try:
                 payload = json.loads(score_row.get('score_payload'))
             except Exception:
                 payload = {}
+
+        # if payload lacks driver fields, try to recompute from inputs (same logic as engine)
+        if not any(k in payload for k in ('recruiter_score','historical_score','funnel_score','market_score','school_score')):
+            # recompute using available inputs
+            def _norm(v, vmax, vmin=0.0):
+                try:
+                    vmax = float(vmax)
+                    v = float(v) if v is not None else 0.0
+                    if vmax <= vmin:
+                        return 0.0
+                    return max(0.0, min(1.0, (v - vmin) / (vmax - vmin)))
+                except Exception:
+                    return 0.0
+
+            max_school_pop = max([ (i.get('school_population') or 0) for i in inputs ]) or 1
+            max_hist = max([ (i.get('historical_production') or 0) for i in inputs ]) or 1
+            max_recruiters = max([ (i.get('recruiter_capacity') or 0) for i in inputs ]) or 1
+
+            rc = inp.get('recruiter_capacity') or 0
+            hp = inp.get('historical_production') or 0
+            fh = float(inp.get('funnel_health') or 0.0)
+            dl = float(inp.get('dep_loss') or 0)
+            sa = float(inp.get('school_access') or 0.0)
+            spop = int(inp.get('school_population') or 0)
+            mkt = inp.get('market_intel')
+
+            recruiter_score = _norm(rc, max_recruiters)
+            historical_score = _norm(hp, max_hist)
+            funnel_score = max(0.0, min(1.0, fh))
+            market_score = 0.5 if mkt else 0.5
+            school_score = 0.5 * _norm(spop, max_school_pop) + 0.5 * max(0.0, min(1.0, sa))
+
+            payload.update({
+                'recruiter_score': recruiter_score,
+                'historical_score': historical_score,
+                'funnel_score': funnel_score,
+                'market_score': market_score,
+                'school_score': school_score
+            })
 
         # compute driver contributions
         contribs = []
