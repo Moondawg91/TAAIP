@@ -107,8 +107,9 @@ def compute_run(run_id: str) -> Tuple[bool, str]:
 
     inputs = get_inputs(run_id)
     if not inputs:
-        # nothing to compute
-        cur.execute('UPDATE mission_allocation_runs SET status=?, updated_at=? WHERE run_id=?', ('no-inputs', now, run_id))
+        # nothing to compute — mark run as no-inputs (avoid using missing
+        # updated_at column in older DB versions)
+        cur.execute('UPDATE mission_allocation_runs SET status=? WHERE run_id=?', ('no-inputs', run_id))
         try:
             conn.commit()
         except Exception:

@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Body
+from datetime import datetime
 from typing import Any, Optional
 from services.api.app.services import mission_allocation_engine
 from services.api.app.db import connect, row_to_dict
@@ -32,8 +33,36 @@ def get_run(run_id: str) -> Any:
 
 @router.post('/runs/{run_id}/compute')
 def compute_run(run_id: str) -> Any:
-    ok, msg = mission_allocation_engine.compute_run(run_id)
-    return {'status': 'ok' if ok else 'pending', 'result': msg}
+    # Check inputs first: if there are no company inputs, return a friendly
+    # no-inputs response without invoking the engine compute path which has
+    # historically raised in this edge case.
+    inputs = mission_allocation_engine.get_inputs(run_id)
+    if not inputs:
+        conn = connect(); cur = conn.cursor()
+        cur.execute('UPDATE mission_allocation_runs SET status=? WHERE run_id=?', ('no-inputs', run_id))
+        try:
+            conn.commit()
+        except Exception:
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+        return {'status': 'no_inputs', 'message': 'Mission allocation run has no company inputs. Add company input data before computing.', 'recommendations': []}
+
+    # There are inputs — run the engine and forward its result (defensively).
+    try:
+        ok, msg = mission_allocation_engine.compute_run(run_id)
+    except Exception as exc:
+        return {'status': 'error', 'message': str(exc)}
+
+    if not ok:
+        try:
+            m = str(msg)
+        except Exception:
+            m = 'error'
+        return {'status': 'error', 'message': m}
+
+    return {'status': 'ok', 'result': msg}
 
 
 @router.get('/runs/{run_id}/results')
