@@ -16,7 +16,7 @@ export default function TargetingPage(){
       apiFetch('/api/ops/targeting/summary').catch(e=>({status:'error', message: e?.message || String(e)})),
       apiFetch('/api/ops/targeting/targets').catch(e=>({status:'error', message: e?.message || String(e)})),
       // fetch guidance for the active unit; fall back to 6L sample if empty
-      apiFetch('/api/v2/targeting/guidance').catch(e=>({status:'error', message: e?.message || String(e)}))
+      apiFetch('/api/ops/targeting/guidance').catch(e=>({status:'error', message: e?.message || String(e)}))
     ]).then(([s, t, g])=>{
       if(!mounted) return
       if(s && s.status === 'error') setError(s.message || 'summary fetch failed')
