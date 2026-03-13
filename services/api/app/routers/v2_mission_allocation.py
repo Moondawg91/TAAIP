@@ -180,6 +180,40 @@ def get_supporting_details(run_id: str) -> Any:
             er['mh_summary'] = None
             er['mh'] = None
 
+        # Enrich mission_risk evidence
+        if er.get('evidence_type') == 'mission_risk':
+            try:
+                # evidence_uri stores the compute_run_id for mission risk
+                compute_id = er.get('evidence_uri')
+                mr = None
+                try:
+                    cur.execute('SELECT * FROM mission_risk_scores WHERE compute_run_id=? LIMIT 1', (compute_id,))
+                    mrow = cur.fetchone()
+                    if mrow:
+                        mr = row_to_dict(cur, mrow)
+                except Exception:
+                    mr = None
+
+                if mr:
+                    try:
+                        score = float(mr.get('mission_risk_score') or 0.0)
+                    except Exception:
+                        score = None
+                    er['mr_summary'] = f"Applied — run: {mr.get('compute_run_id') or compute_id}, score: {round(score,3) if score is not None else '—'}, level: {mr.get('risk_level')}, confidence: {mr.get('confidence_score')}"
+                    er['mr'] = {
+                        'compute_run_id': mr.get('compute_run_id'),
+                        'mission_risk_score': mr.get('mission_risk_score'),
+                        'risk_level': mr.get('risk_level'),
+                        'confidence_score': mr.get('confidence_score'),
+                        'components_json': (mr.get('components_json') if 'components_json' in mr else None)
+                    }
+                else:
+                    er['mr_summary'] = er.get('description')
+                    er['mr'] = None
+            except Exception:
+                er['mr_summary'] = er.get('description')
+                er['mr'] = None
+
         enriched_evidence.append(er)
 
     # replace evidence_rows with enriched versions for downstream rendering/return

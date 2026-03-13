@@ -231,6 +231,7 @@ export default function MissionAllocationPage(){
                         <TableCell>Type</TableCell>
                         <TableCell>URI</TableCell>
                         <TableCell>MH Summary</TableCell>
+                        <TableCell>MR Summary</TableCell>
                         <TableCell>Description</TableCell>
                       </TableRow>
                     </TableHead>
@@ -241,6 +242,7 @@ export default function MissionAllocationPage(){
                           <TableCell>{ev.evidence_type}</TableCell>
                           <TableCell>{ev.evidence_uri}</TableCell>
                           <TableCell>{ev.mh_summary || '—'}</TableCell>
+                          <TableCell>{ev.mr_summary || '—'}</TableCell>
                           <TableCell>{ev.description}</TableCell>
                         </TableRow>
                       ))}

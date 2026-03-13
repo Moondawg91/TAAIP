@@ -196,6 +196,33 @@ def compute_run(run_id: str) -> Tuple[bool, str]:
         risk = risk_penalty
         final_score = max(0.0, min(1.0, supportability + weights['risk_penalty'] * risk))
 
+        # Check for latest Mission Risk for this company and apply modest adjustment
+        mission_risk_info = None
+        try:
+            cur.execute('SELECT * FROM mission_risk_scores WHERE company_id=? ORDER BY created_at DESC LIMIT 1', (cid,))
+            mr_row = cur.fetchone()
+            if mr_row:
+                mrd = row_to_dict(cur, mr_row)
+                try:
+                    mr_score = float(mrd.get('mission_risk_score') or 0.0)
+                except Exception:
+                    mr_score = 0.0
+                mr_level = mrd.get('risk_level')
+                mr_conf = mrd.get('confidence_score')
+                mr_compute = mrd.get('compute_run_id')
+                # modest penalty: reduce final_score by a fraction of mission risk
+                adj = mr_score * 0.1
+                final_score = max(0.0, min(1.0, final_score - adj))
+                mission_risk_info = {'compute_run_id': mr_compute, 'mission_risk_score': mr_score, 'risk_level': mr_level, 'confidence_score': mr_conf}
+                # add mission risk evidence row linking the MAL run
+                try:
+                    desc = f"Applied — run: {mr_compute}, score: {mr_score:.3f}, level: {mr_level}, confidence: {mr_conf}"
+                    add_evidence(run_id, cid, 'mission_risk', mr_compute, desc)
+                except Exception:
+                    pass
+        except Exception:
+            mission_risk_info = None
+
         # confidence heuristic: based on available inputs
         available_fields = sum([1 for k in ('recruiter_capacity','historical_production','funnel_health','dep_loss','school_access','school_population','market_intel') if inp.get(k) is not None])
         confidence = min(1.0, 0.3 + 0.12 * available_fields)
@@ -210,6 +237,7 @@ def compute_run(run_id: str) -> Tuple[bool, str]:
             'supportability_score': supportability,
             'risk_score': risk,
             'final_score': final_score,
+            'mission_risk': mission_risk_info,
             'confidence': confidence
         })
 
