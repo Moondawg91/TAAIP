@@ -266,6 +266,37 @@ def apply_migrations(conn: sqlite3.Connection):
 
     conn.commit()
 
+    # Ensure mission_risk tables
+    if not _table_exists(cur, 'mission_risk_scores'):
+        cur.executescript('''
+        CREATE TABLE mission_risk_scores (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            compute_run_id TEXT,
+            unit_rsid TEXT,
+            company_id TEXT,
+            market_type TEXT,
+            market_id TEXT,
+            as_of_date TEXT,
+            mission_risk_score REAL,
+            risk_level TEXT,
+            confidence_score REAL,
+            components_json TEXT,
+            created_at TEXT
+        );
+        CREATE TABLE mission_risk_evidence (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            compute_run_id TEXT,
+            unit_rsid TEXT,
+            company_id TEXT,
+            source_key TEXT,
+            source_run_id TEXT,
+            notes TEXT,
+            created_at TEXT
+        );
+        CREATE INDEX IF NOT EXISTS idx_mr_scores_unit ON mission_risk_scores(unit_rsid);
+        ''')
+        conn.commit()
+
 
 def seed_default_registry(conn: sqlite3.Connection):
     """Insert a few helpful registry rows for local development if missing."""

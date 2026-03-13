@@ -21,6 +21,7 @@ from fastapi import Depends
 from services.api.app.services import school_targeting
 from services.api.app.db import get_db_conn
 import math
+from services.api.app.services import mission_risk_engine
 
 # single router instance for v2 endpoints
 router = APIRouter(prefix="/v2")
@@ -415,6 +416,42 @@ def school_targeting_run(payload: Dict):
         'drivers': drivers,
         'assumptions': assumptions
     }
+
+
+@router.post('/mission-risk/run')
+def mission_risk_run(payload: Dict):
+    """Compute mission risk for provided inputs.
+
+    Expected payload: { unit_rsid, as_of_date, inputs: [ { company_id, recruiter_capacity, mission_allocation_pressure, funnel_health, dep_loss, historical_production, market_intel, school_targeting_pressure, data_quality_flags } ] }
+    """
+    payload = payload or {}
+    unit = payload.get('unit_rsid')
+    as_of = payload.get('as_of_date')
+    inputs = payload.get('inputs') or payload.get('companies') or []
+    compute_run_id = f"mr_{uuid.uuid4().hex}"
+
+    results = mission_risk_engine.compute_mission_risks(inputs, persist=True, unit_rsid=unit, as_of_date=as_of, compute_run_id=compute_run_id)
+
+    return {
+        'compute_run_id': compute_run_id,
+        'results': results
+    }
+
+
+@router.get('/mission-risk/latest')
+def mission_risk_latest(unit_rsid: str = None, limit: int = 500):
+    conn = get_db_conn(); cur = conn.cursor()
+    try:
+        if unit_rsid:
+            cur.execute('SELECT * FROM mission_risk_scores WHERE unit_rsid=? ORDER BY created_at DESC LIMIT ?', (unit_rsid, limit))
+        else:
+            cur.execute('SELECT * FROM mission_risk_scores ORDER BY created_at DESC LIMIT ?', (limit,))
+        rows = cur.fetchall()
+    except Exception:
+        return {'results': []}
+
+    out = [dict(r) for r in rows]
+    return {'results': out}
 
 
 @router.get('/targeting/schools')
