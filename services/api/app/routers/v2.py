@@ -18,6 +18,9 @@ from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from fastapi import Depends
+from services.api.app.services import school_targeting
+from services.api.app.db import get_db_conn
+import math
 
 # single router instance for v2 endpoints
 router = APIRouter(prefix="/v2")
@@ -381,6 +384,124 @@ def planning_overview():
         return {'items': items}
     except Exception:
         return {'items': []}
+
+
+@router.post('/school-targeting/run')
+def school_targeting_run(payload: Dict):
+    """Run School Targeting scoring for provided schools.
+
+    Expected payload:
+      - unit_rsid: string
+      - as_of_date: string
+      - schools: list of school payloads (school_id, enrollment, access_score, historical_production, ...)
+
+    Returns compute_run_id and scored results.
+    """
+    payload = payload or {}
+    unit = payload.get('unit_rsid')
+    as_of = payload.get('as_of_date')
+    schools = payload.get('schools') or payload.get('payload') or []
+    compute_run_id = f"str_{uuid.uuid4().hex}"
+
+    results = school_targeting.compute_school_targets(schools, persist=True, unit_rsid=unit, as_of_date=as_of, compute_run_id=compute_run_id)
+
+    # Drivers and assumptions are placeholders for now
+    drivers = []
+    assumptions = []
+
+    return {
+        'compute_run_id': compute_run_id,
+        'results': results,
+        'drivers': drivers,
+        'assumptions': assumptions
+    }
+
+
+@router.get('/targeting/schools')
+def targeting_schools(unit_rsid: str = None, limit: int = 500):
+    """Return the latest school targeting scores per school, grouped for display.
+
+    Output: { schools: [ { school_id, school_name, priority_score, confidence_score, drivers: [...], limiting_factors: [...], last_computed, category } ] }
+    """
+    conn = get_db_conn(); cur = conn.cursor()
+    try:
+        cur.execute('SELECT * FROM school_targeting_scores ORDER BY created_at DESC')
+        rows = cur.fetchall()
+    except Exception:
+        return {'schools': []}
+
+    latest_by_school = {}
+    for r in rows:
+        try:
+            rec = dict(r)
+        except Exception:
+            # fallback when sqlite3.Row behaves differently
+            rec = {k: r[i] for i, k in enumerate([c[0] for c in cur.description])}
+        sid = rec.get('school_id')
+        if not sid:
+            continue
+        if sid in latest_by_school:
+            continue
+        latest_by_school[sid] = rec
+
+    out = []
+    for sid, rec in latest_by_school.items():
+        try:
+            score = float(rec.get('priority_score') or rec.get('score') or 0.0)
+        except Exception:
+            score = 0.0
+        try:
+            conf = float(rec.get('confidence_score') or 0.0)
+        except Exception:
+            conf = 0.0
+
+        # simple drivers: access, population, historical, competition
+        drivers = []
+        comps = rec.get('components_json') or rec.get('components')
+        try:
+            if isinstance(comps, str):
+                comps = json.loads(comps)
+        except Exception:
+            comps = comps or {}
+
+        if isinstance(comps, dict):
+            for k in ('access_score', 'population_score', 'historical_yield_score', 'competition_score'):
+                if k in comps and comps.get(k) is not None:
+                    drivers.append({'name': k, 'value': round(float(comps.get(k) or 0.0), 3)})
+
+        # limiting factors heuristic
+        limiting = []
+        try:
+            if (comps.get('access_score') or rec.get('access_score') or 0) < 0.4:
+                limiting.append('Low access score')
+        except Exception:
+            pass
+        try:
+            if (comps.get('enrollment') or rec.get('population_score') or 0) < 200:
+                limiting.append('Small population')
+        except Exception:
+            pass
+
+        # category
+        if score >= 0.75:
+            cat = 'High Priority'
+        elif score >= 0.4:
+            cat = 'Monitor'
+        else:
+            cat = 'Low Priority'
+
+        out.append({
+            'school_id': sid,
+            'school_name': None,
+            'priority_score': round(score, 3),
+            'confidence_score': round(conf, 3),
+            'drivers': drivers,
+            'limiting_factors': limiting,
+            'last_computed': rec.get('created_at'),
+            'category': cat
+        })
+
+    return {'schools': out}
 
 
 @router.get('/twg')

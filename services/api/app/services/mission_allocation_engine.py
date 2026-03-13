@@ -154,13 +154,31 @@ def compute_run(run_id: str) -> Tuple[bool, str]:
         dl = float(inp.get('dep_loss') or 0)
         sa = float(inp.get('school_access') or 0.0)
         spop = int(inp.get('school_population') or 0)
-        # market_intel may be structured; for scaffold use presence as signal
+        # market_intel may be structured; attempt to use Market Health when available
         mkt = inp.get('market_intel')
 
         recruiter_score = _norm(rc, max_recruiters)
         historical_score = _norm(hp, max_hist)
         funnel_score = max(0.0, min(1.0, fh))
-        market_score = 0.5 if mkt else 0.5
+        market_score = 0.5
+        if mkt:
+            try:
+                mq = json.loads(mkt) if isinstance(mkt, str) else mkt
+            except Exception:
+                mq = mkt
+            mt = mq.get('market_type') if isinstance(mq, dict) else None
+            mid = mq.get('market_id') if isinstance(mq, dict) else None
+            if mt and mid:
+                try:
+                    cur.execute("SELECT * FROM market_health_scores WHERE market_type=? AND market_id=? ORDER BY created_at DESC LIMIT 1", (mt, mid))
+                    mrow = cur.fetchone()
+                    if mrow:
+                        mhd = row_to_dict(cur, mrow)
+                        market_score = mhd.get('supportability_score') or market_score
+                        desc = f"Applied — run: {mhd.get('compute_run_id')}, support: {mhd.get('supportability_score')}, confidence: {mhd.get('confidence_score')}, risk: {mhd.get('risk_penalty')}"
+                        add_evidence(run_id, cid, 'market_health', mhd.get('compute_run_id'), desc)
+                except Exception:
+                    pass
         school_score = 0.5 * _norm(spop, max_school_pop) + 0.5 * max(0.0, min(1.0, sa))
         # risk penalty increases with dep_loss and low funnel
         risk_penalty = min(1.0, (dl / max(1.0, hp)) if hp>0 else min(1.0, dl/10.0))
