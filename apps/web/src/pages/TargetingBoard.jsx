@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from 'react'
 import { Box, Button, Snackbar, Alert, Typography, Grid, Paper, Chip, Card, CardContent, Divider, Stack } from '@mui/material'
 import { useAuth } from '../contexts/AuthContext'
-import { getMe } from '../api/client'
+import { getMe, apiFetch } from '../api/client'
 
 export default function TargetingBoard() {
   const [summary, setSummary] = useState(null)
@@ -29,6 +29,23 @@ export default function TargetingBoard() {
 
   useEffect(() => { fetchAll() }, [])
 
+  // Guidance blocks state
+  const [guidance, setGuidance] = useState({})
+  const [editing, setEditing] = useState({})
+
+  async function fetchGuidance(unit_rsid){
+    try{
+      // call ops endpoint (attached unit_rsid will also be applied by apiFetch)
+      const qs = unit_rsid ? `?unit_rsid=${encodeURIComponent(unit_rsid)}` : ''
+      const resp = await apiFetch(`/api/ops/targeting/guidance${qs}`, { includeUnit: false })
+      if (resp && Array.isArray(resp.rows)){
+        const map = {}
+        resp.rows.forEach(r => { map[r.section] = r.payload })
+        setGuidance(map)
+      }
+    }catch(e){ /* ignore */ }
+  }
+
   const [actorName, setActorName] = useState(null)
   const [actorType, setActorType] = useState('human')
 
@@ -55,6 +72,13 @@ export default function TargetingBoard() {
     })
     return ()=>{ mounted = false }
   }, [auth])
+
+  // When summary (current cycle) loads, fetch guidance for its unit
+  useEffect(()=>{
+    const unit = (current && current.unit_rsid) ? current.unit_rsid : '6L'
+    fetchGuidance(unit)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [current])
 
   async function doAdvance(targeting_cycle){
     const reason = window.prompt('Reason for advancing the cycle:', 'Advancing from UI')
@@ -161,6 +185,49 @@ export default function TargetingBoard() {
                 <Divider sx={{ my:1 }} />
                 <Typography variant="body2" color="text.secondary">High-level instructions and mission-critical notes for the current cycle go here.</Typography>
               </Paper>
+            </Grid>
+
+            {/* Guidance blocks: Commander Guidance / Must Keep / Must Win */}
+            <Grid item xs={12}>
+              <Grid container spacing={2}>
+                {['commander_guidance','must_keep','must_win'].map(section => (
+                  <Grid item xs={12} md={4} key={section}>
+                    <Paper sx={{ p:2, minHeight:160 }}>
+                      <Stack direction="row" alignItems="center" justifyContent="space-between">
+                        <Typography variant="subtitle2">{section === 'commander_guidance' ? 'Commander Guidance' : (section === 'must_keep' ? 'Must Keep' : 'Must Win')}</Typography>
+                        <Box>
+                          {editing[section] ? (
+                            <>
+                              <Button size="small" onClick={async ()=>{
+                                // save
+                                try{
+                                  const unit = (current && current.unit_rsid) ? current.unit_rsid : '6L'
+                                  const parsed = JSON.parse(editing[section].text)
+                                  const body = { unit_rsid: unit, section: section, payload: parsed }
+                                  await apiFetch('/api/ops/targeting/guidance', { method: 'POST', body: JSON.stringify(body), headers: {'Content-Type':'application/json'}, includeUnit: false })
+                                  // refresh
+                                  await fetchGuidance(unit)
+                                  setEditing(prev => ({ ...prev, [section]: null }))
+                                  setMsg({ open: true, severity: 'success', text: 'Saved' })
+                                }catch(e){ setMsg({ open: true, severity: 'error', text: String(e) }) }
+                              }}>Save</Button>
+                              <Button size="small" onClick={()=> setEditing(prev=>({ ...prev, [section]: null }))} sx={{ ml:1 }}>Cancel</Button>
+                            </>
+                          ) : (
+                            <Button size="small" onClick={()=> setEditing(prev=>({ ...prev, [section]: { text: JSON.stringify(guidance[section] || {}, null, 2) } }))}>Edit</Button>
+                          )}
+                        </Box>
+                      </Stack>
+                      <Divider sx={{ my:1 }} />
+                      {editing[section] ? (
+                        <textarea style={{ width: '100%', minHeight: 100 }} value={editing[section].text} onChange={(e)=> setEditing(prev=>({ ...prev, [section]: { text: e.target.value } }))} />
+                      ) : (
+                        <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>{(guidance[section] ? (typeof guidance[section] === 'string' ? guidance[section] : JSON.stringify(guidance[section], null, 2)) : 'No items')}</Typography>
+                      )}
+                    </Paper>
+                  </Grid>
+                ))}
+              </Grid>
             </Grid>
 
             <Grid item xs={12} md={6}>

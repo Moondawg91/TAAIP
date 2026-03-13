@@ -186,6 +186,8 @@ from .routers import ops_market_intel as ops_market_intel_router
 api_router.include_router(ops_market_intel_router.router)
 from .routers import operations as operations_router
 api_router.include_router(operations_router.router)
+from .routers import ops_targeting as ops_targeting_router
+api_router.include_router(ops_targeting_router.router)
 from .routers import import_templates as import_templates_router
 api_router.include_router(import_templates_router.router)
 from .routers import uploads as uploads_router
