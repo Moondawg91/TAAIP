@@ -126,6 +126,65 @@ def get_supporting_details(run_id: str) -> Any:
         cid = e.get('company_id') or '__global'
         evidence_by_company.setdefault(cid, []).append({'type': e.get('evidence_type'), 'uri': e.get('evidence_uri'), 'description': e.get('description')})
 
+    # Enrich evidence rows with parsed Market Health details when present so
+    # the frontend can present a briefing-friendly summary and structured fields.
+    enriched_evidence = []
+    for e in evidence_rows:
+        er = dict(e)
+        if er.get('evidence_type') == 'market_health':
+            try:
+                parsed = json.loads(er.get('description') or '{}')
+            except Exception:
+                parsed = {}
+
+            # Some evidence descriptions contain a top-level 'market_health' object;
+            # fall back to using the parsed object directly if that's the case.
+            mh = parsed.get('market_health') if isinstance(parsed, dict) and 'market_health' in parsed else parsed
+
+            compute_id = None
+            support = None
+            confidence = None
+            burden = None
+            risk = None
+
+            if isinstance(mh, dict):
+                compute_id = mh.get('compute_run_id') or parsed.get('compute_run_id')
+                support = mh.get('supportability_score')
+                confidence = mh.get('confidence_score')
+                burden = mh.get('burden_index')
+                risk = mh.get('risk_penalty')
+
+            # Human-friendly summary used by UI table; keep numeric values concise.
+            try:
+                support_s = f"{support:.3f}" if support is not None else '—'
+            except Exception:
+                support_s = '—'
+            try:
+                confidence_s = f"{confidence:.3f}" if confidence is not None else '—'
+            except Exception:
+                confidence_s = '—'
+            try:
+                risk_s = f"{risk:.3f}" if risk is not None else '—'
+            except Exception:
+                risk_s = '—'
+
+            er['mh_summary'] = f"Applied — run: {compute_id or 'unknown'}, support: {support_s}, confidence: {confidence_s}, risk: {risk_s}"
+            er['mh'] = {
+                'compute_run_id': compute_id,
+                'supportability_score': support,
+                'confidence_score': confidence,
+                'burden_index': burden,
+                'risk_penalty': risk,
+            }
+        else:
+            er['mh_summary'] = None
+            er['mh'] = None
+
+        enriched_evidence.append(er)
+
+    # replace evidence_rows with enriched versions for downstream rendering/return
+    evidence_rows = enriched_evidence
+
     # weights mirroring engine's scoring (kept in sync)
     weights = {
         'recruiter_capacity': 0.25,
