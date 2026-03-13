@@ -9,11 +9,13 @@ export default function TargetingBoard() {
   const [changes, setChanges] = useState(null)
   const [msg, setMsg] = useState({ open: false, severity: 'info', text: '' })
   const auth = useAuth()
+  const [schoolTargets, setSchoolTargets] = useState([])
 
   function fetchAll(){
     fetch('/api/v2/targeting/dashboard/summary').then(r=>r.json()).then(setSummary).catch(()=>setSummary(null))
     fetch('/api/v2/targeting/dashboard/pending').then(r=>r.json()).then(setPending).catch(()=>setPending(null))
     fetch('/api/v2/targeting/dashboard/recent-changes').then(r=>r.json()).then(setChanges).catch(()=>setChanges(null))
+    fetch('/api/v2/targeting/schools').then(r=>r.json()).then(js=>setSchoolTargets(js.schools || [])).catch(()=>setSchoolTargets([]))
   }
 
   function getStageColor(stage){
@@ -160,6 +162,32 @@ export default function TargetingBoard() {
                 </Stack>
                 <Divider sx={{ my:1 }} />
                 <Typography variant="body2" color="text.secondary">High-level instructions and mission-critical notes for the current cycle go here.</Typography>
+              </Paper>
+            </Grid>
+
+            <Grid item xs={12} md={6}>
+              <Paper sx={{ p:2 }}>
+                <Typography variant="subtitle2">School Targeting</Typography>
+                <Divider sx={{ my:1 }} />
+                {schoolTargets && schoolTargets.length>0 ? (
+                  <Box>
+                    {['High Priority','Monitor','Low Priority'].map(cat => (
+                      <Box key={cat} sx={{ mb:2 }}>
+                        <Typography variant="subtitle2">{cat}</Typography>
+                        <ul>
+                          {schoolTargets.filter(s=>s.category===cat).slice(0,10).map(s => (
+                            <li key={s.school_id}>
+                              <strong>{s.school_name || s.school_id}</strong> — priority: {s.priority_score} • conf: {s.confidence_score}
+                              {s.drivers && s.drivers.length>0 ? (<div style={{ fontSize:12, color:'#666' }}>Drivers: {s.drivers.map(d=>`${d.name} (${d.value})`).join(', ')}</div>) : null}
+                              {s.limiting_factors && s.limiting_factors.length>0 ? (<div style={{ fontSize:12, color:'#a00' }}>Limiters: {s.limiting_factors.join('; ')}</div>) : null}
+                              <div style={{ fontSize:11, color:'#888' }}>Last computed: {s.last_computed || '—'}</div>
+                            </li>
+                          ))}
+                        </ul>
+                      </Box>
+                    ))}
+                  </Box>
+                ) : <Typography variant="caption" color="text.secondary">No school targeting results yet</Typography>}
               </Paper>
             </Grid>
 

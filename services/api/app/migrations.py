@@ -228,6 +228,42 @@ def apply_migrations(conn: sqlite3.Connection):
         );
         ''')
 
+    # Ensure market_health tables used by the Market Health engine
+    if not _table_exists(cur, 'market_health_scores'):
+        cur.executescript('''
+        CREATE TABLE market_health_scores (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            compute_run_id TEXT,
+            market_type TEXT,
+            market_id TEXT,
+            unit_rsid TEXT,
+            as_of_date TEXT,
+            supportability_score REAL,
+            confidence_score REAL,
+            burden_index REAL,
+            risk_penalty REAL,
+            historical_trend REAL,
+            recruiter_ratio REAL,
+            market_load REAL,
+            activity_signal REAL,
+            demographic_signal REAL,
+            penetration_signal REAL,
+            market_size_index REAL,
+            components_json TEXT,
+            created_at TEXT
+        );
+        CREATE TABLE market_health_evidence (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            compute_run_id TEXT,
+            market_type TEXT,
+            market_id TEXT,
+            evidence_type TEXT,
+            description TEXT,
+            created_at TEXT
+        );
+        CREATE INDEX IF NOT EXISTS idx_mh_scores_market ON market_health_scores(market_type, market_id);
+        ''')
+
     conn.commit()
 
 
@@ -642,6 +678,52 @@ def apply_runtime_migrations(conn: sqlite3.Connection) -> None:
                     CREATE INDEX IF NOT EXISTS idx_mal_inputs_run ON mission_allocation_inputs(run_id);
                     CREATE INDEX IF NOT EXISTS idx_mal_scores_run ON mission_allocation_company_scores(run_id);
                     CREATE INDEX IF NOT EXISTS idx_mal_recs_run ON mission_allocation_recommendations(run_id);
+                    ''')
+                except Exception:
+                    try:
+                        conn.rollback()
+                    except Exception:
+                        pass
+        except Exception:
+            pass
+
+        # Ensure market_health tables
+        try:
+            cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='market_health_scores'")
+            if not cur.fetchone():
+                try:
+                    cur.executescript('''
+                    CREATE TABLE market_health_scores (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        compute_run_id TEXT,
+                        market_type TEXT,
+                        market_id TEXT,
+                        unit_rsid TEXT,
+                        as_of_date TEXT,
+                        supportability_score REAL,
+                        confidence_score REAL,
+                        burden_index REAL,
+                        risk_penalty REAL,
+                        historical_trend REAL,
+                        recruiter_ratio REAL,
+                        market_load REAL,
+                        activity_signal REAL,
+                        demographic_signal REAL,
+                        penetration_signal REAL,
+                        market_size_index REAL,
+                        components_json TEXT,
+                        created_at TEXT
+                    );
+                    CREATE TABLE market_health_evidence (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        compute_run_id TEXT,
+                        market_type TEXT,
+                        market_id TEXT,
+                        evidence_type TEXT,
+                        description TEXT,
+                        created_at TEXT
+                    );
+                    CREATE INDEX IF NOT EXISTS idx_mh_scores_market ON market_health_scores(market_type, market_id);
                     ''')
                 except Exception:
                     try:
