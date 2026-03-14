@@ -135,7 +135,36 @@ export default function CommandCenter() {
       const highestMr = mrResults.length ? mrResults.reduce((acc, cur) => ( (cur.mission_risk_score ?? -Infinity) > (acc.mission_risk_score ?? -Infinity) ? cur : acc), mrResults[0]) : null
       const weakestMh = mhResults.length ? mhResults.reduce((acc, cur) => ( (cur.market_health_score ?? Infinity) < (acc.market_health_score ?? Infinity) ? cur : acc), mhResults[0]) : null
       const topSchools = (stResults || []).slice().sort((a,b) => ((b.priority ?? b.score ?? b.targeting_score ?? 0) - (a.priority ?? a.score ?? a.targeting_score ?? 0))).slice(0,3)
-      setBriefing({ highestMr, weakestMh, allocationCount: maResults.length, topSchools })
+
+      // Build one-line recommended actions
+      const highestMrAction = highestMr ? (() => {
+        const target = highestMr.company_name || highestMr.company || highestMr.unit_name || highestMr.company_rsid || 'the unit'
+        const factors = highestMr.top_risk_factors || highestMr.risk_factors || []
+        if (factors && factors.length) {
+          const f = factors.slice(0,2).join(' and ')
+          return `Investigate ${f} in ${target}.`
+        }
+        return `Investigate mission risk drivers in ${target}.`
+      })() : null
+
+      const topSchoolsAction = (topSchools && topSchools.length) ? (() => {
+        const names = topSchools.map(s => (s.name || s.school || s.school_name)).filter(Boolean)
+        return `Prioritize commander engagement and recruiter coverage for ${names.join(', ')}.`
+      })() : null
+
+      const weakestMhAction = weakestMh ? (() => {
+        const market = weakestMh.market || weakestMh.market_name || weakestMh.cbsa_code || 'this market'
+        return `Review access strategy and event coverage in ${market}.`
+      })() : null
+
+      const allocAction = (() => {
+        const cnt = maResults.length
+        if (!cnt) return 'No allocation actions needed.'
+        if (cnt <= 10) return 'Monitor allocation distribution; consider light adjustments.'
+        return 'Reassess company mission distribution for overburdened units.'
+      })()
+
+      setBriefing({ highestMr, weakestMh, allocationCount: maResults.length, topSchools, highestMrAction, topSchoolsAction, weakestMhAction, allocAction })
     }).finally(() => setLoadingBriefing(false))
   }
 
@@ -233,6 +262,7 @@ export default function CommandCenter() {
                   <div style={{ fontSize: 12, color: '#666' }}>Highest Mission Risk</div>
                   <div style={{ fontWeight: 600 }}>{briefing?.highestMr ? (briefing.highestMr.company_name || briefing.highestMr.company || briefing.highestMr.unit_name || briefing.highestMr.company_rsid) : 'No items'}</div>
                   <div style={{ fontSize: 12, color: '#444' }}>{briefing?.highestMr ? `Score ${briefing.highestMr.mission_risk_score ?? '—'} · ${mrLevel(briefing.highestMr.mission_risk_score)}` : ''}</div>
+                  {briefing?.highestMrAction && <div style={{ fontStyle: 'italic', marginTop: 6 }}>{briefing.highestMrAction}</div>}
                   <div style={{ marginTop: 6 }}><a href="#" onClick={(e)=>{e.preventDefault(); scrollToPanel('mission-risk-panel')}}>View mission risk details</a></div>
                 </div>
 
@@ -245,6 +275,7 @@ export default function CommandCenter() {
                   ) : (
                     <div style={{ fontWeight: 600 }}>None</div>
                   )}
+                  {briefing?.topSchoolsAction && <div style={{ fontStyle: 'italic', marginTop: 6 }}>{briefing.topSchoolsAction}</div>}
                   <div style={{ marginTop: 6 }}><a href="#" onClick={(e)=>{e.preventDefault(); scrollToPanel('targeting-panel')}}>View schools</a></div>
                 </div>
 
@@ -252,6 +283,7 @@ export default function CommandCenter() {
                   <div style={{ fontSize: 12, color: '#666' }}>Weakest Market Health</div>
                   <div style={{ fontWeight: 600 }}>{briefing?.weakestMh ? (briefing.weakestMh.market || briefing.weakestMh.market_name || briefing.weakestMh.cbsa_code || '—') : 'No data'}</div>
                   <div style={{ fontSize: 12, color: '#444' }}>{briefing?.weakestMh ? `Score ${briefing.weakestMh.market_health_score ?? '—'} · ${mhLevel(briefing.weakestMh.market_health_score)}` : ''}</div>
+                  {briefing?.weakestMhAction && <div style={{ fontStyle: 'italic', marginTop: 6 }}>{briefing.weakestMhAction}</div>}
                   <div style={{ marginTop: 6 }}><a href="#" onClick={(e)=>{e.preventDefault(); scrollToPanel('market-health-panel')}}>View market details</a></div>
                 </div>
 
@@ -259,6 +291,7 @@ export default function CommandCenter() {
                   <div style={{ fontSize: 12, color: '#666' }}>Allocation Pressure</div>
                   <div style={{ fontWeight: 600 }}>{briefing ? `${briefing.allocationCount} companies` : '—'}</div>
                   <div style={{ fontSize: 12, color: '#444' }}>{briefing ? allocLevel(briefing.allocationCount) : ''}</div>
+                  {briefing?.allocAction && <div style={{ fontStyle: 'italic', marginTop: 6 }}>{briefing.allocAction}</div>}
                   <div style={{ marginTop: 6 }}><a href="#" onClick={(e)=>{e.preventDefault(); scrollToPanel('allocation-panel')}}>View allocation</a></div>
                 </div>
 
