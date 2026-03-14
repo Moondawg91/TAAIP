@@ -88,12 +88,32 @@ export default function CommandCenter() {
       .finally(() => setLoadingHierarchy(false))
   }, [showHierarchy, unitRsid])
 
+  const mrLevel = (score) => {
+    if (score == null) return 'No data'
+    if (score >= 75) return 'Low'
+    if (score >= 40) return 'Monitor'
+    return 'High'
+  }
+
+  const mhLevel = (score) => {
+    if (score == null) return 'No data'
+    // higher market health is better
+    if (score >= 75) return 'Healthy'
+    if (score >= 40) return 'Watch'
+    return 'At Risk'
+  }
+
+  const allocLevel = (count) => {
+    if (!count) return 'Low'
+    if (count <= 10) return 'Monitor'
+    return 'High'
+  }
+
   const loadBriefing = () => {
     setLoadingBriefing(true)
     const buildParams = () => {
       const params = new URLSearchParams()
       if (unitRsid) params.set('unit_rsid', unitRsid)
-      // use asOf/customDate to build as_of_date
       let as_of_date = ''
       if (asOf === 'custom' && customDate) as_of_date = customDate
       else if (asOf === 'today') as_of_date = (new Date()).toISOString().slice(0,10)
@@ -106,20 +126,30 @@ export default function CommandCenter() {
       fetch(`/api/v2/mission-risk/latest${q}`).then(r => r.json()).catch(() => ({ results: [] })),
       fetch(`/api/v2/market-health/latest${q}`).then(r => r.json()).catch(() => ({ results: [] })),
       fetch(`/api/v2/mission-allocation/latest${q}`).then(r => r.json()).catch(() => ({ results: [] })),
-    ]).then(([mr, mh, ma]) => {
+      fetch(`/api/v2/targeting/schools${q}`).then(r => r.json()).catch(() => ({ schools: [] })),
+    ]).then(([mr, mh, ma, st]) => {
       const mrResults = mr?.results || []
       const mhResults = mh?.results || []
       const maResults = ma?.results || []
-      const highestMr = mrResults.length ? mrResults.reduce((acc, cur) => (cur.mission_risk_score > (acc.mission_risk_score||-Infinity) ? cur : acc), mrResults[0]) : null
-      const weakestMh = mhResults.length ? mhResults.reduce((acc, cur) => (cur.market_health_score < (acc.market_health_score||Infinity) ? cur : acc), mhResults[0]) : null
-      setBriefing({ highestMr, weakestMh, allocationCount: maResults.length })
+      const stResults = st?.schools || st?.results || []
+      const highestMr = mrResults.length ? mrResults.reduce((acc, cur) => ( (cur.mission_risk_score ?? -Infinity) > (acc.mission_risk_score ?? -Infinity) ? cur : acc), mrResults[0]) : null
+      const weakestMh = mhResults.length ? mhResults.reduce((acc, cur) => ( (cur.market_health_score ?? Infinity) < (acc.market_health_score ?? Infinity) ? cur : acc), mhResults[0]) : null
+      const topSchools = (stResults || []).slice().sort((a,b) => ((b.priority ?? b.score ?? b.targeting_score ?? 0) - (a.priority ?? a.score ?? a.targeting_score ?? 0))).slice(0,3)
+      setBriefing({ highestMr, weakestMh, allocationCount: maResults.length, topSchools })
     }).finally(() => setLoadingBriefing(false))
   }
 
-  useEffect(() => { loadBriefing() }, [])
+  useEffect(() => { loadBriefing() }, [unitRsid, asOf, customDate])
   const latestMH = marketHealth && marketHealth[0]
   const latestMR = missionRisk && missionRisk[0]
   const noData = !marketHealth && !missionRisk && (!allocation || allocation.length === 0) && (!targeting || targeting.length === 0)
+
+  const scrollToPanel = (id) => {
+    try {
+      const el = document.getElementById(id)
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    } catch (e) {}
+  }
 
   return (
     <div style={{ padding: 20 }}>
@@ -192,6 +222,52 @@ export default function CommandCenter() {
               {!loadingHierarchy && !hierarchy && (<div>No hierarchy available</div>)}
             </div>
           )}
+
+          {/* Command briefing summary panel */}
+          <div style={{ marginBottom: 12, padding: 12, border: '1px solid #ddd', borderRadius: 6, background: '#fafafa', display: 'flex', gap: 12, alignItems: 'center' }}>
+            {loadingBriefing ? (
+              <div>Loading briefing…</div>
+            ) : (
+              <>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 12, color: '#666' }}>Highest Mission Risk</div>
+                  <div style={{ fontWeight: 600 }}>{briefing?.highestMr ? (briefing.highestMr.company_name || briefing.highestMr.company || briefing.highestMr.unit_name || briefing.highestMr.company_rsid) : 'No items'}</div>
+                  <div style={{ fontSize: 12, color: '#444' }}>{briefing?.highestMr ? `Score ${briefing.highestMr.mission_risk_score ?? '—'} · ${mrLevel(briefing.highestMr.mission_risk_score)}` : ''}</div>
+                  <div style={{ marginTop: 6 }}><a href="#" onClick={(e)=>{e.preventDefault(); scrollToPanel('mission-risk-panel')}}>View mission risk details</a></div>
+                </div>
+
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 12, color: '#666' }}>Top Priority Schools</div>
+                  {briefing?.topSchools && briefing.topSchools.length ? (
+                    briefing.topSchools.map((s, i) => (
+                      <div key={i} style={{ fontWeight: 600 }}>{s.name || s.school || s.school_name || 'School'} — {s.priority ?? s.score ?? s.targeting_score ?? '—'}</div>
+                    ))
+                  ) : (
+                    <div style={{ fontWeight: 600 }}>None</div>
+                  )}
+                  <div style={{ marginTop: 6 }}><a href="#" onClick={(e)=>{e.preventDefault(); scrollToPanel('targeting-panel')}}>View schools</a></div>
+                </div>
+
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 12, color: '#666' }}>Weakest Market Health</div>
+                  <div style={{ fontWeight: 600 }}>{briefing?.weakestMh ? (briefing.weakestMh.market || briefing.weakestMh.market_name || briefing.weakestMh.cbsa_code || '—') : 'No data'}</div>
+                  <div style={{ fontSize: 12, color: '#444' }}>{briefing?.weakestMh ? `Score ${briefing.weakestMh.market_health_score ?? '—'} · ${mhLevel(briefing.weakestMh.market_health_score)}` : ''}</div>
+                  <div style={{ marginTop: 6 }}><a href="#" onClick={(e)=>{e.preventDefault(); scrollToPanel('market-health-panel')}}>View market details</a></div>
+                </div>
+
+                <div style={{ width: 220 }}>
+                  <div style={{ fontSize: 12, color: '#666' }}>Allocation Pressure</div>
+                  <div style={{ fontWeight: 600 }}>{briefing ? `${briefing.allocationCount} companies` : '—'}</div>
+                  <div style={{ fontSize: 12, color: '#444' }}>{briefing ? allocLevel(briefing.allocationCount) : ''}</div>
+                  <div style={{ marginTop: 6 }}><a href="#" onClick={(e)=>{e.preventDefault(); scrollToPanel('allocation-panel')}}>View allocation</a></div>
+                </div>
+
+                <div style={{ alignSelf: 'start' }}>
+                  <button onClick={loadBriefing}>Refresh</button>
+                </div>
+              </>
+            )}
+          </div>
           {noData ? (
             <div style={{ padding: 20, border: '1px dashed #ccc', borderRadius: 6, marginBottom: 16 }}>
               No data returned for the selected filters. Try changing the As-Of, Unit, or Market.
@@ -199,7 +275,7 @@ export default function CommandCenter() {
           ) : null}
 
           <section style={{ display: 'flex', gap: 16, marginBottom: 20 }}>
-            <div style={{ flex: 1, padding: 16, border: '1px solid #ddd', borderRadius: 6 }}>
+            <div id="market-health-panel" style={{ flex: 1, padding: 16, border: '1px solid #ddd', borderRadius: 6 }}>
               <h4>Market Health</h4>
               {latestMH ? (
                 <div>
@@ -221,7 +297,7 @@ export default function CommandCenter() {
               )}
             </div>
 
-            <div style={{ flex: 1, padding: 16, border: '1px solid #ddd', borderRadius: 6 }}>
+            <div id="mission-risk-panel" style={{ flex: 1, padding: 16, border: '1px solid #ddd', borderRadius: 6 }}>
               <h4>Mission Risk</h4>
               {latestMR ? (
                 <div>
@@ -243,7 +319,7 @@ export default function CommandCenter() {
               )}
             </div>
 
-            <div style={{ flex: 1, padding: 16, border: '1px solid #ddd', borderRadius: 6 }}>
+            <div id="allocation-panel" style={{ flex: 1, padding: 16, border: '1px solid #ddd', borderRadius: 6 }}>
               <h4>Allocation Snapshot</h4>
               {allocation && allocation.length ? (
                 <div>
@@ -274,7 +350,7 @@ export default function CommandCenter() {
           </section>
 
           <section style={{ display: 'flex', gap: 16 }}>
-            <div style={{ flex: 1, padding: 16, border: '1px solid #ddd', borderRadius: 6 }}>
+            <div id="targeting-panel" style={{ flex: 1, padding: 16, border: '1px solid #ddd', borderRadius: 6 }}>
               <h4>Top Target Schools</h4>
               {targeting && targeting.length ? (
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
