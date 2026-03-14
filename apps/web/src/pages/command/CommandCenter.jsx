@@ -6,25 +6,47 @@ export default function CommandCenter() {
   const [targeting, setTargeting] = useState([])
   const [allocation, setAllocation] = useState([])
   const [loading, setLoading] = useState(true)
+  const [asOf, setAsOf] = useState('today')
+  const [customDate, setCustomDate] = useState('')
+  const [unitRsid, setUnitRsid] = useState('')
+  const [marketFilter, setMarketFilter] = useState('all')
 
   useEffect(() => {
+    const buildParams = () => {
+      const params = new URLSearchParams()
+      // asOf options: 'today', 'yesterday', 'last_7', 'custom'
+      let as_of_date = ''
+      const today = new Date()
+      const yday = new Date(Date.now() - 24 * 3600 * 1000)
+      if (asOf === 'today') as_of_date = today.toISOString().slice(0, 10)
+      else if (asOf === 'yesterday') as_of_date = yday.toISOString().slice(0, 10)
+      else if (asOf === 'last_7') as_of_date = 'last_7'
+      else if (asOf === 'custom' && customDate) as_of_date = customDate
+      if (as_of_date) params.set('as_of_date', as_of_date)
+      if (unitRsid) params.set('unit_rsid', unitRsid)
+      if (marketFilter && marketFilter !== 'all') params.set('market', marketFilter)
+      return params.toString() ? `?${params.toString()}` : ''
+    }
+
     setLoading(true)
+    const q = buildParams()
     Promise.all([
-      fetch('/api/v2/market-health/latest').then(r => r.json()).catch(() => null),
-      fetch('/api/v2/mission-risk/latest').then(r => r.json()).catch(() => null),
-      fetch('/api/v2/targeting/schools').then(r => r.json()).catch(() => ({ results: [] })),
-      fetch('/api/v2/mission-allocation/latest').then(r => r.json()).catch(() => ({ results: [] })),
+      fetch(`/api/v2/market-health/latest${q}`).then(r => r.json()).catch(() => null),
+      fetch(`/api/v2/mission-risk/latest${q}`).then(r => r.json()).catch(() => null),
+      fetch(`/api/v2/targeting/schools${q}`).then(r => r.json()).catch(() => ({ results: [] })),
+      fetch(`/api/v2/mission-allocation/latest${q}`).then(r => r.json()).catch(() => ({ results: [] })),
     ]).then(([mh, mr, st, ma]) => {
       setMarketHealth(mh?.results || mh || null)
       setMissionRisk(mr?.results || mr || null)
-      setTargeting(st?.results || [])
-      setAllocation(ma?.results || [])
+      // targeting endpoint returns { schools: [...] }
+      setTargeting(st?.schools || st?.results || [])
+      setAllocation(ma?.results || ma || [])
       setLoading(false)
     })
-  }, [])
-
+  }, [asOf, customDate, unitRsid, marketFilter])
   const latestMH = marketHealth && marketHealth[0]
   const latestMR = missionRisk && missionRisk[0]
+  const noData = !marketHealth && !missionRisk && (!allocation || allocation.length === 0) && (!targeting || targeting.length === 0)
 
   return (
     <div style={{ padding: 20 }}>
@@ -34,6 +56,44 @@ export default function CommandCenter() {
 
       {!loading && (
         <>
+          <div style={{ display: 'flex', gap: 12, marginBottom: 16, alignItems: 'center' }}>
+            <label>
+              As-Of:
+              <select value={asOf} onChange={e => setAsOf(e.target.value)} style={{ marginLeft: 8 }}>
+                <option value="today">Today</option>
+                <option value="yesterday">Yesterday</option>
+                <option value="last_7">Last 7 days</option>
+                <option value="custom">Custom</option>
+              </select>
+            </label>
+
+            {asOf === 'custom' && (
+              <label>
+                Date:
+                <input type="date" value={customDate} onChange={e => setCustomDate(e.target.value)} style={{ marginLeft: 8 }} />
+              </label>
+            )}
+
+            <label>
+              Unit RSID:
+              <input placeholder="unit rsid" value={unitRsid} onChange={e => setUnitRsid(e.target.value)} style={{ marginLeft: 8 }} />
+            </label>
+
+            <label>
+              Market:
+              <select value={marketFilter} onChange={e => setMarketFilter(e.target.value)} style={{ marginLeft: 8 }}>
+                <option value="all">All</option>
+                <option value="national">National</option>
+                <option value="local">Local</option>
+              </select>
+            </label>
+          </div>
+          {noData ? (
+            <div style={{ padding: 20, border: '1px dashed #ccc', borderRadius: 6, marginBottom: 16 }}>
+              No data returned for the selected filters. Try changing the As-Of, Unit, or Market.
+            </div>
+          ) : null}
+
           <section style={{ display: 'flex', gap: 16, marginBottom: 20 }}>
             <div style={{ flex: 1, padding: 16, border: '1px solid #ddd', borderRadius: 6 }}>
               <h4>Market Health</h4>
