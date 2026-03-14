@@ -12,6 +12,11 @@ export default function CommandCenter() {
   const [marketFilter, setMarketFilter] = useState('all')
   const [units, setUnits] = useState([])
   const [markets, setMarkets] = useState([])
+  const [showHierarchy, setShowHierarchy] = useState(false)
+  const [hierarchy, setHierarchy] = useState(null)
+  const [loadingHierarchy, setLoadingHierarchy] = useState(false)
+  const [briefing, setBriefing] = useState(null)
+  const [loadingBriefing, setLoadingBriefing] = useState(false)
 
   useEffect(() => {
     const buildParams = () => {
@@ -69,6 +74,49 @@ export default function CommandCenter() {
       })
       .catch(() => setMarkets([]))
   }, [])
+
+  useEffect(() => {
+    if (!showHierarchy) return
+    if (!unitRsid) return
+    setLoadingHierarchy(true)
+    fetch(`/api/v2/org/tree?unit_rsid=${encodeURIComponent(unitRsid)}&depth=2`)
+      .then(r => r.json())
+      .then(j => {
+        setHierarchy(j?.tree || null)
+      })
+      .catch(() => setHierarchy(null))
+      .finally(() => setLoadingHierarchy(false))
+  }, [showHierarchy, unitRsid])
+
+  const loadBriefing = () => {
+    setLoadingBriefing(true)
+    const buildParams = () => {
+      const params = new URLSearchParams()
+      if (unitRsid) params.set('unit_rsid', unitRsid)
+      // use asOf/customDate to build as_of_date
+      let as_of_date = ''
+      if (asOf === 'custom' && customDate) as_of_date = customDate
+      else if (asOf === 'today') as_of_date = (new Date()).toISOString().slice(0,10)
+      else if (asOf === 'yesterday') as_of_date = (new Date(Date.now()-24*3600*1000)).toISOString().slice(0,10)
+      if (as_of_date) params.set('as_of_date', as_of_date)
+      return params.toString() ? `?${params.toString()}` : ''
+    }
+    const q = buildParams()
+    Promise.all([
+      fetch(`/api/v2/mission-risk/latest${q}`).then(r => r.json()).catch(() => ({ results: [] })),
+      fetch(`/api/v2/market-health/latest${q}`).then(r => r.json()).catch(() => ({ results: [] })),
+      fetch(`/api/v2/mission-allocation/latest${q}`).then(r => r.json()).catch(() => ({ results: [] })),
+    ]).then(([mr, mh, ma]) => {
+      const mrResults = mr?.results || []
+      const mhResults = mh?.results || []
+      const maResults = ma?.results || []
+      const highestMr = mrResults.length ? mrResults.reduce((acc, cur) => (cur.mission_risk_score > (acc.mission_risk_score||-Infinity) ? cur : acc), mrResults[0]) : null
+      const weakestMh = mhResults.length ? mhResults.reduce((acc, cur) => (cur.market_health_score < (acc.market_health_score||Infinity) ? cur : acc), mhResults[0]) : null
+      setBriefing({ highestMr, weakestMh, allocationCount: maResults.length })
+    }).finally(() => setLoadingBriefing(false))
+  }
+
+  useEffect(() => { loadBriefing() }, [])
   const latestMH = marketHealth && marketHealth[0]
   const latestMR = missionRisk && missionRisk[0]
   const noData = !marketHealth && !missionRisk && (!allocation || allocation.length === 0) && (!targeting || targeting.length === 0)
@@ -112,6 +160,8 @@ export default function CommandCenter() {
               </select>
             </label>
 
+            <button style={{ marginLeft: 8 }} onClick={() => setShowHierarchy(s => !s)}>{showHierarchy ? 'Hide hierarchy' : 'Show hierarchy'}</button>
+
             <label>
               Market:
               <select value={marketFilter} onChange={e => setMarketFilter(e.target.value)} style={{ marginLeft: 8 }}>
@@ -122,6 +172,26 @@ export default function CommandCenter() {
               </select>
             </label>
           </div>
+          {showHierarchy && (
+            <div style={{ marginBottom: 12, padding: 12, border: '1px solid #eee', borderRadius: 6 }}>
+              <h5>Unit hierarchy (depth 2)</h5>
+              {loadingHierarchy && <div>Loading...</div>}
+              {!loadingHierarchy && hierarchy && (
+                <div>
+                  {/** simple recursive render */}
+                  {function renderNode(n, depth=0){
+                    return (
+                      <div key={n.unit_rsid || n.rsid || n.unit_name} style={{ marginLeft: depth * 12 }}>
+                        <div><strong>{n.unit_name || n.display_name || n.rsid}</strong> {n.unit_rsid || n.rsid ? `(${n.unit_rsid || n.rsid})` : ''}</div>
+                        {n.children && n.children.length ? n.children.map(c => renderNode(c, depth+1)) : null}
+                      </div>
+                    )
+                  }(hierarchy)}
+                </div>
+              )}
+              {!loadingHierarchy && !hierarchy && (<div>No hierarchy available</div>)}
+            </div>
+          )}
           {noData ? (
             <div style={{ padding: 20, border: '1px dashed #ccc', borderRadius: 6, marginBottom: 16 }}>
               No data returned for the selected filters. Try changing the As-Of, Unit, or Market.
