@@ -10,6 +10,8 @@ export default function CommandCenter() {
   const [customDate, setCustomDate] = useState('')
   const [unitRsid, setUnitRsid] = useState('')
   const [marketFilter, setMarketFilter] = useState('all')
+  const [units, setUnits] = useState([])
+  const [markets, setMarkets] = useState([])
 
   useEffect(() => {
     const buildParams = () => {
@@ -44,6 +46,29 @@ export default function CommandCenter() {
       setLoading(false)
     })
   }, [asOf, customDate, unitRsid, marketFilter])
+
+  // Fetch available units and markets for dropdowns
+  useEffect(() => {
+    // units: /api/v2/org/roots -> { status, roots: [{ rsid, display_name, ... }] }
+    fetch('/api/v2/org/roots')
+      .then(r => r.json())
+      .then(j => {
+        const roots = j?.roots || []
+        setUnits(roots)
+        // set default unit if none selected
+        if (!unitRsid && roots && roots.length) setUnitRsid(roots[0].rsid)
+      })
+      .catch(() => setUnits([]))
+
+    // markets: /api/ops/market/cbsa -> { status, rows: [{ cbsa_code, cbsa_name }] }
+    fetch('/api/ops/market/cbsa')
+      .then(r => r.json())
+      .then(j => {
+        const rows = j?.rows || []
+        setMarkets(rows)
+      })
+      .catch(() => setMarkets([]))
+  }, [])
   const latestMH = marketHealth && marketHealth[0]
   const latestMR = missionRisk && missionRisk[0]
   const noData = !marketHealth && !missionRisk && (!allocation || allocation.length === 0) && (!targeting || targeting.length === 0)
@@ -75,16 +100,25 @@ export default function CommandCenter() {
             )}
 
             <label>
-              Unit RSID:
-              <input placeholder="unit rsid" value={unitRsid} onChange={e => setUnitRsid(e.target.value)} style={{ marginLeft: 8 }} />
+              Unit:
+              <select value={unitRsid} onChange={e => setUnitRsid(e.target.value)} style={{ marginLeft: 8 }}>
+                {units && units.length ? (
+                  units.map(u => (
+                    <option key={u.rsid} value={u.rsid}>{u.display_name || u.rsid}</option>
+                  ))
+                ) : (
+                  <option value="">(no units)</option>
+                )}
+              </select>
             </label>
 
             <label>
               Market:
               <select value={marketFilter} onChange={e => setMarketFilter(e.target.value)} style={{ marginLeft: 8 }}>
                 <option value="all">All</option>
-                <option value="national">National</option>
-                <option value="local">Local</option>
+                {markets && markets.length ? markets.map(m => (
+                  <option key={m.cbsa_code || m.cbsaName || m.cbsa_name} value={m.cbsa_code || m.cbsaCode || m.cbsa_code}>{m.cbsa_name || m.cbsaName || m.cbsaCode || m.cbsa_code}</option>
+                )) : null}
               </select>
             </label>
           </div>
