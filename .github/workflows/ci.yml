@@ -46,6 +46,8 @@ jobs:
           python -m pytest -q services/api/app/tests/test_school_targeting_api.py
           python -m pytest -q services/api/app/tests/test_mission_risk.py
           python -m pytest -q services/api/app/tests/test_mission_risk_endpoints_and_integration.py
+          # Command Center smoke tests
+          python -m pytest -q services/api/app/tests/test_command_center_smoke.py
 name: CI
 
 on:
