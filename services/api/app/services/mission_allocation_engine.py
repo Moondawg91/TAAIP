@@ -73,6 +73,27 @@ def get_run(run_id: str) -> Optional[Dict[str, Any]]:
     return row_to_dict(cur, r)
 
 
+def save_decision(run_id: str, approved_allocation: Optional[int] = None, decision_status: Optional[str] = None, decision_notes: Optional[str] = None, approved_by: Optional[str] = None) -> bool:
+    conn = connect(); cur = conn.cursor()
+    now = _now_iso()
+    # set approved_at when a decision is saved
+    cur.execute('UPDATE mission_allocation_runs SET approved_allocation=?, decision_status=?, decision_notes=?, approved_by=?, approved_at=? WHERE run_id=?', (approved_allocation, decision_status, decision_notes, approved_by, now, run_id))
+    try:
+        conn.commit()
+        return True
+    except Exception:
+        try:
+            conn.rollback()
+        except Exception:
+            pass
+        return False
+
+
+def get_decision(run_id: str) -> Dict[str, Any]:
+    # Returns the run row (including decision fields) for convenience
+    return get_run(run_id) or {}
+
+
 def get_inputs(run_id: str) -> List[Dict[str, Any]]:
     conn = connect(); cur = conn.cursor()
     cur.execute('SELECT * FROM mission_allocation_inputs WHERE run_id = ? ORDER BY id', (run_id,))

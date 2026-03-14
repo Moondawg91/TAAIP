@@ -4,6 +4,7 @@ from typing import Any, Optional
 from services.api.app.services import mission_allocation_engine
 from services.api.app.db import connect, row_to_dict
 import uuid
+from typing import Dict
 
 router = APIRouter(prefix="/v2/mission-allocation", tags=["v2-mission-allocation"])
 
@@ -29,6 +30,45 @@ def get_run(run_id: str) -> Any:
         return {'status': 'error', 'result': 'not_found'}
     inputs = mission_allocation_engine.get_inputs(run_id)
     return {'status': 'ok', 'run': r, 'inputs': inputs}
+
+
+@router.post('/runs/{run_id}/decision')
+def post_decision(run_id: str, payload: Dict = Body(...)) -> Any:
+    """Persist an approval/decision for a mission allocation run.
+
+    Expects JSON payload with any of: `approved_allocation` (int),
+    `decision_status` (str), `decision_notes` (str), `approved_by` (str).
+    """
+    try:
+        approved = payload.get('approved_allocation')
+        status = payload.get('decision_status')
+        notes = payload.get('decision_notes')
+        by = payload.get('approved_by')
+        ok = mission_allocation_engine.save_decision(run_id, approved_allocation=approved, decision_status=status, decision_notes=notes, approved_by=by)
+    except Exception as exc:
+        return {'status': 'error', 'message': str(exc)}
+    if not ok:
+        return {'status': 'error', 'message': 'failed to save decision'}
+    # return updated run row
+    r = mission_allocation_engine.get_run(run_id)
+    return {'status': 'ok', 'run': r}
+
+
+@router.get('/runs/{run_id}/decision')
+def get_decision(run_id: str) -> Any:
+    r = mission_allocation_engine.get_decision(run_id)
+    if not r:
+        return {'status': 'error', 'result': 'not_found'}
+    # return only decision-related fields to keep response compact
+    return {
+        'status': 'ok',
+        'run_id': run_id,
+        'approved_allocation': r.get('approved_allocation'),
+        'decision_status': r.get('decision_status'),
+        'decision_notes': r.get('decision_notes'),
+        'approved_by': r.get('approved_by'),
+        'approved_at': r.get('approved_at')
+    }
 
 
 @router.post('/runs/{run_id}/compute')

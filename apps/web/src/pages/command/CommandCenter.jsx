@@ -17,6 +17,19 @@ export default function CommandCenter() {
   const [loadingHierarchy, setLoadingHierarchy] = useState(false)
   const [briefing, setBriefing] = useState(null)
   const [loadingBriefing, setLoadingBriefing] = useState(false)
+  // Mission allocation decision state
+  const [runId, setRunId] = useState(null)
+  const [recommendedTotal, setRecommendedTotal] = useState(null)
+  const [approvedAllocation, setApprovedAllocation] = useState('')
+  const [decisionStatus, setDecisionStatus] = useState('recommended')
+  const [decisionNotes, setDecisionNotes] = useState('')
+  const [approvedBy, setApprovedBy] = useState('')
+  const [savingDecision, setSavingDecision] = useState(false)
+  const [decisionLoaded, setDecisionLoaded] = useState(false)
+  const [approvedAt, setApprovedAt] = useState(null)
+  const [decisionExists, setDecisionExists] = useState(false)
+  const [decisionError, setDecisionError] = useState(null)
+  const [decisionSuccess, setDecisionSuccess] = useState(null)
 
   useEffect(() => {
     const buildParams = () => {
@@ -51,6 +64,84 @@ export default function CommandCenter() {
       setLoading(false)
     })
   }, [asOf, customDate, unitRsid, marketFilter])
+
+  // persist simple filter selections to localStorage for session persistence
+  useEffect(() => {
+    try {
+      const f = { asOf, customDate, unitRsid, marketFilter }
+      localStorage.setItem('command_center_filters_v1', JSON.stringify(f))
+    } catch (e) {}
+  }, [asOf, customDate, unitRsid, marketFilter])
+
+  // restore filters on mount
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem('command_center_filters_v1')
+      if (raw) {
+        const f = JSON.parse(raw)
+        if (f) {
+          if (f.asOf) setAsOf(f.asOf)
+          if (f.customDate) setCustomDate(f.customDate)
+          if (f.unitRsid) setUnitRsid(f.unitRsid)
+          if (f.marketFilter) setMarketFilter(f.marketFilter)
+        }
+      }
+    } catch (e) {}
+  }, [])
+
+
+  // When unit changes or allocation data updates, locate latest run and load decision state
+  useEffect(() => {
+    if (!unitRsid) return
+    setDecisionLoaded(false)
+    // list runs for unit -> pick latest
+    fetch(`/api/v2/mission-allocation/runs?unit_rsid=${encodeURIComponent(unitRsid)}`)
+      .then(r => r.json())
+      .then(j => {
+        const rows = j?.rows || []
+        if (!rows.length) {
+          setRunId(null)
+          setDecisionLoaded(true)
+          return
+        }
+        const rid = rows[0].run_id || rows[0].runId || rows[0].run
+        setRunId(rid)
+
+        // load existing decision state
+        fetch(`/api/v2/mission-allocation/runs/${encodeURIComponent(rid)}/decision`)
+          .then(r => r.json())
+          .then(d => {
+            if (d && d.status === 'ok') {
+              setApprovedAllocation(d.approved_allocation ?? '')
+              setDecisionStatus(d.decision_status ?? 'recommended')
+              setDecisionNotes(d.decision_notes ?? '')
+              setApprovedBy(d.approved_by ?? '')
+              setApprovedAt(d.approved_at ?? null)
+              setDecisionExists(Boolean(d.decision_status || d.approved_allocation || d.decision_notes || d.approved_by || d.approved_at))
+              setDecisionError(null)
+            } else {
+              setApprovedAllocation('')
+              setDecisionStatus('recommended')
+              setDecisionNotes('')
+              setApprovedBy('')
+              setApprovedAt(null)
+              setDecisionExists(false)
+            }
+          }).catch(() => {
+            setDecisionError('Failed to load decision state')
+          })
+          .finally(() => setDecisionLoaded(true))
+
+        // load results to compute recommended total
+        fetch(`/api/v2/mission-allocation/runs/${encodeURIComponent(rid)}/results`)
+          .then(r => r.json())
+          .then(res => {
+            const recs = res?.recommendations || []
+            const sum = recs.reduce((s, c) => s + (Number(c.recommended_allocation) || 0), 0)
+            setRecommendedTotal(sum)
+          }).catch(() => setRecommendedTotal(null))
+      }).catch(() => setDecisionLoaded(true))
+  }, [unitRsid, allocation])
 
   // Fetch available units and markets for dropdowns
   useEffect(() => {
@@ -263,7 +354,7 @@ export default function CommandCenter() {
                   <div style={{ fontWeight: 600 }}>{briefing?.highestMr ? (briefing.highestMr.company_name || briefing.highestMr.company || briefing.highestMr.unit_name || briefing.highestMr.company_rsid) : 'No items'}</div>
                   <div style={{ fontSize: 12, color: '#444' }}>{briefing?.highestMr ? `Score ${briefing.highestMr.mission_risk_score ?? '—'} · ${mrLevel(briefing.highestMr.mission_risk_score)}` : ''}</div>
                   {briefing?.highestMrAction && <div style={{ fontStyle: 'italic', marginTop: 6 }}>{briefing.highestMrAction}</div>}
-                  <div style={{ marginTop: 6 }}><a href="#" onClick={(e)=>{e.preventDefault(); scrollToPanel('mission-risk-panel')}}>View mission risk details</a></div>
+                      <div style={{ marginTop: 6 }}><a href="#" onClick={(e)=>{e.preventDefault(); scrollToPanel('mission-risk-panel')}}>View mission risk details</a></div>
                 </div>
 
                 <div style={{ flex: 1 }}>
@@ -281,16 +372,21 @@ export default function CommandCenter() {
 
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 12, color: '#666' }}>Weakest Market Health</div>
-                  <div style={{ fontWeight: 600 }}>{briefing?.weakestMh ? (briefing.weakestMh.market || briefing.weakestMh.market_name || briefing.weakestMh.cbsa_code || '—') : 'No data'}</div>
-                  <div style={{ fontSize: 12, color: '#444' }}>{briefing?.weakestMh ? `Score ${briefing.weakestMh.market_health_score ?? '—'} · ${mhLevel(briefing.weakestMh.market_health_score)}` : ''}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ fontWeight: 600 }}>{briefing?.weakestMh ? (briefing.weakestMh.market || briefing.weakestMh.market_name || briefing.weakestMh.cbsa_code || '—') : 'No data'}</div>
+                    {briefing?.weakestMh && <div style={{ fontSize: 12, background: '#fff7e6', padding: '2px 6px', borderRadius: 12, color: '#8a6d00' }}>{mhLevel(briefing.weakestMh.market_health_score)}</div>}
+                  </div>
+                  <div style={{ fontSize: 12, color: '#444' }}>{briefing?.weakestMh ? `Score ${briefing.weakestMh.market_health_score ?? '—'}` : ''}</div>
                   {briefing?.weakestMhAction && <div style={{ fontStyle: 'italic', marginTop: 6 }}>{briefing.weakestMhAction}</div>}
                   <div style={{ marginTop: 6 }}><a href="#" onClick={(e)=>{e.preventDefault(); scrollToPanel('market-health-panel')}}>View market details</a></div>
                 </div>
 
                 <div style={{ width: 220 }}>
                   <div style={{ fontSize: 12, color: '#666' }}>Allocation Pressure</div>
-                  <div style={{ fontWeight: 600 }}>{briefing ? `${briefing.allocationCount} companies` : '—'}</div>
-                  <div style={{ fontSize: 12, color: '#444' }}>{briefing ? allocLevel(briefing.allocationCount) : ''}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ fontWeight: 600 }}>{briefing ? `${briefing.allocationCount} companies` : '—'}</div>
+                    {briefing && <div style={{ fontSize: 12, background: '#e6f7ff', padding: '2px 6px', borderRadius: 12, color: '#055160' }}>{allocLevel(briefing.allocationCount)}</div>}
+                  </div>
                   {briefing?.allocAction && <div style={{ fontStyle: 'italic', marginTop: 6 }}>{briefing.allocAction}</div>}
                   <div style={{ marginTop: 6 }}><a href="#" onClick={(e)=>{e.preventDefault(); scrollToPanel('allocation-panel')}}>View allocation</a></div>
                 </div>
@@ -354,9 +450,73 @@ export default function CommandCenter() {
 
             <div id="allocation-panel" style={{ flex: 1, padding: 16, border: '1px solid #ddd', borderRadius: 6 }}>
               <h4>Allocation Snapshot</h4>
-              {allocation && allocation.length ? (
+                {allocation && allocation.length ? (
                 <div>
                   <div><strong>Companies returned:</strong> {allocation.length}</div>
+                    <div style={{ marginTop: 8, display: 'flex', gap: 12, alignItems: 'center' }}>
+                      <div>
+                        <div style={{ fontSize: 12, color: '#666' }}>Recommended</div>
+                        <div style={{ fontWeight: 700, fontSize: 18 }}>{recommendedTotal != null ? recommendedTotal : '—'}</div>
+                        <div style={{ fontSize: 12, color: '#666' }}>Recommended based on current supportability and risk</div>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 12, color: '#666' }}>Approved</div>
+                        <input type="number" value={approvedAllocation ?? ''} onChange={e => setApprovedAllocation(e.target.value)} style={{ marginLeft: 8, width: 140, fontSize: 16, padding: '6px 8px', border: (recommendedTotal != null && approvedAllocation !== '' && Number(approvedAllocation) !== Number(recommendedTotal)) ? '2px solid #c0392b' : '1px solid #ccc' }} />
+                        {(recommendedTotal != null && approvedAllocation !== '' && Number(approvedAllocation) !== Number(recommendedTotal)) && (
+                          <div style={{ color: '#c0392b', fontSize: 12, marginTop: 6 }}>Commander-approved allocation differs from engine recommendation</div>
+                        )}
+                      </div>
+                    </div>
+                    <div style={{ marginTop: 8 }}>
+                      <label>
+                        Decision Status:
+                        <select value={decisionStatus} onChange={e => setDecisionStatus(e.target.value)} style={{ marginLeft: 8 }}>
+                          <option value="recommended">recommended</option>
+                          <option value="approved">approved</option>
+                          <option value="adjusted">adjusted</option>
+                          <option value="rejected">rejected</option>
+                        </select>
+                      </label>
+                    </div>
+                    <div style={{ marginTop: 8 }}>
+                      <label>Decision Notes:</label>
+                      <div><textarea value={decisionNotes} onChange={e => setDecisionNotes(e.target.value)} rows={3} style={{ width: '100%', marginTop: 6 }} /></div>
+                    </div>
+                    <div style={{ marginTop: 8 }}>
+                      <label>Approved By: <input type="text" value={approvedBy} onChange={e => setApprovedBy(e.target.value)} style={{ marginLeft: 8 }} /></label>
+                    </div>
+                    <div style={{ marginTop: 8 }}>
+                      {decisionError && <div style={{ color: 'crimson', marginBottom: 6 }}>{decisionError}</div>}
+                      {decisionSuccess && <div style={{ color: 'green', marginBottom: 6 }}>{decisionSuccess}</div>}
+                      <button onClick={() => {
+                        setDecisionError(null)
+                        setDecisionSuccess(null)
+                        if (!runId) { setDecisionError('No run available to save decision'); return }
+                        setSavingDecision(true)
+                        fetch(`/api/v2/mission-allocation/runs/${encodeURIComponent(runId)}/decision`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({approved_allocation: approvedAllocation !== '' ? Number(approvedAllocation) : null, decision_status: decisionStatus, decision_notes: decisionNotes, approved_by: approvedBy})})
+                          .then(r => r.json())
+                          .then(j => {
+                            if (j && j.status === 'ok') {
+                              // refresh decision state
+                              fetch(`/api/v2/mission-allocation/runs/${encodeURIComponent(runId)}/decision`).then(rr => rr.json()).then(d => {
+                                if (d && d.status === 'ok') {
+                                  setApprovedAllocation(d.approved_allocation ?? '')
+                                  setDecisionStatus(d.decision_status ?? 'recommended')
+                                  setDecisionNotes(d.decision_notes ?? '')
+                                  setApprovedBy(d.approved_by ?? '')
+                                  setApprovedAt(d.approved_at ?? null)
+                                  setDecisionExists(Boolean(d.decision_status || d.approved_allocation || d.decision_notes || d.approved_by || d.approved_at))
+                                  setDecisionSuccess('Decision saved')
+                                } else {
+                                  setDecisionError('Decision saved but failed to reload')
+                                }
+                              }).catch(() => setDecisionError('Decision saved but failed to reload'))
+                            } else {
+                              setDecisionError('Failed to save decision: ' + (j && j.message ? j.message : JSON.stringify(j)))
+                            }
+                          }).catch(e => setDecisionError('Failed to save decision: ' + String(e))).finally(() => setSavingDecision(false))
+                      }}>{savingDecision ? 'Saving…' : 'Save / Approve'}</button>
+                    </div>
                   <div style={{ marginTop: 8, maxHeight: 160, overflow: 'auto' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                       <thead>
@@ -374,6 +534,20 @@ export default function CommandCenter() {
                         ))}
                       </tbody>
                     </table>
+                  </div>
+                  {/* Decision metadata and empty-state */}
+                  <div style={{ marginTop: 10, fontSize: 13 }}>
+                    {!decisionLoaded ? (
+                      <div>Loading decision…</div>
+                    ) : (!decisionExists ? (
+                      <div style={{ color: '#666' }}>No commander decision recorded yet.</div>
+                    ) : (
+                      <div>
+                        <div><strong>Decision Status:</strong> {decisionStatus}</div>
+                        <div><strong>Approved By:</strong> {approvedBy || '—'}</div>
+                        <div><strong>Approved At:</strong> {approvedAt || '—'}</div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               ) : (
