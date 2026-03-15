@@ -2196,6 +2196,7 @@ def init_schema() -> None:
                 data_source TEXT,
                 impressions INTEGER,
                 engagement_count INTEGER,
+                clicks INTEGER DEFAULT 0,
                 awareness_metric REAL,
                 activation_conversions INTEGER,
                 reporting_date TEXT,
@@ -2924,6 +2925,7 @@ def init_schema() -> None:
                         data_source TEXT,
                         impressions INTEGER DEFAULT 0,
                         engagement_count INTEGER DEFAULT 0,
+                        clicks INTEGER DEFAULT 0,
                         awareness_metric REAL,
                         activation_conversions INTEGER DEFAULT 0,
                         reporting_date TEXT,
@@ -2933,8 +2935,8 @@ def init_schema() -> None:
                         import_job_id TEXT,
                         record_status TEXT DEFAULT 'active'
                     );
-                    INSERT OR IGNORE INTO marketing_activities_new(activity_id,event_id,activity_type,campaign_name,channel,data_source,impressions,engagement_count,awareness_metric,activation_conversions,reporting_date,metadata,cost,created_at,import_job_id,record_status)
-                        SELECT COALESCE(activity_id, CAST(id AS TEXT)), event_id, activity_type, campaign_name, channel, data_source, impressions, engagement_count, awareness_metric, activation_conversions, reporting_date, metadata, cost, created_at, import_job_id, record_status FROM marketing_activities;
+                    INSERT OR IGNORE INTO marketing_activities_new(activity_id,event_id,activity_type,campaign_name,channel,data_source,impressions,engagement_count,clicks,awareness_metric,activation_conversions,reporting_date,metadata,cost,created_at,import_job_id,record_status)
+                        SELECT COALESCE(activity_id, CAST(id AS TEXT)), event_id, activity_type, campaign_name, channel, data_source, impressions, engagement_count, 0 AS clicks, awareness_metric, activation_conversions, reporting_date, metadata, cost, created_at, import_job_id, record_status FROM marketing_activities;
                     DROP TABLE IF EXISTS marketing_activities;
                     ALTER TABLE marketing_activities_new RENAME TO marketing_activities;
                     PRAGMA foreign_keys=ON;
@@ -3716,6 +3718,7 @@ def init_schema() -> None:
                         data_source TEXT,
                         impressions INTEGER DEFAULT 0,
                         engagement_count INTEGER DEFAULT 0,
+                        clicks INTEGER DEFAULT 0,
                         awareness_metric REAL,
                         activation_conversions INTEGER,
                         reporting_date TEXT,

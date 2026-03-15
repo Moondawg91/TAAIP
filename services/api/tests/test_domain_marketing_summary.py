@@ -39,9 +39,11 @@ def create_org_and_users(db):
         st1 = models.Station(rsid='1A1D', display='St1', company_id=co.id)
         db.add(st1)
         db.commit()
-    u = models.User(username='usarec_admin', role=models.UserRole.USAREC, scope='USAREC')
-    db.add(u)
-    db.commit()
+    u = db.query(models.User).filter(models.User.username == 'usarec_admin').first()
+    if not u:
+        u = models.User(username='usarec_admin', role=models.UserRole.USAREC, scope='USAREC')
+        db.add(u)
+        db.commit()
 
 
 def token_for(db, username):
