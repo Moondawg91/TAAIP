@@ -1,5 +1,6 @@
 import os
 import pathlib
+import time
 
 import pytest
 
@@ -139,10 +140,10 @@ def transactional_tests():
         from services.api.app import db as app_db
         import sqlite3, os
         db_path = os.environ.get('TAAIP_DB_PATH', './taaip_test.db')
-        fallback = sqlite3.connect(db_path, check_same_thread=False, timeout=30)
+        raw = sqlite3.connect(db_path, check_same_thread=False, timeout=30)
         try:
             # enforce pragmas on the fallback raw connection to reduce locking
-            cur = fallback.cursor()
+            cur = raw.cursor()
             cur.executescript("""
             PRAGMA foreign_keys=ON;
             PRAGMA journal_mode=WAL;
@@ -152,6 +153,75 @@ def transactional_tests():
             cur.close()
         except Exception:
             pass
+
+        # Small retry helper to mitigate transient `database is locked` errors
+        def _retry_db_op(op, max_attempts=6, base_delay=0.02):
+            attempt = 0
+            while True:
+                try:
+                    return op()
+                except sqlite3.OperationalError as e:
+                    msg = str(e).lower()
+                    if 'database is locked' in msg or 'database table is locked' in msg:
+                        attempt += 1
+                        if attempt >= max_attempts:
+                            raise
+                        time.sleep(base_delay * attempt)
+                        continue
+                    raise
+
+        class _RetryCursor:
+            def __init__(self, cur):
+                self._cur = cur
+
+            def execute(self, *a, **kw):
+                return _retry_db_op(lambda: self._cur.execute(*a, **kw))
+
+            def executescript(self, *a, **kw):
+                return _retry_db_op(lambda: self._cur.executescript(*a, **kw))
+
+            def executemany(self, *a, **kw):
+                return _retry_db_op(lambda: self._cur.executemany(*a, **kw))
+
+            def __getattr__(self, name):
+                return getattr(self._cur, name)
+
+        class _RetryConnection:
+            def __init__(self, conn):
+                self._conn = conn
+
+            def cursor(self):
+                return _RetryCursor(self._conn.cursor())
+
+            def execute(self, *a, **kw):
+                return _retry_db_op(lambda: self._conn.execute(*a, **kw))
+
+            def executescript(self, *a, **kw):
+                return _retry_db_op(lambda: self._conn.executescript(*a, **kw))
+
+            def executemany(self, *a, **kw):
+                return _retry_db_op(lambda: self._conn.executemany(*a, **kw))
+
+            def commit(self):
+                return _retry_db_op(lambda: self._conn.commit())
+
+            def rollback(self):
+                try:
+                    return self._conn.rollback()
+                except Exception:
+                    pass
+
+            def close(self):
+                try:
+                    return self._conn.close()
+                except Exception:
+                    pass
+
+            def __getattr__(self, name):
+                return getattr(self._conn, name)
+
+        # Wrap the raw connection with the retry proxy and register it
+        fallback = _RetryConnection(raw)
         app_db.set_test_raw_conn(fallback)
     except Exception:
         pass
