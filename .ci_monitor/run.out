@@ -1,0 +1,5664 @@
+CI monitor starting (poll every 300 seconds)
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Processing failed run: 
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+Running local pytest reproduction...
+Switched to a new branch 'fix/ci--diagnostics'
+[fix/ci--diagnostics f12f319] ci: add diagnostics for failing CI run
+ 2 files changed, 3 insertions(+)
+ create mode 100644 ci_diagnostics/-pytest.log
+ create mode 100644 ci_diagnostics/.log
+remote: 
+remote: Create a pull request for 'fix/ci--diagnostics' on GitHub by visiting:        
+remote:      https://github.com/Moondawg91/TAAIP/pull/new/fix/ci--diagnostics        
+remote: 
+To https://github.com/Moondawg91/TAAIP.git
+ * [new branch]      fix/ci--diagnostics -> fix/ci--diagnostics
+branch 'fix/ci--diagnostics' set up to track 'origin/fix/ci--diagnostics'.
+Warning: 5 uncommitted changes
+https://github.com/Moondawg91/TAAIP/pull/17
+Switched to branch 'main'
+M	taaip_test.db-shm
+M	taaip_test.db-wal
+Your branch is up to date with 'origin/main'.
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName
+scripts/ci_monitor.sh: line 20: mapfile: command not found
+Unknown JSON field: "id"
+Available fields:
+  attempt
+  conclusion
+  createdAt
+  databaseId
+  displayTitle
+  event
+  headBranch
+  headSha
+  name
+  number
+  startedAt
+  status
+  updatedAt
+  url
+  workflowDatabaseId
+  workflowName

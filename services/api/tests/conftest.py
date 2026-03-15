@@ -1,5 +1,6 @@
 import os
 import pathlib
+import time
 
 import pytest
 
@@ -56,6 +57,13 @@ def init_test_db():
             cur = conn.cursor()
             cur.execute("PRAGMA table_info(marketing_activities)")
             cols = [r[1] for r in cur.fetchall()]
+            # Ensure 'clicks' column exists for newer tests expecting it
+            if 'clicks' not in cols:
+                try:
+                    cur.execute("ALTER TABLE marketing_activities ADD COLUMN clicks INTEGER DEFAULT 0")
+                except Exception:
+                    # If ALTER fails (e.g., table missing), we'll fallback to recreate below
+                    pass
             if 'activity_id' not in cols:
                 try:
                     cur.executescript('''
@@ -69,6 +77,7 @@ def init_test_db():
                         data_source TEXT,
                         impressions INTEGER DEFAULT 0,
                         engagement_count INTEGER DEFAULT 0,
+                        clicks INTEGER DEFAULT 0,
                         awareness_metric REAL,
                         activation_conversions INTEGER DEFAULT 0,
                         reporting_date TEXT,
@@ -78,8 +87,8 @@ def init_test_db():
                         import_job_id TEXT,
                         record_status TEXT DEFAULT 'active'
                     );
-                    INSERT OR IGNORE INTO marketing_activities_new(activity_id,event_id,activity_type,campaign_name,channel,data_source,impressions,engagement_count,awareness_metric,activation_conversions,reporting_date,metadata,cost,created_at,import_job_id,record_status)
-                        SELECT COALESCE(activity_id, CAST(id AS TEXT)), event_id, activity_type, campaign_name, channel, data_source, impressions, engagement_count, awareness_metric, activation_conversions, reporting_date, metadata, cost, created_at, import_job_id, record_status FROM marketing_activities;
+                    INSERT OR IGNORE INTO marketing_activities_new(activity_id,event_id,activity_type,campaign_name,channel,data_source,impressions,engagement_count,clicks,awareness_metric,activation_conversions,reporting_date,metadata,cost,created_at,import_job_id,record_status)
+                        SELECT COALESCE(activity_id, CAST(id AS TEXT)), event_id, activity_type, campaign_name, channel, data_source, impressions, engagement_count, 0 AS clicks, awareness_metric, activation_conversions, reporting_date, metadata, cost, created_at, import_job_id, record_status FROM marketing_activities;
                     DROP TABLE IF EXISTS marketing_activities;
                     ALTER TABLE marketing_activities_new RENAME TO marketing_activities;
                     PRAGMA foreign_keys=ON;
@@ -131,8 +140,114 @@ def transactional_tests():
         from services.api.app import db as app_db
         import sqlite3, os
         db_path = os.environ.get('TAAIP_DB_PATH', './taaip_test.db')
-        fallback = sqlite3.connect(db_path, check_same_thread=False)
-        app_db.set_test_raw_conn(fallback)
+        raw = sqlite3.connect(db_path, check_same_thread=False, timeout=30)
+        try:
+            # enforce pragmas on the fallback raw connection to reduce locking
+            cur = raw.cursor()
+            cur.executescript("""
+            PRAGMA foreign_keys=ON;
+            PRAGMA journal_mode=WAL;
+            PRAGMA synchronous=NORMAL;
+            PRAGMA busy_timeout=20000;
+            """)
+            cur.close()
+        except Exception:
+            pass
+
+        # Small retry helper to mitigate transient `database is locked` errors
+        def _retry_db_op(op, max_attempts=6, base_delay=0.02):
+            attempt = 0
+            while True:
+                try:
+                    return op()
+                except sqlite3.OperationalError as e:
+                    msg = str(e).lower()
+                    if 'database is locked' in msg or 'database table is locked' in msg:
+                        attempt += 1
+                        if attempt >= max_attempts:
+                            raise
+                        time.sleep(base_delay * attempt)
+                        continue
+                    raise
+
+        class _RetryCursor:
+            def __init__(self, cur):
+                self._cur = cur
+
+            def execute(self, *a, **kw):
+                return _retry_db_op(lambda: self._cur.execute(*a, **kw))
+
+            def executescript(self, *a, **kw):
+                return _retry_db_op(lambda: self._cur.executescript(*a, **kw))
+
+            def executemany(self, *a, **kw):
+                return _retry_db_op(lambda: self._cur.executemany(*a, **kw))
+
+            def __getattr__(self, name):
+                return getattr(self._cur, name)
+
+        class _RetryConnection:
+            def __init__(self, conn):
+                self._conn = conn
+
+            def cursor(self):
+                return _RetryCursor(self._conn.cursor())
+
+            def execute(self, *a, **kw):
+                return _retry_db_op(lambda: self._conn.execute(*a, **kw))
+
+            def executescript(self, *a, **kw):
+                return _retry_db_op(lambda: self._conn.executescript(*a, **kw))
+
+            def executemany(self, *a, **kw):
+                return _retry_db_op(lambda: self._conn.executemany(*a, **kw))
+
+            def commit(self):
+                return _retry_db_op(lambda: self._conn.commit())
+
+            def rollback(self):
+                try:
+                    return self._conn.rollback()
+                except Exception:
+                    pass
+
+            def close(self):
+                try:
+                    return self._conn.close()
+                except Exception:
+                    pass
+
+            def __getattr__(self, name):
+                return getattr(self._conn, name)
+
+        # Register the real raw sqlite3 connection with the DB helper so it
+        # can detect the test DB path. Also monkeypatch `sqlite3.connect`
+        # so callers requesting the test DB path receive a retry-wrapped
+        # connection object to mitigate transient locking errors.
+        app_db.set_test_raw_conn(raw)
+
+        # Preserve original connect and patch to return retry wrapper for
+        # the configured test DB path only.
+        try:
+            orig_connect = getattr(__import__('sqlite3'), '_orig_connect', __import__('sqlite3').connect)
+            setattr(__import__('sqlite3'), '_orig_connect', orig_connect)
+
+            def _patched_connect(path=None, *a, **kw):
+                dbp = os.environ.get('TAAIP_DB_PATH', './taaip_test.db')
+                # Normalize paths to compare
+                try:
+                    if path is None or os.path.abspath(str(path)) == os.path.abspath(dbp):
+                        # return a retry-wrapped connection backed by the original connect
+                        c = orig_connect(path or dbp, *a, **kw)
+                        return _RetryConnection(c)
+                except Exception:
+                    pass
+                return orig_connect(path, *a, **kw)
+
+            __import__('sqlite3').connect = _patched_connect
+        except Exception:
+            # If monkeypatching fails, still ensure the raw conn is registered
+            pass
     except Exception:
         pass
     # Create a single Session instance bound to the connection and ensure

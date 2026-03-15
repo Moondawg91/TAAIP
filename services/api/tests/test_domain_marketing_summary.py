@@ -22,26 +22,39 @@ def teardown_module(module):
 
 
 def create_org_and_users(db):
-    cmd = models.Command(command='CMD1', display='CMD1')
-    db.add(cmd)
-    db.commit()
+    cmd = db.query(models.Command).filter(models.Command.command == 'CMD1').first()
+    if not cmd:
+        cmd = models.Command(command='CMD1', display='CMD1')
+        db.add(cmd)
+        db.commit()
     bde = models.Brigade(brigade_prefix='1', display='B1', command_id=cmd.id)
-    db.add(bde)
-    db.commit()
-    bn = models.Battalion(battalion_prefix='1A', display='Bn1A', brigade_id=bde.id)
-    db.add(bn)
-    db.commit()
-    co = models.Company(company_prefix='1A1', display='Co', battalion_id=bn.id)
-    db.add(co)
-    db.commit()
+    existing_bde = db.query(models.Brigade).filter(models.Brigade.brigade_prefix == '1', models.Brigade.command_id == cmd.id).first()
+    if not existing_bde:
+        bde = models.Brigade(brigade_prefix='1', display='B1', command_id=cmd.id)
+        db.add(bde)
+        db.commit()
+    else:
+        bde = existing_bde
+    bn = db.query(models.Battalion).filter(models.Battalion.battalion_prefix == '1A', models.Battalion.brigade_id == bde.id).first()
+    if not bn:
+        bn = models.Battalion(battalion_prefix='1A', display='Bn1A', brigade_id=bde.id)
+        db.add(bn)
+        db.commit()
+    co = db.query(models.Company).filter(models.Company.company_prefix == '1A1', models.Company.battalion_id == bn.id).first()
+    if not co:
+        co = models.Company(company_prefix='1A1', display='Co', battalion_id=bn.id)
+        db.add(co)
+        db.commit()
     st1 = db.query(models.Station).filter(models.Station.rsid == '1A1D').first()
     if not st1:
         st1 = models.Station(rsid='1A1D', display='St1', company_id=co.id)
         db.add(st1)
         db.commit()
-    u = models.User(username='usarec_admin', role=models.UserRole.USAREC, scope='USAREC')
-    db.add(u)
-    db.commit()
+    u = db.query(models.User).filter(models.User.username == 'usarec_admin').first()
+    if not u:
+        u = models.User(username='usarec_admin', role=models.UserRole.USAREC, scope='USAREC')
+        db.add(u)
+        db.commit()
 
 
 def token_for(db, username):

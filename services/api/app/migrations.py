@@ -652,6 +652,11 @@ def apply_runtime_migrations(conn: sqlite3.Connection) -> None:
                         mission_total INTEGER,
                         status TEXT DEFAULT 'created',
                         notes TEXT,
+                        approved_allocation INTEGER,
+                        decision_status TEXT,
+                        decision_notes TEXT,
+                        approved_by TEXT,
+                        approved_at TEXT,
                         created_at TEXT,
                         started_at TEXT,
                         completed_at TEXT

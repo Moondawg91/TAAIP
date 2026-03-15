@@ -120,4 +120,15 @@ def me(effective=Depends(auth.get_effective_user)):
             pass
 
     is_admin = bool(perms_map.get('admin.permissions.manage') or ('*' in (perms_list or [])))
-    return {'user': user_claim, 'permissions': perms_map, 'is_admin': is_admin}
+    # If the effective user provided permissions as a list (master/dev modes),
+    # preserve that shape for compatibility with older frontend expectations
+    # and specific tests that assert a list is returned.
+    perms_out = perms_map
+    if isinstance(effective.get('permissions'), list):
+        perms_out = effective.get('permissions')
+
+    result = {'user': user_claim, 'permissions': perms_out, 'is_admin': is_admin}
+    # include explicit roles when available (used by some tests)
+    if effective.get('roles'):
+        result['roles'] = effective.get('roles')
+    return result

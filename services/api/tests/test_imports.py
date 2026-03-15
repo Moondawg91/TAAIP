@@ -58,7 +58,9 @@ def create_users(db):
         models.User(username='usarec_admin', role=models.UserRole.USAREC, scope='USAREC'),
     ]
     for u in users:
-        db.add(u)
+        existing = db.query(models.User).filter(models.User.username == u.username).first()
+        if not existing:
+            db.add(u)
     db.commit()
 
 

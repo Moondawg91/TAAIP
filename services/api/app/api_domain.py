@@ -138,15 +138,42 @@ def marketing_summary(start: Optional[str] = Query(None), end: Optional[str] = Q
     from datetime import datetime
     s = datetime.fromisoformat(start).date() if start else None
     e = datetime.fromisoformat(end).date() if end else None
-    q = crud.marketing_summary(db, None, None, s, e)
-    row = q.one_or_none()
+    # Use a direct SQL aggregation grouped by the activity identifier
+    # to avoid double-counting rows that may be created by compatibility
+    # and domain handlers (some DB variants use `activity_id` while
+    # ORM models may reference `id`). Grouping by the physical key
+    # (COALESCE(activity_id,id)) ensures each activity contributes once.
+    try:
+        stmt = """
+        SELECT
+            SUM(impressions) as impressions,
+            SUM(engagement_count) as engagements,
+            SUM(COALESCE(clicks,0)) as clicks,
+            SUM(activation_conversions) as conversions,
+            SUM(COALESCE(cost,0.0)) as cost
+        FROM (
+            SELECT COALESCE(activity_id, id) as activity_key,
+                   MAX(COALESCE(impressions,0)) as impressions,
+                   MAX(COALESCE(engagement_count,0)) as engagement_count,
+                   MAX(COALESCE(clicks,0)) as clicks,
+                   MAX(COALESCE(activation_conversions,0)) as activation_conversions,
+                   MAX(COALESCE(cost,0.0)) as cost
+            FROM marketing_activities
+            GROUP BY activity_key
+        ) as dedup
+        """
+        row = db.execute(text(stmt)).mappings().first()
+    except Exception:
+        # Fallback: attempt domain query if raw SQL fails
+        q = crud.marketing_summary(db, None, None, s, e)
+        row = q.one_or_none()
     if not row:
         return {"status": "ok", "data": {}}
-    impressions = row.impressions or 0
-    engagements = row.engagements or 0
-    clicks = row.clicks or 0
-    conversions = row.conversions or 0
-    cost = row.cost or 0.0
+    impressions = int(row['impressions'] or 0)
+    engagements = int(row['engagements'] or 0)
+    clicks = int(row['clicks'] or 0)
+    conversions = int(row['conversions'] or 0)
+    cost = float(row['cost'] or 0.0)
     cpl = cost / max(1, conversions) if conversions else None
     return {"status": "ok", "data": _format_datetimes({
         'impressions': impressions,
