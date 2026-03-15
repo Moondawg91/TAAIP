@@ -142,7 +142,11 @@ def detect_importer(path: str):
         fp = spec.get('fingerprint', {})
         # check sheet hints
         hints = [h.upper() for h in fp.get('sheetNameHints', [])] if fp.get('sheetNameHints') else []
-        if hints:
+        # For CSV inputs (sheets == ['CSV']), allow matching based on columns
+        # even if the importer defines sheet name hints. This keeps CSV
+        # detection permissive for simple exports while keeping hint checks
+        # for Excel/complex workbooks.
+        if hints and 'CSV' not in sheets:
             # require any hint present in sheet names
             if not any(any(h in s for s in sheets) for h in hints):
                 continue

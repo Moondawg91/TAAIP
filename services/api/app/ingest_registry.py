@@ -13,6 +13,7 @@ def _add(spec: dict):
 
 # USAREC RSID Hierarchy (dataset registry hint)
 _add({
+    'id': 'usarec_org_hierarchy',
     'dataset_key': 'USAREC_ORG_HIERARCHY',
     'display_name': 'USAREC RSID Hierarchy',
     'importer': 'usarec_org_hierarchy',

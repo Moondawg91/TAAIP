@@ -460,6 +460,42 @@ def init_schema() -> None:
                 created_at TEXT
             );
 
+            -- Minimal org tables matching SQLAlchemy models used in tests
+            CREATE TABLE IF NOT EXISTS brigades (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                brigade_prefix TEXT NOT NULL,
+                display TEXT,
+                command_id INTEGER,
+                created_at TEXT,
+                UNIQUE (brigade_prefix, command_id)
+            );
+
+            CREATE TABLE IF NOT EXISTS battalions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                battalion_prefix TEXT NOT NULL,
+                display TEXT,
+                brigade_id INTEGER,
+                created_at TEXT,
+                UNIQUE (battalion_prefix, brigade_id)
+            );
+
+            CREATE TABLE IF NOT EXISTS companies (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                company_prefix TEXT NOT NULL,
+                display TEXT,
+                battalion_id INTEGER,
+                created_at TEXT,
+                UNIQUE (company_prefix, battalion_id)
+            );
+
+            CREATE TABLE IF NOT EXISTS stations (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                rsid TEXT NOT NULL UNIQUE,
+                display TEXT,
+                company_id INTEGER,
+                created_at TEXT
+            );
+
             CREATE TABLE IF NOT EXISTS import_job (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 created_at TEXT,
