@@ -80,16 +80,25 @@ def list_documents():
     rows = cur.fetchall()
     # convert sqlite3.Row to dict
     result = []
+    desc = None
+    try:
+        desc = cur.description
+    except Exception:
+        desc = None
     for r in rows:
+        if hasattr(r, 'keys'):
+            rd = dict(r)
+        else:
+            rd = {d[0]: r[i] for i, d in enumerate(desc)} if desc else {}
         result.append({
-            'id': r['id'],
-            'filename': r['filename'],
-            'content_type': r['content_type'],
-            'size': r['size'],
-            'uploaded_by': r['uploaded_by'],
-            'uploaded_at': r['uploaded_at'],
-            'description': r['description'],
-            'tags': r['tags']
+            'id': rd.get('id'),
+            'filename': rd.get('filename'),
+            'content_type': rd.get('content_type'),
+            'size': rd.get('size'),
+            'uploaded_by': rd.get('uploaded_by'),
+            'uploaded_at': rd.get('uploaded_at'),
+            'description': rd.get('description'),
+            'tags': rd.get('tags')
         })
     return result
 
@@ -103,9 +112,17 @@ def download_document(doc_id: str):
     row = cur.fetchone()
     if not row:
         raise HTTPException(status_code=404, detail="Document not found")
-    stored_path = row['stored_path']
-    filename = row['filename']
-    content_type = row['content_type'] or 'application/octet-stream'
+    try:
+        if hasattr(row, 'keys'):
+            r = dict(row)
+        else:
+            desc = cur.description
+            r = {d[0]: row[i] for i, d in enumerate(desc)}
+    except Exception:
+        r = row
+    stored_path = r.get('stored_path') if isinstance(r, dict) else (row[1] if len(row) > 1 else None)
+    filename = r.get('filename') if isinstance(r, dict) else (row[0] if len(row) > 0 else None)
+    content_type = (r.get('content_type') if isinstance(r, dict) else (row[2] if len(row) > 2 else None)) or 'application/octet-stream'
     if not os.path.exists(stored_path):
         raise HTTPException(status_code=404, detail="Stored file missing")
     return FileResponse(path=stored_path, media_type=content_type, filename=filename)

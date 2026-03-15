@@ -135,10 +135,12 @@ def events_dashboard(current_user: Dict = Depends(get_current_user)):
         cur = conn.cursor()
         out = _empty_rollup('events')
         try:
-            if not _table_exists(cur, 'events'):
+            # support legacy singular `event` table name as well as `events`
+            table_name = 'events' if _table_exists(cur, 'events') else ('event' if _table_exists(cur, 'event') else None)
+            if not table_name:
                 return out
             # counts and sums
-            cur.execute("SELECT COUNT(1) as cnt, COALESCE(SUM(budget),0) as budget_sum FROM events")
+            cur.execute(f"SELECT COUNT(1) as cnt, COALESCE(SUM(budget),0) as budget_sum FROM {table_name}")
             r = cur.fetchone()
             cnt = int(r['cnt'] if isinstance(r, dict) and 'cnt' in r else (r[0] if r and r[0] is not None else 0))
             budget_sum = float(r['budget_sum'] if isinstance(r, dict) and 'budget_sum' in r else (r[1] if r and r[1] is not None else 0))
@@ -157,7 +159,7 @@ def events_dashboard(current_user: Dict = Depends(get_current_user)):
 
             # breakdown by event_type
             try:
-                cur.execute("SELECT COALESCE(event_type,'UNKNOWN') as type, COUNT(1) as cnt, COALESCE(SUM(budget),0) as budget FROM events GROUP BY event_type ORDER BY cnt DESC LIMIT 50")
+                cur.execute(f"SELECT COALESCE(event_type,'UNKNOWN') as type, COUNT(1) as cnt, COALESCE(SUM(budget),0) as budget FROM {table_name} GROUP BY event_type ORDER BY cnt DESC LIMIT 50")
                 rows = cur.fetchall() or []
                 b = []
                 for row in rows:

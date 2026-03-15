@@ -256,14 +256,30 @@ def validate_v3(payload: Dict[str, Any] = Body(...), allowed_orgs: Optional[list
         cur = conn.cursor()
         cur.execute('SELECT mapping_json FROM import_column_map WHERE import_job_id=? ORDER BY created_at DESC LIMIT 1', (import_job_id,))
         mrow = cur.fetchone()
-        mapping = json.loads(mrow['mapping_json']) if mrow and mrow['mapping_json'] else {}
+        if mrow and not hasattr(mrow, 'keys'):
+            try:
+                mrow = {d[0]: mrow[i] for i, d in enumerate(cur.description)}
+            except Exception:
+                pass
+        mapping = json.loads(mrow.get('mapping_json')) if mrow and isinstance(mrow, dict) and mrow.get('mapping_json') else {}
         # dataset_key is stored on the import_job_v3 record; fall back to payload if absent
         cur.execute('SELECT dataset_key FROM import_job_v3 WHERE id=? LIMIT 1', (import_job_id,))
         jrow = cur.fetchone()
-        dataset = jrow['dataset_key'] if jrow and 'dataset_key' in jrow.keys() and jrow['dataset_key'] else (payload.get('dataset_key') if payload else None)
+        if jrow and not hasattr(jrow, 'keys'):
+            try:
+                jrow = {d[0]: jrow[i] for i, d in enumerate(cur.description)}
+            except Exception:
+                pass
+        dataset = jrow.get('dataset_key') if jrow and isinstance(jrow, dict) and jrow.get('dataset_key') else (payload.get('dataset_key') if payload else None)
         # fetch imported_rows for this job
         cur.execute('SELECT id, row_json FROM imported_rows WHERE import_job_id=? LIMIT 1000', (import_job_id,))
         rows = cur.fetchall()
+        if rows and not hasattr(rows[0], 'keys'):
+            try:
+                desc = cur.description
+                rows = [{desc[i][0]: r[i] for i in range(len(desc))} for r in rows]
+            except Exception:
+                pass
         errors = 0
         sample_errors = []
         for i, r in enumerate(rows):
@@ -409,16 +425,43 @@ def commit_v3(payload: Dict[str, Any] = Body(...), allowed_orgs: Optional[list] 
         rows = []
         legacy_mode = False
         if job:
-            dataset = job['dataset_key'] if 'dataset_key' in job.keys() else job[0]
-            source_system = job['source_system'] if 'source_system' in job.keys() else job[1]
-            scope_org = job['scope_org_unit_id'] if 'scope_org_unit_id' in job.keys() else job[2]
+            # normalize job whether it's a sqlite3.Row or a plain tuple
+            if hasattr(job, 'keys'):
+                dataset = job.get('dataset_key')
+                source_system = job.get('source_system')
+                scope_org = job.get('scope_org_unit_id')
+            else:
+                try:
+                    dataset = job[0]
+                except Exception:
+                    dataset = None
+                try:
+                    source_system = job[1]
+                except Exception:
+                    source_system = None
+                try:
+                    scope_org = job[2]
+                except Exception:
+                    scope_org = None
             # fetch v3 stored preview rows
             cur.execute('SELECT row_json FROM imported_rows WHERE import_job_id=?', (import_job_id,))
             rows = cur.fetchall()
+            # normalize rows to mapping-like dicts if DB driver returned tuples
+            if rows and not hasattr(rows[0], 'keys'):
+                try:
+                    desc = cur.description
+                    rows = [{desc[i][0]: r[i] for i in range(len(desc))} for r in rows]
+                except Exception:
+                    pass
             # load mapping if present
             cur.execute('SELECT mapping_json FROM import_column_map WHERE import_job_id=? ORDER BY created_at DESC LIMIT 1', (import_job_id,))
             mrow = cur.fetchone()
-            mapping = json.loads(mrow['mapping_json']) if mrow and mrow['mapping_json'] else {}
+            if mrow and not hasattr(mrow, 'keys'):
+                try:
+                    mrow = {d[0]: mrow[i] for i, d in enumerate(cur.description)}
+                except Exception:
+                    pass
+            mapping = json.loads(mrow.get('mapping_json')) if mrow and mrow.get('mapping_json') else {}
         else:
             # fallback: support legacy numeric import_job id
             try:
@@ -430,12 +473,28 @@ def commit_v3(payload: Dict[str, Any] = Body(...), allowed_orgs: Optional[list] 
                 ljob = cur.fetchone()
                 if ljob:
                     legacy_mode = True
-                    dataset = ljob['target_domain'] if 'target_domain' in ljob.keys() else (ljob[1] if len(ljob) > 1 else 'generic')
-                    source_system = ljob['source_system'] if 'source_system' in ljob.keys() else None
+                    if hasattr(ljob, 'keys'):
+                        dataset = ljob.get('target_domain')
+                        source_system = ljob.get('source_system')
+                    else:
+                        try:
+                            dataset = ljob[1] if len(ljob) > 1 else 'generic'
+                        except Exception:
+                            dataset = 'generic'
+                        try:
+                            source_system = ljob[2] if len(ljob) > 2 else None
+                        except Exception:
+                            source_system = None
                     scope_org = None
                     # fetch legacy imported_rows where import_job_id is numeric
                     cur.execute('SELECT row_json FROM imported_rows WHERE import_job_id=?', (legacy_id,))
                     rows = cur.fetchall()
+                    if rows and not hasattr(rows[0], 'keys'):
+                        try:
+                            desc = cur.description
+                            rows = [{desc[i][0]: r[i] for i in range(len(desc))} for r in rows]
+                        except Exception:
+                            pass
                 else:
                     raise HTTPException(status_code=404, detail='job not found')
             else:
@@ -950,24 +1009,35 @@ def commit_v3_compat(payload: Dict[str, Any] = Body(...)):
         j = cur.fetchone()
         legacy_id = None
         if j:
-            try:
-                filename = j['filename'] if 'filename' in j.keys() else (j[0] if len(j) > 0 else None)
-            except Exception:
-                filename = j[0] if j and len(j) > 0 else None
-            try:
-                sha = j['file_sha256'] if 'file_sha256' in j.keys() else (j[1] if len(j) > 1 else None)
-            except Exception:
-                sha = j[1] if j and len(j) > 1 else None
+            # normalize mapping/sequence access without calling .keys() on tuples
+            if hasattr(j, 'keys'):
+                filename = j.get('filename')
+                sha = j.get('file_sha256')
+            else:
+                try:
+                    filename = j[0] if len(j) > 0 else None
+                except Exception:
+                    filename = None
+                try:
+                    sha = j[1] if len(j) > 1 else None
+                except Exception:
+                    sha = None
             if filename:
                 cur.execute('SELECT id FROM import_job WHERE filename_original=? OR filename=? LIMIT 1', (filename, filename))
                 f = cur.fetchone()
                 if f:
-                    legacy_id = f['id'] if 'id' in f.keys() else f[0]
+                    if hasattr(f, 'keys'):
+                        legacy_id = f.get('id')
+                    else:
+                        legacy_id = f[0]
             if not legacy_id and sha:
                 cur.execute('SELECT id FROM import_job WHERE sha256_hash=? OR file_hash=? LIMIT 1', (sha, sha))
                 f = cur.fetchone()
                 if f:
-                    legacy_id = f['id'] if 'id' in f.keys() else f[0]
+                    if hasattr(f, 'keys'):
+                        legacy_id = f.get('id')
+                    else:
+                        legacy_id = f[0]
         if not legacy_id:
             raise HTTPException(status_code=404, detail='legacy job not found for import_job_id')
         # Copy any legacy `imported_rows` into the v3 import_job_id so the v3
@@ -977,15 +1047,23 @@ def commit_v3_compat(payload: Dict[str, Any] = Body(...)):
             cur.execute('SELECT row_json, target_domain, created_at FROM imported_rows WHERE import_job_id=?', (legacy_id,))
             legacy_rows = cur.fetchall()
             for lr in legacy_rows:
-                try:
-                    row_json = lr['row_json'] if 'row_json' in lr.keys() else (lr[0] if len(lr) > 0 else None)
-                    target_domain = lr['target_domain'] if 'target_domain' in lr.keys() else (lr[1] if len(lr) > 1 else None)
-                    created_at = lr['created_at'] if 'created_at' in lr.keys() else (lr[2] if len(lr) > 2 else None)
-                except Exception:
-                    # best-effort unpack
-                    row_json = lr[0] if lr and len(lr) > 0 else None
-                    target_domain = lr[1] if lr and len(lr) > 1 else None
-                    created_at = lr[2] if lr and len(lr) > 2 else None
+                if hasattr(lr, 'keys'):
+                    row_json = lr.get('row_json')
+                    target_domain = lr.get('target_domain')
+                    created_at = lr.get('created_at')
+                else:
+                    try:
+                        row_json = lr[0] if len(lr) > 0 else None
+                    except Exception:
+                        row_json = None
+                    try:
+                        target_domain = lr[1] if len(lr) > 1 else None
+                    except Exception:
+                        target_domain = None
+                    try:
+                        created_at = lr[2] if len(lr) > 2 else None
+                    except Exception:
+                        created_at = None
                 try:
                     cur.execute('INSERT INTO imported_rows(import_job_id, target_domain, row_json, created_at) VALUES (?,?,?,?)', (import_job_id, target_domain or 'production', row_json, created_at or now_iso()))
                 except Exception:

@@ -220,9 +220,34 @@ def transactional_tests():
             def __getattr__(self, name):
                 return getattr(self._conn, name)
 
-        # Wrap the raw connection with the retry proxy and register it
-        fallback = _RetryConnection(raw)
-        app_db.set_test_raw_conn(fallback)
+        # Register the real raw sqlite3 connection with the DB helper so it
+        # can detect the test DB path. Also monkeypatch `sqlite3.connect`
+        # so callers requesting the test DB path receive a retry-wrapped
+        # connection object to mitigate transient locking errors.
+        app_db.set_test_raw_conn(raw)
+
+        # Preserve original connect and patch to return retry wrapper for
+        # the configured test DB path only.
+        try:
+            orig_connect = getattr(__import__('sqlite3'), '_orig_connect', __import__('sqlite3').connect)
+            setattr(__import__('sqlite3'), '_orig_connect', orig_connect)
+
+            def _patched_connect(path=None, *a, **kw):
+                dbp = os.environ.get('TAAIP_DB_PATH', './taaip_test.db')
+                # Normalize paths to compare
+                try:
+                    if path is None or os.path.abspath(str(path)) == os.path.abspath(dbp):
+                        # return a retry-wrapped connection backed by the original connect
+                        c = orig_connect(path or dbp, *a, **kw)
+                        return _RetryConnection(c)
+                except Exception:
+                    pass
+                return orig_connect(path, *a, **kw)
+
+            __import__('sqlite3').connect = _patched_connect
+        except Exception:
+            # If monkeypatching fails, still ensure the raw conn is registered
+            pass
     except Exception:
         pass
     # Create a single Session instance bound to the connection and ensure

@@ -169,53 +169,54 @@ def post_activity(payload: dict = None, user: dict = Depends(get_current_user), 
         "created_at": datetime.utcnow().isoformat(),
         "record_status": "active",
     }
-    # Prefer inserting via SQLAlchemy domain layer so domain queries (marketing_summary
-    # and others) immediately see the rows in the ORM session/engine used by tests.
-    try:
-        from services.api.app import crud_domain as crud
-        # coerce reporting_date to a Python date for SQLAlchemy Date column
-        from datetime import date as _pydate
-        rd = payload.get('reporting_date')
-        if rd and isinstance(rd, str):
-            try:
-                payload['reporting_date'] = _pydate.fromisoformat(rd)
-            except Exception:
-                # leave as-is; domain layer may accept None
-                payload['reporting_date'] = None
-
-        domain_payload = {
-            'id': aid,
-            'event_id': payload.get('event_id'),
-            'station_rsid': payload.get('station_rsid'),
-            'activity_type': payload.get('activity_type'),
-            'campaign_name': payload.get('campaign_name'),
-            'channel': payload.get('channel'),
-            'data_source': payload.get('data_source'),
-            'impressions': payload.get('impressions') or 0,
-            'engagements': payload.get('engagements') or payload.get('engagement_count') or 0,
-            'clicks': payload.get('clicks') or 0,
-            'conversions': payload.get('conversions') or payload.get('activation_conversions') or 0,
-            'cost': float(payload.get('cost') or 0.0),
-            'reporting_date': payload.get('reporting_date'),
-            'metadata': payload.get('metadata')
-        }
+    # Prefer inserting via SQLAlchemy domain layer when the physical
+    # marketing_activities table supports the newer domain columns
+    # (avoid attempting the domain helper and then falling back).
+    from datetime import date as _pydate
+    rd = payload.get('reporting_date')
+    if rd and isinstance(rd, str):
         try:
-            crud.create_marketing_activity(db, domain_payload)
+            payload['reporting_date'] = _pydate.fromisoformat(rd)
+        except Exception:
+            payload['reporting_date'] = None
+
+    domain_payload = {
+        'id': aid,
+        'event_id': payload.get('event_id'),
+        'station_rsid': payload.get('station_rsid'),
+        'activity_type': payload.get('activity_type'),
+        'campaign_name': payload.get('campaign_name'),
+        'channel': payload.get('channel'),
+        'data_source': payload.get('data_source'),
+        'impressions': payload.get('impressions') or 0,
+        'engagements': payload.get('engagements') or payload.get('engagement_count') or 0,
+        'clicks': payload.get('clicks') or 0,
+        'conversions': payload.get('conversions') or payload.get('activation_conversions') or 0,
+        'cost': float(payload.get('cost') or 0.0),
+        'reporting_date': payload.get('reporting_date'),
+        'metadata': payload.get('metadata')
+    }
+
+    # Inspect physical table columns and decide which insert path to use.
+    try:
+        cur = get_db_conn().cursor()
+        cur.execute('PRAGMA table_info(marketing_activities)')
+        fcols = [r[1] for r in cur.fetchall()]
+    except Exception:
+        fcols = []
+
+    # If the table contains the domain-only column `station_rsid`, use the
+    # domain helper (ORM). Otherwise use the compatibility/raw insert path.
+    if 'station_rsid' in fcols:
+        try:
+            from services.api.app import crud_domain as crud_domain
+            crud_domain.create_marketing_activity(db, domain_payload)
             return {"status": "ok", "activity_id": aid}
         except Exception:
-            # If the domain-layer insertion failed (schema mismatch or flush
-            # error), ensure the Session is rolled back so we can safely use
-            # the Session/DB again for a raw-SQL fallback.
-            try:
-                db.rollback()
-            except Exception:
-                pass
-            # fall through to raw SQL fallback
-            pass
-    except Exception:
-        # fall back to raw insertion below
-        pass
-    # Final attempt: insert using a parameterized text() statement via the shared Session
+            # If domain helper fails unexpectedly, raise so tests surface
+            # the failure (avoid silently falling back and creating dupes).
+            raise
+    # Final attempt: use a parameterized text() statement via the shared Session
     try:
         db.execute(stmt, params)
         db.commit()
@@ -295,10 +296,29 @@ def marketing_sync(payload: dict, db: Session = Depends(auth.get_db)):
                 'record_status': 'active',
             }
             try:
-                db.execute(insert_stmt, params)
+                # Delegate to the domain create helper so batch sync items
+                # use the same authoritative insert path.
+                from services.api.app import crud_domain as crud
+                domain_payload = {
+                    'id': params.get('activity_id'),
+                    'event_id': params.get('event_id'),
+                    'station_rsid': None,
+                    'activity_type': params.get('activity_type'),
+                    'campaign_name': params.get('campaign_name'),
+                    'channel': params.get('channel'),
+                    'data_source': params.get('data_source'),
+                    'impressions': params.get('impressions') or 0,
+                    'engagements': params.get('engagement_count') or 0,
+                    'clicks': params.get('clicks') or 0,
+                    'conversions': params.get('activation_conversions') or 0,
+                    'cost': params.get('cost') or 0.0,
+                    'reporting_date': params.get('reporting_date'),
+                    'metadata': json.loads(params.get('metadata')) if params.get('metadata') else None,
+                }
+                crud.create_marketing_activity(db, domain_payload)
                 created += 1
             except Exception:
-                # fall back to DB-API insertion
+                # fall back to DB-API insertion if the domain helper fails
                 try:
                     cur = get_db_conn().cursor()
                     # Compatibility: insert only columns present in DB

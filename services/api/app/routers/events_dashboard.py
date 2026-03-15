@@ -25,7 +25,17 @@ def events_dashboard(fy: int = None, qtr: int = None, org_unit_id: int = None, s
     # test harness `TAAIP_DB_PATH` and the shared raw connection when
     # running under pytest. This avoids opening independent sqlite3
     # connections that can cause visibility/isolation issues.
-    conn = connect()
+    # Prefer opening an explicit connection to the file indicated by
+    # `TAAIP_DB_PATH` to avoid any proxying or connection-reuse logic that
+    # can point to a different file during the pytest harness.
+    if db_path:
+        try:
+            conn = sqlite3.connect(db_path, check_same_thread=False)
+            conn.row_factory = sqlite3.Row
+        except Exception:
+            conn = connect()
+    else:
+        conn = connect()
     try:
         cur = conn.cursor()
         filters = {}
@@ -111,16 +121,42 @@ def events_dashboard(fy: int = None, qtr: int = None, org_unit_id: int = None, s
                 cur.execute(f'SELECT {select_cols} FROM event')
                 rows = cur.fetchall()
             for r in rows:
-                row = dict(r)
+                try:
+                    row = dict(r)
+                except Exception as e:
+                    try:
+                        row = {d[0]: r[i] for i, d in enumerate(cur.description)}
+                    except Exception:
+                        try:
+                            import traceback
+                            with open('/tmp/events_handler_exc.txt', 'a') as _ef:
+                                _ef.write(f"Row conversion failed type={type(r)} repr={repr(r)}\n")
+                                _ef.write(''.join(traceback.format_exception(None, e, e.__traceback__)))
+                        except Exception:
+                            pass
+                        row = r
                 eid = row.get('event_id')
                 name = row.get('name')
                 planned_cost = float(row.get('planned') or 0)
                 loe_val = float(row.get('loe') or 0) if has_loe else 0
                 proj_id = row.get('project_id')
                 cur.execute('SELECT SUM(COALESCE(amount,0)) as s FROM expenses WHERE event_id=?', (eid,))
-                rr = cur.fetchone();
-                rr = dict(rr) if rr is not None else None
-                actual_spent = float(rr.get('s') or 0) if rr else 0.0
+                rr = cur.fetchone()
+                try:
+                    if rr is None:
+                        actual_spent = 0.0
+                    else:
+                        # rr may be sqlite3.Row (mapping), a tuple, or other sequence
+                        if hasattr(rr, 'get'):
+                            sval = rr.get('s')
+                        else:
+                            try:
+                                sval = rr[0]
+                            except Exception:
+                                sval = None
+                        actual_spent = float(sval) if sval is not None else 0.0
+                except Exception:
+                    actual_spent = 0.0
                 pending = max(planned_cost - actual_spent, 0.0)
                 variance = planned_cost - actual_spent
                 # attempt ROI: prefer event_roi table, fallback to marketing_activities cost/metrics
@@ -178,7 +214,14 @@ def events_dashboard(fy: int = None, qtr: int = None, org_unit_id: int = None, s
             except Exception:
                 pass
 
-        return {'filters': filters, 'totals': {'count': total_events, 'planned_cost': total_planned_cost, 'total_loe': total_loe}, 'by_type': by_type, 'events': events}
+        outp = {'filters': filters, 'totals': {'count': total_events, 'planned_cost': total_planned_cost, 'total_loe': total_loe}, 'by_type': by_type, 'events': events}
+        try:
+            with open('/tmp/events_handler_out.json', 'w') as _of:
+                import json
+                json.dump(outp, _of)
+        except Exception:
+            pass
+        return outp
     finally:
         try:
             conn.close()
