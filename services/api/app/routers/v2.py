@@ -976,39 +976,75 @@ def funnel_transition(payload: dict = None):
 
 
 @router.post("/burden/input")
-def burden_input(payload: dict, user: dict = Depends(require_roles("co_cmd"))):
-    bid = "bur_" + uuid.uuid4().hex[:10]
-    conn = get_db_conn()
-    cur = conn.cursor()
+def burden_input(payload: dict, user: dict = Depends(require_roles("co_cmd")), db: Session = Depends(auth.get_db)):
+    """Create a burden input. Prefer SQLAlchemy when a DB session is available so
+    test harnesses that use SQLAlchemy sessions see consistent state.
+    """
     try:
-        execute_with_retry(cur, "INSERT INTO burden_inputs(id,scope_type,scope_value,mission_requirement,recruiter_strength,reporting_date,created_at) VALUES(?,?,?,?,?,?,?)", (bid, payload.get("scope_type"), payload.get("scope_value"), payload.get("mission_requirement"), payload.get("recruiter_strength"), payload.get("reporting_date"), datetime.utcnow().isoformat()))
-        conn.commit()
+        # prefer SQLAlchemy model to ensure session visibility in tests
+        from services.api.app.models_domain import BurdenInput as BurdenInputModel
+        bid = payload.get('id') or "bur_" + uuid.uuid4().hex[:10]
+        bi = BurdenInputModel(
+            id=bid,
+            scope_type=payload.get('scope_type'),
+            scope_value=payload.get('scope_value'),
+            mission_requirement=payload.get('mission_requirement'),
+            recruiter_strength=payload.get('recruiter_strength'),
+            reporting_date=payload.get('reporting_date'),
+        )
+        db.add(bi)
+        db.commit()
+        return {"status": "ok"}
     except Exception:
+        # fallback to raw SQL for compatibility
+        bid = "bur_" + uuid.uuid4().hex[:10]
+        conn = get_db_conn()
+        cur = conn.cursor()
         try:
-            conn.rollback()
+            execute_with_retry(cur, "INSERT INTO burden_inputs(id,scope_type,scope_value,mission_requirement,recruiter_strength,reporting_date,created_at) VALUES(?,?,?,?,?,?,?)", (bid, payload.get("scope_type"), payload.get("scope_value"), payload.get("mission_requirement"), payload.get("recruiter_strength"), payload.get("reporting_date"), datetime.utcnow().isoformat()))
+            conn.commit()
         except Exception:
-            pass
-    conn.close()
-    return {"status": "ok"}
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+        conn.close()
+        return {"status": "ok"}
 
 
 @router.get("/burden/latest")
-def burden_latest(scope_type: str = None, scope_value: str = None):
-    conn = get_db_conn()
-    cur = conn.cursor()
-    cur.execute("SELECT id,scope_type,scope_value,mission_requirement,recruiter_strength,reporting_date,created_at FROM burden_inputs WHERE scope_type=? AND scope_value=? ORDER BY reporting_date DESC LIMIT 1", (scope_type, scope_value))
-    row = cur.fetchone()
-    if not row:
-        return {"status": "ok", "data": None}
-    # Coerce numeric-looking mission_requirement to int for compatibility
-    mr = row[3]
+def burden_latest(scope_type: str = None, scope_value: str = None, db: Session = Depends(auth.get_db)):
     try:
-        if mr is not None and not isinstance(mr, int):
-            mr = int(mr)
+        # Prefer SQLAlchemy query so tests using SQLAlchemy sessions see the row
+        from services.api.app.models_domain import BurdenInput as BurdenInputModel
+        q = db.query(BurdenInputModel).filter(BurdenInputModel.scope_type == scope_type, BurdenInputModel.scope_value == scope_value).order_by(BurdenInputModel.reporting_date.desc()).limit(1)
+        row = q.first()
+        if not row:
+            return {"status": "ok", "data": None}
+        mr = row.mission_requirement
+        try:
+            if mr is not None and not isinstance(mr, int):
+                mr = int(mr)
+        except Exception:
+            pass
+        record = {"id": row.id, "scope_type": row.scope_type, "scope_value": row.scope_value, "mission_requirement": mr, "recruiter_strength": row.recruiter_strength, "reporting_date": str(row.reporting_date) if row.reporting_date is not None else None, "created_at": str(row.created_at) if getattr(row, 'created_at', None) is not None else None}
+        return {"status": "ok", "data": record}
     except Exception:
-        pass
-    record = {"id": row[0], "scope_type": row[1], "scope_value": row[2], "mission_requirement": mr, "recruiter_strength": row[4], "reporting_date": row[5], "created_at": row[6]}
-    return {"status": "ok", "data": record}
+        # fallback to raw SQL
+        conn = get_db_conn()
+        cur = conn.cursor()
+        cur.execute("SELECT id,scope_type,scope_value,mission_requirement,recruiter_strength,reporting_date,created_at FROM burden_inputs WHERE scope_type=? AND scope_value=? ORDER BY reporting_date DESC LIMIT 1", (scope_type, scope_value))
+        row = cur.fetchone()
+        if not row:
+            return {"status": "ok", "data": None}
+        mr = row[3]
+        try:
+            if mr is not None and not isinstance(mr, int):
+                mr = int(mr)
+        except Exception:
+            pass
+        record = {"id": row[0], "scope_type": row[1], "scope_value": row[2], "mission_requirement": mr, "recruiter_strength": row[4], "reporting_date": row[5], "created_at": row[6]}
+        return {"status": "ok", "data": record}
 
 
 @router.post("/loes")
