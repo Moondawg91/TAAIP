@@ -139,7 +139,19 @@ def transactional_tests():
         from services.api.app import db as app_db
         import sqlite3, os
         db_path = os.environ.get('TAAIP_DB_PATH', './taaip_test.db')
-        fallback = sqlite3.connect(db_path, check_same_thread=False)
+        fallback = sqlite3.connect(db_path, check_same_thread=False, timeout=30)
+        try:
+            # enforce pragmas on the fallback raw connection to reduce locking
+            cur = fallback.cursor()
+            cur.executescript("""
+            PRAGMA foreign_keys=ON;
+            PRAGMA journal_mode=WAL;
+            PRAGMA synchronous=NORMAL;
+            PRAGMA busy_timeout=20000;
+            """)
+            cur.close()
+        except Exception:
+            pass
         app_db.set_test_raw_conn(fallback)
     except Exception:
         pass
