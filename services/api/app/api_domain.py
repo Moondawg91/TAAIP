@@ -152,7 +152,7 @@ def marketing_summary(start: Optional[str] = Query(None), end: Optional[str] = Q
             SUM(activation_conversions) as conversions,
             SUM(COALESCE(cost,0.0)) as cost
         FROM (
-            SELECT COALESCE(activity_id, id) as activity_key,
+                 SELECT COALESCE(activity_id, CAST(id AS TEXT)) as activity_key,
                    MAX(COALESCE(impressions,0)) as impressions,
                    MAX(COALESCE(engagement_count,0)) as engagement_count,
                    MAX(COALESCE(clicks,0)) as clicks,

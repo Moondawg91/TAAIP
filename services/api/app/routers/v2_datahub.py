@@ -213,7 +213,18 @@ def commit_run(run_id: str):
         cur.execute('UPDATE import_run_v2 SET status=?, rows_in=?, rows_loaded=?, ended_at=? WHERE run_id=?', ('success', rows_in, rows_loaded, datetime.datetime.utcnow().isoformat(), run_id))
         conn.commit()
         try:
+            # refresh lightweight KPIs
             refresh_mod.refresh_agg_kpis(conn, unit_rsid=scope_unit_rsid)
+        except Exception:
+            pass
+        try:
+            # best-effort: refresh higher-level analytics (school targeting, market health, mission risk)
+            # Only run when explicitly enabled via env var to avoid surprising test-side effects.
+            if os.environ.get('ENABLE_POST_COMMIT_ANALYTICS', '').lower() in ('1', 'true', 'yes'):
+                try:
+                    refresh_mod.refresh_all_analytics(conn, unit_rsid=scope_unit_rsid)
+                except Exception:
+                    pass
         except Exception:
             pass
         return JSONResponse(status_code=200, content={'run_id': run_id, 'status': 'success', 'dataset_key': dataset_key, 'rows_in': rows_in, 'rows_loaded': rows_loaded})
