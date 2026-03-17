@@ -35,7 +35,7 @@ def generate_explanation_from_recommendation(rec: Dict[str, Any]) -> Dict[str, A
     fields such as `recommendation_text`, `evidence_json`, `fusion_score`,
     and `unit_rsid` to produce a human-usable explanation.
     """
-    explanation_parts: List[str] = []
+    # parse evidence payload when available
     evidence = None
     try:
         if rec.get('evidence_json'):
@@ -43,34 +43,90 @@ def generate_explanation_from_recommendation(rec: Dict[str, Any]) -> Dict[str, A
     except Exception:
         evidence = None
 
-    # what data drove it
-    if evidence:
-        keys = sorted(list(evidence.keys()))[:4]
-        explanation_parts.append(f"Data: {', '.join(keys)}")
-    elif rec.get('recommendation_text'):
-        explanation_parts.append("Data: derived from recommendation engine payload")
-    else:
-        explanation_parts.append("Data: multiple inputs (mission, market, school)")
+    # helper: build 'what' and list-style 'why' items from available data
+    what = rec.get('recommendation_text') or rec.get('action') or 'Suggested action'
+    why: List[str] = []
+    ev = evidence or {}
+    # school-related reasons
+    school = ev.get('school') if isinstance(ev, dict) else None
+    if school and school.get('priority_score') is not None:
+        why.append('School priority score supports targeting')
+    if school and school.get('enrollment'):
+        why.append(f"School population: {school.get('enrollment')}")
+    # market-related reasons
+    market = ev.get('market') if isinstance(ev, dict) else None
+    if market and market.get('avg_share') is not None:
+        why.append('Market share indicates opportunity')
+    if market and market.get('examples'):
+        why.append('Local market examples present')
+    # mission-related reasons
+    mission = ev.get('mission') if isinstance(ev, dict) else None
+    if mission and mission.get('mission_total'):
+        why.append('Mission allocation has capacity in this run')
 
-    # why it matters operationally
+    # evidence numeric bundle
+    evidence_struct: Dict[str, Any] = {}
     score = rec.get('fusion_score') or rec.get('score')
     if score is not None:
-        explanation_parts.append(f"Why: prioritized by score {round(float(score),2)}")
+        evidence_struct['fusion_score'] = float(score)
+    if school and school.get('enrollment') is not None:
+        evidence_struct['school_population'] = school.get('enrollment')
+    if market and market.get('avg_share') is not None:
+        evidence_struct['market_share'] = market.get('avg_share')
+
+    # risk and expected effect
+    risks: List[str] = []
+    if school and school.get('confidence_score') is not None and school.get('confidence_score') < 0.5:
+        risks.append('Low confidence in school data')
+    if school and school.get('components') and school['components'].get('historical_production') == 0:
+        risks.append('No historical production; conversion uncertain')
+    if evidence_struct.get('fusion_score') and evidence_struct.get('fusion_score') < 0.2:
+        risks.append('Low fusion score — prioritize cautiously')
+
+    expected_effect = rec.get('expected_effect') or 'Increase engagement or contracts in target area'
+
+    # confidence mapping: scale fusion_score -> [0.15, 0.95]
+    try:
+        f = float(score) if score is not None else 0.2
+        confidence = round(min(0.95, max(0.15, f * 4.0)), 2)
+    except Exception:
+        confidence = 0.5
+
+    assumptions = [
+        'Market data is current',
+        'School access remains unchanged'
+    ]
+
+    data_quality = 'medium'
+
+    # determine doctrine refs via simple rule engine
+    doctrine_refs = []
+    rtype = (rec.get('recommendation_type') or '').lower()
+    if 'school' in rtype or 'target' in rtype:
+        doctrine_refs = ['UR 27-4', 'UR 601-210']
+    elif 'mission' in rtype or 'allocation' in rtype:
+        doctrine_refs = ['UR 350-1', 'UR 601-106']
+    elif 'market' in rtype or 'analysis' in rtype:
+        doctrine_refs = ['UM 3-0', 'UTP 3-10.2']
     else:
-        explanation_parts.append("Why: engine indicates operational priority")
+        doctrine_refs = ['UM 3-0']
 
-    # suggested action
-    action = rec.get('recommendation_text') or rec.get('action') or "Consider allocating resources or engagement"
-    explanation_parts.append(f"Action: {action}")
+    doctrine_summary = '; '.join([DOCTRINE_REFERENCES.get(k, k) for k in doctrine_refs])
 
-    explanation = "; ".join(explanation_parts)
-
-    # Pick a small set of doctrine refs heuristically
-    doctrine_refs = ["UM 3-0", "UR 27-4"]
-    doctrine_summary = "; ".join([DOCTRINE_REFERENCES.get(k, k) for k in doctrine_refs])
+    struct = {
+        'what': what,
+        'why': why,
+        'evidence': evidence_struct,
+        'risk': risks,
+        'expected_effect': expected_effect,
+        'confidence': confidence,
+        'assumptions': assumptions,
+        'data_quality': data_quality
+    }
 
     return {
-        'explanation': explanation,
+        'explanation': json.dumps(struct),
+        'explanation_struct': struct,
         'doctrine_refs_json': json.dumps([{'ref': k, 'note': DOCTRINE_REFERENCES.get(k, '')} for k in doctrine_refs]),
         'doctrine_summary': doctrine_summary,
         'created_at': _short_timestamp()
@@ -101,6 +157,16 @@ def fetch_recommendations_with_annotations(conn, recommendation_table: str = 'fu
                 r['doctrine_refs'] = []
         else:
             r['doctrine_refs'] = []
+        # if explanation column contains JSON (structured explanation), parse it
+        expl = r.get('explanation')
+        if expl:
+            try:
+                r['explanation_struct'] = json.loads(expl)
+            except Exception:
+                # legacy free-text explanation — keep as-is
+                r['explanation_struct'] = None
+        else:
+            r['explanation_struct'] = None
     return rows
 
 
