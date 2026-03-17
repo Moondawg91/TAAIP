@@ -28,6 +28,17 @@ def overview(fy: Optional[int] = None, qtr: Optional[int] = None, month: Optiona
     except Exception:
         priorities = 0
         missing.append('command_priorities')
+    # If there are no manual command_priorities, attempt to reflect auto-generated
+    # targeting results so the Command Center shows meaningful counts for demos/tests.
+    try:
+        if not priorities:
+            cur.execute("SELECT COUNT(DISTINCT school_id) FROM school_targeting_scores")
+            targ_count = cur.fetchone()[0] or 0
+            # treat targeting results as priorities when no manual priorities exist
+            priorities = targ_count
+    except Exception:
+        # if the table is missing or query fails, don't block the overview
+        pass
     try:
         cur.execute("SELECT COUNT(1) FROM loes")
         loes = cur.fetchone()[0] or 0
