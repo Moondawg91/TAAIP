@@ -15,6 +15,8 @@ export default function DataHubImports(){
   const [statusMessage, setStatusMessage] = useState(null)
   const [validResult, setValidResult] = useState(null)
   const [commitResult, setCommitResult] = useState(null)
+  const [analyticsStatus, setAnalyticsStatus] = useState(null)
+  const [destinationPath, setDestinationPath] = useState(null)
   const [canUpload, setCanUpload] = useState(false)
   const [runs, setRuns] = useState([])
 
@@ -114,6 +116,7 @@ export default function DataHubImports(){
   async function handleCommit(){
     if(!jobId){ setStatusMessage('No job to commit'); return }
     setStatusMessage('Committing…')
+    setAnalyticsStatus(null)
     try{
       // call v2 commit endpoint which will process the previously uploaded file
       const res = await fetch(`/api/v2/datahub/runs/${encodeURIComponent(jobId)}/commit`, { method: 'POST' })
@@ -125,6 +128,52 @@ export default function DataHubImports(){
       }
       setCommitResult(body)
       setStatusMessage(`Commit complete — imported: ${body.rows_loaded || 0}`)
+      // determine destination workspace based on dataset_key
+      try{
+        const dk = (body && (body.dataset_key || body.datasetKey || body.dataset)) ? (body.dataset_key || body.datasetKey || body.dataset) : null
+        let dest = null
+        if(dk){
+          const lower = dk.toLowerCase()
+          if(lower.includes('school') || lower.includes('school_program') || lower.includes('school_program_fact') || lower.includes('rsid')) dest = '/planning/targeting-board'
+          else if(lower.includes('market') || lower.includes('market_potential') || lower.includes('market_health')) dest = '/command-center'
+          else if(lower.includes('mission') || lower.includes('mission_allocation')) dest = '/command-center/mission-assessment'
+          else if(lower.includes('event') || lower.includes('emm') || lower.includes('marketing')) dest = '/roi'
+          else dest = null
+        }
+        setDestinationPath(dest)
+      }catch(e){ setDestinationPath(null) }
+
+      // kick off a lightweight analytics check: poll the expected endpoint until results appear or timeout
+      (async function pollAnalytics(){
+        setAnalyticsStatus('pending')
+        const max = 6
+        let ok = false
+        for(let i=0;i<max;i++){
+          try{
+            if(destinationPath === '/planning/targeting-board'){
+              const r = await fetch('/api/v2/targeting/schools')
+              const j = await r.json()
+              if(j && Array.isArray(j.schools) && j.schools.length>0){ ok = true; break }
+            } else if(destinationPath === '/command-center'){
+              const r = await fetch('/api/command-center/overview')
+              const j = await r.json()
+              if(j && j.summary) { ok = true; break }
+            } else if(destinationPath === '/command-center/mission-assessment'){
+              const r = await fetch('/api/v2/mission-allocation/runs')
+              const j = await r.json()
+              if(j && j.status === 'ok') { ok = true; break }
+            } else if(destinationPath === '/roi'){
+              const r = await fetch('/api/v2/roi/kpis')
+              if(r && r.ok){ ok = true; break }
+            } else {
+              // unknown destination: consider analytics done
+              ok = true; break
+            }
+          }catch(e){}
+          await new Promise(res=>setTimeout(res, 1000))
+        }
+        setAnalyticsStatus(ok ? 'done' : 'failed')
+      })()
     }catch(err){ setStatusMessage('Commit error: ' + (err && err.message ? err.message : String(err))) }
   }
 

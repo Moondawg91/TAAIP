@@ -41,7 +41,6 @@ const sections = [
   {
     title: 'Planning',
     items: [
-      { to: '/planning', label: 'Planning Home', icon: StorageIcon },
       { to: '/planning/twg', label: 'TWG', icon: MapIcon },
       { to: '/planning/fusion', label: 'Fusion Cell', icon: AssessmentIcon },
     ],
@@ -49,8 +48,7 @@ const sections = [
   {
     title: 'ROI',
     items: [
-      { to: '/roi/marketing', label: 'Marketing ROI', icon: AssessmentIcon },
-      { to: '/roi/mac', label: 'MAC ROI', icon: AssessmentIcon },
+      { to: '/roi', label: 'Engagement / ROI Analysis', icon: AssessmentIcon },
     ],
   },
   {

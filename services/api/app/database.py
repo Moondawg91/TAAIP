@@ -81,7 +81,14 @@ def reload_engine_if_needed():
     `engine` and `SessionLocal` reflect the current environment.
     """
     global engine, SessionLocal
-    desired = os.getenv("DATABASE_URL") or "sqlite:///./taaip_dev.db"
+    # Respect TAAIP_DB_PATH if set (tests use this), otherwise fall back to
+    # DATABASE_URL or the default. This mirrors `_create_engine_from_env()`
+    # so reloads use the same computed URL as engine creation.
+    taaip_path = os.getenv("TAAIP_DB_PATH")
+    if taaip_path:
+        desired = f"sqlite:///{taaip_path}"
+    else:
+        desired = os.getenv("DATABASE_URL") or "sqlite:///./taaip_dev.db"
     try:
         current_url = str(engine.url)
     except Exception:
@@ -97,6 +104,16 @@ def reload_engine_if_needed():
                 SessionLocal = SessionProxy(sessionmaker(autocommit=False, autoflush=False, bind=engine))
         except Exception:
             SessionLocal = SessionProxy(sessionmaker(autocommit=False, autoflush=False, bind=engine))
+        # Ensure SQLAlchemy model metadata exists on the newly-created engine.
+        try:
+            # Import here to avoid import-time cycles when module is imported elsewhere.
+            from services.api.app import models as _models
+            try:
+                _models.Base.metadata.create_all(bind=engine)
+            except Exception:
+                pass
+        except Exception:
+            pass
 
 
 def get_db():
