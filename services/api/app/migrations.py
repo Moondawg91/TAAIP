@@ -431,6 +431,54 @@ def apply_migrations(conn: sqlite3.Connection):
         ''')
         conn.commit()
 
+    # AI LMS: explanations, doctrine refs, decision tracking, and outcome records
+    if not _table_exists(cur, 'recommendation_explanations'):
+        cur.executescript('''
+        CREATE TABLE IF NOT EXISTS recommendation_explanations (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            recommendation_table TEXT,
+            recommendation_id INTEGER,
+            explanation TEXT,
+            doctrine_summary TEXT,
+            doctrine_refs_json TEXT,
+            created_at TEXT DEFAULT (datetime('now'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_rex_rec ON recommendation_explanations(recommendation_table, recommendation_id);
+        ''')
+        conn.commit()
+
+    if not _table_exists(cur, 'user_decisions'):
+        cur.executescript('''
+        CREATE TABLE IF NOT EXISTS user_decisions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            recommendation_table TEXT,
+            recommendation_id INTEGER,
+            action TEXT,
+            notes TEXT,
+            user_id TEXT,
+            created_at TEXT DEFAULT (datetime('now'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_udec_rec ON user_decisions(recommendation_table, recommendation_id);
+        ''')
+        conn.commit()
+
+    if not _table_exists(cur, 'outcome_records'):
+        cur.executescript('''
+        CREATE TABLE IF NOT EXISTS outcome_records (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            recommendation_table TEXT,
+            recommendation_id INTEGER,
+            decision_id INTEGER,
+            outcome_type TEXT,
+            outcome_value TEXT,
+            observed_at TEXT,
+            notes TEXT,
+            created_at TEXT DEFAULT (datetime('now'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_out_rec ON outcome_records(recommendation_table, recommendation_id);
+        ''')
+        conn.commit()
+
 
 def seed_default_registry(conn: sqlite3.Connection):
     """Insert a few helpful registry rows for local development if missing."""
