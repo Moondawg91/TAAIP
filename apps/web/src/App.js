@@ -54,6 +54,7 @@ import MissionFeasibilityPage from './pages/command/MissionFeasibilityPage'
 import FsLossPage from './pages/command/FsLossPage'
 import TWGPageNew from './pages/command/TWGPage'
 import FusionCellPage from './pages/command/FusionCellPage'
+import FusionBriefing from './pages/command/FusionBriefing'
 import PlanningLandingPage from './pages/planning/PlanningLandingPage'
 import MissionAnalysisPage from './pages/operations/MissionAnalysisPage'
 import MissionPlanningPage from './pages/operations/MissionPlanningPage'
@@ -181,9 +182,6 @@ export default function App() {
           <Route path="/ops/budget" element={<OpsBudgetPage />} />
           <Route path="/ops/roi" element={<OpsRoiPage />} />
           <Route path="/roi" element={<RoiPage />} />
-          <Route path="/roi/events" element={<NotLoadedPage title="ROI Events" subtitle="Placeholder" />} />
-          <Route path="/roi/marketing" element={<RoiPage />} />
-          <Route path="/roi/mac" element={<RoiPage />} />
 
           {/* documents */}
           <Route path="/docs/sharepoint" element={<DocsSharepoint />} />
@@ -213,8 +211,10 @@ export default function App() {
           <Route path="/command-center/targeting-data" element={<TargetingDataPage />} />
           <Route path="/command-center/twg" element={<TWGPageNew />} />
           <Route path="/command-center/fusion-cell" element={<FusionCellPage />} />
+          <Route path="/command-center/fusion-briefing" element={<FusionBriefing />} />
 
           {/* planning aliases and direct links for TWG/Fusion per TOR */}
+          {/* Planning landing removed from primary nav; keep route for compatibility if needed */}
           <Route path="/planning" element={<PlanningLandingPage />} />
           <Route path="/planning/twg" element={<TWGPageNew />} />
           <Route path="/planning/fusion" element={<FusionCellPage />} />
@@ -228,13 +228,13 @@ export default function App() {
           <Route path="/operations/mission-planning" element={<MissionPlanningPage />} />
           <Route path="/operations/targeting-methodology" element={<TargetingMethodologyPage />} />
           <Route path="/operations/targeting-data" element={<TargetingDataPage />} />
-          <Route path="/operations/marketing-roi" element={<MarketingROIPage />} />
+          {/* ROI/Events consolidated under /roi page; legacy /operations/event-performance retained for compatibility */}
           <Route path="/operations/event-performance" element={<EventPerformancePage />} />
 
           <Route path="/planning/projects-events" element={<ProjectsEventsPage />} />
           <Route path="/planning/asset-management" element={<AssetManagementPage />} />
           <Route path="/planning/community-engagement" element={<CommunityEngagementPage />} />
-          <Route path="/planning/env-recommendation" element={<EnvRecommendationPage />} />
+          {/* Environmental Recommendation Engine removed from top-level nav (kept as background input). */}
           <Route path="/planning/calendar" element={<PlanningCalendarPage />} />
 
           <Route path="/planning/recommendations" element={<RecommendationsPage />} />

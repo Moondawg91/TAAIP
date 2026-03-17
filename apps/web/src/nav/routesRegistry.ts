@@ -8,6 +8,7 @@ const ROUTES_REGISTRY = [
       { id: 'fusion', label: 'Fusion Cell', path: '/command-center/fusion-cell', icon: 'Groups' },
       { id: 'twg', label: 'Targeting Working Group (TWG)', path: '/command-center/twg', icon: 'Hub' },
       { id: 'intel', label: 'Analytics & Intelligence', path: '/command-center/intel', icon: 'Analytics' },
+      { id: 'fusion-briefing', label: 'Fusion Briefing', path: '/command-center/fusion-briefing', icon: 'GridView' },
       { id: 'recruiting-ops', label: 'Recruiting Operations Plan/Program', path: '/command-center/recruiting-ops', icon: 'Work' },
       { id: 'priorities', label: 'Command Priorities', path: '/command-center/priorities', icon: 'Flag' },
       { id: 'mission-assess', label: 'Mission Assessment', path: '/command-center/mission-assessment', icon: 'Assessment' }
@@ -34,15 +35,11 @@ const ROUTES_REGISTRY = [
     icon: 'Build',
     items: [
       { id: 'projects-events', label: 'Project & Event Management', path: '/planning/projects-events', icon: 'PlaylistAddCheck' },
-      { id: 'planning-home', label: 'Planning Home', path: '/planning', icon: 'Build' },
+      
       // TWG and Fusion are surfaced under Command Center per TOR; planning keeps aliases hidden
-      { id: 'roi-overview-planning', label: 'ROI Overview', path: '/roi', icon: 'TrendingUp' },
-      { id: 'roi-events', label: 'ROI Events', path: '/roi/events', icon: 'Event' },
-      { id: 'roi-marketing', label: 'ROI — Marketing', path: '/roi/marketing', icon: 'Campaign' },
-      { id: 'roi-mac', label: 'ROI — MAC', path: '/roi/mac', icon: 'Analytics' },
+      { id: 'engagement-roi', label: 'Engagement / ROI Analysis', path: '/roi', icon: 'TrendingUp' },
       { id: 'asset-management', label: 'Asset Management', path: '/planning/asset-management', icon: 'Inventory' },
       { id: 'community-engagement', label: 'Community Engagement', path: '/planning/community-engagement', icon: 'Handshake' },
-      { id: 'env-reco', label: 'Environmental Recommendation Engine', path: '/planning/env-recommendation', icon: 'AutoMode' },
       { id: 'targeting-board', label: 'Targeting Board', path: '/planning/targeting-board', icon: 'TableChart' },
       { id: 'calendar', label: 'Calendar / Scheduling', path: '/planning/calendar', icon: 'CalendarMonth' }
     ]
@@ -52,7 +49,7 @@ const ROUTES_REGISTRY = [
     label: 'School Recruiting',
     icon: 'School',
     items: [
-      { id: 'school-home', label: 'Home', path: '/school-recruiting', icon: 'Home' },
+      
       { id: 'school-program', label: 'Program', path: '/school-recruiting/program', icon: 'Campaign' },
       { id: 'school-compliance-activities', label: 'Compliance & Activities', path: '/school/compliance', icon: 'Gavel' },
       { id: 'school-leadflow', label: 'Lead Flow', path: '/school/leadflow', icon: 'ContactMail' },

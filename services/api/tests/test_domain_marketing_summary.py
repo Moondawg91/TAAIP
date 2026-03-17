@@ -15,6 +15,27 @@ def setup_module(module):
     from services.api.app.db import init_db
     os.environ['TAAIP_DB_PATH'] = './taaip_dev.db'
     init_db()
+    # Ensure test DB starts with a clean marketing_activities table to avoid
+    # pre-seeded rows from other tests or previous runs interfering with
+    # aggregation expectations.
+    try:
+        from services.api.app.db import connect
+        conn = connect()
+        cur = conn.cursor()
+        try:
+            cur.execute('DELETE FROM marketing_activities')
+            conn.commit()
+        except Exception:
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+        try:
+            conn.close()
+        except Exception:
+            pass
+    except Exception:
+        pass
 
 
 def teardown_module(module):

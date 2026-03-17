@@ -77,6 +77,79 @@ def apply_migrations(conn: sqlite3.Connection):
         );
         ''')
 
+    # Ensure mission_allocation runtime tables (create early so endpoints are available)
+    if not _table_exists(cur, 'mission_allocation_runs'):
+        cur.executescript('''
+        CREATE TABLE IF NOT EXISTS mission_allocation_runs (
+            run_id TEXT PRIMARY KEY,
+            unit_rsid TEXT,
+            mission_total INTEGER,
+            status TEXT DEFAULT 'created',
+            notes TEXT,
+            approved_allocation INTEGER,
+            decision_status TEXT,
+            decision_notes TEXT,
+            approved_by TEXT,
+            approved_at TEXT,
+            created_at TEXT,
+            started_at TEXT,
+            completed_at TEXT
+        );
+
+        CREATE TABLE IF NOT EXISTS mission_allocation_inputs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            run_id TEXT,
+            company_id TEXT,
+            recruiter_capacity INTEGER,
+            historical_production INTEGER,
+            funnel_health REAL,
+            dep_loss INTEGER,
+            school_access REAL,
+            school_population INTEGER,
+            ascope TEXT,
+            pmesii TEXT,
+            market_intel TEXT,
+            extra_json TEXT,
+            created_at TEXT
+        );
+
+        CREATE TABLE IF NOT EXISTS mission_allocation_company_scores (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            run_id TEXT,
+            company_id TEXT,
+            supportability_score REAL,
+            risk_score REAL,
+            confidence_score REAL,
+            score_payload TEXT,
+            created_at TEXT
+        );
+
+        CREATE TABLE IF NOT EXISTS mission_allocation_recommendations (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            run_id TEXT,
+            company_id TEXT,
+            recommended_mission INTEGER,
+            rationale TEXT,
+            confidence REAL,
+            created_at TEXT
+        );
+
+        CREATE TABLE IF NOT EXISTS mission_allocation_evidence (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            run_id TEXT,
+            company_id TEXT,
+            evidence_type TEXT,
+            evidence_uri TEXT,
+            description TEXT,
+            created_at TEXT
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_mal_runs_unit ON mission_allocation_runs(unit_rsid);
+        CREATE INDEX IF NOT EXISTS idx_mal_inputs_run ON mission_allocation_inputs(run_id);
+        CREATE INDEX IF NOT EXISTS idx_mal_scores_run ON mission_allocation_company_scores(run_id);
+        CREATE INDEX IF NOT EXISTS idx_mal_recs_run ON mission_allocation_recommendations(run_id);
+        ''')
+
     # Ensure raw_file_storage table
     if not _table_exists(cur, 'raw_file_storage'):
         cur.executescript('''
@@ -191,6 +264,28 @@ def apply_migrations(conn: sqlite3.Connection):
         CREATE INDEX IF NOT EXISTS idx_fact_emm_activity_begin ON fact_emm_activity(begin_date);
         ''')
 
+        # Ensure market fact used by backend loaders (fact_market_share_contracts)
+        if not _table_exists(cur, 'fact_market_share_contracts'):
+                cur.executescript('''
+                CREATE TABLE IF NOT EXISTS fact_market_share_contracts (
+                    batch_id TEXT,
+                    fy INTEGER,
+                    per TEXT,
+                    comp TEXT,
+                    mkt TEXT,
+                    bde TEXT,
+                    bn TEXT,
+                    co TEXT,
+                    rsid TEXT,
+                    zip TEXT,
+                    contracts REAL,
+                    share REAL,
+                    totcontracts REAL,
+                    totpop REAL,
+                    imported_at TEXT
+                );
+                ''')
+
     if not _table_exists(cur, 'fact_lead_journey'):
         cur.executescript('''
         CREATE TABLE fact_lead_journey (
@@ -294,6 +389,93 @@ def apply_migrations(conn: sqlite3.Connection):
             created_at TEXT
         );
         CREATE INDEX IF NOT EXISTS idx_mr_scores_unit ON mission_risk_scores(unit_rsid);
+        ''')
+        conn.commit()
+
+    # Fusion engine tables: recommendations and evidence
+    if not _table_exists(cur, 'fusion_recommendations'):
+        cur.executescript('''
+        CREATE TABLE IF NOT EXISTS fusion_recommendations (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            fusion_run_id TEXT,
+            unit_rsid TEXT,
+            school_id TEXT,
+            market_key TEXT,
+            zip5 TEXT,
+            mission_pressure_score REAL,
+            market_opportunity_score REAL,
+            school_priority_score REAL,
+            fusion_score REAL,
+            recommendation_type TEXT,
+            recommendation_text TEXT,
+            evidence_json TEXT,
+            as_of_date TEXT,
+            created_at TEXT
+        );
+        CREATE INDEX IF NOT EXISTS idx_fusion_run_unit ON fusion_recommendations(fusion_run_id, unit_rsid);
+        CREATE INDEX IF NOT EXISTS idx_fusion_unit ON fusion_recommendations(unit_rsid);
+        ''')
+        conn.commit()
+
+    if not _table_exists(cur, 'fusion_evidence'):
+        cur.executescript('''
+        CREATE TABLE IF NOT EXISTS fusion_evidence (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            fusion_run_id TEXT,
+            source_type TEXT,
+            source_ref TEXT,
+            payload_json TEXT,
+            created_at TEXT
+        );
+        CREATE INDEX IF NOT EXISTS idx_fusion_evidence_run ON fusion_evidence(fusion_run_id);
+        ''')
+        conn.commit()
+
+    # AI LMS: explanations, doctrine refs, decision tracking, and outcome records
+    if not _table_exists(cur, 'recommendation_explanations'):
+        cur.executescript('''
+        CREATE TABLE IF NOT EXISTS recommendation_explanations (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            recommendation_table TEXT,
+            recommendation_id INTEGER,
+            explanation TEXT,
+            doctrine_summary TEXT,
+            doctrine_refs_json TEXT,
+            created_at TEXT DEFAULT (datetime('now'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_rex_rec ON recommendation_explanations(recommendation_table, recommendation_id);
+        ''')
+        conn.commit()
+
+    if not _table_exists(cur, 'user_decisions'):
+        cur.executescript('''
+        CREATE TABLE IF NOT EXISTS user_decisions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            recommendation_table TEXT,
+            recommendation_id INTEGER,
+            action TEXT,
+            notes TEXT,
+            user_id TEXT,
+            created_at TEXT DEFAULT (datetime('now'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_udec_rec ON user_decisions(recommendation_table, recommendation_id);
+        ''')
+        conn.commit()
+
+    if not _table_exists(cur, 'outcome_records'):
+        cur.executescript('''
+        CREATE TABLE IF NOT EXISTS outcome_records (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            recommendation_table TEXT,
+            recommendation_id INTEGER,
+            decision_id INTEGER,
+            outcome_type TEXT,
+            outcome_value TEXT,
+            observed_at TEXT,
+            notes TEXT,
+            created_at TEXT DEFAULT (datetime('now'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_out_rec ON outcome_records(recommendation_table, recommendation_id);
         ''')
         conn.commit()
 

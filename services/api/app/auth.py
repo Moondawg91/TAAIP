@@ -44,6 +44,11 @@ def decode_token(token: str):
 
 def get_db():
     from . import database as _database
+    # Ensure the SQLAlchemy engine/session reflect any env changes (tests set TAAIP_DB_PATH).
+    try:
+        _database.reload_engine_if_needed()
+    except Exception:
+        pass
     db = _database.SessionLocal()
     try:
         yield db
