@@ -202,6 +202,173 @@ def commit_run(run_id: str):
                 rows_loaded = emm_portal.process_and_load(df, ctx, conn, run_id)
             elif dataset_key == 'USAREC_ORG_HIERARCHY':
                 rows_loaded = usarec_org_hierarchy.process_and_load(df, ctx, conn, run_id)
+                try:
+                    try:
+                        org_touched = refresh_mod.refresh_org_hierarchy(conn, batch_id=run_id, unit_rsid=scope_unit_rsid)
+                    except Exception:
+                        org_touched = 0
+                    print(f'[datahub.commit] refresh_org_hierarchy touched={org_touched} run_id={run_id}')
+                except Exception:
+                    pass
+            elif dataset_key == 'school_program_fact':
+                # Generic foundation loader for school_program_fact when committing via DataHub
+                # Attempt flexible column mapping similar to imports_foundation.commit
+                try:
+                    req_cols = ['bde', 'bn', 'co', 'rsid_prefix', 'population', 'available']
+                    # build normalized header map
+                    hdrs = list(df.columns)
+                    def _norm(s):
+                        if s is None:
+                            return ''
+                        return ''.join([c for c in str(s).lower() if c.isalnum()])
+                    norm_map = { _norm(h): h for h in hdrs }
+                    mapped = {}
+                    for rc in req_cols:
+                        mapped[rc] = None
+                        if _norm(rc) in norm_map:
+                            mapped[rc] = norm_map[_norm(rc)]
+                        else:
+                            # try substring match
+                            for h in hdrs:
+                                if _norm(rc) in _norm(h) or _norm(h) in _norm(rc):
+                                    mapped[rc] = h; break
+                            # special-case fuzzy matching for rsid-like columns
+                            if not mapped[rc] and 'rsid' in rc:
+                                for h in hdrs:
+                                    nh = _norm(h)
+                                    if nh.startswith('rs') or 'rsid' in nh or 'rsprefix' in nh or 'rs_prefix' in h.lower():
+                                        mapped[rc] = h; break
+                    # if any required missing, fail with descriptive error
+                    missing = [k for k,v in mapped.items() if not v]
+                    if missing:
+                        raise Exception(f'missing required columns for school_program_fact: {missing}')
+                    rows = []
+                    for _, r in df.fillna('').iterrows():
+                        row = {}
+                        for tgt, src in mapped.items():
+                            val = r.get(src) if hasattr(r, 'get') else None
+                            # normalize numeric
+                            if tgt in ('population','available'):
+                                try:
+                                    if val is None or val == '':
+                                        row[tgt] = None
+                                    else:
+                                        v = str(val).strip()
+                                        row[tgt] = int(float(v))
+                                except Exception:
+                                    row[tgt] = None
+                            else:
+                                row[tgt] = val
+                        row['id'] = f"spf_{uuid.uuid4().hex}"
+                        row['ingested_at'] = datetime.datetime.utcnow().isoformat()
+                        rows.append(row)
+                    if rows:
+                        cols = list(rows[0].keys())
+                        placeholders = ','.join(['?']*len(cols))
+                        insert_sql = f"INSERT INTO school_program_fact ({', '.join(cols)}) VALUES ({placeholders})"
+                        to_insert = [[r.get(c) for c in cols] for r in rows]
+                        cur.executemany(insert_sql, to_insert)
+                        conn.commit()
+                        rows_loaded = len(rows)
+                    else:
+                        rows_loaded = 0
+                except Exception:
+                    raise
+            elif dataset_key and dataset_key.upper() in ('USAREC_MARKET_CONTRACTS_SHARE','USAREC_VOL_CONTRACTS_BY_SERVICE'):
+                # Use backend market loader to populate canonical market tables in the runtime DB
+                try:
+                    from backend.ingestion.loaders.market_share_loader import load_market_share
+                except Exception:
+                    load_market_share = None
+                if load_market_share:
+                    print(f'[datahub.commit] invoking load_market_share run_id={run_id} path={stored}')
+                    # pre-count on the loader's target table: fact_market_share_contracts
+                    pre = 0
+                    try:
+                        cur2 = conn.cursor()
+                        cur2.execute("SELECT COUNT(*) FROM fact_market_share_contracts")
+                        pre = int(cur2.fetchone()[0])
+                    except Exception:
+                        pre = 0
+                    # call loader with the same sqlite connection so it writes into runtime DB
+                    try:
+                        load_market_share(conn, stored, run_id)
+                    except Exception as e:
+                        print(f'[datahub.commit] load_market_share raised: {e}')
+                        # surface loader exception to run error_summary
+                        raise
+                    # post-count
+                    post = 0
+                    try:
+                        cur2 = conn.cursor()
+                        cur2.execute("SELECT COUNT(*) FROM fact_market_share_contracts")
+                        post = int(cur2.fetchone()[0])
+                    except Exception:
+                        post = pre
+                    rows_loaded = max(0, post - pre)
+                    print(f'[datahub.commit] load_market_share rows pre={pre} post={post} rows_loaded={rows_loaded} run_id={run_id}')
+                    try:
+                        # best-effort: run market aggregation to populate runtime tables dashboards read
+                        try:
+                            agg_inserted = refresh_mod.refresh_market_from_contracts(conn, batch_id=run_id, unit_rsid=scope_unit_rsid)
+                        except Exception:
+                            agg_inserted = 0
+                        print(f'[datahub.commit] refresh_market_from_contracts inserted={agg_inserted} run_id={run_id}')
+                    except Exception:
+                        pass
+                else:
+                    rows_loaded = 0
+            elif dataset_key and (dataset_key.upper().startswith('USAREC_MISSION') or dataset_key == 'MISSION_CATEGORY'):
+                # Use backend mission loader to populate mission canonical table
+                try:
+                    from backend.ingestion.loaders.mission_loader import load_mission
+                except Exception:
+                    load_mission = None
+                if load_mission:
+                    print(f'[datahub.commit] invoking load_mission run_id={run_id} path={stored}')
+                    # pre-count on mission target table: fact_mission_category
+                    pre = 0
+                    try:
+                        cur2 = conn.cursor()
+                        cur2.execute("SELECT COUNT(*) FROM fact_mission_category")
+                        pre = int(cur2.fetchone()[0])
+                    except Exception:
+                        pre = 0
+                    # call loader; it returns number inserted
+                    try:
+                        inserted = load_mission(conn, stored, run_id)
+                    except Exception as e:
+                        print(f'[datahub.commit] load_mission raised: {e}')
+                        raise
+                    # post-count
+                    post = 0
+                    try:
+                        cur2 = conn.cursor()
+                        cur2.execute("SELECT COUNT(*) FROM fact_mission_category")
+                        post = int(cur2.fetchone()[0])
+                    except Exception:
+                        post = pre
+                    # prefer loader-returned count if available, otherwise delta
+                    if inserted is not None:
+                        try:
+                            rows_loaded = int(inserted or 0)
+                        except Exception:
+                            rows_loaded = max(0, post - pre)
+                    else:
+                        rows_loaded = max(0, post - pre)
+                    print(f'[datahub.commit] load_mission rows pre={pre} post={post} loader_return={inserted} rows_loaded={rows_loaded} run_id={run_id}')
+                    try:
+                        # best-effort: create a mission_allocation run from imported categories
+                        try:
+                            mal_run = refresh_mod.refresh_mission_from_category(conn, batch_id=run_id, unit_rsid=scope_unit_rsid)
+                        except Exception:
+                            mal_run = None
+                        if mal_run:
+                            print(f'[datahub.commit] created mission_allocation run={mal_run} from batch={run_id}')
+                    except Exception:
+                        pass
+                else:
+                    rows_loaded = 0
             else:
                 rows_loaded = 0
         except Exception as e:
