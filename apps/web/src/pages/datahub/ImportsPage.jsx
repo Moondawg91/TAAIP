@@ -9,6 +9,8 @@ export default function DataHubImports(){
   // Upload flow state
   const [file, setFile] = useState(null)
   const [jobId, setJobId] = useState(null)
+  const [needsDataset, setNeedsDataset] = useState(null)
+  const [selectedDataset, setSelectedDataset] = useState('')
   const [legacyJobId, setLegacyJobId] = useState(null)
   const [preview, setPreview] = useState([])
   const [columns, setColumns] = useState([])
@@ -16,6 +18,9 @@ export default function DataHubImports(){
   const [validResult, setValidResult] = useState(null)
   const [commitResult, setCommitResult] = useState(null)
   const [analyticsStatus, setAnalyticsStatus] = useState(null)
+  const [postCommitInfo, setPostCommitInfo] = useState(null)
+  const [runDetailsMap, setRunDetailsMap] = useState({})
+  const [expandedRunId, setExpandedRunId] = useState(null)
   const [destinationPath, setDestinationPath] = useState(null)
   const [canUpload, setCanUpload] = useState(false)
   const [runs, setRuns] = useState([])
@@ -50,13 +55,41 @@ export default function DataHubImports(){
     setJobId(null); setPreview([]); setColumns([]); setValidResult(null); setCommitResult(null)
     if(!file){ setStatusMessage('Choose a file first'); return }
     try{
+      // Always call the preview endpoint first to avoid hitting upload validation
       const fd = new FormData()
       fd.append('file', file)
-      // dry-run preview via v2 endpoint
-      const j = await dataHubUpload(fd, true)
-      const jid = j && (j.run_id || j.runId || j.run_id || j.id)
+
+      const token = localStorage.getItem('taaip_jwt')
+      const headers = {}
+      if (token) headers['Authorization'] = `Bearer ${token}`
+
+      const res = await fetch('/api/v2/datahub/preview', { method: 'POST', body: fd, headers })
+      let j = null
+      try{ j = await res.json() }catch(e){ j = null }
+      if (!res.ok) {
+        // If preview failed with a validation-style error, surface it
+        const err = (j && (j.error || j.message)) ? (j.error || j.message) : 'preview failed'
+        throw new Error(err)
+      }
+
+      const jid = j && (j.run_id || j.runId || j.id)
       setJobId(jid || null)
-      // use preview returned directly from upload when available
+
+      // handle low-confidence gating response from preview
+      if (j && j.status === 'needs_dataset_selection'){
+        setNeedsDataset({ suggested: j.suggested_dataset, confidence: j.detected_confidence, preview_rows: j.preview_rows || j.previewRows || j.preview || [] })
+        if(j.suggested_dataset) setSelectedDataset(j.suggested_dataset)
+        setStatusMessage('Dataset selection required — please choose dataset')
+        const previewRows = j && (j.preview_rows || j.preview || j.previewRows)
+        if(previewRows && Array.isArray(previewRows)){
+          setPreview(previewRows)
+          const cols = previewRows.length>0 ? Object.keys(previewRows[0]) : []
+          setColumns(cols)
+        }
+        return
+      }
+
+      // Normal preview result
       const previewRows = j && (j.preview_rows || j.preview || j.previewRows)
       if(previewRows && Array.isArray(previewRows)){
         setPreview(previewRows)
@@ -64,7 +97,7 @@ export default function DataHubImports(){
         setColumns(cols)
         setStatusMessage(`Preview ready — ${previewRows.length} rows`)
       } else {
-        setStatusMessage('Upload complete — preview not available')
+        setStatusMessage('Preview complete — no preview rows returned')
       }
       // refresh runs list
       try{ const runsResp = await dataHubListRuns(); setRuns(runsResp || []) }catch(e){}
@@ -89,6 +122,31 @@ export default function DataHubImports(){
       }catch(e){}
       setStatusMessage('Upload error: ' + String(err))
     }
+  }
+
+  async function continueWithDataset(){
+    if(!file) { setStatusMessage('No file to continue'); return }
+    if(!selectedDataset) { setStatusMessage('Choose a dataset first'); return }
+    setStatusMessage('Uploading with selected dataset…')
+    try{
+      const fd = new FormData()
+      fd.append('file', file)
+      fd.append('dataset_key', selectedDataset)
+      const j = await dataHubUpload(fd, true)
+      const jid = j && (j.run_id || j.runId || j.run_id || j.id)
+      setJobId(jid || null)
+      setNeedsDataset(null)
+      const previewRows = j && (j.preview_rows || j.preview || j.previewRows)
+      if(previewRows && Array.isArray(previewRows)){
+        setPreview(previewRows)
+        const cols = previewRows.length>0 ? Object.keys(previewRows[0]) : []
+        setColumns(cols)
+        setStatusMessage(`Preview ready — ${previewRows.length} rows`)
+      } else {
+        setStatusMessage('Upload complete — preview not available')
+      }
+      try{ const runsResp = await dataHubListRuns(); setRuns(runsResp || []) }catch(e){}
+    }catch(e){ setStatusMessage('Upload error: ' + String(e)) }
   }
 
   
@@ -127,6 +185,12 @@ export default function DataHubImports(){
         return
       }
       setCommitResult(body)
+      setCommitResult(body)
+      setCommitResult(body)
+      setPostCommitInfo(body)
+      try{
+        sessionStorage.setItem('datahub_last_commit', JSON.stringify(body))
+      }catch(e){}
       setStatusMessage(`Commit complete — imported: ${body.rows_loaded || 0}`)
       // determine destination workspace based on dataset_key
       try{
@@ -173,6 +237,8 @@ export default function DataHubImports(){
           await new Promise(res=>setTimeout(res, 1000))
         }
         setAnalyticsStatus(ok ? 'done' : 'failed')
+        // reflect analytics status into the post-commit card if present
+        setPostCommitInfo(prev => prev ? Object.assign({}, prev, { analytics_check: ok ? 'done' : 'failed' }) : prev)
       })()
     }catch(err){ setStatusMessage('Commit error: ' + (err && err.message ? err.message : String(err))) }
   }
@@ -194,11 +260,75 @@ export default function DataHubImports(){
         )}
         {statusMessage && <div style={{marginTop:8}}><strong>{statusMessage}</strong></div>}
         {jobId && <div style={{marginTop:8}}>Job ID: {jobId} {legacyJobId && <em>(legacy {legacyJobId})</em>}</div>}
+        {needsDataset && (
+          <div style={{marginTop:12, padding:8, border:'1px dashed #ccc'}}>
+            <div><strong>Dataset selection required</strong> — suggested: {needsDataset.suggested || '(none)'} (confidence: {needsDataset.confidence || 0})</div>
+            <div style={{marginTop:8}}>
+              <select value={selectedDataset} onChange={e=>setSelectedDataset(e.target.value)}>
+                <option value=''>-- choose dataset --</option>
+                {importers.map(i=> <option key={i.dataset_key||i.id} value={i.dataset_key||i.id}>{i.display_name||i.dataset_key||i.id}</option>)}
+              </select>
+              <button onClick={continueWithDataset} style={{marginLeft:8}}>Use selected dataset and continue</button>
+            </div>
+          </div>
+        )}
         <div style={{marginTop:8}}>
           <button onClick={handleValidate} disabled={!jobId}>Validate</button>
           <button onClick={handleCommit} disabled={!jobId} style={{marginLeft:8}}>Commit</button>
         </div>
+        {/* Simple workflow step labels */}
+        <div style={{marginTop:12, display:'flex', gap:12, alignItems:'center'}}>
+          {[
+            {key:'file', label:'File selected', ok: !!file},
+            {key:'preview', label:'Preview ready', ok: preview && preview.length>0},
+            {key:'dataset', label:'Dataset confirmed', ok: !!selectedDataset},
+            {key:'validation', label:'Validation complete', ok: validResult && (validResult.errors ? validResult.errors.length===0 : true)},
+            {key:'commit', label:'Commit complete', ok: commitResult != null}
+          ].map(s => (
+            <div key={s.key} style={{padding:'6px 10px', borderRadius:6, background: s.ok ? '#e6ffed' : '#fafafa', border: '1px solid #ddd'}}>
+              <strong style={{color: s.ok ? '#007a2f' : '#333'}}>{s.ok ? '✓ ' : ''}{s.label}</strong>
+            </div>
+          ))}
+        </div>
       </section>
+      {/* Inline run detail (replaces alert popup) */}
+      {expandedRunId && runDetailsMap && runDetailsMap[expandedRunId] && (
+        <section style={{marginTop:12, padding:12, border:'1px solid #e0e0e0', borderRadius:6}}>
+          <h3 style={{marginTop:0}}>Run Details — {expandedRunId}</h3>
+          <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:8}}>
+            {Object.entries(runDetailsMap[expandedRunId]).map(([k,v]) => (
+              <div key={k} style={{padding:6, borderBottom:'1px solid #fafafa'}}>
+                <strong style={{display:'block'}}>{k}</strong>
+                <div style={{fontSize:12, color:'#333'}}>{typeof v === 'object' ? JSON.stringify(v) : String(v)}</div>
+              </div>
+            ))}
+          </div>
+          <div style={{marginTop:8}}>
+            <button onClick={()=>setExpandedRunId(null)}>Close</button>
+          </div>
+        </section>
+      )}
+      {/* Post-commit success panel */}
+      {postCommitInfo && (
+        <section style={{marginBottom:24, padding:16, border:'1px solid #cfeadf', background:'#f4fffa', borderRadius:6}}>
+          <h3 style={{marginTop:0}}>Import Success</h3>
+          <div><strong>Dataset:</strong> {postCommitInfo.dataset_key || postCommitInfo.dataset || 'unknown'}</div>
+          <div><strong>Rows loaded:</strong> {postCommitInfo.rows_loaded || 0}</div>
+          <div><strong>Run ID:</strong> {postCommitInfo.run_id || postCommitInfo.id}</div>
+          <div><strong>Commit status:</strong> {postCommitInfo.status || 'committed'}</div>
+          <div><strong>Analytics check:</strong> {postCommitInfo.analytics_check || analyticsStatus || 'pending'}</div>
+          <div><strong>Timestamp:</strong> {postCommitInfo.committed_at || postCommitInfo.finished_at || postCommitInfo.created_at || ''}</div>
+          <div style={{marginTop:8}}>
+            <button onClick={async ()=>{
+              const rid = postCommitInfo.run_id || postCommitInfo.id
+              if(!rid) return
+              const d = await refreshRunDetail(rid)
+              if(d){ setRunDetailsMap(m => Object.assign({}, m, { [rid]: d })); setExpandedRunId(rid) }
+            }}>Inspect run</button>
+            {destinationPath && <a style={{marginLeft:8}} href={destinationPath}>Go to destination</a>}
+          </div>
+        </section>
+      )}
       {validResult && validResult.errors && Array.isArray(validResult.errors) && (
         <section style={{marginBottom:24}}>
           <h3>Upload Validation — Errors</h3>
@@ -280,7 +410,13 @@ export default function DataHubImports(){
                   <td style={{padding:6}}>{r.rows_loaded}</td>
                   <td style={{padding:6}}>{r.error_summary}</td>
                   <td style={{padding:6}}>
-                    <button onClick={async ()=>{ const d = await refreshRunDetail(r.run_id); if(d) alert(JSON.stringify(d, null, 2)) }}>View</button>
+                    <button onClick={async ()=>{
+                      const d = await refreshRunDetail(r.run_id)
+                      if(d){
+                        setRunDetailsMap(m => Object.assign({}, m, { [r.run_id]: d }))
+                        setExpandedRunId(r.run_id)
+                      }
+                    }}>View</button>
                     {r.error_summary && <a style={{marginLeft:8}} href={dataHubDownloadErrors(r.run_id)}>Download Errors</a>}
                   </td>
                 </tr>
