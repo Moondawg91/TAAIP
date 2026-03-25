@@ -1,5 +1,5 @@
-import React, { useState } from 'react'
-import { Box, Typography, Grid } from '@mui/material'
+import React, { useState, useEffect } from 'react'
+import { Box, Typography, Grid, Button } from '@mui/material'
 import FlashBureauPanel from '../components/home/FlashBureauPanel'
 import MessagesPanel from '../components/home/MessagesPanel'
 import RecognitionPanel from '../components/home/RecognitionPanel'
@@ -7,7 +7,11 @@ import UpcomingPanel from '../components/home/UpcomingPanel'
 import ReferenceRailsPanel from '../components/home/ReferenceRailsPanel'
 import { useOrgUnitStore } from '../state/orgUnitStore'
 import VirtualTechnicianBrief from '../components/home/VirtualTechnicianBrief'
-import { Button, Link } from '@mui/material'
+import api from '../api/client'
+import DashboardCard from '../components/ui/DashboardCard'
+import KpiTile from '../components/ui/KpiTile'
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
+import { Table, TableBody, TableCell, TableHead, TableRow } from '@mui/material'
 
 export default function HomePage(){
   // Quick Actions + System Readiness on left; Strategic + Upcoming center; Reference + Data Status right
@@ -23,27 +27,120 @@ export default function HomePage(){
   const activeUnitKey = store.activeUnitKey
   const activeEchelon = store.activeEchelon
   const [drillUnit, setDrillUnit] = useState<{ unit_key: string; echelon: string } | null>(null)
+  const [kpis, setKpis] = useState(null)
+  const [trend, setTrend] = useState([])
+  const [stations, setStations] = useState([])
+  const [runs, setRuns] = useState([])
 
-  function DashboardCanvas({ unit_key, echelon }: { unit_key: string; echelon: string }){
+  useEffect(()=>{
+    let mounted = true
+    ;(async ()=>{
+      try{
+        const [summary, perf, datahubRuns] = await Promise.all([
+          api.getAnalyticsSummary().catch(()=>null),
+          api.getPerformanceDashboard().catch(()=>null),
+          api.dataHubListRuns().catch(()=>[])
+        ])
+        if(!mounted) return
+        setKpis(summary || null)
+        if(perf && perf.stations) setStations(perf.stations)
+        if(perf && perf.conversion_trend) setTrend(perf.conversion_trend)
+        setRuns(Array.isArray(datahubRuns) ? datahubRuns : (datahubRuns && datahubRuns.items) ? datahubRuns.items : [])
+      }catch(e){}
+    })()
+    return ()=>{ mounted = false }
+  }, [])
+
+  // Executive KPI row component
+  function ExecutiveKpis(){
+    const activeLeads = kpis && kpis.leads ? kpis.leads.active : null
+    const contracts = kpis && kpis.contracts ? kpis.contracts.total : null
+    const conv = (contracts != null && activeLeads != null && activeLeads>0) ? ((contracts/activeLeads)*100).toFixed(1) : null
+    const freshnessTs = kpis && kpis.freshness ? kpis.freshness.last_updated : null
+    const freshnessState = kpis && kpis.freshness ? kpis.freshness.state : null
     return (
-      <Box sx={{ height: 240, bgcolor: 'background.paper', display:'flex', alignItems:'center', justifyContent:'center', position:'relative', cursor:'pointer' }}
-        onClick={()=> setDrillUnit({ unit_key, echelon })}
-        title={`Click for details about ${unit_key}`}>
-        <Box>
-          <Typography variant="h6">Dashboard for {unit_key}</Typography>
-          <Typography variant="body2" sx={{ color:'text.secondary' }}>{echelon}</Typography>
-        </Box>
-      </Box>
+      <DashboardCard>
+        <Grid container spacing={2}>
+          <Grid item xs={12} sm={6} md={3}><KpiTile label="Active Leads" value={activeLeads != null ? activeLeads : 'Data unavailable'} sub={''} /></Grid>
+          <Grid item xs={12} sm={6} md={3}><KpiTile label="Contracts" value={contracts != null ? contracts : 'Data unavailable'} sub={''} /></Grid>
+          <Grid item xs={12} sm={6} md={3}><KpiTile label="Conversion Rate" value={conv != null ? `${conv}%` : 'Data unavailable'} sub={''} /></Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <Box>
+              <Typography sx={{ fontSize: 12, fontWeight:700, color:'text.secondary', textTransform:'uppercase' }}>Data Freshness</Typography>
+              <Typography sx={{ fontSize:20, fontWeight:800 }}>{freshnessState ? freshnessState : 'Unknown'}</Typography>
+              <Typography sx={{ fontSize:12, color:'text.secondary' }}>{freshnessTs ? new Date(freshnessTs).toLocaleString() : 'No recent data'}</Typography>
+            </Box>
+          </Grid>
+        </Grid>
+      </DashboardCard>
     )
   }
 
-  function DetailPanel({ unit_key, echelon }: { unit_key: string; echelon: string }){
+  function ConversionTrendPanel(){
     return (
-      <Box sx={{ padding: 2, mt:2, bgcolor:'background.paper' }}>
-        <Typography variant="h6">Details for {unit_key}</Typography>
-        <Typography variant="body2" sx={{ color:'text.secondary' }}>{echelon}</Typography>
-        <Box sx={{ mt:1 }}>This panel shows drilldown data for the selected KPI card.</Box>
-      </Box>
+      <DashboardCard>
+        <Typography variant="subtitle2">Conversion Trend</Typography>
+        <Box sx={{ height:240 }}>
+          {trend && trend.length>0 ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={trend} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+                <XAxis dataKey="period" />
+                <YAxis />
+                <Tooltip />
+                <Line type="monotone" dataKey="conversion_pct" stroke="#1976d2" strokeWidth={2} dot={false} />
+              </LineChart>
+            </ResponsiveContainer>
+          ) : <Typography>No trend data available</Typography>}
+        </Box>
+      </DashboardCard>
+    )
+  }
+
+  function TopStationsPanel(){
+    return (
+      <DashboardCard>
+        <Typography variant="subtitle2">Top Performing Stations</Typography>
+        {stations && stations.length>0 ? (
+          <Table size="small">
+            <TableHead>
+              <TableRow>
+                <TableCell>Station</TableCell>
+                <TableCell>Leads</TableCell>
+                <TableCell>Contracts</TableCell>
+                <TableCell>Conversion</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {stations.map(s => (
+                <TableRow key={s.station_rsid || s.station || s.id}>
+                  <TableCell>{s.name || s.station_rsid || s.station}</TableCell>
+                  <TableCell>{s.leads ?? '—'}</TableCell>
+                  <TableCell>{s.contracts ?? '—'}</TableCell>
+                  <TableCell>{s.conversion_pct != null ? `${s.conversion_pct}%` : '—'}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        ) : <Typography>No station performance data</Typography>}
+      </DashboardCard>
+    )
+  }
+
+  function DataFreshnessPanel(){
+    const recent = (runs || []).filter(r => r.status && ['success','completed','committed','done','ok'].includes(String(r.status).toLowerCase())).slice(0,3)
+    return (
+      <DashboardCard>
+        <Typography variant="subtitle2">Data Freshness & Recent Imports</Typography>
+        {recent.length>0 ? (
+          <Box>
+            {recent.map(r => (
+              <Box key={r.run_id} sx={{ my:1 }}>
+                <Typography sx={{ fontSize:13 }}>{r.dataset_key} — {r.rows_loaded ?? r.rows_in ?? 0} rows — {r.ended_at || r.finished_at || r.created_at}</Typography>
+              </Box>
+            ))}
+          </Box>
+        ) : <Typography>No recent successful imports</Typography>}
+      </DashboardCard>
     )
   }
 
@@ -58,7 +155,12 @@ export default function HomePage(){
 
         <Grid container spacing={2}>
           <Grid item xs={12}>
-            <DashboardCanvas unit_key={activeUnitKey} echelon={activeEchelon} />
+            <Grid container spacing={2}>
+              <Grid item xs={12}><ExecutiveKpis /></Grid>
+              <Grid item xs={12} md={6}><ConversionTrendPanel /></Grid>
+              <Grid item xs={12} md={6}><TopStationsPanel /></Grid>
+              <Grid item xs={12}><DataFreshnessPanel /></Grid>
+            </Grid>
           </Grid>
           <Grid item xs={12} md={3}>
             <Box sx={{ display:'flex', flexDirection:'column', gap:2 }}>
@@ -89,11 +191,7 @@ export default function HomePage(){
             </Box>
           </Grid>
         </Grid>
-        {drillUnit ? (
-          <Box sx={{ maxWidth:1400, mx:'auto', mt:2 }}>
-            <DetailPanel unit_key={drillUnit.unit_key} echelon={drillUnit.echelon} />
-          </Box>
-        ) : null}
+        {/* drill detail panel removed for new dashboard */}
       </Box>
     </Box>
   )
