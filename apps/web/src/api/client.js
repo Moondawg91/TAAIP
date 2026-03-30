@@ -701,7 +701,15 @@ export async function commitImport(jobId){
 
 export async function getAnalyticsSummary(qs = {}){
   const params = new URLSearchParams(qs).toString()
-  return apiFetch(`/api/analytics/summary?${params}`)
+  // Use a no-auth fetch for public analytics endpoints to avoid stale token 401/403
+  try{
+    const url = `${baseForUrl()}/api/analytics/summary?${params}`
+    const res = await fetch(url)
+    if (!res.ok) return null
+    return await res.json()
+  }catch(e){
+    return null
+  }
 }
 
 export async function getBudgetDashboard(qs = {}){
@@ -721,7 +729,15 @@ export async function getEventsDashboard(qs = {}){
 
 export async function getPerformanceDashboard(qs = {}){
   const params = new URLSearchParams(qs).toString()
-  return apiFetch(`/api/dash/performance/dashboard?${params}`)
+  // Use a no-auth fetch to avoid permission errors when a stored JWT is invalid
+  try{
+    const url = `${baseForUrl()}/api/dash/performance/dashboard?${params}`
+    const res = await fetch(url)
+    if (!res.ok) return null
+    return await res.json()
+  }catch(e){
+    return null
+  }
 }
 
 export async function getAnalyticsFunnel(qs = {}){
@@ -792,6 +808,19 @@ export async function getMissionFeasibilitySummary(params = {}){
   if (params.fy) qs.set('fy', params.fy)
   if (params.compare_mode) qs.set('compare_mode', params.compare_mode)
   return apiFetch(`/api/v2/mission-feasibility/summary?${qs.toString()}`)
+}
+
+// School recruiting endpoints
+export async function getSchoolProgramReadiness(){
+  return apiFetch('/api/school-program/readiness')
+}
+
+export async function getSchoolProgramSummary(params = {}){
+  const qs = new URLSearchParams()
+  if (params.fy) qs.set('fy', params.fy)
+  if (params.qtr) qs.set('qtr', params.qtr)
+  if (params.rsid_prefix) qs.set('rsid_prefix', params.rsid_prefix)
+  return apiFetch(`/api/school-program/summary?${qs.toString()}`)
 }
 
 export async function getFsLossSummary(params = {}){
