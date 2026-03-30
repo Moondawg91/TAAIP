@@ -13,6 +13,7 @@ from ..importers import emm_portal
 from ..importers import usarec_org_hierarchy
 from ..aggregations import refresh as refresh_mod
 from .rbac import require_perm
+from ..services import dataset_orchestrator
 
 router = APIRouter()
 
@@ -31,14 +32,33 @@ def _apply_header_aliases(df, headers, dataset_key):
     """Attempt to map common alternate header names to expected required column names.
     This mutates the DataFrame columns if aliases are found and returns updated headers list.
     """
-    # simple alias map for EMM portal events and common variants
-    alias_map = {
-        'event_name': ['title', 'event_title', 'activity_title', 'activity name', 'activity title', 'event name'],
-        'start_date': ['begin_date', 'begin date', 'start_date', 'start date', 'start'],
-        'end_date': ['end_date', 'end date', 'end']
-    }
-    # only apply for EMM datasets (hinted or detected)
-    if not dataset_key or not str(dataset_key).upper().startswith('EMM'):
+    # choose alias map based on dataset_key
+    alias_map = {}
+    dk = (dataset_key or '')
+    # EMM portal events
+    if dk and str(dk).upper().startswith('EMM'):
+        alias_map = {
+            'event_name': ['title', 'event_title', 'activity_title', 'activity name', 'activity title', 'event name'],
+            'start_date': ['begin_date', 'begin date', 'start_date', 'start date', 'start'],
+            'end_date': ['end_date', 'end date', 'end']
+        }
+    # School program / station-to-zip support files
+    elif dk and str(dk).lower() in ('school_program_fact', 'dod_stn_zip_service_lookup'):
+        alias_map = {
+            'bde': ['bde_name', 'bde'],
+            'bn': ['bn_code', 'bn'],
+            'co': ['co', 'company', 'co_code'],
+            'rsid_prefix': ['rs_prefix', 'rs prefix', 'rsprefix', 'rsid_prefix'],
+            'zip': ['zip code', 'zip', 'zipcode', 'zip5'],
+            'population': ['population', 'pop', 'population '],
+            'available': ['avail', 'available', 'available_flag', 'availabl']
+        }
+    else:
+        # no-op unless dataset-specific mapping provided
+        alias_map = {}
+
+    # if nothing to map, return early
+    if not alias_map:
         return headers
 
     # build normalized header map
@@ -132,6 +152,18 @@ def get_run(run_id: str, user: dict = Depends(require_perm('datahub.view'))):
     run['errors'] = [dict(x) for x in cur.fetchall()]
     return run
 
+
+@router.get('/v2/datahub/runs/{run_id}/processing')
+def get_run_processing(run_id: str, user: dict = Depends(require_perm('datahub.view'))):
+    """Return per-processor processing status rows for a given import run."""
+    conn = connect()
+    cur = conn.cursor()
+    try:
+        cur.execute('SELECT id, processor_name, target_module, status, started_at, ended_at, error_message, created_at FROM import_run_processing_status WHERE run_id=? ORDER BY id ASC', (run_id,))
+        rows = [dict(r) for r in cur.fetchall()]
+    except Exception:
+        rows = []
+    return rows
 
 @router.post('/v2/datahub/runs/{run_id}/commit', dependencies=[Depends(require_perm('datahub.upload'))])
 def commit_run(run_id: str):
@@ -394,7 +426,21 @@ def commit_run(run_id: str):
                     pass
         except Exception:
             pass
-        return JSONResponse(status_code=200, content={'run_id': run_id, 'status': 'success', 'dataset_key': dataset_key, 'rows_in': rows_in, 'rows_loaded': rows_loaded})
+        # invoke orchestration to process committed dataset (best-effort)
+        processing_result = None
+        try:
+            processing_result = dataset_orchestrator.process_committed_dataset(run_id, dataset_key, unit_rsid=scope_unit_rsid)
+        except Exception:
+            try:
+                # swallow orchestration errors but record debug print
+                print(f'[datahub.commit] orchestration failed for run={run_id} dataset={dataset_key}')
+            except Exception:
+                pass
+
+        resp_body = {'run_id': run_id, 'status': 'success', 'dataset_key': dataset_key, 'rows_in': rows_in, 'rows_loaded': rows_loaded}
+        if processing_result is not None:
+            resp_body['processing'] = processing_result.get('processing') if isinstance(processing_result, dict) else processing_result
+        return JSONResponse(status_code=200, content=resp_body)
     except Exception as exc:
         try:
             cur.execute('UPDATE import_run_v2 SET status=?, error_summary=? WHERE run_id=?', ('failed', f'exception:{str(exc)}', run_id))
@@ -472,6 +518,21 @@ async def upload_datahub(
                     matched_on = 'headers:usarec_org'
             except Exception:
                 pass
+        # If detection was automatic and low-confidence, require explicit dataset selection
+        try:
+            low_confidence = False
+            try:
+                low_confidence = (float(confidence) < 0.8)
+            except Exception:
+                low_confidence = False
+            if (not provided_hint) and low_confidence:
+                # do not auto-assign dataset_key; ask UI to pick dataset
+                cur.execute('UPDATE import_run_v2 SET dataset_key=?, detected_confidence=?, status=?, started_at=? WHERE run_id=?', (None, confidence or 0.0, 'validated_needs_dataset', datetime.datetime.utcnow().isoformat(), run_id))
+                conn.commit()
+                return JSONResponse(status_code=200, content={'run_id': run_id, 'status': 'needs_dataset_selection', 'suggested_dataset': dataset_key, 'detected_confidence': confidence, 'preview_rows': preview_rows})
+        except Exception:
+            pass
+
         # update with detection
         cur.execute('UPDATE import_run_v2 SET dataset_key=?, detected_confidence=?, status=?, started_at=? WHERE run_id=?', (dataset_key, confidence, 'running', datetime.datetime.utcnow().isoformat(), run_id))
         conn.commit()
@@ -664,4 +725,21 @@ async def preview_datahub(file: UploadFile = File(...), hint_dataset_key: Option
     cur.execute('SELECT dataset_key, display_name, detection_keywords FROM dataset_registry WHERE enabled=1')
     reg = [dict(r) for r in cur.fetchall()]
     dataset_key, confidence, matched_on = detect_mod.detect_dataset(file.filename, sheet_names, headers, reg, hint=hint_dataset_key)
+    # If detection is low confidence and the caller did not provide a hint, require explicit dataset selection
+    try:
+        threshold = 0.8
+        if (not hint_dataset_key) and (confidence is not None) and (float(confidence) < float(threshold)):
+            return JSONResponse(status_code=200, content={
+                'status': 'needs_dataset_selection',
+                'suggested_dataset': dataset_key,
+                'detected_confidence': confidence,
+                'filename': file.filename,
+                'sheets': sheet_names,
+                'headers': headers,
+                'preview_rows': preview_rows,
+            })
+    except Exception:
+        # If any error evaluating confidence happens, fall through to normal preview
+        pass
+
     return {'filename': file.filename, 'sheets': sheet_names, 'headers': headers, 'preview': preview_rows, 'detected_dataset_key': dataset_key, 'confidence': confidence}

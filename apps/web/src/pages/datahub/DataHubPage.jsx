@@ -86,7 +86,14 @@ export default function DataHubPage(){
               <div><strong>Rows loaded:</strong> {lastCommit.rows_loaded || lastCommit.rows_in || 0}</div>
               <div><strong>Run ID:</strong> {lastCommit.run_id || lastCommit.id}</div>
               <div><strong>Commit status:</strong> {lastCommit.status || 'committed'}</div>
+              <div><strong>Commit status:</strong> {lastCommit.status || 'committed'}</div>
               <div><strong>Analytics status:</strong> {(lastCommit.analytics_check && String(lastCommit.analytics_check).toLowerCase()==='done') || (lastCommit.analytics_check==='true') ? 'Ready for analytics' : (lastCommit.analytics_check ? String(lastCommit.analytics_check) : 'Analytics verification pending')}</div>
+              {lastCommit.processing && (
+                <>
+                  <div><strong>Analytics ready:</strong> {lastCommit.processing.analytics_ready ? 'Yes' : 'No'}</div>
+                  <div><strong>Affected modules:</strong> {(lastCommit.processing.affected_modules && Array.isArray(lastCommit.processing.affected_modules)) ? lastCommit.processing.affected_modules.join(', ') : '—'}</div>
+                </>
+              )}
               <div><strong>Completed:</strong> {lastCommit.ended_at || lastCommit.updated_at || lastCommit.committed_at || lastCommit.finished_at || lastCommit.created_at || ''}</div>
               <div style={{marginTop:10}}>
                 <button onClick={async ()=>{
@@ -98,6 +105,16 @@ export default function DataHubPage(){
                     setExpandedRunId(rid)
                   }catch(e){}
                 }}>Inspect run</button>
+                <button style={{marginLeft:8}} onClick={async ()=>{
+                  const rid = lastCommit.run_id || lastCommit.id
+                  if(!rid) return
+                  try{
+                    const resp = await fetch(`/api/v2/datahub/runs/${encodeURIComponent(rid)}/processing`)
+                    const hist = await resp.json()
+                    setRunDetailsMap(m => Object.assign({}, m, { [rid]: Object.assign({}, (m[rid]||{}), { processing_history: hist }) }))
+                    setExpandedRunId(rid)
+                  }catch(e){ console.error('fetch processing history error', e) }
+                }}>View processing history</button>
                 <button style={{marginLeft:8}} onClick={()=>{ try{ const dest = getDestinationFromDatasetKey(lastCommit.dataset_key || lastCommit.dataset); if(dest) window.location.href = dest }catch(e){} }}>View destination</button>
                 <button style={{marginLeft:8}} onClick={()=>{ window.location.href = '/command-center' }}>Go to command center</button>
                 <button style={{marginLeft:8}} onClick={()=>{ try{ sessionStorage.removeItem('datahub_last_commit'); setLastCommit(null)}catch(e){} }}>Dismiss</button>
