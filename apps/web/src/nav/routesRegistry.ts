@@ -1,5 +1,13 @@
 const ROUTES_REGISTRY = [
   {
+    id: 'dashboards',
+    label: 'Dashboard',
+    icon: 'Dashboard',
+    items: [
+      { id: 'main-dashboard', label: 'Dashboard', path: '/dashboard', icon: 'Dashboard' }
+    ]
+  },
+  {
     id: 'command-center',
     label: 'TAAIP',
     icon: 'Dashboard',

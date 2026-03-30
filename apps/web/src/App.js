@@ -128,10 +128,8 @@ import UploadsPage from './pages/resources/UploadsPage'
 import HistoricalDataPage from './pages/resources/HistoricalDataPage'
 import RegulatoryPage from './pages/resources/RegulatoryPage'
 import TraceabilityMatrixPage from './pages/resources/TraceabilityMatrixPage'
-import DataHubOverview from './pages/datahub/OverviewPage'
-import DataHubImports from './pages/datahub/ImportsPage'
-import DataHubSchemas from './pages/datahub/SchemasPage'
-import DataHubStorage from './pages/datahub/StoragePage'
+import DataHubPage from './pages/datahub/DataHubPage'
+import DashboardPage from './pages/DashboardPage'
 import DashboardLayout from './layouts/DashboardLayout'
 import SubmitTicketPage from './pages/help/SubmitTicketPage'
 import TicketStatusPage from './pages/help/TicketStatusPage'
@@ -168,6 +166,7 @@ export default function App() {
           {/* unit cascade is rendered in TopHeader for dashboard routes */}
           <Routes>
           <Route path="/" element={<DashboardLayout><HomePage /></DashboardLayout>} />
+          <Route path="/dashboard" element={<DashboardLayout><DashboardPage /></DashboardLayout>} />
           <Route path="/qbr" element={<QBRPage />} />
           <Route path="/dashboards/command-center" element={<CommandCenterPage />} />
           <Route path="/projects" element={<ProjectsPage />} />
@@ -257,10 +256,10 @@ export default function App() {
           <Route path="/admin/config" element={<ProtectedRoute path="/admin"><SystemConfigPage /></ProtectedRoute>} />
 
           <Route path="/resources/doc-library" element={<DocLibraryPage />} />
-          <Route path="/data-hub" element={<DataHubOverview />} />
-          <Route path="/data-hub/imports" element={<DataHubImports />} />
-          <Route path="/data-hub/schemas" element={<DataHubSchemas />} />
-          <Route path="/data-hub/storage" element={<DataHubStorage />} />
+          <Route path="/data-hub" element={<DataHubPage />} />
+          <Route path="/data-hub/imports" element={<Navigate to="/data-hub" replace />} />
+          <Route path="/data-hub/schemas" element={<Navigate to="/data-hub" replace />} />
+          <Route path="/data-hub/storage" element={<Navigate to="/data-hub" replace />} />
           <Route path="/access-denied" element={<AccessDeniedPage />} />
           <Route path="/unauthorized" element={<UnauthorizedPage />} />
           <Route path="/debug/access" element={<DebugAccessPage />} />
