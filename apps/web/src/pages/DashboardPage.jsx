@@ -4,7 +4,7 @@ import { getAnalyticsSummary, getKpis, getPerformanceDashboard, dataHubListRuns 
 
 export default function DashboardPage(){
   const [summary, setSummary] = useState(null)
-  const [kpis, setKpis] = useState([])
+  const [kpis, setKpis] = useState([]) // array from /api/powerbi/kpis
   const [perf, setPerf] = useState(null)
   const [freshness, setFreshness] = useState(null)
 
@@ -47,14 +47,18 @@ export default function DashboardPage(){
     return ()=>{ mounted = false }
   },[])
 
+  // Convert KPI array into a lookup map for easy fallbacks
+  const kpiMap = Array.isArray(kpis) ? kpis.reduce((acc, it) => { if (it && it.metric_key) acc[it.metric_key] = it.metric_value; return acc }, {}) : {}
+
   const kpiItems = [
-    { label: 'Active leads', value: (summary && summary.leads && summary.leads.active) || (kpis && kpis.leads_active) || '—' },
-    { label: 'Contracts', value: (summary && summary.contracts && summary.contracts.total) || (kpis && kpis.contracts_total) || '—' },
-    { label: 'Conversion %', value: (summary && summary.conversion && summary.conversion.pct != null) ? `${(summary.conversion.pct*100).toFixed(1)}%` : (kpis && kpis.conversion_pct) || '—' }
+    { label: 'Active leads', value: (summary && summary.leads && typeof summary.leads.active !== 'undefined') ? summary.leads.active : (kpiMap.active_leads ?? kpiMap.leads_active ?? '—') },
+    { label: 'Contracts', value: (summary && summary.contracts && typeof summary.contracts.total !== 'undefined') ? summary.contracts.total : (kpiMap.contracts_total ?? kpiMap.contracts ?? '—') },
+    { label: 'Conversion %', value: (summary && summary.conversion && summary.conversion.pct != null) ? `${Number(summary.conversion.pct).toFixed(1)}%` : (typeof kpiMap.conversion_pct !== 'undefined' ? `${Number(kpiMap.conversion_pct).toFixed(1)}%` : (typeof kpiMap.conversion === 'number' ? `${Number(kpiMap.conversion).toFixed(1)}%` : '—')) }
   ]
 
+  // backend returns `conversion_trend` and `stations` keys from /dash/performance/dashboard
   const conversionTrend = (perf && perf.conversion_trend) || (summary && summary.trend) || null
-  const topStations = (perf && perf.top_stations) || (summary && summary.top_stations) || []
+  const topStations = (perf && perf.stations) || (summary && summary.top_stations) || []
 
   return (
     <Box sx={{ p:3 }}>
@@ -79,7 +83,7 @@ export default function DashboardPage(){
             {conversionTrend && Array.isArray(conversionTrend) ? (
               <List dense>
                 {conversionTrend.slice(0,12).map((row, i) => (
-                  <ListItem key={i}><ListItemText primary={`${row.period || row.label || i}: ${typeof row.value !== 'undefined' ? row.value : JSON.stringify(row)}`} /></ListItem>
+                  <ListItem key={i}><ListItemText primary={`${row.period || row.label || i}: leads=${row.leads ?? ''}${typeof row.conversion_pct !== 'undefined' && row.conversion_pct !== null ? ` — ${row.conversion_pct}%` : ''}`} /></ListItem>
                 ))}
               </List>
             ) : <Typography variant="body2" sx={{ color:'text.secondary' }}>No trend data available</Typography>}
@@ -91,7 +95,7 @@ export default function DashboardPage(){
             <Typography variant="h6">Top Stations</Typography>
             {topStations && topStations.length>0 ? (
               <List dense>
-                {topStations.slice(0,10).map((s,i) => (<ListItem key={i}><ListItemText primary={`${s.station || s.unit_rsid || s.name || s[0] || 'unknown'} — ${s.metric || s.leads || s.value || ''}`} /></ListItem>))}
+                {topStations.slice(0,10).map((s,i) => (<ListItem key={i}><ListItemText primary={`${s.name || s.station || s.unit_rsid || s[0] || 'unknown'} — leads:${s.leads ?? ''}${typeof s.conversion_pct !== 'undefined' && s.conversion_pct !== null ? ` — ${s.conversion_pct}%` : ''}`} /></ListItem>))}
               </List>
             ) : <Typography variant="body2" sx={{ color:'text.secondary' }}>No station data available</Typography>}
           </Paper>
