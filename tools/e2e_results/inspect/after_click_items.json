@@ -1,0 +1,30 @@
+[
+  {
+    "text": "All",
+    "html": "<li class=\"MuiButtonBase-root MuiMenuItem-root MuiMenuItem-gutters Mui-selected Mui-focusVisible MuiMenuItem-root MuiMenuItem-gutters Mui-selected css-kk890x-MuiButtonBase-root-MuiMenuItem-root\" tabindex=\"0\" role=\"option\" aria-selected=\"true\" data-value=\"\">All<span class=\"MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root\"></span></li>"
+  },
+  {
+    "text": "1st Recruiting Brigade",
+    "html": "<li class=\"MuiButtonBase-root MuiMenuItem-root MuiMenuItem-gutters MuiMenuItem-root MuiMenuItem-gutters css-kk890x-MuiButtonBase-root-MuiMenuItem-root\" tabindex=\"-1\" role=\"option\" aria-selected=\"false\">1st Recruiting Brigade<span class=\"MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root\"></span></li>"
+  },
+  {
+    "text": "2nd Recruiting Brigade",
+    "html": "<li class=\"MuiButtonBase-root MuiMenuItem-root MuiMenuItem-gutters MuiMenuItem-root MuiMenuItem-gutters css-kk890x-MuiButtonBase-root-MuiMenuItem-root\" tabindex=\"-1\" role=\"option\" aria-selected=\"false\">2nd Recruiting Brigade<span class=\"MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root\"></span></li>"
+  },
+  {
+    "text": "3rd Recruiting Brigade",
+    "html": "<li class=\"MuiButtonBase-root MuiMenuItem-root MuiMenuItem-gutters MuiMenuItem-root MuiMenuItem-gutters css-kk890x-MuiButtonBase-root-MuiMenuItem-root\" tabindex=\"-1\" role=\"option\" aria-selected=\"false\">3rd Recruiting Brigade<span class=\"MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root\"></span></li>"
+  },
+  {
+    "text": "4th Recruiting Brigade",
+    "html": "<li class=\"MuiButtonBase-root MuiMenuItem-root MuiMenuItem-gutters MuiMenuItem-root MuiMenuItem-gutters css-kk890x-MuiButtonBase-root-MuiMenuItem-root\" tabindex=\"-1\" role=\"option\" aria-selected=\"false\">4th Recruiting Brigade<span class=\"MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root\"></span></li>"
+  },
+  {
+    "text": "5th Recruiting Brigade",
+    "html": "<li class=\"MuiButtonBase-root MuiMenuItem-root MuiMenuItem-gutters MuiMenuItem-root MuiMenuItem-gutters css-kk890x-MuiButtonBase-root-MuiMenuItem-root\" tabindex=\"-1\" role=\"option\" aria-selected=\"false\">5th Recruiting Brigade<span class=\"MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root\"></span></li>"
+  },
+  {
+    "text": "6th Recruiting Brigade",
+    "html": "<li class=\"MuiButtonBase-root MuiMenuItem-root MuiMenuItem-gutters MuiMenuItem-root MuiMenuItem-gutters css-kk890x-MuiButtonBase-root-MuiMenuItem-root\" tabindex=\"-1\" role=\"option\" aria-selected=\"false\">6th Recruiting Brigade<span class=\"MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root\"></span></li>"
+  }
+]

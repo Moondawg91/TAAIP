@@ -1,0 +1,38 @@
+TAAIP
+
+
+
+
+
+
+
+
+
+
+
+TAAIP
+Talent Acquisition Intelligence & Analytics Platform
+Export
+MASTER MODE
+Data not loaded
+
+Normal
+Data not loaded
+Alerts
+0
+Status
+Help Desk
+Mission Analysis
+Operational mission analysis & diagnostics
+FY
+2026
+Quarter
+Q3
+Unit
+USAREC
+Station
+All
+Export
+Mission Analysis
+Operational diagnostics will appear here once data is available.
+Go to Data Hub

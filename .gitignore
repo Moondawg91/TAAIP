@@ -1,43 +1,5 @@
-# Python
-__pycache__/
-*.py[cod]
-*.sqlite3
-.pytest_cache/
-venv/
+node_modules
 .venv/
-.env
-
-# Node
-node_modules/
-npm-debug.log*
-package-lock.json
-
-# Editor/OS
-.DS_Store
-.vscode/
-.idea/
-
-# Data/exports
-data/
-exports/
-server.log
-server.pid
-
-# Generated headless-capture artifacts
-pm_*.png
-pm_*.json
-pm_capture.png
-pm_debug.png
-tmp_puppeteer*
-
-
-# local artifacts
-_backups/
-backups/
-uploads/
-tmp/
-*.bak
-._*
-.DS_Store
-*.zip
-*.db
+venv/
+__pycache__/
+*.pyc

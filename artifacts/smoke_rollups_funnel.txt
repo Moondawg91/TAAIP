@@ -1,0 +1,1 @@
+{"status":"ok","data_as_of":"2026-04-05T23:16:27.823641Z","filters":{},"kpis":{"total_leads":0,"total_appointments":0,"total_contracts":0,"conversion_rate":0.0,"flash_to_bang_days":null},"breakdowns":{"by_stage":[],"bottlenecks":[]},"trends":{"conversion_trend":[]},"missing_data":[]}

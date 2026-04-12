@@ -1,0 +1,50 @@
+[
+  {
+    "trail_file": "tools/import-trail-f491250846d64aefbc9f7b6bff78a29c.5.json",
+    "import_job_id": "f491250846d64aefbc9f7b6bff78a29c",
+    "commit_file": "tools/import-commit-response.5.json",
+    "committed_rows": 2,
+    "imported_rows_count": 2,
+    "fact_production_count": 2,
+    "fact_production_sample": [
+      [
+        "d01fbb1f39b24ae28d74083bd83d82df",
+        "USAREC",
+        "2025-01-01",
+        "leads",
+        7.0
+      ],
+      [
+        "07f0f087e50348b68aa6c6af528f6d29",
+        "USAREC",
+        "2025-01-01",
+        "contracts",
+        1.0
+      ]
+    ]
+  },
+  {
+    "trail_file": "tools/import-trail-f491250846d64aefbc9f7b6bff78a29c.json",
+    "import_job_id": "f491250846d64aefbc9f7b6bff78a29c",
+    "commit_file": "tools/import-commit-response.5.json",
+    "committed_rows": 2,
+    "imported_rows_count": 2,
+    "fact_production_count": 2,
+    "fact_production_sample": [
+      [
+        "d01fbb1f39b24ae28d74083bd83d82df",
+        "USAREC",
+        "2025-01-01",
+        "leads",
+        7.0
+      ],
+      [
+        "07f0f087e50348b68aa6c6af528f6d29",
+        "USAREC",
+        "2025-01-01",
+        "contracts",
+        1.0
+      ]
+    ]
+  }
+]

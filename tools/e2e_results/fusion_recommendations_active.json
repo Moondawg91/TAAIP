@@ -1,0 +1,25 @@
+[
+  {
+    "id": 7,
+    "fusion_run_id": null,
+    "unit_rsid": null,
+    "school_id": null,
+    "market_key": null,
+    "zip5": null,
+    "mission_pressure_score": null,
+    "market_opportunity_score": null,
+    "school_priority_score": null,
+    "fusion_score": null,
+    "recommendation_type": null,
+    "recommendation_text": "rec-temp",
+    "evidence_json": null,
+    "as_of_date": null,
+    "created_at": "2026-04-02T19:17:12.060171",
+    "fusion_id": "e2e-fusion-001",
+    "archived": 0,
+    "archived_at": null,
+    "archived_by": null,
+    "created_by": "e2e-test",
+    "linked_to_twg": 0
+  }
+]

@@ -1,0 +1,4 @@
+init_schema: requested_path=./data/taaip.sqlite3, test_raw_conn_path=None
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INIT_DB_PATH: ./data/taaip.sqlite3

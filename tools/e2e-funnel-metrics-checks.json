@@ -1,0 +1,31 @@
+{
+  "route": "/performance/funnel-metrics",
+  "usable": true,
+  "checks": [
+    {
+      "key": "leads",
+      "value": "7",
+      "found": true
+    },
+    {
+      "key": "contacts",
+      "value": "",
+      "found": true
+    },
+    {
+      "key": "appointments",
+      "value": "",
+      "found": true
+    },
+    {
+      "key": "applicants",
+      "value": "",
+      "found": true
+    },
+    {
+      "key": "contracts",
+      "value": "1",
+      "found": true
+    }
+  ]
+}

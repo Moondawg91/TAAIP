@@ -13,6 +13,20 @@ def now_iso():
 @router.post('/api/v2/uploads')
 async def upload_v2(file: UploadFile = File(...), source_system: Optional[str] = Form(None)):
     contents = await file.read()
+    # Reject simulation/demo-marked uploads unless explicitly allowed
+    if os.getenv('ALLOW_SIMULATION_IMPORTS') != '1':
+        try:
+            sim_pat = __import__('re').compile(r"\bSIM_|\bsim-|\bdemo-|\bdemo_", __import__('re').IGNORECASE)
+            try:
+                s = contents.decode('utf-8', errors='ignore')
+            except Exception:
+                s = ''
+            if sim_pat.search(s):
+                raise HTTPException(status_code=400, detail="Import rejected: contains simulation/demo markers. Set ALLOW_SIMULATION_IMPORTS=1 to override.")
+        except HTTPException:
+            raise
+        except Exception:
+            raise HTTPException(status_code=400, detail="Import validation failed; refused to process file")
     sha = hashlib.sha256(contents).hexdigest()
     upload_id = uuid.uuid4().hex
     # store file

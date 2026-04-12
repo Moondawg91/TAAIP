@@ -1,0 +1,9 @@
+{
+  "status": 200,
+  "body": {
+    "status": "ok",
+    "import_job_id": "685c105f90b44d1a848f27923e2af386",
+    "committed_rows": 2
+  },
+  "url": "http://127.0.0.1:8000/api/import/commit"
+}

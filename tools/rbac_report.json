@@ -1,0 +1,236 @@
+{
+  "base": "http://127.0.0.1:8000",
+  "results": {
+    "anon": {
+      "/api/import/jobs": {
+        "status": 401,
+        "text": "{\"detail\":\"Unauthorized\"}"
+      },
+      "/api/import/upload": {
+        "status": 401,
+        "text": "{\"detail\":\"Unauthorized\"}"
+      },
+      "/api/import/parse": {
+        "status": 401,
+        "text": "{\"detail\":\"Unauthorized\"}"
+      },
+      "/api/import/map": {
+        "status": 401,
+        "text": "{\"detail\":\"Unauthorized\"}"
+      },
+      "/api/import/validate": {
+        "status": 401,
+        "text": "{\"detail\":\"Unauthorized\"}"
+      },
+      "/api/import/commit": {
+        "status": 401,
+        "text": "{\"detail\":\"Unauthorized\"}"
+      },
+      "/api/powerbi/fact_production": {
+        "status": 200,
+        "text": "[{\"id\":\"644b0d04a2d1457c85997776f997d9cc\",\"org_unit_id\":\"USAREC\",\"date_key\":\"2025-01-01\",\"metric_key\":\"leads\",\"metric_value\":7.0,\"source_system\":null,\"import_job_id\":\"6946635a9a2842f8afe913d55463432d\""
+      },
+      "/api/mission_assessments/latest": {
+        "status": 200,
+        "text": "{\"id\":\"8cff8cef-d7a1-4907-a073-c0e2d0bd6d3f\",\"period_type\":\"monthly\",\"period_value\":\"2026-03\",\"scope\":\"USAREC\",\"metrics_json\":\"{\\\"kpis\\\":{\\\"score\\\":85,\\\"leads\\\":7,\\\"contracts\\\":1}}\",\"narrative\":\"Auto-"
+      },
+      "/api/market-intel/summary": {
+        "status": 200,
+        "text": "{\"status\":\"ok\",\"data_as_of\":\"2026-04-04T22:34:54.059650Z\",\"filters\":{},\"kpis\":{\"market_potential_total\":0,\"contracts_total\":0,\"potential_remaining_total\":3700,\"army_share_weighted\":0,\"p2p_avg\":0.775,\""
+      },
+      "/api/ops/market/summary": {
+        "status": 200,
+        "text": "{\"status\":\"ok\",\"data_as_of\":\"2026-04-01T23:00:00Z\",\"filters\":{\"as_of_date\":null,\"component\":null,\"echelon_type\":null,\"unit_value\":null,\"zip_category\":null,\"cbsa_code\":null},\"kpis\":{\"zips\":7,\"total_arm"
+      },
+      "/api/org/children": {
+        "status": 401,
+        "text": "{\"detail\":\"Authorization header required\"}"
+      },
+      "/api/v2/connectors/status": {
+        "status": 200,
+        "text": "{\"status\":\"ok\",\"connectors\":{\"emm\":{\"available\":true,\"loader_present\":true,\"target_tables_present\":true,\"last_sync\":\"2026-04-02T17:51:48.246618\",\"last_run_summary\":{\"rows_in\":2,\"rows_inserted\":2},\"sta"
+      },
+      "/health": {
+        "status": 200,
+        "text": "{\"status\":\"ok\"}"
+      }
+    },
+    "usarec_admin": {
+      "/api/import/jobs": {
+        "status": 200,
+        "text": "[{\"id\":\"68a05538426f423888b41e5a307b2a65\",\"created_at\":\"2026-04-04T22:13:53Z\",\"created_by\":null,\"dataset_key\":\"production\",\"source_system\":null,\"filename\":\"import-production.csv\",\"file_sha256\":\"1aaf98"
+      },
+      "/api/import/upload": {
+        "status": 500,
+        "text": "Internal Server Error"
+      },
+      "/api/import/parse": {
+        "status": 500,
+        "text": "Internal Server Error"
+      },
+      "/api/import/map": {
+        "status": 500,
+        "text": "Internal Server Error"
+      },
+      "/api/import/validate": {
+        "status": 500,
+        "text": "Internal Server Error"
+      },
+      "/api/import/commit": {
+        "status": 500,
+        "text": "Internal Server Error"
+      },
+      "/api/powerbi/fact_production": {
+        "status": 200,
+        "text": "[{\"id\":\"644b0d04a2d1457c85997776f997d9cc\",\"org_unit_id\":\"USAREC\",\"date_key\":\"2025-01-01\",\"metric_key\":\"leads\",\"metric_value\":7.0,\"source_system\":null,\"import_job_id\":\"6946635a9a2842f8afe913d55463432d\""
+      },
+      "/api/mission_assessments/latest": {
+        "status": 200,
+        "text": "{\"id\":\"8cff8cef-d7a1-4907-a073-c0e2d0bd6d3f\",\"period_type\":\"monthly\",\"period_value\":\"2026-03\",\"scope\":\"USAREC\",\"metrics_json\":\"{\\\"kpis\\\":{\\\"score\\\":85,\\\"leads\\\":7,\\\"contracts\\\":1}}\",\"narrative\":\"Auto-"
+      },
+      "/api/market-intel/summary": {
+        "status": 200,
+        "text": "{\"status\":\"ok\",\"data_as_of\":\"2026-04-04T22:34:54.117455Z\",\"filters\":{},\"kpis\":{\"market_potential_total\":0,\"contracts_total\":0,\"potential_remaining_total\":3700,\"army_share_weighted\":0,\"p2p_avg\":0.775,\""
+      },
+      "/api/ops/market/summary": {
+        "status": 200,
+        "text": "{\"status\":\"ok\",\"data_as_of\":\"2026-04-01T23:00:00Z\",\"filters\":{\"as_of_date\":null,\"component\":null,\"echelon_type\":null,\"unit_value\":null,\"zip_category\":null,\"cbsa_code\":null},\"kpis\":{\"zips\":7,\"total_arm"
+      },
+      "/api/org/children": {
+        "status": 200,
+        "text": "{\"status\":\"ok\",\"parent\":{\"type\":\"USAREC\",\"prefix\":null},\"children\":[{\"id\":\"1\",\"label\":\"1 - B1\",\"type\":\"BDE\"}],\"org_not_loaded\":false}"
+      },
+      "/api/v2/connectors/status": {
+        "status": 200,
+        "text": "{\"status\":\"ok\",\"connectors\":{\"emm\":{\"available\":true,\"loader_present\":true,\"target_tables_present\":true,\"last_sync\":\"2026-04-02T17:51:48.246618\",\"last_run_summary\":{\"rows_in\":2,\"rows_inserted\":2},\"sta"
+      },
+      "/health": {
+        "status": 200,
+        "text": "{\"status\":\"ok\"}"
+      }
+    },
+    "bn_420t": {
+      "/api/import/jobs": {
+        "status": 200,
+        "text": "[{\"id\":\"68a05538426f423888b41e5a307b2a65\",\"created_at\":\"2026-04-04T22:13:53Z\",\"created_by\":null,\"dataset_key\":\"production\",\"source_system\":null,\"filename\":\"import-production.csv\",\"file_sha256\":\"1aaf98"
+      },
+      "/api/import/upload": {
+        "status": 500,
+        "text": "Internal Server Error"
+      },
+      "/api/import/parse": {
+        "status": 500,
+        "text": "Internal Server Error"
+      },
+      "/api/import/map": {
+        "status": 500,
+        "text": "Internal Server Error"
+      },
+      "/api/import/validate": {
+        "status": 500,
+        "text": "Internal Server Error"
+      },
+      "/api/import/commit": {
+        "status": 500,
+        "text": "Internal Server Error"
+      },
+      "/api/powerbi/fact_production": {
+        "status": 200,
+        "text": "[{\"id\":\"644b0d04a2d1457c85997776f997d9cc\",\"org_unit_id\":\"USAREC\",\"date_key\":\"2025-01-01\",\"metric_key\":\"leads\",\"metric_value\":7.0,\"source_system\":null,\"import_job_id\":\"6946635a9a2842f8afe913d55463432d\""
+      },
+      "/api/mission_assessments/latest": {
+        "status": 200,
+        "text": "{\"id\":\"8cff8cef-d7a1-4907-a073-c0e2d0bd6d3f\",\"period_type\":\"monthly\",\"period_value\":\"2026-03\",\"scope\":\"USAREC\",\"metrics_json\":\"{\\\"kpis\\\":{\\\"score\\\":85,\\\"leads\\\":7,\\\"contracts\\\":1}}\",\"narrative\":\"Auto-"
+      },
+      "/api/market-intel/summary": {
+        "status": 200,
+        "text": "{\"status\":\"ok\",\"data_as_of\":\"2026-04-04T22:34:54.194837Z\",\"filters\":{},\"kpis\":{\"market_potential_total\":0,\"contracts_total\":0,\"potential_remaining_total\":3700,\"army_share_weighted\":0,\"p2p_avg\":0.775,\""
+      },
+      "/api/ops/market/summary": {
+        "status": 200,
+        "text": "{\"status\":\"ok\",\"data_as_of\":\"2026-04-01T23:00:00Z\",\"filters\":{\"as_of_date\":null,\"component\":null,\"echelon_type\":null,\"unit_value\":null,\"zip_category\":null,\"cbsa_code\":null},\"kpis\":{\"zips\":7,\"total_arm"
+      },
+      "/api/org/children": {
+        "status": 200,
+        "text": "{\"status\":\"ok\",\"parent\":{\"type\":\"USAREC\",\"prefix\":null},\"children\":[{\"id\":\"1\",\"label\":\"1 - B1\",\"type\":\"BDE\"}],\"org_not_loaded\":false}"
+      },
+      "/api/v2/connectors/status": {
+        "status": 200,
+        "text": "{\"status\":\"ok\",\"connectors\":{\"emm\":{\"available\":true,\"loader_present\":true,\"target_tables_present\":true,\"last_sync\":\"2026-04-02T17:51:48.246618\",\"last_run_summary\":{\"rows_in\":2,\"rows_inserted\":2},\"sta"
+      },
+      "/health": {
+        "status": 200,
+        "text": "{\"status\":\"ok\"}"
+      }
+    },
+    "station_view": {
+      "/api/import/jobs": {
+        "status": 200,
+        "text": "[{\"id\":\"68a05538426f423888b41e5a307b2a65\",\"created_at\":\"2026-04-04T22:13:53Z\",\"created_by\":null,\"dataset_key\":\"production\",\"source_system\":null,\"filename\":\"import-production.csv\",\"file_sha256\":\"1aaf98"
+      },
+      "/api/import/upload": {
+        "status": 500,
+        "text": "Internal Server Error"
+      },
+      "/api/import/parse": {
+        "status": 500,
+        "text": "Internal Server Error"
+      },
+      "/api/import/map": {
+        "status": 500,
+        "text": "Internal Server Error"
+      },
+      "/api/import/validate": {
+        "status": 500,
+        "text": "Internal Server Error"
+      },
+      "/api/import/commit": {
+        "status": 500,
+        "text": "Internal Server Error"
+      },
+      "/api/powerbi/fact_production": {
+        "status": 200,
+        "text": "[{\"id\":\"644b0d04a2d1457c85997776f997d9cc\",\"org_unit_id\":\"USAREC\",\"date_key\":\"2025-01-01\",\"metric_key\":\"leads\",\"metric_value\":7.0,\"source_system\":null,\"import_job_id\":\"6946635a9a2842f8afe913d55463432d\""
+      },
+      "/api/mission_assessments/latest": {
+        "status": 200,
+        "text": "{\"id\":\"8cff8cef-d7a1-4907-a073-c0e2d0bd6d3f\",\"period_type\":\"monthly\",\"period_value\":\"2026-03\",\"scope\":\"USAREC\",\"metrics_json\":\"{\\\"kpis\\\":{\\\"score\\\":85,\\\"leads\\\":7,\\\"contracts\\\":1}}\",\"narrative\":\"Auto-"
+      },
+      "/api/market-intel/summary": {
+        "status": 200,
+        "text": "{\"status\":\"ok\",\"data_as_of\":\"2026-04-04T22:34:54.254353Z\",\"filters\":{},\"kpis\":{\"market_potential_total\":0,\"contracts_total\":0,\"potential_remaining_total\":3700,\"army_share_weighted\":0,\"p2p_avg\":0.775,\""
+      },
+      "/api/ops/market/summary": {
+        "status": 200,
+        "text": "{\"status\":\"ok\",\"data_as_of\":\"2026-04-01T23:00:00Z\",\"filters\":{\"as_of_date\":null,\"component\":null,\"echelon_type\":null,\"unit_value\":null,\"zip_category\":null,\"cbsa_code\":null},\"kpis\":{\"zips\":7,\"total_arm"
+      },
+      "/api/org/children": {
+        "status": 200,
+        "text": "{\"status\":\"ok\",\"parent\":{\"type\":\"USAREC\",\"prefix\":null},\"children\":[{\"id\":\"1\",\"label\":\"1 - B1\",\"type\":\"BDE\"}],\"org_not_loaded\":false}"
+      },
+      "/api/v2/connectors/status": {
+        "status": 200,
+        "text": "{\"status\":\"ok\",\"connectors\":{\"emm\":{\"available\":true,\"loader_present\":true,\"target_tables_present\":true,\"last_sync\":\"2026-04-02T17:51:48.246618\",\"last_run_summary\":{\"rows_in\":2,\"rows_inserted\":2},\"sta"
+      },
+      "/health": {
+        "status": 200,
+        "text": "{\"status\":\"ok\"}"
+      }
+    }
+  },
+  "classifications": {
+    "/api/import/jobs": "protected_correctly",
+    "/api/import/upload": "broken_inconsistent",
+    "/api/import/parse": "broken_inconsistent",
+    "/api/import/map": "broken_inconsistent",
+    "/api/import/validate": "broken_inconsistent",
+    "/api/import/commit": "broken_inconsistent",
+    "/api/powerbi/fact_production": "intentionally_public_or_exposed",
+    "/api/mission_assessments/latest": "intentionally_public_or_exposed",
+    "/api/market-intel/summary": "intentionally_public_or_exposed",
+    "/api/ops/market/summary": "intentionally_public_or_exposed",
+    "/api/org/children": "protected_correctly",
+    "/api/v2/connectors/status": "intentionally_public_or_exposed",
+    "/health": "intentionally_public_or_exposed"
+  }
+}

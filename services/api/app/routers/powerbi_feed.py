@@ -157,26 +157,85 @@ def row_to_dict(row) -> Dict:
 
 
 @router.get("/kpis")
-def get_kpis(scope: Optional[str] = "USAREC", as_of: Optional[str] = None, allowed_orgs: Optional[list] = Depends(get_allowed_org_units)) -> List[Dict]:
+def get_kpis(scope: Optional[str] = "USAREC", as_of: Optional[str] = None, allowed_orgs: Optional[list] = None) -> List[Dict]:
+    """Return KPIs as an array of simple metric objects.
+
+    Preferred shape: [{"metric_key":"active_leads","metric_value":123}, ...]
+    """
     conn = db.connect()
     try:
         cur = conn.cursor()
-        if as_of:
-            cur.execute("SELECT * FROM kpi_snapshot WHERE scope=? AND as_of=? ORDER BY id", (scope, as_of))
-        else:
-            # pick latest as_of for scope
-            cur.execute("SELECT as_of FROM kpi_snapshot WHERE scope=? ORDER BY as_of DESC LIMIT 1", (scope,))
-            row = cur.fetchone()
-            if not row:
-                return []
-            latest = row[0]
-            cur.execute("SELECT * FROM kpi_snapshot WHERE scope=? AND as_of=? ORDER BY id", (scope, latest))
-        rows = _fetch_as_dicts(cur)
-        out = rows
-        if out:
-            return out
-        # empty DB: return empty rows + schema metadata
-        return {"rows": [], "schema": ["id","scope","as_of","metric_key","metric_value","source","notes"]}
+        rows = []
+        try:
+            if as_of:
+                cur.execute("SELECT metric_key, metric_value FROM kpi_snapshot WHERE scope=? AND as_of=? ORDER BY id", (scope, as_of))
+            else:
+                cur.execute("SELECT as_of FROM kpi_snapshot WHERE scope=? ORDER BY as_of DESC LIMIT 1", (scope,))
+                row = cur.fetchone()
+                if row:
+                    latest = row[0]
+                    cur.execute("SELECT metric_key, metric_value FROM kpi_snapshot WHERE scope=? AND as_of=? ORDER BY id", (scope, latest))
+                else:
+                    rows = []
+            if rows == []:
+                rows = cur.fetchall()
+            if rows:
+                out = []
+                for r in rows:
+                    # sqlite Row mapping
+                    mk = r['metric_key'] if hasattr(r, 'keys') else r[0]
+                    mv = r['metric_value'] if hasattr(r, 'keys') else r[1]
+                    out.append({'metric_key': mk, 'metric_value': mv})
+                return out
+        except Exception:
+            pass
+
+        # fallback: compute from fact_production / funnel_event
+        try:
+            # try funnel_event sums
+            cur.execute("PRAGMA table_info(funnel_event)")
+            fcols = [c[1] for c in cur.fetchall()]
+            if 'leads' in fcols or 'contracts' in fcols:
+                cur.execute('SELECT SUM(COALESCE(leads,0)) as leads_sum, SUM(COALESCE(contracts,0)) as contracts_sum FROM funnel_event')
+                r = cur.fetchone()
+                leads = int(r['leads_sum'] or 0)
+                contracts = int(r['contracts_sum'] or 0)
+                conv = round((contracts / leads * 100), 1) if leads else None
+                return [
+                    {'metric_key': 'active_leads', 'metric_value': leads},
+                    {'metric_key': 'contracts', 'metric_value': contracts},
+                    {'metric_key': 'conversion_pct', 'metric_value': conv}
+                ]
+        except Exception:
+            pass
+
+        # fallback2: simple leads table count
+        try:
+            cur.execute("PRAGMA table_info(leads)")
+            lcols = [c[1] for c in cur.fetchall()]
+            if lcols:
+                cur.execute('SELECT COUNT(1) as c FROM leads')
+                r = cur.fetchone()
+                leads = int(r['c'] or 0)
+                contracts = 0
+                try:
+                    cur.execute("SELECT COUNT(1) as c FROM fact_school_contracts")
+                    rc = cur.fetchone(); contracts = int(rc['c'] or 0)
+                except Exception:
+                    contracts = 0
+                conv = round((contracts / leads * 100), 1) if leads else None
+                return [
+                    {'metric_key': 'active_leads', 'metric_value': leads},
+                    {'metric_key': 'contracts', 'metric_value': contracts},
+                    {'metric_key': 'conversion_pct', 'metric_value': conv}
+                ]
+        except Exception:
+            pass
+        except Exception:
+            pass
+
+        # final fallback: empty list
+        return []
     finally:
         conn.close()
 

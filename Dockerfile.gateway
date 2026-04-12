@@ -1,8 +1,0 @@
-FROM node:20-alpine
-WORKDIR /app
-COPY package.json package-lock.json* ./
-RUN npm install --production || true
-COPY api-gateway.js ./
-ENV PORT=80
-EXPOSE 80 443
-CMD ["node", "api-gateway.js"]

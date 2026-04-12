@@ -1,0 +1,818 @@
+INFO:     Will watch for changes in these directories: ['/Users/ambermooney/Desktop/TAAIP']
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [13997] using WatchFiles
+INFO:     LOCAL_DEV_AUTH_BYPASS=0
+INFO:     Mounted frontend static assets at /Users/ambermooney/Desktop/TAAIP/apps/web/build/static
+INFO:     Started server process [14065]
+INFO:     Waiting for application startup.
+INFO:     DB path: ./data/taaip.sqlite3
+INFO:     TAAIP_BACKFILL_ON_STARTUP not enabled; skipping runtime backfills
+INFO:     Runtime migrations applied
+seed_rbac: error assigning baseline role to user 2
+Traceback (most recent call last):
+  File "/Users/ambermooney/Desktop/TAAIP/services/api/app/seed_rbac.py", line 320, in seed_rbac
+    cur.execute('INSERT OR IGNORE INTO user_role(user_id, role_key) VALUES (?,?)', (uid, baseline_role_id))
+sqlite3.IntegrityError: FOREIGN KEY constraint failed
+seed_rbac: error assigning baseline role to user 3
+Traceback (most recent call last):
+  File "/Users/ambermooney/Desktop/TAAIP/services/api/app/seed_rbac.py", line 320, in seed_rbac
+    cur.execute('INSERT OR IGNORE INTO user_role(user_id, role_key) VALUES (?,?)', (uid, baseline_role_id))
+sqlite3.IntegrityError: FOREIGN KEY constraint failed
+seed_rbac: error assigning baseline role to user 1
+Traceback (most recent call last):
+  File "/Users/ambermooney/Desktop/TAAIP/services/api/app/seed_rbac.py", line 320, in seed_rbac
+    cur.execute('INSERT OR IGNORE INTO user_role(user_id, role_key) VALUES (?,?)', (uid, baseline_role_id))
+sqlite3.IntegrityError: FOREIGN KEY constraint failed
+INFO:     RBAC seed applied
+INFO:     Export storage dir ensured: ./data/exports
+INFO:     Application startup complete.
+init_schema: requested_path=./data/taaip.sqlite3, test_raw_conn_path=None
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49415 - "GET /import-center HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49415 - "GET /js/main.9e5fdcdf.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49416 - "GET /css/main.1d5a254f.css HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49415 - "GET /api/me?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49417 - "GET /api/phonetics/readiness?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49416 - "GET /api/market-intel/readiness?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49417 - "GET /api/documents?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49419 - "GET /api/system/freshness?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49420 - "GET /api/system/alerts?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49418 - "GET /api/system/status?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49417 - "GET /api/v2/connectors/status HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49415 - "GET /api/system/status?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49420 - "GET /api/me?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49416 - "GET /api/import/jobs?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49415 - "GET /api/v2/marketing/sources HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49419 - "GET /api/system/status?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49415 - "GET /favicon.ico HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49415 - "POST /api/import/upload HTTP/1.1" 200 OK
+WARNING:  WatchFiles detected changes in 'services/api/app/db.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [14065]
+INFO:     LOCAL_DEV_AUTH_BYPASS=0
+INFO:     Mounted frontend static assets at /Users/ambermooney/Desktop/TAAIP/apps/web/build/static
+INFO:     Started server process [15186]
+INFO:     Waiting for application startup.
+INFO:     DB path: ./data/taaip.sqlite3
+INFO:     TAAIP_BACKFILL_ON_STARTUP not enabled; skipping runtime backfills
+INFO:     Runtime migrations applied
+seed_rbac: error assigning baseline role to user 2
+Traceback (most recent call last):
+  File "/Users/ambermooney/Desktop/TAAIP/services/api/app/seed_rbac.py", line 320, in seed_rbac
+    cur.execute('INSERT OR IGNORE INTO user_role(user_id, role_key) VALUES (?,?)', (uid, baseline_role_id))
+sqlite3.IntegrityError: FOREIGN KEY constraint failed
+seed_rbac: error assigning baseline role to user 3
+Traceback (most recent call last):
+  File "/Users/ambermooney/Desktop/TAAIP/services/api/app/seed_rbac.py", line 320, in seed_rbac
+    cur.execute('INSERT OR IGNORE INTO user_role(user_id, role_key) VALUES (?,?)', (uid, baseline_role_id))
+sqlite3.IntegrityError: FOREIGN KEY constraint failed
+seed_rbac: error assigning baseline role to user 1
+Traceback (most recent call last):
+  File "/Users/ambermooney/Desktop/TAAIP/services/api/app/seed_rbac.py", line 320, in seed_rbac
+    cur.execute('INSERT OR IGNORE INTO user_role(user_id, role_key) VALUES (?,?)', (uid, baseline_role_id))
+sqlite3.IntegrityError: FOREIGN KEY constraint failed
+INFO:     RBAC seed applied
+INFO:     Export storage dir ensured: ./data/exports
+INFO:     Application startup complete.
+init_schema: requested_path=./data/taaip.sqlite3, test_raw_conn_path=None
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49429 - "POST /api/import/parse?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49429 - "GET /api/import/6d87c139ae544af2853aa9c9fc252250?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49432 - "GET /api/system/alerts?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49431 - "GET /api/system/freshness?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49433 - "GET /api/system/status?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49436 - "POST /api/import/6d87c139ae544af2853aa9c9fc252250/map?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49436 - "GET /api/import/6d87c139ae544af2853aa9c9fc252250?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49439 - "POST /api/import/validate?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49442 - "GET /api/system/alerts?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49441 - "GET /api/system/freshness?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49443 - "GET /api/system/status?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49444 - "POST /api/import/commit HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49444 - "GET /api/import/jobs HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49448 - "GET /import-center HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49448 - "GET /js/main.9e5fdcdf.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49449 - "GET /css/main.1d5a254f.css HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49449 - "GET /api/market-intel/readiness?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49448 - "GET /api/me?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49451 - "GET /api/phonetics/readiness?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49448 - "GET /api/documents?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49453 - "GET /api/system/freshness?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49454 - "GET /api/system/alerts?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49452 - "GET /api/system/status?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49449 - "GET /api/system/status?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49453 - "GET /api/v2/connectors/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49451 - "GET /api/import/jobs?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49454 - "GET /api/me?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49448 - "GET /api/system/status?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49448 - "GET /api/v2/marketing/sources HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49448 - "GET /favicon.ico HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49448 - "POST /api/import/upload HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49458 - "POST /api/import/parse?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49458 - "GET /api/import/51f9bf6c58bc4babb7ce66ff71b8266d?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49461 - "GET /api/system/alerts?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49460 - "GET /api/system/freshness?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49462 - "GET /api/system/status?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49463 - "POST /api/import/51f9bf6c58bc4babb7ce66ff71b8266d/map?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49463 - "GET /api/import/51f9bf6c58bc4babb7ce66ff71b8266d?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49465 - "POST /api/import/validate?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49467 - "GET /api/system/alerts?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49466 - "GET /api/system/freshness?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49468 - "GET /api/system/status?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49469 - "POST /api/import/commit HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49469 - "GET /api/import/jobs HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49473 - "GET /import-center HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49473 - "GET /js/main.9e5fdcdf.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49474 - "GET /css/main.1d5a254f.css HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49473 - "GET /api/me?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49476 - "GET /api/phonetics/readiness?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49478 - "GET /api/system/freshness?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49476 - "GET /api/documents?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49474 - "GET /api/market-intel/readiness?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49479 - "GET /api/system/alerts?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49477 - "GET /api/system/status?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49478 - "GET /api/import/jobs?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49479 - "GET /api/me?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49473 - "GET /api/system/status?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49476 - "GET /api/v2/connectors/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49474 - "GET /api/system/status?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49473 - "GET /favicon.ico HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49473 - "GET /api/v2/marketing/sources HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49473 - "POST /api/import/upload HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49483 - "POST /api/import/parse?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49483 - "GET /api/import/281412d0c04a484c9c1451cbbe28df64?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49487 - "GET /api/system/alerts?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49486 - "GET /api/system/freshness?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49488 - "GET /api/system/status?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49491 - "POST /api/import/281412d0c04a484c9c1451cbbe28df64/map?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49491 - "GET /api/import/281412d0c04a484c9c1451cbbe28df64?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49493 - "POST /api/import/validate?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49495 - "GET /api/system/freshness?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49497 - "GET /api/system/status?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49496 - "GET /api/system/alerts?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49499 - "POST /api/import/commit HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49499 - "GET /api/import/jobs HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49503 - "GET /import-center HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49503 - "GET /js/main.9e5fdcdf.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49504 - "GET /css/main.1d5a254f.css HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49503 - "GET /api/me?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49505 - "GET /api/phonetics/readiness?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49504 - "GET /api/market-intel/readiness?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49508 - "GET /api/system/alerts?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49507 - "GET /api/system/freshness?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49505 - "GET /api/documents?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49506 - "GET /api/system/status?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49503 - "GET /api/system/status?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49505 - "GET /api/me?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49508 - "GET /api/v2/connectors/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49504 - "GET /api/import/jobs?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49507 - "GET /api/system/status?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49503 - "GET /favicon.ico HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49503 - "GET /api/v2/marketing/sources HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49503 - "POST /api/import/upload HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49510 - "POST /api/import/parse?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49510 - "GET /api/import/18b1a47681494479933ff30ab2b3f92b?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49513 - "GET /api/system/freshness?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49514 - "GET /api/system/alerts?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49515 - "GET /api/system/status?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49516 - "POST /api/import/18b1a47681494479933ff30ab2b3f92b/map?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49516 - "GET /api/import/18b1a47681494479933ff30ab2b3f92b?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49519 - "POST /api/import/validate?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49520 - "GET /api/system/freshness?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49521 - "GET /api/system/alerts?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49522 - "GET /api/system/status?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49526 - "POST /api/import/commit HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49526 - "GET /api/import/jobs HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49532 - "GET /import-center HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49532 - "GET /js/main.9e5fdcdf.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49533 - "GET /css/main.1d5a254f.css HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49532 - "GET /api/me?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49534 - "GET /api/phonetics/readiness?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49533 - "GET /api/market-intel/readiness?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49534 - "GET /api/documents?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49536 - "GET /api/system/freshness?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49537 - "GET /api/system/alerts?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49535 - "GET /api/system/status?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49537 - "GET /api/me?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49532 - "GET /api/system/status?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49534 - "GET /api/v2/connectors/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49533 - "GET /api/import/jobs?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49536 - "GET /api/system/status?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49532 - "GET /api/v2/marketing/sources HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49532 - "GET /favicon.ico HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49532 - "POST /api/import/upload HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49539 - "POST /api/import/parse?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49539 - "GET /api/import/f491250846d64aefbc9f7b6bff78a29c?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49543 - "GET /api/system/alerts?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49542 - "GET /api/system/freshness?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49544 - "GET /api/system/status?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49546 - "POST /api/import/f491250846d64aefbc9f7b6bff78a29c/map?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49546 - "GET /api/import/f491250846d64aefbc9f7b6bff78a29c?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49547 - "POST /api/import/validate?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49551 - "GET /api/system/alerts?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49550 - "GET /api/system/freshness?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49552 - "GET /api/system/status?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49553 - "POST /api/import/commit HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49553 - "GET /api/import/jobs HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49571 - "GET /import-center HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49572 - "GET /css/main.1d5a254f.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49571 - "GET /js/main.9e5fdcdf.js HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49571 - "GET /api/me?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49573 - "GET /api/phonetics/readiness?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49576 - "GET /api/system/alerts?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49575 - "GET /api/system/freshness?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49572 - "GET /api/market-intel/readiness?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49573 - "GET /api/documents?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49574 - "GET /api/system/status?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49575 - "GET /api/v2/connectors/status HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49573 - "GET /api/me?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49571 - "GET /api/system/status?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49576 - "GET /api/import/jobs?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49572 - "GET /api/system/status?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49571 - "GET /api/v2/marketing/sources HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49571 - "GET /favicon.ico HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49571 - "POST /api/import/upload HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49581 - "POST /api/import/parse?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49581 - "GET /api/import/685c105f90b44d1a848f27923e2af386?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49585 - "GET /api/system/freshness?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49587 - "GET /api/system/status?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49586 - "GET /api/system/alerts?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49590 - "POST /api/import/685c105f90b44d1a848f27923e2af386/map?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49590 - "GET /api/import/685c105f90b44d1a848f27923e2af386?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49591 - "POST /api/import/validate?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49593 - "GET /api/system/alerts?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49594 - "GET /api/system/status?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49592 - "GET /api/system/freshness?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49595 - "POST /api/import/commit HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49595 - "GET /api/import/jobs HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49600 - "GET /import-center HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49601 - "GET /css/main.1d5a254f.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49600 - "GET /js/main.9e5fdcdf.js HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49600 - "GET /api/me?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49601 - "GET /api/phonetics/readiness?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49600 - "GET /api/market-intel/readiness?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49604 - "GET /api/system/freshness?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49601 - "GET /api/documents?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49605 - "GET /api/system/alerts?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49603 - "GET /api/system/status?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49606 - "GET /api/system/status?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49604 - "GET /api/v2/connectors/status HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49605 - "GET /api/me?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49600 - "GET /api/import/jobs?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49601 - "GET /api/system/status?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49600 - "GET /api/v2/marketing/sources HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49600 - "GET /favicon.ico HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49600 - "POST /api/import/upload HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49609 - "POST /api/import/parse?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49609 - "GET /api/import/d1e1d1ba313144de9239506a717c71fd?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49613 - "GET /api/system/alerts?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49612 - "GET /api/system/freshness?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49614 - "GET /api/system/status?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49616 - "POST /api/import/d1e1d1ba313144de9239506a717c71fd/map?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49616 - "GET /api/import/d1e1d1ba313144de9239506a717c71fd?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49617 - "POST /api/import/validate?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49619 - "GET /api/system/alerts?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49618 - "GET /api/system/freshness?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49620 - "GET /api/system/status?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49622 - "POST /api/import/commit HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49622 - "GET /api/import/jobs HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49626 - "GET /import-center HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49626 - "GET /js/main.9e5fdcdf.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49627 - "GET /css/main.1d5a254f.css HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49626 - "GET /api/me?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49627 - "GET /api/market-intel/readiness?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49628 - "GET /api/phonetics/readiness?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49630 - "GET /api/system/freshness?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49631 - "GET /api/system/alerts?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49627 - "GET /api/documents?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49629 - "GET /api/system/status?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49626 - "GET /api/system/status?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49630 - "GET /api/v2/connectors/status HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49627 - "GET /api/me?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49628 - "GET /api/import/jobs?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49631 - "GET /api/system/status?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49626 - "GET /api/v2/marketing/sources HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49626 - "GET /favicon.ico HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49626 - "POST /api/import/upload HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49635 - "POST /api/import/parse?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49635 - "GET /api/import/c248eeb829304603ba366450ea1cab30?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49640 - "GET /api/system/alerts?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49639 - "GET /api/system/freshness?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49641 - "GET /api/system/status?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49642 - "POST /api/import/c248eeb829304603ba366450ea1cab30/map?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49642 - "GET /api/import/c248eeb829304603ba366450ea1cab30?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49645 - "POST /api/import/validate?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49648 - "GET /api/system/alerts?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49647 - "GET /api/system/freshness?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49649 - "GET /api/system/status?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49650 - "POST /api/import/commit HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49650 - "GET /api/import/jobs HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49654 - "GET /import-center HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49654 - "GET /js/main.9e5fdcdf.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49655 - "GET /css/main.1d5a254f.css HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49654 - "GET /api/me?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49656 - "GET /api/phonetics/readiness?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49655 - "GET /api/market-intel/readiness?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49659 - "GET /api/system/alerts?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49658 - "GET /api/system/freshness?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49655 - "GET /api/documents?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49656 - "GET /api/import/jobs?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49657 - "GET /api/system/status?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49659 - "GET /api/v2/connectors/status HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49654 - "GET /api/system/status?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49655 - "GET /api/me?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49658 - "GET /api/system/status?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49654 - "GET /favicon.ico HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49654 - "GET /api/v2/marketing/sources HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49654 - "POST /api/import/upload HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49662 - "POST /api/import/parse?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49662 - "GET /api/import/c750d72fa99e4e698b5f7e952c287ce7?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49665 - "GET /api/system/alerts?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49664 - "GET /api/system/freshness?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49666 - "GET /api/system/status?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49667 - "POST /api/import/c750d72fa99e4e698b5f7e952c287ce7/map?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49667 - "GET /api/import/c750d72fa99e4e698b5f7e952c287ce7?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49669 - "POST /api/import/validate?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49671 - "GET /api/system/alerts?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49670 - "GET /api/system/freshness?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49672 - "GET /api/system/status?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49675 - "POST /api/import/commit HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49675 - "GET /api/import/jobs HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49679 - "GET /import-center HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49679 - "GET /js/main.9e5fdcdf.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49680 - "GET /css/main.1d5a254f.css HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49679 - "GET /api/me?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49681 - "GET /api/phonetics/readiness?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49680 - "GET /api/market-intel/readiness?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49683 - "GET /api/system/freshness?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49684 - "GET /api/system/alerts?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49681 - "GET /api/documents?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49682 - "GET /api/system/status?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49683 - "GET /api/v2/connectors/status HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49681 - "GET /api/me?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49679 - "GET /api/system/status?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49680 - "GET /api/import/jobs?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49684 - "GET /api/system/status?unit_rsid=USAREC&echelon=CMD HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49679 - "GET /api/v2/marketing/sources HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49679 - "GET /favicon.ico HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49679 - "POST /api/import/upload HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49687 - "POST /api/import/parse?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49687 - "GET /api/import/bd63eabea2964aff9e8cf1efea93e25a?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49691 - "GET /api/system/alerts?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49690 - "GET /api/system/freshness?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49692 - "GET /api/system/status?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49693 - "POST /api/import/bd63eabea2964aff9e8cf1efea93e25a/map?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49693 - "GET /api/import/bd63eabea2964aff9e8cf1efea93e25a?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49694 - "POST /api/import/validate?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49697 - "GET /api/system/freshness?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49698 - "GET /api/system/alerts?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49699 - "GET /api/system/status?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4 HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49700 - "POST /api/import/commit HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=./data/taaip.sqlite3
+INFO:     127.0.0.1:49700 - "GET /api/import/jobs HTTP/1.1" 200 OK

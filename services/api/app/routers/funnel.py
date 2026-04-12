@@ -3,6 +3,7 @@ from typing import Optional
 from .. import db
 from datetime import datetime
 from .rbac import require_scope
+from ..data.funnel_loader import load_funnel_data
 
 router = APIRouter(prefix="/funnel", tags=["funnel"])
 
@@ -84,3 +85,47 @@ def query_events(scope: Optional[str] = None, start: Optional[str] = None, end: 
         return [dict(r) for r in cur.fetchall()]
     finally:
         conn.close()
+
+
+@router.get('/metrics')
+def funnel_metrics():
+    """Return simple funnel conversion metrics computed from summary artifact."""
+    _, summary = load_funnel_data()
+    if summary.empty:
+        return {'conversion_rates': {'lead_to_applicant': 0, 'applicant_to_dep': 0, 'dep_to_ship': 0}}
+    lead = int(summary['lead_at'].notna().sum()) if 'lead_at' in summary.columns else 0
+    applicant = int(summary['applicant_at'].notna().sum()) if 'applicant_at' in summary.columns else 0
+    dep = int(summary['dep_at'].notna().sum()) if 'dep_at' in summary.columns else 0
+    ship = int(summary['ship_at'].notna().sum()) if 'ship_at' in summary.columns else 0
+
+    return {
+        'conversion_rates': {
+            'lead_to_applicant': (applicant / lead) if lead else 0,
+            'applicant_to_dep': (dep / applicant) if applicant else 0,
+            'dep_to_ship': (ship / dep) if dep else 0,
+        }
+    }
+
+
+@router.get('/timing')
+def funnel_timing():
+    """Return simple timeline averages from summary artifact."""
+    _, summary = load_funnel_data()
+    if summary.empty:
+        return {'avg_days_to_applicant': None, 'avg_days_to_dep': None, 'avg_days_to_ship': None}
+    def safe_mean(col):
+        try:
+            if col not in summary.columns:
+                return None
+            vals = pd.to_numeric(summary[col], errors='coerce')
+            if vals.dropna().empty:
+                return None
+            return float(vals.mean())
+        except Exception:
+            return None
+
+    return {
+        'avg_days_to_applicant': safe_mean('days_to_applicant'),
+        'avg_days_to_dep': safe_mean('days_to_dep'),
+        'avg_days_to_ship': safe_mean('days_to_ship'),
+    }

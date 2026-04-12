@@ -12,7 +12,7 @@ def setup_module(module):
     Base.metadata.create_all(bind=engine)
     import os
     from services.api.app.db import init_db
-    os.environ['TAAIP_DB_PATH'] = './taaip_dev.db'
+    os.environ.setdefault('TAAIP_DB_PATH', './taaip_dev.db')
     init_db()
 
 
@@ -21,9 +21,13 @@ def teardown_module(module):
 
 
 def create_org(db):
-    cmd = models.Command(command='CMD1', display='CMD1')
-    db.add(cmd)
-    db.commit()
+    # idempotent: avoid inserting duplicate Command rows when tests
+    # or init_db have already populated the table.
+    cmd = db.query(models.Command).filter_by(command='CMD1').first()
+    if not cmd:
+        cmd = models.Command(command='CMD1', display='CMD1')
+        db.add(cmd)
+        db.commit()
     bde = models.Brigade(brigade_prefix='1', display='B1', command_id=cmd.id)
     db.add(bde)
     db.commit()

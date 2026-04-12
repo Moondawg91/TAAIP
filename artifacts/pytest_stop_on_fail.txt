@@ -1,0 +1,215 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.9.6, pytest-7.4.0, pluggy-1.6.0 -- /Users/ambermooney/Desktop/TAAIP/.venv/bin/python3
+cachedir: .pytest_cache
+rootdir: /Users/ambermooney/Desktop/TAAIP
+plugins: anyio-4.11.0
+collecting ... collected 99 items / 2 skipped
+
+test_taaip_ai_lms.py::test_ai_train_and_predict PASSED                   [  1%]
+test_taaip_ai_lms.py::test_lms_enroll_and_progress_and_stats PASSED      [  2%]
+test_taaip_exports_v2.py::test_exports_endpoints_v2 PASSED               [  3%]
+test_taaip_features.py::test_api_health PASSED                           [  4%]
+test_taaip_features.py::test_company_standings PASSED                    [  5%]
+test_taaip_features.py::test_user_access PASSED                          [  6%]
+test_taaip_features.py::test_helpdesk_submission PASSED                  [  7%]
+test_taaip_features.py::test_helpdesk_retrieval PASSED                   [  8%]
+test_taaip_features.py::test_standings_update PASSED                     [  9%]
+test_taaip_features.py::test_brigade_filtering PASSED                    [ 10%]
+test_taaip_kpis.py::test_kpis_basic_and_with_budget PASSED               [ 11%]
+test_taaip_marketing.py::test_record_and_analytics PASSED                [ 12%]
+test_taaip_marketing.py::test_sources_and_sync PASSED                    [ 13%]
+test_taaip_marketing.py::test_funnel_attribution_endpoint FAILED         [ 14%]
+
+=================================== FAILURES ===================================
+_______________________ test_funnel_attribution_endpoint _______________________
+
+    def test_funnel_attribution_endpoint():
+        # Create a lead and move through stages to allow attribution
+        lead_payload = {
+            "lead_id": "lead_py_001",
+            "first_name": "Test",
+            "last_name": "User",
+            "email": "testuser@example.com",
+            "phone": "555-0001",
+            "source": "emm",
+            "age": 20,
+            "education_level": "High School",
+            "cbsa_code": "00001",
+            "campaign_source": "pytest"
+        }
+>       rlead = client.post("/api/v1/ingestLead", json=lead_payload)
+
+test_taaip_marketing.py:104: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.9/site-packages/starlette/testclient.py:552: in post
+    return super().post(
+.venv/lib/python3.9/site-packages/httpx/_client.py:1144: in post
+    return self.request(
+.venv/lib/python3.9/site-packages/starlette/testclient.py:451: in request
+    return super().request(
+.venv/lib/python3.9/site-packages/httpx/_client.py:825: in request
+    return self.send(request, auth=auth, follow_redirects=follow_redirects)
+.venv/lib/python3.9/site-packages/httpx/_client.py:914: in send
+    response = self._send_handling_auth(
+.venv/lib/python3.9/site-packages/httpx/_client.py:942: in _send_handling_auth
+    response = self._send_handling_redirects(
+.venv/lib/python3.9/site-packages/httpx/_client.py:979: in _send_handling_redirects
+    response = self._send_single_request(request)
+.venv/lib/python3.9/site-packages/httpx/_client.py:1014: in _send_single_request
+    response = transport.handle_request(request)
+.venv/lib/python3.9/site-packages/starlette/testclient.py:354: in handle_request
+    raise exc
+.venv/lib/python3.9/site-packages/starlette/testclient.py:351: in handle_request
+    portal.call(self.app, scope, receive, send)
+.venv/lib/python3.9/site-packages/anyio/from_thread.py:321: in call
+    return cast(T_Retval, self.start_task_soon(func, *args).result())
+/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/concurrent/futures/_base.py:445: in result
+    return self.__get_result()
+/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/concurrent/futures/_base.py:390: in __get_result
+    raise self._exception
+.venv/lib/python3.9/site-packages/anyio/from_thread.py:252: in _call_func
+    retval = await retval_or_awaitable
+.venv/lib/python3.9/site-packages/fastapi/applications.py:1138: in __call__
+    await super().__call__(scope, receive, send)
+.venv/lib/python3.9/site-packages/starlette/applications.py:113: in __call__
+    await self.middleware_stack(scope, receive, send)
+.venv/lib/python3.9/site-packages/starlette/middleware/errors.py:186: in __call__
+    raise exc
+.venv/lib/python3.9/site-packages/starlette/middleware/errors.py:164: in __call__
+    await self.app(scope, receive, _send)
+.venv/lib/python3.9/site-packages/starlette/middleware/cors.py:85: in __call__
+    await self.app(scope, receive, send)
+.venv/lib/python3.9/site-packages/starlette/middleware/exceptions.py:63: in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+.venv/lib/python3.9/site-packages/starlette/_exception_handler.py:53: in wrapped_app
+    raise exc
+.venv/lib/python3.9/site-packages/starlette/_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+.venv/lib/python3.9/site-packages/fastapi/middleware/asyncexitstack.py:18: in __call__
+    await self.app(scope, receive, send)
+.venv/lib/python3.9/site-packages/starlette/routing.py:716: in __call__
+    await self.middleware_stack(scope, receive, send)
+.venv/lib/python3.9/site-packages/starlette/routing.py:736: in app
+    await route.handle(scope, receive, send)
+.venv/lib/python3.9/site-packages/starlette/routing.py:290: in handle
+    await self.app(scope, receive, send)
+.venv/lib/python3.9/site-packages/fastapi/routing.py:121: in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+.venv/lib/python3.9/site-packages/starlette/_exception_handler.py:53: in wrapped_app
+    raise exc
+.venv/lib/python3.9/site-packages/starlette/_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+.venv/lib/python3.9/site-packages/fastapi/routing.py:107: in app
+    response = await f(request)
+.venv/lib/python3.9/site-packages/fastapi/routing.py:426: in app
+    raw_response = await run_endpoint_function(
+.venv/lib/python3.9/site-packages/fastapi/routing.py:314: in run_endpoint_function
+    return await dependant.call(**values)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+payload = {'age': 20, 'campaign_source': 'pytest', 'cbsa_code': '00001', 'education_level': 'High School', ...}
+user = {'permissions': ['*'], 'roles': ['usarec_admin', 'system_admin'], 'scopes': [{'scope_type': 'USAREC', 'scope_value': 'USAREC'}], 'username': 'dev.user'}
+
+    @router.post("/ingestLead")
+    async def ingest_lead(payload: dict, user: dict = Depends(get_current_user)):
+        conn = get_db_conn()
+        if os.getenv('TAAIP_INSTRUMENT_FUNNEL') == '1':
+            try:
+                print(f"INSTR: ingestLead start; db_path={os.getenv('TAAIP_DB_PATH')} conn={getattr(conn,'__class__',None)}")
+            except Exception:
+                pass
+        cur = conn.cursor()
+        lid = payload.get("lead_id") or ("lead_" + uuid.uuid4().hex[:10])
+        if os.getenv('TAAIP_INSTRUMENT_FUNNEL') == '1':
+            print("INSTR: ingestLead executing insert into leads")
+>       cur.execute(
+            "INSERT OR REPLACE INTO leads(lead_id,first_name,last_name,email,phone,source,age,education_level,cbsa_code,campaign_source,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?)",
+            (
+                lid,
+                payload.get("first_name"),
+                payload.get("last_name"),
+                payload.get("email"),
+                payload.get("phone"),
+                payload.get("source"),
+                payload.get("age"),
+                payload.get("education_level"),
+                payload.get("cbsa_code"),
+                payload.get("campaign_source"),
+                datetime.utcnow().isoformat(),
+            ),
+        )
+E       sqlite3.OperationalError: database is locked
+
+services/api/app/routers/v1.py:24: OperationalError
+----------------------------- Captured stdout call -----------------------------
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_fc5a85f6db464787a14f6e869a98c711.db
+=============================== warnings summary ===============================
+services/api/app/schemas.py:5
+  /Users/ambermooney/Desktop/TAAIP/services/api/app/schemas.py:5: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class ZipCoverageItem(BaseModel):
+
+.venv/lib/python3.9/site-packages/pydantic/_internal/_config.py:383
+.venv/lib/python3.9/site-packages/pydantic/_internal/_config.py:383
+  /Users/ambermooney/Desktop/TAAIP/.venv/lib/python3.9/site-packages/pydantic/_internal/_config.py:383: UserWarning: Valid config keys have changed in V2:
+  * 'orm_mode' has been renamed to 'from_attributes'
+    warnings.warn(message, UserWarning)
+
+services/api/app/schemas_domain.py:22
+  /Users/ambermooney/Desktop/TAAIP/services/api/app/schemas_domain.py:22: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class EventOut(BaseModel):
+
+services/api/app/main.py:411
+  /Users/ambermooney/Desktop/TAAIP/services/api/app/main.py:411: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    @app.on_event("startup")
+
+.venv/lib/python3.9/site-packages/fastapi/applications.py:4579
+  /Users/ambermooney/Desktop/TAAIP/.venv/lib/python3.9/site-packages/fastapi/applications.py:4579: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    return self.router.on_event(event_type)
+
+.venv/lib/python3.9/site-packages/urllib3/__init__.py:35
+  /Users/ambermooney/Desktop/TAAIP/.venv/lib/python3.9/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+    warnings.warn(
+
+test_taaip_features.py::test_api_health
+  /Users/ambermooney/Desktop/TAAIP/.venv/lib/python3.9/site-packages/_pytest/python.py:198: PytestReturnNotNoneWarning: Expected None, but test_taaip_features.py::test_api_health returned True, which will be an error in a future version of pytest.  Did you mean to use `assert` instead of `return`?
+    warnings.warn(
+
+test_taaip_features.py::test_company_standings
+  /Users/ambermooney/Desktop/TAAIP/.venv/lib/python3.9/site-packages/_pytest/python.py:198: PytestReturnNotNoneWarning: Expected None, but test_taaip_features.py::test_company_standings returned False, which will be an error in a future version of pytest.  Did you mean to use `assert` instead of `return`?
+    warnings.warn(
+
+test_taaip_features.py::test_user_access
+  /Users/ambermooney/Desktop/TAAIP/.venv/lib/python3.9/site-packages/_pytest/python.py:198: PytestReturnNotNoneWarning: Expected None, but test_taaip_features.py::test_user_access returned False, which will be an error in a future version of pytest.  Did you mean to use `assert` instead of `return`?
+    warnings.warn(
+
+test_taaip_features.py::test_helpdesk_submission
+  /Users/ambermooney/Desktop/TAAIP/.venv/lib/python3.9/site-packages/_pytest/python.py:198: PytestReturnNotNoneWarning: Expected None, but test_taaip_features.py::test_helpdesk_submission returned False, which will be an error in a future version of pytest.  Did you mean to use `assert` instead of `return`?
+    warnings.warn(
+
+test_taaip_features.py::test_helpdesk_retrieval
+  /Users/ambermooney/Desktop/TAAIP/.venv/lib/python3.9/site-packages/_pytest/python.py:198: PytestReturnNotNoneWarning: Expected None, but test_taaip_features.py::test_helpdesk_retrieval returned False, which will be an error in a future version of pytest.  Did you mean to use `assert` instead of `return`?
+    warnings.warn(
+
+test_taaip_features.py::test_standings_update
+  /Users/ambermooney/Desktop/TAAIP/.venv/lib/python3.9/site-packages/_pytest/python.py:198: PytestReturnNotNoneWarning: Expected None, but test_taaip_features.py::test_standings_update returned False, which will be an error in a future version of pytest.  Did you mean to use `assert` instead of `return`?
+    warnings.warn(
+
+test_taaip_features.py::test_brigade_filtering
+  /Users/ambermooney/Desktop/TAAIP/.venv/lib/python3.9/site-packages/_pytest/python.py:198: PytestReturnNotNoneWarning: Expected None, but test_taaip_features.py::test_brigade_filtering returned False, which will be an error in a future version of pytest.  Did you mean to use `assert` instead of `return`?
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test_taaip_marketing.py::test_funnel_attribution_endpoint - sqlite3.Op...
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+============ 1 failed, 13 passed, 2 skipped, 14 warnings in 34.10s =============

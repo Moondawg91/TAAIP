@@ -26,6 +26,20 @@ async def upload_file(file: UploadFile = File(...), dry_run: int = Query(0)):
     body = await file.read()
     if not body:
         raise HTTPException(status_code=400, detail="empty file")
+    # Reject simulation/demo-marked uploads unless explicitly allowed
+    if os.getenv('ALLOW_SIMULATION_IMPORTS') != '1':
+        try:
+            sim_pat = re.compile(r"\bSIM_|\bsim-|\bdemo-|\bdemo_", re.IGNORECASE)
+            try:
+                s = body.decode('utf-8', errors='ignore')
+            except Exception:
+                s = ''
+            if sim_pat.search(s):
+                raise HTTPException(status_code=400, detail="Import rejected: contains simulation/demo markers. Set ALLOW_SIMULATION_IMPORTS=1 to override.")
+        except HTTPException:
+            raise
+        except Exception:
+            raise HTTPException(status_code=400, detail="Import validation failed; refused to process file")
     max_bytes = int(os.getenv('DATAHUB_MAX_BYTES', str(25 * 1024 * 1024)))
     if len(body) > max_bytes:
         raise HTTPException(status_code=413, detail="file too large")

@@ -1,0 +1,27 @@
+{
+  "status": 200,
+  "json": [
+    {
+      "id": "b645dcbf-1ca1-408f-ae46-490d22ac2906",
+      "org_unit_id": "USAREC",
+      "date_key": "2026-03-01",
+      "metric_key": "leads",
+      "metric_value": 5,
+      "source_system": null,
+      "import_job_id": null,
+      "created_at": "2026-03-01T00:00:00Z",
+      "record_status": "active",
+      "archived_at": null,
+      "keep_until": null,
+      "fy": null,
+      "qtr": null,
+      "scope_type": null,
+      "scope_value": null,
+      "station_rsid": null,
+      "reported_at": null,
+      "reporting_date": null,
+      "updated_at": null,
+      "ingested_at": null
+    }
+  ]
+}

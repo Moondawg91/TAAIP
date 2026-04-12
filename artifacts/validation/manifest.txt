@@ -1,0 +1,16 @@
+Files changed:
+- services/api/app/routers/imports.py
+- services/api/app/routers/v2.py
+- services/api/app/routers/datahub.py
+- services/api/app/routers/uploads.py
+- services/api/app/routers/imports_mi.py
+- services/api/app/routers/imports_foundation.py
+- services/api/app/routers/v2_datahub.py
+- services/api/app/routers/admin_v2.py
+- services/api/app/api_ingest.py
+- tests/test_import_guard.py
+
+Artifacts included:
+- artifacts/import_guard_evidence/*
+- artifacts/validation/*
+- artifacts/pytest_full_output.txt

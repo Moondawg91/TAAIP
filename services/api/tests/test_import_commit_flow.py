@@ -106,13 +106,13 @@ def test_import_map_commit_end_to_end(tmp_path):
 
     # Use v3 compatibility endpoints: /api/import/map, /api/import/validate, /api/import/commit
     # provide a minimal mapping payload (must be truthy)
-    resp = client.post('/api/api/import/map', json={'import_job_id': import_id, 'mapping': {'field_map': {}, 'target_table': 'fact_production'}, 'dataset_key': 'production'})
+    resp = client.post('/api/import/map', json={'import_job_id': import_id, 'mapping': {'field_map': {}, 'target_table': 'fact_production'}, 'dataset_key': 'production'})
     assert resp.status_code in (200, 201, 204)
 
-    respv = client.post('/api/api/import/validate', json={'import_job_id': import_id})
+    respv = client.post('/api/import/validate', json={'import_job_id': import_id})
     assert respv.status_code in (200, 201, 204)
 
-    resp2 = client.post('/api/api/import/commit', json={'import_job_id': import_id, 'mode': 'append'})
+    resp2 = client.post('/api/import/commit', json={'import_job_id': import_id, 'mode': 'append'})
     assert resp2.status_code in (200, 201, 204)
 
     # verify fact_production rows created

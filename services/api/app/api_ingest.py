@@ -28,8 +28,18 @@ def upload_file(file: UploadFile = File(...), recipe_id: int = None, user: model
     tmpdir = '/tmp/taaip_uploads'
     os.makedirs(tmpdir, exist_ok=True)
     path = os.path.join(tmpdir, file.filename)
+    contents = file.file.read()
+    # guard against SIM/demo content
+    if os.getenv('ALLOW_SIMULATION_IMPORTS') != '1':
+        import re
+        try:
+            s = contents.decode('utf-8', errors='ignore')
+        except Exception:
+            s = ''
+        if re.search(r"\bSIM_|\bsim-|\bdemo-|\bdemo_", s, re.IGNORECASE):
+            raise HTTPException(status_code=400, detail='Import rejected: contains simulation/demo markers. Set ALLOW_SIMULATION_IMPORTS=1 to override.')
     with open(path, 'wb') as f:
-        f.write(file.file.read())
+        f.write(contents)
     recipe = None
     if recipe_id:
         recipe = db.query(models_ingest.TransformRecipe).filter_by(id=recipe_id).one_or_none()
@@ -46,8 +56,18 @@ def v2_upload(file: UploadFile = File(...), user: models.User = Depends(auth.get
     tmpdir = './data/uploads'
     os.makedirs(tmpdir, exist_ok=True)
     path = os.path.join(tmpdir, file.filename)
+    contents = file.file.read()
+    # guard against SIM/demo content
+    if os.getenv('ALLOW_SIMULATION_IMPORTS') != '1':
+        import re
+        try:
+            s = contents.decode('utf-8', errors='ignore')
+        except Exception:
+            s = ''
+        if re.search(r"\bSIM_|\bsim-|\bdemo-|\bdemo_", s, re.IGNORECASE):
+            raise HTTPException(status_code=400, detail='Import rejected: contains simulation/demo markers. Set ALLOW_SIMULATION_IMPORTS=1 to override.')
     with open(path, 'wb') as f:
-        f.write(file.file.read())
+        f.write(contents)
     # compute simple hash
     try:
         import hashlib

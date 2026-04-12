@@ -120,7 +120,7 @@ def create_task(payload: dict, allowed_orgs: Optional[list] = Depends(require_sc
 
 
 @router.get("/", summary="List tasks")
-def list_tasks(project_id: Optional[int] = None, owner: Optional[str] = None, limit: int = 200, allowed_orgs: Optional[list] = Depends(require_scope('STATION'))):
+def list_tasks(project_id: Optional[int] = None, owner: Optional[str] = None, limit: int = 200, include_archived: bool = False, allowed_orgs: Optional[list] = Depends(require_scope('STATION'))):
     conn = connect()
     try:
         cur = conn.cursor()
@@ -151,13 +151,17 @@ def list_tasks(project_id: Optional[int] = None, owner: Optional[str] = None, li
                 params = list(allowed_orgs)
         if owner:
             sql += ' AND owner=?'; params.append(owner)
-        # determine ordering column: prefer integer `id` when present, else use rowid
+        # If the tasks table supports `archived`, exclude archived by default
         try:
             cur.execute(f"PRAGMA table_info({table_name})")
             cols_info = [r for r in cur.fetchall()]
             cols_present = [c[1] for c in cols_info]
         except Exception:
             cols_present = []
+        if 'archived' in cols_present and not include_archived:
+            sql += ' AND (archived IS NULL OR archived=0)'
+        # determine ordering column: prefer integer `id` when present, else use rowid
+        # cols_present already computed above
         # If table doesn't have integer `id`, include rowid as `id` in the select so callers always see `id`.
         if 'id' not in cols_present:
             sql = sql.replace('SELECT ', 'SELECT rowid as id, ', 1)
@@ -200,6 +204,20 @@ def update_task(task_id: int, payload: dict, allowed_orgs: Optional[list] = Depe
         where_col = 'id' if 'id' in task_cols else 'rowid'
         cur.execute(f'SELECT project_id FROM {table_name} WHERE {where_col}=?', (task_id,))
         t = cur.fetchone()
+        # If not found in chosen table, try the alternate legacy table name
+        if not t:
+            alt = 'task' if table_name == 'tasks' else 'tasks'
+            try:
+                cur.execute(f"PRAGMA table_info({alt})")
+                alt_cols = [r[1] for r in cur.fetchall()]
+                alt_where = 'id' if 'id' in alt_cols else 'rowid'
+                cur.execute(f'SELECT project_id FROM {alt} WHERE {alt_where}=?', (task_id,))
+                t = cur.fetchone()
+                if t:
+                    table_name = alt
+                    where_col = alt_where
+            except Exception:
+                t = None
         if not t:
             raise HTTPException(status_code=404, detail='task_not_found')
         t = row_to_dict(cur, t)
@@ -281,9 +299,34 @@ def delete_task(task_id: int, allowed_orgs: Optional[list] = Depends(require_sco
             p = row_to_dict(cur, p)
         if allowed_orgs is not None and p and p.get('org_unit_id') not in allowed_orgs:
             raise HTTPException(status_code=403, detail='forbidden')
-        cur.execute(f'DELETE FROM {table_name} WHERE {where_col}=?', (task_id,))
-        conn.commit()
-        return {'deleted': task_id}
+        # Prefer soft-archive: add/update archived columns if available or add them
+        try:
+            cur.execute(f"PRAGMA table_info({table_name})")
+            task_cols = [r[1] for r in cur.fetchall()]
+        except Exception:
+            task_cols = []
+        who = 'system'
+        if 'archived' in task_cols:
+            try:
+                cur.execute(f'UPDATE {table_name} SET archived=1, archived_at=?, archived_by=? WHERE {where_col}=?', ( __import__('datetime').datetime.utcnow().isoformat(), who, task_id))
+                conn.commit()
+                return {'status': 'archived'}
+            except Exception:
+                pass
+        # try to add archived columns when possible
+        try:
+            cur.execute(f"ALTER TABLE {table_name} ADD COLUMN archived INTEGER DEFAULT 0")
+            cur.execute(f"ALTER TABLE {table_name} ADD COLUMN archived_at TEXT")
+            cur.execute(f"ALTER TABLE {table_name} ADD COLUMN archived_by TEXT")
+            conn.commit()
+            cur.execute(f'UPDATE {table_name} SET archived=1, archived_at=?, archived_by=? WHERE {where_col}=?', ( __import__('datetime').datetime.utcnow().isoformat(), who, task_id))
+            conn.commit()
+            return {'status': 'archived'}
+        except Exception:
+            # fallback: hard delete
+            cur.execute(f'DELETE FROM {table_name} WHERE {where_col}=?', (task_id,))
+            conn.commit()
+            return {'deleted': task_id}
     finally:
         conn.close()
 

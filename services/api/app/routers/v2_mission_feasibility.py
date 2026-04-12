@@ -132,10 +132,27 @@ def summary(request: Request = None, unit_rsid: str = 'USAREC', fy: Optional[int
             cur.execute('SELECT * FROM mission_target WHERE unit_rsid = ? AND fy = ? LIMIT 1', (unit_rsid, fy))
             row = cur.fetchone()
             if row:
-                if row.get('annual_contract_mission') is not None:
-                    mission_annual = int(row['annual_contract_mission'])
-                elif row.get('mission_contracts') is not None:
-                    mission_annual = int(row['mission_contracts'])
+                try:
+                    # support sqlite3.Row (mapping-like) and tuple results
+                    if hasattr(row, 'keys'):
+                        # sqlite3.Row supports dict-style indexing but not get()
+                        try:
+                            val = row['annual_contract_mission']
+                            if val is not None:
+                                mission_annual = int(val)
+                        except Exception:
+                            try:
+                                val2 = row['mission_contracts']
+                                if val2 is not None:
+                                    mission_annual = int(val2)
+                            except Exception:
+                                mission_annual = None
+                    else:
+                        # tuple-style result: annual_contract_mission is column index 3
+                        if len(row) > 3 and row[3] is not None:
+                            mission_annual = int(row[3])
+                except Exception:
+                    mission_annual = None
         except Exception:
             mission_annual = None
 
@@ -157,22 +174,47 @@ def summary(request: Request = None, unit_rsid: str = 'USAREC', fy: Optional[int
             else:
                 cur.execute(f"SELECT AVG(recruiters_assigned) as avg_assigned FROM recruiter_strength WHERE month LIKE ? AND org_unit_id IN ({placeholders})", [f"{fy}-%"] + params)
             r = cur.fetchone()
-            if r and r.get('avg_assigned') is not None:
-                recruiters_assigned_avg = float(r['avg_assigned'])
+            if r:
+                try:
+                    if hasattr(r, 'keys'):
+                        if 'avg_assigned' in r.keys() and r['avg_assigned'] is not None:
+                            recruiters_assigned_avg = float(r['avg_assigned'])
+                    else:
+                        # tuple: avg_assigned at index 0
+                        if len(r) > 0 and r[0] is not None:
+                            recruiters_assigned_avg = float(r[0])
+                except Exception:
+                    recruiters_assigned_avg = None
         except Exception:
             recruiters_assigned_avg = None
 
         try:
             cur.execute('SELECT AVG(recruiters_available) as avg_available FROM recruiter_strength WHERE unit_rsid = ? AND month LIKE ?', (unit_rsid, f"{fy}-%"))
             r = cur.fetchone()
-            if r and r.get('avg_available') is not None:
-                recruiters_available_avg = float(r['avg_available'])
+            if r:
+                try:
+                    if hasattr(r, 'keys'):
+                        if 'avg_available' in r.keys() and r['avg_available'] is not None:
+                            recruiters_available_avg = float(r['avg_available'])
+                    else:
+                        if len(r) > 0 and r[0] is not None:
+                            recruiters_available_avg = float(r[0])
+                except Exception:
+                    recruiters_available_avg = None
         except Exception:
             try:
                 cur.execute('SELECT AVG(producers_available) as avg_producers_available FROM recruiter_strength WHERE unit_rsid = ? AND month LIKE ?', (unit_rsid, f"{fy}-%"))
                 r2 = cur.fetchone()
-                if r2 and r2.get('avg_producers_available') is not None:
-                    recruiters_available_avg = float(r2['avg_producers_available'])
+                if r2:
+                    try:
+                        if hasattr(r2, 'keys'):
+                            if 'avg_producers_available' in r2.keys() and r2['avg_producers_available'] is not None:
+                                recruiters_available_avg = float(r2['avg_producers_available'])
+                        else:
+                            if len(r2) > 0 and r2[0] is not None:
+                                recruiters_available_avg = float(r2[0])
+                    except Exception:
+                        recruiters_available_avg = None
             except Exception:
                 recruiters_available_avg = None
 
@@ -182,17 +224,30 @@ def summary(request: Request = None, unit_rsid: str = 'USAREC', fy: Optional[int
             cur.execute('SELECT * FROM market_capacity WHERE unit_rsid = ? AND fy = ? LIMIT 1', (unit_rsid, fy))
             m = cur.fetchone()
             if m:
-                if m.get('baseline_contract_capacity') is not None:
-                    market_capacity_baseline = int(m['baseline_contract_capacity'])
-                elif m.get('market_index') is not None:
-                    try:
-                        market_capacity_baseline = int(m['market_index'])
-                    except Exception:
-                        market_capacity_baseline = None
-                if m.get('market_burden_factor') is not None:
-                    market_burden_factor = float(m['market_burden_factor'] or 1.0)
-                else:
-                    market_burden_factor = 1.0
+                try:
+                    if hasattr(m, 'keys'):
+                        if 'baseline_contract_capacity' in m.keys() and m['baseline_contract_capacity'] is not None:
+                            market_capacity_baseline = int(m['baseline_contract_capacity'])
+                        elif 'market_index' in m.keys() and m['market_index'] is not None:
+                            try:
+                                market_capacity_baseline = int(m['market_index'])
+                            except Exception:
+                                market_capacity_baseline = None
+                        if 'market_burden_factor' in m.keys() and m['market_burden_factor'] is not None:
+                            market_burden_factor = float(m['market_burden_factor'] or 1.0)
+                        else:
+                            market_burden_factor = 1.0
+                    else:
+                        # tuple: baseline_contract_capacity index 3, market_burden_factor index 4
+                        if len(m) > 3 and m[3] is not None:
+                            market_capacity_baseline = int(m[3])
+                        if len(m) > 4 and m[4] is not None:
+                            market_burden_factor = float(m[4])
+                        else:
+                            market_burden_factor = 1.0
+                except Exception:
+                    market_capacity_baseline = None
+                    market_burden_factor = None
         except Exception:
             market_capacity_baseline = None
             market_burden_factor = None

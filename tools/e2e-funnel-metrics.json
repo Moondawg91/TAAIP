@@ -1,0 +1,18 @@
+{
+  "status": 200,
+  "json": {
+    "funnel": {
+      "leads": 7,
+      "contacts": 0,
+      "appointments": 0,
+      "applicants": 0,
+      "contracts": 1
+    },
+    "conversion_rates": {
+      "lead_to_contact": 0,
+      "contact_to_appt": null,
+      "appt_to_applicant": null,
+      "applicant_to_contract": null
+    }
+  }
+}

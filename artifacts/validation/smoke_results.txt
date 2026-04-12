@@ -1,0 +1,17 @@
+--- CURL /api/import/upload (benign leads_test.csv) ---
+v1 response:
+Internal Server Error--- CURL /api/v2/import/upload (benign leads_test.csv) ---
+v2 response:
+{"status":"error","error":"no such table: import_job"}
+--- CURL /api/import/upload (SIM demo) ---
+v1 sim response:
+Internal Server Error--- CURL /api/v2/import/upload (SIM demo) ---
+v2 sim response:
+{"status":"error","error":"no such table: import_job"}
+--- /api/import/jobs ---
+Internal Server Error--- /api/operations/rollups/summary ---
+{"status":"ok","agg_kpis_period_count":0}
+--- /api/dash/performance/dashboard ---
+{"filters":{},"top_metrics":[],"funnel":[],"priorities":[],"loes":[],"metrics_comparison":[],"missing_data":["mission_assessments table missing","projects table missing"],"conversion_trend":[],"stations":[],"metrics":[]}
+--- /api/auth/login (POST empty) ---
+{"detail":[{"loc":["body","username"],"msg":"field required","type":"value_error.missing"}]}

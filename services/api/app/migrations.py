@@ -28,17 +28,37 @@ def apply_migrations(conn: sqlite3.Connection):
         cur.executescript('''
         CREATE TABLE dataset_registry (
             dataset_key TEXT PRIMARY KEY,
-            display_name TEXT,
             source_system TEXT,
+            display_name TEXT,
+            enabled INTEGER DEFAULT 1,
             file_types TEXT,
+            sheet_hints TEXT,
+            detection_keywords TEXT,
             required_columns TEXT,
             optional_columns TEXT,
-            detection_keywords TEXT,
-            target_tables TEXT,
-            enabled INTEGER DEFAULT 1,
-            version INTEGER DEFAULT 1
+            primary_date_column TEXT,
+            unit_columns TEXT,
+            target_table TEXT,
+            normalizer_key TEXT,
+            version INTEGER DEFAULT 1,
+            created_at TEXT,
+            updated_at TEXT
         );
         ''')
+    else:
+        # Ensure legacy DBs have the `sheet_hints` column expected by seeds
+        try:
+            for _col, _ddl in (('sheet_hints', 'TEXT'), ('primary_date_column', 'TEXT'), ('unit_columns', 'TEXT'), ('target_table', 'TEXT'), ('normalizer_key', 'TEXT'), ('created_at', 'TEXT'), ('updated_at', 'TEXT')):
+                try:
+                    if not _column_exists(cur, 'dataset_registry', _col):
+                        try:
+                            cur.execute(f'ALTER TABLE dataset_registry ADD COLUMN {_col} {_ddl}')
+                        except Exception:
+                            pass
+                except Exception:
+                    pass
+        except Exception:
+            pass
 
     # Ensure import_run_v2
     if not _table_exists(cur, 'import_run_v2'):
@@ -161,6 +181,53 @@ def apply_migrations(conn: sqlite3.Connection):
             content_type TEXT,
             size_bytes INTEGER,
             created_at TEXT
+        );
+        ''')
+
+    # Ensure helpdesk tickets table
+    if not _table_exists(cur, 'tickets'):
+        cur.executescript('''
+        CREATE TABLE tickets (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT,
+            category TEXT,
+            description TEXT,
+            priority TEXT,
+            status TEXT,
+            created_by TEXT,
+            created_at TEXT,
+            updated_at TEXT,
+            archived INTEGER DEFAULT 0
+        );
+        ''')
+
+    # Ensure TWG items table
+    if not _table_exists(cur, 'twg_items'):
+        cur.executescript('''
+        CREATE TABLE twg_items (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            wg_id INTEGER,
+            title TEXT,
+            owner TEXT,
+            due TEXT,
+            status TEXT,
+            notes TEXT,
+            created_at TEXT,
+            updated_at TEXT
+        );
+        ''')
+
+    # Ensure working_group table
+    if not _table_exists(cur, 'working_group'):
+        cur.executescript('''
+        CREATE TABLE working_group (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            org_unit_id INTEGER,
+            name TEXT,
+            wg_type TEXT,
+            description TEXT,
+            created_at TEXT,
+            updated_at TEXT
         );
         ''')
 
@@ -361,6 +428,28 @@ def apply_migrations(conn: sqlite3.Connection):
 
     conn.commit()
 
+    # Ensure LOE runtime columns for older DBs (status/progress/archived/updated_at)
+    try:
+        from .db import safe_add_column
+        try:
+            safe_add_column(conn, 'loe', 'status', 'TEXT')
+        except Exception:
+            pass
+        try:
+            safe_add_column(conn, 'loe', 'progress', 'REAL')
+        except Exception:
+            pass
+        try:
+            safe_add_column(conn, 'loe', 'archived', 'INTEGER')
+        except Exception:
+            pass
+        try:
+            safe_add_column(conn, 'loe', 'updated_at', 'TEXT')
+        except Exception:
+            pass
+    except Exception:
+        pass
+
     # Ensure mission_risk tables
     if not _table_exists(cur, 'mission_risk_scores'):
         cur.executescript('''
@@ -417,6 +506,29 @@ def apply_migrations(conn: sqlite3.Connection):
         ''')
         conn.commit()
 
+    # Ensure COA recommendations table for Courses of Action engine
+    if not _table_exists(cur, 'coa_recommendations'):
+        cur.executescript('''
+        CREATE TABLE IF NOT EXISTS coa_recommendations (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            coa_run_id TEXT,
+            unit_rsid TEXT,
+            coa_type TEXT,
+            coa_title TEXT,
+            coa_summary TEXT,
+            recommended_actions_json TEXT,
+            expected_benefit TEXT,
+            risk_level TEXT,
+            assumptions_json TEXT,
+            doctrine_refs_json TEXT,
+            supporting_evidence_json TEXT,
+            created_at TEXT
+        );
+        CREATE INDEX IF NOT EXISTS idx_coa_run_unit ON coa_recommendations(coa_run_id, unit_rsid);
+        CREATE INDEX IF NOT EXISTS idx_coa_unit ON coa_recommendations(unit_rsid);
+        ''')
+        conn.commit()
+
     if not _table_exists(cur, 'fusion_evidence'):
         cur.executescript('''
         CREATE TABLE IF NOT EXISTS fusion_evidence (
@@ -428,6 +540,23 @@ def apply_migrations(conn: sqlite3.Connection):
             created_at TEXT
         );
         CREATE INDEX IF NOT EXISTS idx_fusion_evidence_run ON fusion_evidence(fusion_run_id);
+        ''')
+        conn.commit()
+
+    # Fusion session/process table for manual Fusion Cell entries (drilldowns, notes, actions)
+    if not _table_exists(cur, 'fusion_process'):
+        cur.executescript('''
+        CREATE TABLE IF NOT EXISTS fusion_process (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            fusion_id TEXT,
+            session_date TEXT,
+            participants TEXT,
+            insights TEXT,
+            actions TEXT,
+            status TEXT,
+            created_at TEXT
+        );
+        CREATE INDEX IF NOT EXISTS idx_fusion_process_date ON fusion_process(session_date);
         ''')
         conn.commit()
 
@@ -527,6 +656,26 @@ def seed_default_registry(conn: sqlite3.Connection):
             cur.execute('''INSERT INTO dataset_registry (dataset_key, display_name, source_system, file_types, required_columns, optional_columns, detection_keywords, target_tables, enabled, version)
                            VALUES (?,?,?,?,?,?,?,?,?,?)''', (r['dataset_key'], r['display_name'], r['source_system'], r['file_types'], r['required_columns'], r['optional_columns'], r['detection_keywords'], r['target_tables'], r['enabled'], r['version']))
     conn.commit()
+
+    # Ensure import_run_processing_status table for post-commit orchestration audit
+    if not _table_exists(cur, 'import_run_processing_status'):
+        cur.executescript('''
+        CREATE TABLE IF NOT EXISTS import_run_processing_status (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            run_id TEXT,
+            dataset_key TEXT,
+            processor_name TEXT,
+            target_module TEXT,
+            status TEXT,
+            started_at TEXT,
+            ended_at TEXT,
+            error_message TEXT,
+            created_at TEXT DEFAULT (datetime('now'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_proc_status_run ON import_run_processing_status(run_id);
+        CREATE INDEX IF NOT EXISTS idx_proc_status_processor ON import_run_processing_status(processor_name);
+        ''')
+        conn.commit()
 
 
 def seed_org_tree(conn: sqlite3.Connection):
@@ -687,6 +836,24 @@ def apply_runtime_migrations(conn: sqlite3.Connection) -> None:
             conn.rollback()
         except Exception:
             pass
+
+    # Ensure LOE has expected runtime columns (status, progress, archived, updated_at)
+    try:
+        safe_add_column(conn, 'loe', 'status', 'TEXT')
+    except Exception:
+        pass
+    try:
+        safe_add_column(conn, 'loe', 'progress', 'REAL')
+    except Exception:
+        pass
+    try:
+        safe_add_column(conn, 'loe', 'archived', 'INTEGER')
+    except Exception:
+        pass
+    try:
+        safe_add_column(conn, 'loe', 'updated_at', 'TEXT')
+    except Exception:
+        pass
 
     # Additional runtime additions: add canonical scope/time columns for EMM and Enlistments BN
     try:

@@ -17,18 +17,26 @@ def init_test_db():
     This mirrors app startup behaviour and ensures tests have a consistent
     schema regardless of collection order.
     """
-    db_path = _test_db_path()
-    # force the test DB path so imports use this DB
-    os.environ['DATABASE_URL'] = f"sqlite:///{db_path}"
-    os.environ['TAAIP_DB_PATH'] = db_path
+    # If a higher-level fixture or the root conftest already set
+    # `TAAIP_DB_PATH`, respect it. Otherwise use the default repo-local
+    # test DB path and create/remove the file as before.
+    env_db = os.environ.get('TAAIP_DB_PATH')
+    if env_db:
+        db_path = env_db
+        os.environ['DATABASE_URL'] = f"sqlite:///{db_path}"
+    else:
+        db_path = _test_db_path()
+        # force the test DB path so imports use this DB
+        os.environ['DATABASE_URL'] = f"sqlite:///{db_path}"
+        os.environ['TAAIP_DB_PATH'] = db_path
 
-    # remove any leftover test DB for a fresh start
-    try:
-        p = pathlib.Path(db_path)
-        if p.exists():
-            p.unlink()
-    except Exception:
-        pass
+        # remove any leftover test DB for a fresh start
+        try:
+            p = pathlib.Path(db_path)
+            if p.exists():
+                p.unlink()
+        except Exception:
+            pass
 
     # Import and initialize schema
     # Re-import/reload DB modules so they honor the overridden DATABASE_URL
@@ -140,22 +148,30 @@ def transactional_tests():
         from services.api.app import db as app_db
         import sqlite3, os
         db_path = os.environ.get('TAAIP_DB_PATH', './taaip_test.db')
-        raw = sqlite3.connect(db_path, check_same_thread=False, timeout=30)
-        try:
-            # enforce pragmas on the fallback raw connection to reduce locking
-            cur = raw.cursor()
-            cur.executescript("""
-            PRAGMA foreign_keys=ON;
-            PRAGMA journal_mode=WAL;
-            PRAGMA synchronous=NORMAL;
-            PRAGMA busy_timeout=20000;
-            """)
-            cur.close()
-        except Exception:
-            pass
+        # Use URI mode when configured for in-memory shared DBs
+        if isinstance(db_path, str) and db_path.startswith('file:') or os.getenv('TAAIP_SQLITE_URI') == '1':
+            raw = sqlite3.connect(db_path, check_same_thread=False, timeout=30, uri=True)
+        else:
+            raw = sqlite3.connect(db_path, check_same_thread=False, timeout=30)
+            try:
+                # enforce pragmas on the fallback raw connection to reduce locking
+                cur = raw.cursor()
+                if os.getenv('TAAIP_DISABLE_WAL') == '1':
+                    journal = 'DELETE'
+                else:
+                    journal = 'WAL'
+                cur.executescript(f"""
+                PRAGMA foreign_keys=ON;
+                PRAGMA journal_mode={journal};
+                PRAGMA synchronous=NORMAL;
+                PRAGMA busy_timeout=20000;
+                """)
+                cur.close()
+            except Exception:
+                pass
 
         # Small retry helper to mitigate transient `database is locked` errors
-        def _retry_db_op(op, max_attempts=6, base_delay=0.02):
+        def _retry_db_op(op, max_attempts=12, base_delay=0.05):
             attempt = 0
             while True:
                 try:
@@ -213,6 +229,39 @@ def transactional_tests():
 
             def close(self):
                 try:
+                    # During tests the harness may register a shared raw
+                    # sqlite3 connection with `services.api.app.db._test_raw_conn`.
+                    # Some request handlers call `conn.close()` in finally
+                    # blocks; closing the harness-provided connection breaks
+                    # the test infrastructure and causes "closed database"
+                    # errors. Avoid closing the underlying connection when
+                    # it is the harness raw connection. For other connections
+                    # (e.g., unrelated DB files) forward the close call.
+                    try:
+                        from services.api.app import db as app_db
+                        # Unwrap nested wrappers to find the underlying raw
+                        base = self._conn
+                        for _ in range(5):
+                            if hasattr(base, '_conn'):
+                                try:
+                                    base = getattr(base, '_conn')
+                                except Exception:
+                                    break
+                            else:
+                                break
+                        # If the underlying base connection is the harness
+                        # test raw connection, suppress closing it.
+                        if getattr(app_db, '_test_raw_conn', None) is base:
+                            try:
+                                import logging
+                                logging.debug('tests: suppressed close() of harness raw sqlite3 connection')
+                            except Exception:
+                                pass
+                            return
+                    except Exception:
+                        # If we cannot inspect app_db for any reason, fall
+                        # back to attempting to close the underlying conn.
+                        pass
                     return self._conn.close()
                 except Exception:
                     pass
@@ -234,10 +283,29 @@ def transactional_tests():
 
             def _patched_connect(path=None, *a, **kw):
                 dbp = os.environ.get('TAAIP_DB_PATH', './taaip_test.db')
-                # Normalize paths to compare
+                # When using URI-style DBs, ensure we pass uri=True to the
+                # underlying sqlite3.connect so the filename is treated as a URI.
                 try:
-                    if path is None or os.path.abspath(str(path)) == os.path.abspath(dbp):
-                        # return a retry-wrapped connection backed by the original connect
+                    match = False
+                    if dbp and isinstance(dbp, str) and dbp.startswith('file:'):
+                        # For URI-style paths, compare string equality
+                        if path is None:
+                            match = True
+                        else:
+                            try:
+                                if str(path) == dbp:
+                                    match = True
+                            except Exception:
+                                pass
+                    else:
+                        # Normalize filesystem paths for comparison
+                        if path is None or os.path.abspath(str(path)) == os.path.abspath(dbp):
+                            match = True
+                    if match:
+                        # For URI DBs, ensure kw includes uri=True
+                        if dbp and isinstance(dbp, str) and dbp.startswith('file:'):
+                            kw = dict(kw)
+                            kw.setdefault('uri', True)
                         c = orig_connect(path or dbp, *a, **kw)
                         return _RetryConnection(c)
                 except Exception:

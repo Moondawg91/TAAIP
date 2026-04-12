@@ -9,7 +9,7 @@ try:
 except Exception:
     pass
 os.environ['LOCAL_DEV_AUTH_BYPASS']='1'
-os.environ['TAAIP_DB_PATH']=DB
+os.environ.setdefault('TAAIP_DB_PATH', DB)
 init_db()
 client=TestClient(app)
 # create event via compat endpoint

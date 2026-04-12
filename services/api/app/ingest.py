@@ -8,6 +8,7 @@ import re
 from dateutil import parser as date_parser
 from . import ingest_registry
 from .db import get_db_conn
+from sqlalchemy import text
 
 
 def read_file_to_df(path: str):
@@ -202,12 +203,24 @@ def run_import(path: str, ingest_run_id: int = None, importer_id: str = None, db
         spec = ingest_registry.get_importer(importer_id) if importer_id else None
     if not spec:
         # unknown dataset: persist to stg_raw_dataset rows
-        conn = get_db_conn()
-        cur = conn.cursor()
         rows = df.to_dict(orient='records') if hasattr(df, 'to_dict') else []
-        for i, r in enumerate(rows, start=1):
-            cur.execute("INSERT INTO stg_raw_dataset (ingest_run_id, row_number, row_json) VALUES (?, ?, ?)", (ingest_run_id, i, json.dumps(r)))
-        conn.commit()
+        # Prefer using the shared SQLAlchemy session when available to
+        # avoid mixing independent sqlite3 connections which can hold
+        # locks during concurrent test runs.
+        if db:
+            stmt = text("INSERT INTO stg_raw_dataset (ingest_run_id, row_number, row_json) VALUES (:ingest_run_id, :row_number, :row_json)")
+            for i, r in enumerate(rows, start=1):
+                db.execute(stmt, { 'ingest_run_id': ingest_run_id, 'row_number': i, 'row_json': json.dumps(r) })
+            try:
+                db.commit()
+            except Exception:
+                pass
+        else:
+            conn = get_db_conn()
+            cur = conn.cursor()
+            for i, r in enumerate(rows, start=1):
+                cur.execute("INSERT INTO stg_raw_dataset (ingest_run_id, row_number, row_json) VALUES (?, ?, ?)", (ingest_run_id, i, json.dumps(r)))
+            conn.commit()
         result['status'] = 'staged_unknown'
         result['row_count_in'] = len(rows)
         return result

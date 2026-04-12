@@ -30,7 +30,8 @@ def _normalize_col(c):
 
 def _apply_header_aliases(df, headers, dataset_key):
     """Attempt to map common alternate header names to expected required column names.
-    This mutates the DataFrame columns if aliases are found and returns updated headers list.
+    This mutates the DataFrame columns if aliases are found and returns (updated_headers, renamed_map).
+    renamed_map maps expected_name -> original_column_name for any renames applied.
     """
     # choose alias map based on dataset_key
     alias_map = {}
@@ -87,7 +88,7 @@ def _apply_header_aliases(df, headers, dataset_key):
                         pass
                 break
 
-    return headers
+    return headers, renamed
 
 
 def _storage_path_for(filename: str):
@@ -210,7 +211,10 @@ def commit_run(run_id: str):
         # apply header alias mapping after we know dataset_key (helps loaders expect canonical names)
         try:
             headers = list(headers)
-            headers = _apply_header_aliases(df, headers, dataset_key)
+            try:
+                headers, aliases_applied = _apply_header_aliases(df, headers, dataset_key)
+            except Exception:
+                aliases_applied = {}
         except Exception:
             pass
 
@@ -411,21 +415,27 @@ def commit_run(run_id: str):
         # finalize
         cur.execute('UPDATE import_run_v2 SET status=?, rows_in=?, rows_loaded=?, ended_at=? WHERE run_id=?', ('success', rows_in, rows_loaded, datetime.datetime.utcnow().isoformat(), run_id))
         conn.commit()
+        refreshed = {}
         try:
             # refresh lightweight KPIs
-            refresh_mod.refresh_agg_kpis(conn, unit_rsid=scope_unit_rsid)
+            try:
+                r = refresh_mod.refresh_agg_kpis(conn, unit_rsid=scope_unit_rsid)
+                refreshed['agg_kpis'] = r if r is not None else True
+            except Exception:
+                refreshed['agg_kpis'] = False
         except Exception:
-            pass
+            refreshed['agg_kpis'] = False
         try:
             # best-effort: refresh higher-level analytics (school targeting, market health, mission risk)
             # Only run when explicitly enabled via env var to avoid surprising test-side effects.
             if os.environ.get('ENABLE_POST_COMMIT_ANALYTICS', '').lower() in ('1', 'true', 'yes'):
                 try:
-                    refresh_mod.refresh_all_analytics(conn, unit_rsid=scope_unit_rsid)
+                    r2 = refresh_mod.refresh_all_analytics(conn, unit_rsid=scope_unit_rsid)
+                    refreshed['post_commit_analytics'] = r2 if r2 is not None else True
                 except Exception:
-                    pass
+                    refreshed['post_commit_analytics'] = False
         except Exception:
-            pass
+            refreshed['post_commit_analytics'] = False
         # invoke orchestration to process committed dataset (best-effort)
         processing_result = None
         try:
@@ -437,7 +447,7 @@ def commit_run(run_id: str):
             except Exception:
                 pass
 
-        resp_body = {'run_id': run_id, 'status': 'success', 'dataset_key': dataset_key, 'rows_in': rows_in, 'rows_loaded': rows_loaded}
+        resp_body = {'run_id': run_id, 'status': 'success', 'dataset_key': dataset_key, 'rows_in': rows_in, 'rows_loaded': rows_loaded, 'refreshed': refreshed}
         if processing_result is not None:
             resp_body['processing'] = processing_result.get('processing') if isinstance(processing_result, dict) else processing_result
         return JSONResponse(status_code=200, content=resp_body)
@@ -465,6 +475,18 @@ async def upload_datahub(
         # save file
         stored = _storage_path_for(file.filename)
         contents = await file.read()
+        # guard against SIM/demo content
+        if os.getenv('ALLOW_SIMULATION_IMPORTS') != '1':
+            sim_pat = __import__('re').compile(r"\bSIM_|\bsim-|\bdemo-|\bdemo_", __import__('re').IGNORECASE)
+            try:
+                s = contents.decode('utf-8', errors='ignore')
+            except Exception:
+                s = ''
+            if sim_pat.search(s):
+                cur = connect().cursor()
+                cur.execute('UPDATE import_run_v2 SET status=?, error_summary=? WHERE run_id=?', ('failed', 'rejected_sim_demo', run_id))
+                connect().commit()
+                return JSONResponse(status_code=400, content={'run_id': run_id, 'status': 'failed', 'error': 'Import rejected: contains simulation/demo markers'})
         with open(stored, 'wb') as fh:
             fh.write(contents)
 
@@ -485,13 +507,6 @@ async def upload_datahub(
             cur.execute('UPDATE import_run_v2 SET status=?, error_summary=? WHERE run_id=?', ('failed', f'parse_error: {str(e)}', run_id))
             conn.commit()
             return JSONResponse(status_code=400, content={'run_id': run_id, 'status': 'failed', 'error': str(e)})
-
-            # apply header alias mapping (may rename df columns for loaders)
-            try:
-                headers = list(headers)
-                headers = _apply_header_aliases(df, headers, hint_dataset_key)
-            except Exception:
-                pass
 
         # compute a small preview to return to the client
         preview_rows = []
@@ -562,6 +577,16 @@ async def upload_datahub(
             required = []
             optional = []
 
+        # Apply header alias mapping now that we know the dataset_key/entry.
+        try:
+            headers = list(headers)
+            try:
+                headers, aliases_applied = _apply_header_aliases(df, headers, dataset_key)
+            except Exception:
+                aliases_applied = {}
+        except Exception:
+            aliases_applied = {}
+
         errors = validate_mod.validate_headers(headers, required, optional)
         if errors:
             for e in errors:
@@ -596,11 +621,11 @@ async def upload_datahub(
                 else:
                     cur.execute('UPDATE import_run_v2 SET status=?, error_summary=?, rows_in=? WHERE run_id=?', ('failed', 'missing required columns', len(df.index) if hasattr(df, 'index') else 0, run_id))
                     conn.commit()
-                    return JSONResponse(status_code=400, content={'run_id': run_id, 'status': 'failed', 'errors': errors})
+                    return JSONResponse(status_code=400, content={'run_id': run_id, 'status': 'failed', 'errors': errors, 'required_columns': required})
             except Exception:
                 cur.execute('UPDATE import_run_v2 SET status=?, error_summary=?, rows_in=? WHERE run_id=?', ('failed', 'missing required columns', len(df.index) if hasattr(df, 'index') else 0, run_id))
                 conn.commit()
-                return JSONResponse(status_code=400, content={'run_id': run_id, 'status': 'failed', 'errors': errors})
+                return JSONResponse(status_code=400, content={'run_id': run_id, 'status': 'failed', 'errors': errors, 'required_columns': required})
 
             # If required columns are satisfied only after aliasing, that will be reflected in headers/df
             headers = [h for h in headers]
@@ -619,7 +644,16 @@ async def upload_datahub(
                     conn.rollback()
                 except Exception:
                     pass
-            return JSONResponse(status_code=200, content={'run_id': run_id, 'status': 'validated', 'dataset_key': dataset_key, 'detected_confidence': confidence, 'rows_in': rows_in, 'rows_loaded': 0, 'preview_rows': preview_rows})
+            # recompute preview rows from possibly aliased DataFrame so keys match normalized headers
+            try:
+                preview_rows = df.head(5).fillna('').to_dict(orient='records')
+            except Exception:
+                pass
+            try:
+                normalized_headers = list(df.columns)
+            except Exception:
+                normalized_headers = headers
+            return JSONResponse(status_code=200, content={'run_id': run_id, 'status': 'validated', 'dataset_key': dataset_key, 'detected_confidence': confidence, 'rows_in': rows_in, 'rows_loaded': 0, 'preview_rows': preview_rows, 'headers': normalized_headers, 'normalized_headers': normalized_headers, 'aliases_applied': aliases_applied})
 
         # load into canonical table using loader map
         ctx = {'dataset_key': dataset_key, 'source_system': entry.get('source_system'), 'unit_rsid': scope_unit_rsid, 'scope_fy': scope_fy, 'scope_qtr': scope_qtr, 'scope_rsm_month': scope_rsm_month}
@@ -708,6 +742,15 @@ async def preview_datahub(file: UploadFile = File(...), hint_dataset_key: Option
     """Parse an uploaded file and return sheet names, detected headers and first 5 rows for preview without persisting."""
     stored = _storage_path_for(file.filename)
     contents = await file.read()
+    # guard against SIM/demo content
+    if os.getenv('ALLOW_SIMULATION_IMPORTS') != '1':
+        sim_pat = __import__('re').compile(r"\bSIM_|\bsim-|\bdemo-|\bdemo_", __import__('re').IGNORECASE)
+        try:
+            s = contents.decode('utf-8', errors='ignore')
+        except Exception:
+            s = ''
+        if sim_pat.search(s):
+            return JSONResponse(status_code=400, content={'error': 'Import rejected: contains simulation/demo markers'})
     with open(stored, 'wb') as fh:
         fh.write(contents)
     try:
@@ -742,4 +785,36 @@ async def preview_datahub(file: UploadFile = File(...), hint_dataset_key: Option
         # If any error evaluating confidence happens, fall through to normal preview
         pass
 
-    return {'filename': file.filename, 'sheets': sheet_names, 'headers': headers, 'preview': preview_rows, 'detected_dataset_key': dataset_key, 'confidence': confidence}
+    # Apply header alias mapping so preview mirrors canonicalized headers used during upload/commit
+    aliases_applied = {}
+    try:
+        try:
+            headers, aliases_applied = _apply_header_aliases(df, headers, dataset_key)
+        except Exception:
+            aliases_applied = {}
+    except Exception:
+        aliases_applied = {}
+
+    # Recompute preview rows from the (potentially renamed) DataFrame so keys match normalized headers
+    try:
+        preview_rows = df.head(5).fillna('').to_dict(orient='records')
+    except Exception:
+        preview_rows = preview_rows
+
+    # Ensure headers reflect DataFrame columns
+    try:
+        headers = list(df.columns)
+    except Exception:
+        headers = headers
+
+    return {
+        'filename': file.filename,
+        'sheets': sheet_names,
+        'headers': headers,
+        'normalized_headers': headers,
+        'aliases_applied': aliases_applied,
+        'preview_rows': preview_rows,
+        'preview': preview_rows,
+        'detected_dataset_key': dataset_key,
+        'confidence': confidence
+    }

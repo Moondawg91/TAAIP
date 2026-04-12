@@ -1,0 +1,10 @@
+{
+  "status": 200,
+  "url": "http://127.0.0.1:8001/api/import/validate?unit_rsid=USAREC&echelon=CMD&fy=2026&qtr=3&qtr_num=3&rsm_month=2026-04&month=4",
+  "body": {
+    "status": "ok",
+    "import_job_id": "fcb9e0b7b05a4401918ee94bae939bb0",
+    "error_count": 0,
+    "sample_errors": []
+  }
+}

@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Request
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 from ..db import connect
 from ..utils.rollup_utils import apply_common_filters, build_empty_rollup_contract, safe_table_exists
 from datetime import datetime
@@ -222,6 +222,29 @@ def marketing_dashboard_alias(request: Request):
 @router.get('/funnel/dashboard')
 def funnel_dashboard_alias(request: Request):
     return funnel_dashboard(request)
+
+
+@router.get('/v2/funnel/metrics')
+def funnel_metrics(fy: Optional[int] = None, qtr: Optional[int] = None, scope_type: Optional[str] = None, scope_value: Optional[str] = None, station_rsid: Optional[str] = None):
+    # Compatibility alias for older clients expecting /api/v2/funnel/metrics
+    # Build a minimal request-like object with query_params to reuse existing funnel_dashboard
+    params = {}
+    if fy is not None:
+        params['fy'] = str(fy)
+    if qtr is not None:
+        params['qtr'] = str(qtr)
+    if scope_type is not None:
+        params['scope_type'] = scope_type
+    if scope_value is not None:
+        params['scope_value'] = scope_value
+    if station_rsid is not None:
+        params['station_rsid'] = station_rsid
+
+    class _Req:
+        def __init__(self, qp):
+            self.query_params = qp
+
+    return funnel_dashboard(_Req(params))
 
 
 @router.get('/command/mission-assessment')

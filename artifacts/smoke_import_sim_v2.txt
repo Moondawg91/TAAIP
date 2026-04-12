@@ -1,0 +1,1 @@
+{"detail":"Import rejected: contains simulation/demo markers. Set ALLOW_SIMULATION_IMPORTS=1 to override."}

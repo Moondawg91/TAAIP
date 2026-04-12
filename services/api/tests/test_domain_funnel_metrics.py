@@ -12,7 +12,7 @@ def setup_module(module):
     Base.metadata.create_all(bind=engine)
     import os
     from services.api.app.db import init_db
-    os.environ['TAAIP_DB_PATH'] = './taaip_dev.db'
+    os.environ.setdefault('TAAIP_DB_PATH', './taaip_dev.db')
     init_db()
     from services.api.app.db import init_db
     init_db()
@@ -23,10 +23,16 @@ def teardown_module(module):
 
 
 def create_org(db):
-    cmd = models.Command(command='CMD1', display='CMD1')
-    db.add(cmd); db.commit()
-    bde = models.Brigade(brigade_prefix='1', display='B1', command_id=cmd.id)
-    db.add(bde); db.commit()
+    # idempotent creation: avoid duplicate Command inserts
+    cmd = db.query(models.Command).filter_by(command='CMD1').first()
+    if not cmd:
+        cmd = models.Command(command='CMD1', display='CMD1')
+        db.add(cmd); db.commit()
+    # idempotent brigade creation to avoid UNIQUE constraint failures
+    bde = db.query(models.Brigade).filter_by(brigade_prefix='1', command_id=cmd.id).first()
+    if not bde:
+        bde = models.Brigade(brigade_prefix='1', display='B1', command_id=cmd.id)
+        db.add(bde); db.commit()
     bn = models.Battalion(battalion_prefix='1A', display='Bn1A', brigade_id=bde.id)
     db.add(bn); db.commit()
     co = models.Company(company_prefix='1A1', display='Co', battalion_id=bn.id)

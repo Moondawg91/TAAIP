@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import os, json, datetime
-os.environ['TAAIP_DB_PATH'] = os.getenv('TAAIP_DB_PATH', './taaip_dev.db')
+os.environ.setdefault('TAAIP_DB_PATH', './taaip_dev.db')
 from services.api.app import db
 from services.api.app.routers import maintenance
 from pprint import pprint

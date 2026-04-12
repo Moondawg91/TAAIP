@@ -8,6 +8,8 @@ from datetime import datetime
 import json, uuid
 
 from ..db import connect
+from . import lead_line as lead_line_mod
+from datetime import date
 
 
 def _now_iso():
@@ -43,9 +45,41 @@ def _compute_mission_pressure(cur, unit_rsid: Optional[str]) -> Dict[str, Any]:
         if not r:
             return {'score': 0.0, 'source': None}
         run_id, ur, total, created_at = r[0], r[1], r[2], r[3]
-        # normalize: assume reasonable mission_total scale; use 100 as soft-cap
-        score = _norm_score(float(total or 0) / 100.0)
-        return {'score': score, 'source': {'run_id': run_id, 'mission_total': total, 'created_at': created_at}}
+        # compute actual YTD contracts from fact_lead_journey
+        try:
+            today = date.today()
+            start_of_year = date(today.year, 1, 1).isoformat()
+            params2 = [start_of_year]
+            q2 = "SELECT COUNT(*) as cnt FROM fact_lead_journey WHERE contract_flag=1 AND created_dt >= ?"
+            if unit_rsid:
+                q2 = "SELECT COUNT(*) as cnt FROM fact_lead_journey WHERE contract_flag=1 AND unit_rsid=? AND created_dt >= ?"
+                params2 = [unit_rsid, start_of_year]
+            cur.execute(q2, params2)
+            cnt_row = cur.fetchone()
+            actual_ytd = int(cnt_row[0]) if cnt_row and cnt_row[0] is not None else 0
+        except Exception:
+            actual_ytd = 0
+
+        # Use lead_line calculation to determine pacing/variance
+        try:
+            ll = lead_line_mod.calculate_lead_line(actual_ytd, int(total or 0))
+            variance = ll.get('variance')
+        except Exception:
+            ll = None
+            variance = 0.0
+
+        # Map variance -> mission pressure score: behind (negative variance) increases pressure
+        pressure_raw = 0.0
+        try:
+            if variance < 0:
+                pressure_raw = min(1.0, abs(variance) / max(1, int(total or 1)))
+            else:
+                pressure_raw = 0.0
+        except Exception:
+            pressure_raw = 0.0
+
+        score = _norm_score(pressure_raw, cap=1.0)
+        return {'score': score, 'source': {'run_id': run_id, 'mission_total': total, 'created_at': created_at, 'lead_line': ll}}
     except Exception:
         return {'score': 0.0, 'source': None}
 
@@ -176,6 +210,14 @@ def run_fusion(unit_rsid: Optional[str] = None, as_of_date: Optional[str] = None
             else:
                 rtype = 'shift_targeting'
                 text = f"Consider shifting targeting towards School {s.get('school_id')} in Unit {unit_rsid or 'UNASSIGNED'} (fusion_score={fusion_score:.2f})."
+
+            # Append lead-line status to explanation when available
+            try:
+                ll = mission.get('source', {}).get('lead_line') if mission and mission.get('source') else None
+                if ll:
+                    text = text + f" Lead-line status: {ll.get('status')} (var={ll.get('variance')})."
+            except Exception:
+                pass
 
             evidence = {'mission': mission.get('source'), 'market': market.get('source'), 'school': s}
 

@@ -1,0 +1,82 @@
+........................................................................ [ 72%]
+...........................                                              [100%]
+=============================== warnings summary ===============================
+services/api/app/schemas.py:5
+  /Users/ambermooney/Desktop/TAAIP/services/api/app/schemas.py:5: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class ZipCoverageItem(BaseModel):
+
+.venv/lib/python3.9/site-packages/pydantic/_internal/_config.py:383
+.venv/lib/python3.9/site-packages/pydantic/_internal/_config.py:383
+tests/contract/test_api_contract.py::test_openapi_paths_exist
+tests/contract/test_api_contract.py::test_openapi_paths_exist
+tests/contract/test_api_contract.py::test_openapi_paths_exist
+tests/contract/test_api_contract.py::test_openapi_paths_exist
+tests/contract/test_api_contract.py::test_openapi_paths_exist
+tests/contract/test_api_contract.py::test_openapi_paths_exist
+  /Users/ambermooney/Desktop/TAAIP/.venv/lib/python3.9/site-packages/pydantic/_internal/_config.py:383: UserWarning: Valid config keys have changed in V2:
+  * 'orm_mode' has been renamed to 'from_attributes'
+    warnings.warn(message, UserWarning)
+
+services/api/app/schemas_domain.py:22
+  /Users/ambermooney/Desktop/TAAIP/services/api/app/schemas_domain.py:22: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class EventOut(BaseModel):
+
+services/api/app/main.py:411
+services/api/tests/test_documents_api.py::test_upload_list_download_roundtrip
+  /Users/ambermooney/Desktop/TAAIP/services/api/app/main.py:411: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    @app.on_event("startup")
+
+.venv/lib/python3.9/site-packages/fastapi/applications.py:4579
+services/api/tests/test_documents_api.py::test_upload_list_download_roundtrip
+  /Users/ambermooney/Desktop/TAAIP/.venv/lib/python3.9/site-packages/fastapi/applications.py:4579: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    return self.router.on_event(event_type)
+
+.venv/lib/python3.9/site-packages/urllib3/__init__.py:35
+  /Users/ambermooney/Desktop/TAAIP/.venv/lib/python3.9/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+    warnings.warn(
+
+test_taaip_features.py::test_api_health
+  /Users/ambermooney/Desktop/TAAIP/.venv/lib/python3.9/site-packages/_pytest/python.py:198: PytestReturnNotNoneWarning: Expected None, but test_taaip_features.py::test_api_health returned True, which will be an error in a future version of pytest.  Did you mean to use `assert` instead of `return`?
+    warnings.warn(
+
+test_taaip_features.py::test_company_standings
+  /Users/ambermooney/Desktop/TAAIP/.venv/lib/python3.9/site-packages/_pytest/python.py:198: PytestReturnNotNoneWarning: Expected None, but test_taaip_features.py::test_company_standings returned False, which will be an error in a future version of pytest.  Did you mean to use `assert` instead of `return`?
+    warnings.warn(
+
+test_taaip_features.py::test_user_access
+  /Users/ambermooney/Desktop/TAAIP/.venv/lib/python3.9/site-packages/_pytest/python.py:198: PytestReturnNotNoneWarning: Expected None, but test_taaip_features.py::test_user_access returned False, which will be an error in a future version of pytest.  Did you mean to use `assert` instead of `return`?
+    warnings.warn(
+
+test_taaip_features.py::test_helpdesk_submission
+  /Users/ambermooney/Desktop/TAAIP/.venv/lib/python3.9/site-packages/_pytest/python.py:198: PytestReturnNotNoneWarning: Expected None, but test_taaip_features.py::test_helpdesk_submission returned False, which will be an error in a future version of pytest.  Did you mean to use `assert` instead of `return`?
+    warnings.warn(
+
+test_taaip_features.py::test_helpdesk_retrieval
+  /Users/ambermooney/Desktop/TAAIP/.venv/lib/python3.9/site-packages/_pytest/python.py:198: PytestReturnNotNoneWarning: Expected None, but test_taaip_features.py::test_helpdesk_retrieval returned False, which will be an error in a future version of pytest.  Did you mean to use `assert` instead of `return`?
+    warnings.warn(
+
+test_taaip_features.py::test_standings_update
+  /Users/ambermooney/Desktop/TAAIP/.venv/lib/python3.9/site-packages/_pytest/python.py:198: PytestReturnNotNoneWarning: Expected None, but test_taaip_features.py::test_standings_update returned False, which will be an error in a future version of pytest.  Did you mean to use `assert` instead of `return`?
+    warnings.warn(
+
+test_taaip_features.py::test_brigade_filtering
+  /Users/ambermooney/Desktop/TAAIP/.venv/lib/python3.9/site-packages/_pytest/python.py:198: PytestReturnNotNoneWarning: Expected None, but test_taaip_features.py::test_brigade_filtering returned False, which will be an error in a future version of pytest.  Did you mean to use `assert` instead of `return`?
+    warnings.warn(
+
+services/api/tests/test_domain_burden_ratio.py::test_burden_input_and_latest
+services/api/tests/test_domain_funnel_metrics.py::test_funnel_stages_and_transition
+  /Users/ambermooney/Desktop/TAAIP/services/api/tests/conftest.py:392: SAWarning: transaction already deassociated from connection
+    trans.rollback()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+99 passed, 2 skipped, 24 warnings in 21.73s

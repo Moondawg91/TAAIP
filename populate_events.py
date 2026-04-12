@@ -6,6 +6,7 @@ Safe to run multiple times (uses INSERT OR IGNORE by event_id).
 
 import sqlite3
 import uuid
+import os
 from datetime import datetime, timedelta
 
 DB_FILE = 'recruiting.db'
@@ -17,6 +18,11 @@ def column_exists(cursor, table: str, column: str) -> bool:
 
 
 def seed_events():
+    # Safety: require explicit opt-in to run event seeding in non-dev environments
+    if os.getenv('ALLOW_SIMULATION') != '1':
+        print('Event seeding disabled: set ALLOW_SIMULATION=1 to enable')
+        return
+
     conn = sqlite3.connect(DB_FILE)
     cursor = conn.cursor()
     conn.row_factory = sqlite3.Row

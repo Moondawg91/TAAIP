@@ -428,6 +428,20 @@ def import_upload(
     df = df.dropna(how="all")
     df.columns = [str(c).strip() for c in df.columns]
 
+    # Hardening: reject imports that contain simulation/demo markers unless explicitly allowed
+    if os.getenv('ALLOW_SIMULATION_IMPORTS') != '1':
+        sim_pat = re.compile(r'(?i)\bSIM_|\bsim-|\bdemo-|\bdemo_')
+        try:
+            for v in df.fillna('').astype(str).values.flatten():
+                if isinstance(v, str) and sim_pat.search(v):
+                    raise HTTPException(status_code=400, detail="Import rejected: contains simulation/demo markers. Set ALLOW_SIMULATION_IMPORTS=1 to override.")
+        except HTTPException:
+            # surface the HTTP error to caller
+            raise
+        except Exception:
+            # if df inspection fails, be conservative and reject if we cannot validate
+            raise HTTPException(status_code=400, detail="Import validation failed; refused to process file")
+
     canonical_cols, orig_map = canonicalize_columns(list(df.columns))
     profile, score = classify_profile(set(canonical_cols))
 

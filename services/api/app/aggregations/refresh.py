@@ -168,6 +168,227 @@ def refresh_market_from_contracts(conn: sqlite3.Connection, batch_id: str = None
         return 0
 
 
+def refresh_market_zip_metrics(conn: sqlite3.Connection, unit_rsid: str = None):
+    """Derive market_zip_metrics from market_zip_fact as a best-effort local aggregator.
+
+    This populates a minimal set of columns required by zip-rankings and summary
+    endpoints. The function is deterministic and safe to call repeatedly.
+    Returns number of rows written to market_zip_metrics.
+    """
+    cur = conn.cursor()
+    try:
+        # create target table (schema aligned with db.py expectations)
+        cur.executescript('''
+        CREATE TABLE IF NOT EXISTS market_zip_metrics (
+            id TEXT PRIMARY KEY,
+            as_of_date TEXT,
+            component TEXT,
+            echelon_type TEXT,
+            unit_value TEXT,
+            station_rsid TEXT,
+            zip TEXT,
+            zip5 TEXT,
+            population INTEGER,
+            opportunity_score INTEGER,
+            zip_category TEXT,
+            cbsa_code TEXT,
+            dma_name TEXT,
+            army_potential INTEGER,
+            dod_potential INTEGER,
+            dod_wtd_avg INTEGER,
+            army_share_of_potential REAL,
+            contracts_ga INTEGER,
+            contracts_sa INTEGER,
+            contracts_vol INTEGER,
+            potential_remaining INTEGER,
+            p2p_band TEXT,
+            p2p_value REAL,
+            ingested_at TEXT NOT NULL
+        );
+        ''')
+    except Exception:
+        pass
+
+    # build where clause for unit scoping if provided
+    where_clause = ''
+    params = []
+    if unit_rsid:
+        where_clause = 'WHERE rsid_prefix LIKE ?'
+        params = [f"{unit_rsid}%"]
+
+    # read source rows
+    try:
+        cur.execute(f"SELECT * FROM market_zip_fact {where_clause}", params)
+    except Exception:
+        return 0
+
+    rows = cur.fetchall()
+    cols = [c[0] for c in cur.description] if cur.description else []
+
+    written = 0
+    import uuid
+    now_iso = datetime.utcnow().isoformat()
+
+    # ensure new columns exist on existing table (safe ALTER)
+    try:
+        cur.execute("PRAGMA table_info('market_zip_metrics')")
+        existing_cols = [r[1] for r in cur.fetchall()]
+    except Exception:
+        existing_cols = []
+    try:
+        if 'zip5' not in existing_cols:
+            cur.execute("ALTER TABLE market_zip_metrics ADD COLUMN zip5 TEXT")
+    except Exception:
+        pass
+    try:
+        if 'population' not in existing_cols:
+            cur.execute("ALTER TABLE market_zip_metrics ADD COLUMN population INTEGER")
+    except Exception:
+        pass
+    try:
+        if 'opportunity_score' not in existing_cols:
+            cur.execute("ALTER TABLE market_zip_metrics ADD COLUMN opportunity_score INTEGER")
+    except Exception:
+        pass
+
+    # clear scoped existing rows for idempotence
+    try:
+        if unit_rsid:
+            cur.execute("DELETE FROM market_zip_metrics WHERE unit_value LIKE ?", (f"{unit_rsid}%",))
+        else:
+            cur.execute("DELETE FROM market_zip_metrics")
+    except Exception:
+        pass
+
+    for r in rows:
+        try:
+            row = dict(zip(cols, r))
+        except Exception:
+            continue
+
+        try:
+            zip5 = row.get('zip5') or row.get('zip') or row.get('zip5')
+            if zip5:
+                zip5 = str(zip5)[:5]
+            # population heuristics
+            population = None
+            for k in ['fqma','population_17_24','youth_pop','population']:
+                if k in row and row.get(k) is not None:
+                    try:
+                        population = int(row.get(k))
+                        break
+                    except Exception:
+                        continue
+
+            potential_remaining = None
+            if 'potential_remaining' in row and row.get('potential_remaining') is not None:
+                try:
+                    potential_remaining = int(row.get('potential_remaining'))
+                except Exception:
+                    potential_remaining = None
+
+            army_share = None
+            for k in ['army_share','army_share_of_potential','army_share_weighted']:
+                if k in row and row.get(k) is not None:
+                    try:
+                        army_share = float(row.get(k))
+                        break
+                    except Exception:
+                        continue
+
+            # contracts total heuristic
+            contracts = None
+            if 'contracts' in row and row.get('contracts') is not None:
+                try:
+                    contracts = int(row.get('contracts'))
+                except Exception:
+                    contracts = None
+            else:
+                # sum components if present
+                try:
+                    ga = int(row.get('contracts_ga') or 0)
+                    sa = int(row.get('contracts_sa') or 0)
+                    vol = int(row.get('contracts_vol') or 0)
+                    contracts = ga + sa + vol
+                except Exception:
+                    contracts = None
+
+            # p2p value
+            p2p = None
+            for k in ['p2p','p2p_value']:
+                if k in row and row.get(k) is not None:
+                    try:
+                        p2p = float(row.get(k))
+                        break
+                    except Exception:
+                        continue
+
+            # army_potential heuristic: use army_accessions or army_potential or estimate
+            army_potential = None
+            for k in ['army_accessions','army_potential']:
+                if k in row and row.get(k) is not None:
+                    try:
+                        army_potential = int(row.get(k))
+                        break
+                    except Exception:
+                        continue
+            if army_potential is None and population is not None and army_share is not None:
+                try:
+                    army_potential = int(population * float(army_share))
+                except Exception:
+                    army_potential = None
+
+            # p2p band
+            p2p_band = None
+            try:
+                if p2p is not None:
+                    if p2p < 0.05:
+                        p2p_band = 'low'
+                    elif p2p < 0.15:
+                        p2p_band = 'mid'
+                    else:
+                        p2p_band = 'high'
+            except Exception:
+                p2p_band = None
+
+            # opportunity score: primary potential_remaining else population*army_share
+            opportunity = 0
+            try:
+                if potential_remaining is not None:
+                    opportunity = int(potential_remaining)
+                elif population is not None and army_share is not None:
+                    opportunity = int(population * army_share)
+                elif population is not None:
+                    opportunity = int(population)
+            except Exception:
+                opportunity = 0
+
+            as_of = row.get('ingested_at') or row.get('created_at') or now_iso
+            station_rsid = row.get('rsid_prefix') or row.get('station_rsid') or None
+            cbsa = row.get('cbsa_code') or row.get('cbsa') or None
+            dma = row.get('dma_name') if 'dma_name' in row else None
+            zip_category = row.get('market_category') or row.get('zip_category') or 'SU'
+
+            mid = f"mzm_{uuid.uuid4().hex}"
+            cur.execute('''INSERT OR REPLACE INTO market_zip_metrics (id, as_of_date, component, echelon_type, unit_value, station_rsid, zip, zip5, population, opportunity_score, zip_category, cbsa_code, dma_name, army_potential, dod_potential, dod_wtd_avg, army_share_of_potential, contracts_ga, contracts_sa, contracts_vol, potential_remaining, p2p_band, p2p_value, ingested_at)
+                           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''', (
+                mid, as_of, None, None, station_rsid, station_rsid, zip5, zip5, population or 0, opportunity, zip_category, cbsa, dma, army_potential or 0, 0, None, army_share, int(contracts or 0), 0, 0, int(potential_remaining or 0), p2p_band, p2p, as_of
+            ))
+            written += 1
+        except Exception:
+            continue
+
+    try:
+        conn.commit()
+    except Exception:
+        try:
+            conn.rollback()
+        except Exception:
+            pass
+
+    return written
+
+
 def refresh_mission_from_category(conn: sqlite3.Connection, batch_id: str = None, unit_rsid: str = None):
     """Promote recent `fact_mission_category` rows into a mission_allocation run.
 

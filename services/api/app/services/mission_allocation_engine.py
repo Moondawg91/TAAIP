@@ -21,7 +21,11 @@ def create_run(unit_rsid: str, mission_total: int, notes: Optional[str] = None) 
             conn.rollback()
         except Exception:
             pass
-    return rid
+    try:
+        return rid
+    finally:
+        try: conn.close()
+        except Exception: pass
 
 
 def add_inputs(run_id: str, inputs: List[Dict[str, Any]]) -> int:
@@ -52,25 +56,37 @@ def add_inputs(run_id: str, inputs: List[Dict[str, Any]]) -> int:
             conn.rollback()
         except Exception:
             pass
-    return count
+    try:
+        return count
+    finally:
+        try: conn.close()
+        except Exception: pass
 
 
 def list_runs(unit_rsid: Optional[str] = None) -> List[Dict[str, Any]]:
     conn = connect(); cur = conn.cursor()
-    if unit_rsid:
-        cur.execute('SELECT * FROM mission_allocation_runs WHERE unit_rsid=? ORDER BY created_at DESC', (unit_rsid,))
-    else:
-        cur.execute('SELECT * FROM mission_allocation_runs ORDER BY created_at DESC')
-    return [row_to_dict(cur, r) for r in cur.fetchall()]
+    try:
+        if unit_rsid:
+            cur.execute('SELECT * FROM mission_allocation_runs WHERE unit_rsid=? ORDER BY created_at DESC', (unit_rsid,))
+        else:
+            cur.execute('SELECT * FROM mission_allocation_runs ORDER BY created_at DESC')
+        return [row_to_dict(cur, r) for r in cur.fetchall()]
+    finally:
+        try: conn.close()
+        except Exception: pass
 
 
 def get_run(run_id: str) -> Optional[Dict[str, Any]]:
     conn = connect(); cur = conn.cursor()
-    cur.execute('SELECT * FROM mission_allocation_runs WHERE run_id = ? LIMIT 1', (run_id,))
-    r = cur.fetchone()
-    if not r:
-        return None
-    return row_to_dict(cur, r)
+    try:
+        cur.execute('SELECT * FROM mission_allocation_runs WHERE run_id = ? LIMIT 1', (run_id,))
+        r = cur.fetchone()
+        if not r:
+            return None
+        return row_to_dict(cur, r)
+    finally:
+        try: conn.close()
+        except Exception: pass
 
 
 def save_decision(run_id: str, approved_allocation: Optional[int] = None, decision_status: Optional[str] = None, decision_notes: Optional[str] = None, approved_by: Optional[str] = None) -> bool:
@@ -87,6 +103,9 @@ def save_decision(run_id: str, approved_allocation: Optional[int] = None, decisi
         except Exception:
             pass
         return False
+    finally:
+        try: conn.close()
+        except Exception: pass
 
 
 def get_decision(run_id: str) -> Dict[str, Any]:
@@ -96,8 +115,12 @@ def get_decision(run_id: str) -> Dict[str, Any]:
 
 def get_inputs(run_id: str) -> List[Dict[str, Any]]:
     conn = connect(); cur = conn.cursor()
-    cur.execute('SELECT * FROM mission_allocation_inputs WHERE run_id = ? ORDER BY id', (run_id,))
-    return [row_to_dict(cur, r) for r in cur.fetchall()]
+    try:
+        cur.execute('SELECT * FROM mission_allocation_inputs WHERE run_id = ? ORDER BY id', (run_id,))
+        return [row_to_dict(cur, r) for r in cur.fetchall()]
+    finally:
+        try: conn.close()
+        except Exception: pass
 
 
 def compute_run(run_id: str) -> Tuple[bool, str]:
@@ -295,6 +318,9 @@ def compute_run(run_id: str) -> Tuple[bool, str]:
             conn.rollback()
         except Exception:
             pass
+    finally:
+        try: conn.close()
+        except Exception: pass
 
     return True, json.dumps({'results': recs})
 
@@ -310,6 +336,9 @@ def save_company_score(run_id: str, company_id: str, supportability: Optional[fl
             conn.rollback()
         except Exception:
             pass
+    finally:
+        try: conn.close()
+        except Exception: pass
 
 
 def save_recommendation(run_id: str, company_id: str, recommended_mission: Optional[int], rationale: Optional[str], confidence: Optional[float]):
@@ -323,6 +352,9 @@ def save_recommendation(run_id: str, company_id: str, recommended_mission: Optio
             conn.rollback()
         except Exception:
             pass
+    finally:
+        try: conn.close()
+        except Exception: pass
 
 
 def add_evidence(run_id: str, company_id: Optional[str], evidence_type: str, evidence_uri: Optional[str], description: Optional[str]):
@@ -336,3 +368,6 @@ def add_evidence(run_id: str, company_id: Optional[str], evidence_type: str, evi
             conn.rollback()
         except Exception:
             pass
+    finally:
+        try: conn.close()
+        except Exception: pass

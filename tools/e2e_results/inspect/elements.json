@@ -1,0 +1,44 @@
+[
+  {
+    "tag": "DIV",
+    "role": "combobox",
+    "ariaHasPopup": "listbox",
+    "outer": "<div tabindex=\"0\" role=\"combobox\" aria-controls=\":rd:\" aria-expanded=\"false\" aria-haspopup=\"listbox\" class=\"MuiSelect-select MuiSelect-outlined MuiInputBase-input MuiOutlinedInput-input MuiInputBase-inputSizeSmall css-ut5uq4-MuiSelect-select-MuiInputBase-input-MuiOutlinedInput-input\"><span class=\"notranslate\">​</span></div>"
+  },
+  {
+    "tag": "DIV",
+    "role": "combobox",
+    "ariaHasPopup": "listbox",
+    "outer": "<div role=\"combobox\" aria-controls=\":re:\" aria-disabled=\"true\" aria-expanded=\"false\" aria-haspopup=\"listbox\" class=\"MuiSelect-select MuiSelect-outlined Mui-disabled MuiInputBase-input MuiOutlinedInput-input Mui-disabled MuiInputBase-inputSizeSmall css-ut5uq4-MuiSelect-select-MuiInputBase-input-MuiOutlinedInput-input\"><span class=\"notranslate\">​</span></div>"
+  },
+  {
+    "tag": "DIV",
+    "role": "combobox",
+    "ariaHasPopup": "listbox",
+    "outer": "<div role=\"combobox\" aria-controls=\":rf:\" aria-disabled=\"true\" aria-expanded=\"false\" aria-haspopup=\"listbox\" class=\"MuiSelect-select MuiSelect-outlined Mui-disabled MuiInputBase-input MuiOutlinedInput-input Mui-disabled MuiInputBase-inputSizeSmall css-ut5uq4-MuiSelect-select-MuiInputBase-input-MuiOutlinedInput-input\"><span class=\"notranslate\">​</span></div>"
+  },
+  {
+    "tag": "DIV",
+    "role": "combobox",
+    "ariaHasPopup": "listbox",
+    "outer": "<div role=\"combobox\" aria-controls=\":rg:\" aria-disabled=\"true\" aria-expanded=\"false\" aria-haspopup=\"listbox\" class=\"MuiSelect-select MuiSelect-outlined Mui-disabled MuiInputBase-input MuiOutlinedInput-input Mui-disabled MuiInputBase-inputSizeSmall css-ut5uq4-MuiSelect-select-MuiInputBase-input-MuiOutlinedInput-input\"><span class=\"notranslate\">​</span></div>"
+  },
+  {
+    "tag": "DIV",
+    "role": "combobox",
+    "ariaHasPopup": "listbox",
+    "outer": "<div tabindex=\"0\" role=\"combobox\" aria-controls=\":rh:\" aria-expanded=\"false\" aria-haspopup=\"listbox\" class=\"MuiSelect-select MuiSelect-outlined MuiInputBase-input MuiOutlinedInput-input MuiInputBase-inputSizeSmall css-ut5uq4-MuiSelect-select-MuiInputBase-input-MuiOutlinedInput-input\">2026</div>"
+  },
+  {
+    "tag": "DIV",
+    "role": "combobox",
+    "ariaHasPopup": "listbox",
+    "outer": "<div tabindex=\"0\" role=\"combobox\" aria-controls=\":ri:\" aria-expanded=\"false\" aria-haspopup=\"listbox\" class=\"MuiSelect-select MuiSelect-outlined MuiInputBase-input MuiOutlinedInput-input MuiInputBase-inputSizeSmall css-ut5uq4-MuiSelect-select-MuiInputBase-input-MuiOutlinedInput-input\">Q3</div>"
+  },
+  {
+    "tag": "DIV",
+    "role": "combobox",
+    "ariaHasPopup": "listbox",
+    "outer": "<div tabindex=\"0\" role=\"combobox\" aria-controls=\":rj:\" aria-expanded=\"false\" aria-haspopup=\"listbox\" class=\"MuiSelect-select MuiSelect-outlined MuiInputBase-input MuiOutlinedInput-input MuiInputBase-inputSizeSmall css-ut5uq4-MuiSelect-select-MuiInputBase-input-MuiOutlinedInput-input\">2026-04</div>"
+  }
+]

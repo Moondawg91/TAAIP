@@ -1,0 +1,26 @@
+[
+  {
+    "url": "https://taaip.app/projects",
+    "status": 200,
+    "contentType": "text/html",
+    "bodySnippet": ""
+  },
+  {
+    "url": "https://taaip.app/assets/index-ceUyExNy.css",
+    "status": 200,
+    "contentType": "text/css",
+    "bodySnippet": ""
+  },
+  {
+    "url": "https://taaip.app/assets/index-gUAnDrob.js",
+    "status": 200,
+    "contentType": "application/javascript",
+    "bodySnippet": ""
+  },
+  {
+    "url": "https://taaip.app/vite.svg",
+    "status": 404,
+    "contentType": "text/html",
+    "bodySnippet": ""
+  }
+]

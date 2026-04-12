@@ -1,0 +1,22 @@
+[
+  {
+    "text": "All",
+    "value": null,
+    "role": "option"
+  },
+  {
+    "text": "1st Battalion",
+    "value": "1BN",
+    "role": "option"
+  },
+  {
+    "text": "2nd Battalion",
+    "value": "2BN",
+    "role": "option"
+  },
+  {
+    "text": "3rd Battalion",
+    "value": "3BN",
+    "role": "option"
+  }
+]

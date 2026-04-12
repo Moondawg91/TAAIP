@@ -1,0 +1,8 @@
+{
+  "status": 200,
+  "url": "http://127.0.0.1:8000/api/import/upload",
+  "body": {
+    "import_job_id": "c248eeb829304603ba366450ea1cab30",
+    "legacy_job_id": 96
+  }
+}

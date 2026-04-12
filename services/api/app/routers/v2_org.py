@@ -3,6 +3,8 @@ from typing import Optional
 from fastapi import APIRouter, HTTPException, Depends
 from ..db import connect
 from .. import org_utils
+# fallback static hierarchy when DB lacks full USAREC entries
+from database import rsid_hierarchy
 from .rbac import require_perm
 
 router = APIRouter(prefix="/v2/org", tags=["v2_org"])
@@ -34,11 +36,99 @@ def node(unit_rsid: str = 'USAREC', user: dict = Depends(require_perm('dashboard
 
 
 @router.get('/children')
-def children(unit_rsid: str = 'USAREC', user: dict = Depends(require_perm('dashboards.view'))):
+def children(unit_rsid: str = 'USAREC', parent_rsid: Optional[str] = None, echelon: Optional[str] = None, user: dict = Depends(require_perm('dashboards.view'))):
     conn = connect()
     try:
-        kids = org_utils.get_children(conn, unit_rsid)
-        return {'unit_rsid': unit_rsid, 'children': kids}
+        # accept either `unit_rsid` (legacy) or `parent_rsid` (frontend callers)
+        rsid = parent_rsid or unit_rsid or 'USAREC'
+        kids = org_utils.get_children(conn, rsid)
+        # apply echelon filter if provided
+        try:
+            if echelon and kids:
+                kids = [k for k in (kids or []) if (str(k.get('echelon') or k.get('type') or '').upper() == str(echelon).upper())]
+        except Exception:
+            pass
+        # normalize child objects to include a `display_name` field used by older frontends
+        try:
+            norm = []
+            for k in (kids or []):
+                dk = dict(k)
+                dk['display_name'] = dk.get('display_name') or dk.get('unit_name') or dk.get('name') or dk.get('rsid') or dk.get('unit_key')
+                norm.append(dk)
+            kids = norm
+        except Exception:
+            pass
+        # If DB has no children for this node, provide a static fallback
+        if not kids:
+            try:
+                # use the resolved rsid (may be from parent_rsid or unit_rsid)
+                resolved = str(rsid)
+                # helper: if a battalion id (e.g., '1BN') is supplied, resolve its brigade
+                def _find_brigade_for_battalion(bn_id):
+                    try:
+                        for bkey, bdata in rsid_hierarchy.USAREC_HIERARCHY['USAREC']['brigades'].items():
+                            if isinstance(bdata.get('battalions'), dict) and bn_id in bdata.get('battalions'):
+                                return bkey
+                    except Exception:
+                        pass
+                    return None
+                # if resolved looks like a battalion id, map to brigade-bn
+                if resolved.endswith('BN'):
+                    br_for_bn = _find_brigade_for_battalion(resolved)
+                    if br_for_bn:
+                        resolved = f"{br_for_bn}-{resolved}"
+                # Top-level USAREC -> brigades
+                if (not echelon and resolved.upper() == 'USAREC') or (echelon and str(echelon).upper() == 'BDE' and resolved.upper() == 'USAREC'):
+                    brs = rsid_hierarchy.get_all_brigades()
+                    kids = [ { 'unit_rsid': b, 'unit_name': rsid_hierarchy.USAREC_HIERARCHY['USAREC']['brigades'][b]['name'], 'display_name': rsid_hierarchy.USAREC_HIERARCHY['USAREC']['brigades'][b]['name'], 'echelon': 'BDE' } for b in brs ]
+                else:
+                    parts = resolved.split('-')
+                    # brigade -> battalions
+                    if (not echelon and len(parts) == 1) or (echelon and str(echelon).upper() == 'BN' and len(parts) == 1):
+                        bds = rsid_hierarchy.get_battalions_for_brigade(resolved)
+                        kids = [ { 'unit_rsid': bn, 'unit_name': rsid_hierarchy.USAREC_HIERARCHY['USAREC']['brigades'].get(resolved, {}).get('battalions', {}).get(bn, {}).get('name') or bn, 'display_name': rsid_hierarchy.USAREC_HIERARCHY['USAREC']['brigades'].get(resolved, {}).get('battalions', {}).get(bn, {}).get('name') or bn, 'echelon': 'BN' } for bn in bds ]
+                    # battalion -> companies (synthesized) OR battalion -> stations when asked for STN
+                    elif len(parts) == 2:
+                        brigade = parts[0]
+                        bn = parts[1]
+                        # if caller requested CO, synthesize a single 'All Companies' CO
+                        if echelon and str(echelon).upper() == 'CO':
+                            kids = [ { 'unit_rsid': f"{brigade}-{bn}-CO", 'unit_name': 'All Companies', 'display_name': 'All Companies', 'echelon': 'CO' } ]
+                        else:
+                            # return stations for the battalion
+                            sts = rsid_hierarchy.get_stations_for_battalion(brigade, bn)
+                            kids = [ { 'unit_rsid': f"{brigade}-{bn}-{s}", 'unit_name': f"Station {s}", 'display_name': f"Station {s}", 'echelon': 'STN' } for s in sts ]
+                    # synthetic CO node -> stations
+                    elif len(parts) >= 3 and str(parts[2]).upper().startswith('CO'):
+                        brigade = parts[0]
+                        bn = parts[1]
+                        sts = rsid_hierarchy.get_stations_for_battalion(brigade, bn)
+                        kids = [ { 'unit_rsid': f"{brigade}-{bn}-{s}", 'unit_name': f"Station {s}", 'display_name': f"Station {s}", 'echelon': 'STN' } for s in sts ]
+            except Exception:
+                # keep kids as empty list on any error
+                kids = kids or []
+        # normalize children to include `rsid`, `display_name`, and `echelon` keys expected by frontend
+        try:
+            norm = []
+            for k in (kids or []):
+                dk = dict(k)
+                # ensure rsid exists for frontend components
+                dk['rsid'] = dk.get('rsid') or dk.get('unit_rsid') or dk.get('unit_key') or dk.get('unitKey')
+                dk['display_name'] = dk.get('display_name') or dk.get('unit_name') or dk.get('name') or dk.get('rsid')
+                dk['echelon'] = dk.get('echelon') or dk.get('type') or dk.get('echelon_type')
+                norm.append(dk)
+            kids = norm
+        except Exception:
+            pass
+
+        # finally, if an echelon was requested, try to ensure returned items match that echelon
+        try:
+            if echelon:
+                kids = [k for k in (kids or []) if (not k.get('echelon')) or (str(k.get('echelon')).upper() == str(echelon).upper())]
+        except Exception:
+            pass
+
+        return {'unit_rsid': rsid, 'children': kids}
     finally:
         conn.close()
 
@@ -255,3 +345,60 @@ def selection_default():
             return { 'ok': True, 'data': { 'rsid': node.get('rsid'), 'display_name': node.get('display_name'), 'echelon': node.get('echelon') } }
     finally:
         conn.close()
+
+
+@router.get('/root')
+def root_compat():
+    """Compatibility endpoint for older UI expecting `/api/v2/org/root`.
+
+    Returns: { brigades: [...] } or minimal shape the frontend expects.
+    """
+    try:
+        r = roots() or {}
+        # roots() returns { 'status':'ok', 'roots': [...] }
+        items = r.get('roots') if isinstance(r, dict) and 'roots' in r else (r if isinstance(r, list) else [])
+        # if DB returned no roots, provide static USAREC brigade list
+        if not items:
+            try:
+                brs = rsid_hierarchy.get_all_brigades()
+                items = [ { 'rsid': b, 'unit_key': b, 'display_name': rsid_hierarchy.USAREC_HIERARCHY['USAREC']['brigades'][b]['name'], 'echelon': 'BDE' } for b in brs ]
+            except Exception:
+                items = []
+        return { 'brigades': items }
+    except Exception:
+        return { 'brigades': [] }
+
+
+@router.get('/units')
+def units_compat(parent_key: str = None, echelon: str = None):
+    """Compatibility endpoint for `/api/v2/org/units?parent_key=...&echelon=...` used by the UI.
+
+    Returns: { units: [...] }
+    """
+    try:
+        # prefer children() which returns {'unit_rsid':..., 'children': [...]}
+        pk = parent_key or None
+        if not pk:
+            # no parent specified: return top-level roots as units
+            r = roots() or {}
+            items = r.get('roots') if isinstance(r, dict) and 'roots' in r else (r if isinstance(r, list) else [])
+            return { 'units': items }
+        else:
+            resp = children(unit_rsid=pk)
+            kids = resp.get('children') if isinstance(resp, dict) and 'children' in resp else (resp or [])
+            # apply echelon filter if provided
+            if echelon:
+                kids = [k for k in kids if (k.get('echelon') or '').upper() == str(echelon).upper()]
+            # normalize to units array with rsid/unit_key/display_name fields
+            out = []
+            for k in kids:
+                item = {}
+                # prefer unit_key/display_name fields if present
+                item['rsid'] = k.get('rsid') or k.get('unit_rsid')
+                item['unit_key'] = item['rsid']
+                item['display_name'] = k.get('display_name') or k.get('unit_name') or k.get('name') or item['rsid']
+                item['echelon'] = k.get('echelon') or k.get('type')
+                out.append(item)
+            return { 'units': out }
+    except Exception:
+        return { 'units': [] }

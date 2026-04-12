@@ -105,6 +105,25 @@ def market_intel_summary(year: Optional[int] = Query(None), rsid_prefix: Optiona
         contract['detected_tables'] = detected
     except Exception:
         contract['detected_tables'] = {}
+
+    # Derive simple totals from market_zip_metrics when present to provide usable local KPIs
+    try:
+        if safe_table_exists(conn, 'market_zip_metrics') and _table_has_rows(conn, 'market_zip_metrics'):
+            try:
+                cur.execute('SELECT COALESCE(SUM(potential_remaining),0), COALESCE(SUM(contracts_vol),0), COALESCE(AVG(p2p_value),0), COUNT(DISTINCT zip5) FROM market_zip_metrics')
+                r = cur.fetchone()
+                if r:
+                    contract['kpis']['potential_remaining_total'] = int(r[0] or 0)
+                    contract['kpis']['contracts_total'] = int(r[1] or 0)
+                    try:
+                        contract['kpis']['p2p_avg'] = float(r[2] or 0)
+                    except Exception:
+                        contract['kpis']['p2p_avg'] = 0
+                    contract['kpis']['zip_count'] = int(r[3] or 0)
+            except Exception:
+                pass
+    except Exception:
+        pass
     contract["status"] = "ok" if len(missing) == 0 else "partial"
     return contract
 
@@ -302,7 +321,8 @@ def zip_rankings(limit: int = Query(25), year: Optional[int] = Query(None)):
         return contract
 
     cur = conn.cursor()
-    q = f"SELECT zip5, population, opportunity_score FROM market_zip_metrics ORDER BY opportunity_score DESC LIMIT {int(limit)}"
+    # Deduplicate by zip5: pick aggregated/latest values per zip to avoid duplicates
+    q = f"SELECT zip5, MAX(population) as population, MAX(opportunity_score) as opportunity_score FROM market_zip_metrics GROUP BY zip5 ORDER BY opportunity_score DESC LIMIT {int(limit)}"
     try:
         cur.execute(q)
         rows = cur.fetchall()

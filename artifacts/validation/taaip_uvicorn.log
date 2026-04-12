@@ -1,0 +1,563 @@
+INFO:     Will watch for changes in these directories: ['/Users/ambermooney/Desktop/TAAIP']
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [76691] using WatchFiles
+INFO:     LOCAL_DEV_AUTH_BYPASS=1
+WARNING:root:LOCAL_DEV_AUTH_BYPASS enabled: JWT validation will be bypassed for local development
+WARNING:root:TAAIP_MASTER_MODE enabled: granting master permissions to local user
+INFO:     TAAIP_DB_PATH not set; defaulting to /Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+INFO:     Mounted frontend static assets at /Users/ambermooney/Desktop/TAAIP/apps/web/build/static
+INFO:     Started server process [76759]
+INFO:     Waiting for application startup.
+INFO:     DB path: /Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+INFO:     TAAIP_BACKFILL_ON_STARTUP not enabled; skipping runtime backfills
+INFO:     Runtime migrations applied
+ERROR:seed_rbac:seed_rbac: error assigning baseline role to user 2
+Traceback (most recent call last):
+  File "/Users/ambermooney/Desktop/TAAIP/services/api/app/seed_rbac.py", line 320, in seed_rbac
+    cur.execute('INSERT OR IGNORE INTO user_role(user_id, role_key) VALUES (?,?)', (uid, baseline_role_id))
+sqlite3.IntegrityError: FOREIGN KEY constraint failed
+ERROR:seed_rbac:seed_rbac: error assigning baseline role to user 3
+Traceback (most recent call last):
+  File "/Users/ambermooney/Desktop/TAAIP/services/api/app/seed_rbac.py", line 320, in seed_rbac
+    cur.execute('INSERT OR IGNORE INTO user_role(user_id, role_key) VALUES (?,?)', (uid, baseline_role_id))
+sqlite3.IntegrityError: FOREIGN KEY constraint failed
+ERROR:seed_rbac:seed_rbac: error assigning baseline role to user 1
+Traceback (most recent call last):
+  File "/Users/ambermooney/Desktop/TAAIP/services/api/app/seed_rbac.py", line 320, in seed_rbac
+    cur.execute('INSERT OR IGNORE INTO user_role(user_id, role_key) VALUES (?,?)', (uid, baseline_role_id))
+sqlite3.IntegrityError: FOREIGN KEY constraint failed
+INFO:     RBAC seed applied
+INFO:     Export storage dir ensured: ./data/exports
+INFO:     Application startup complete.
+init_schema: requested_path=/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3, test_raw_conn_path=None
+connect: opened new sqlite3 conn for path=/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+INFO:     127.0.0.1:51293 - "GET /openapi.json HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+INFO:     127.0.0.1:51342 - "POST /api/v2/import/upload HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+INFO:     127.0.0.1:51343 - "POST /api/import/upload HTTP/1.1" 200 OK
+WARNING:  WatchFiles detected changes in 'backend/routers/imports_v2.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [76759]
+INFO:     LOCAL_DEV_AUTH_BYPASS=1
+WARNING:root:LOCAL_DEV_AUTH_BYPASS enabled: JWT validation will be bypassed for local development
+WARNING:root:TAAIP_MASTER_MODE enabled: granting master permissions to local user
+INFO:     TAAIP_DB_PATH not set; defaulting to /Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+INFO:     Mounted frontend static assets at /Users/ambermooney/Desktop/TAAIP/apps/web/build/static
+INFO:     Started server process [78311]
+INFO:     Waiting for application startup.
+INFO:     DB path: /Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+INFO:     TAAIP_BACKFILL_ON_STARTUP not enabled; skipping runtime backfills
+INFO:     Runtime migrations applied
+ERROR:seed_rbac:seed_rbac: error assigning baseline role to user 2
+Traceback (most recent call last):
+  File "/Users/ambermooney/Desktop/TAAIP/services/api/app/seed_rbac.py", line 320, in seed_rbac
+    cur.execute('INSERT OR IGNORE INTO user_role(user_id, role_key) VALUES (?,?)', (uid, baseline_role_id))
+sqlite3.IntegrityError: FOREIGN KEY constraint failed
+ERROR:seed_rbac:seed_rbac: error assigning baseline role to user 3
+Traceback (most recent call last):
+  File "/Users/ambermooney/Desktop/TAAIP/services/api/app/seed_rbac.py", line 320, in seed_rbac
+    cur.execute('INSERT OR IGNORE INTO user_role(user_id, role_key) VALUES (?,?)', (uid, baseline_role_id))
+sqlite3.IntegrityError: FOREIGN KEY constraint failed
+ERROR:seed_rbac:seed_rbac: error assigning baseline role to user 1
+Traceback (most recent call last):
+  File "/Users/ambermooney/Desktop/TAAIP/services/api/app/seed_rbac.py", line 320, in seed_rbac
+    cur.execute('INSERT OR IGNORE INTO user_role(user_id, role_key) VALUES (?,?)', (uid, baseline_role_id))
+sqlite3.IntegrityError: FOREIGN KEY constraint failed
+INFO:     RBAC seed applied
+INFO:     Export storage dir ensured: ./data/exports
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'services/api/app/routers/imports.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [78311]
+init_schema: requested_path=/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3, test_raw_conn_path=None
+connect: opened new sqlite3 conn for path=/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+INFO:     LOCAL_DEV_AUTH_BYPASS=1
+WARNING:root:LOCAL_DEV_AUTH_BYPASS enabled: JWT validation will be bypassed for local development
+WARNING:root:TAAIP_MASTER_MODE enabled: granting master permissions to local user
+INFO:     TAAIP_DB_PATH not set; defaulting to /Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+INFO:     Mounted frontend static assets at /Users/ambermooney/Desktop/TAAIP/apps/web/build/static
+INFO:     Started server process [82233]
+INFO:     Waiting for application startup.
+INFO:     DB path: /Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+INFO:     TAAIP_BACKFILL_ON_STARTUP not enabled; skipping runtime backfills
+INFO:     Runtime migrations applied
+ERROR:seed_rbac:seed_rbac: error assigning baseline role to user 2
+Traceback (most recent call last):
+  File "/Users/ambermooney/Desktop/TAAIP/services/api/app/seed_rbac.py", line 320, in seed_rbac
+    cur.execute('INSERT OR IGNORE INTO user_role(user_id, role_key) VALUES (?,?)', (uid, baseline_role_id))
+sqlite3.IntegrityError: FOREIGN KEY constraint failed
+ERROR:seed_rbac:seed_rbac: error assigning baseline role to user 3
+Traceback (most recent call last):
+  File "/Users/ambermooney/Desktop/TAAIP/services/api/app/seed_rbac.py", line 320, in seed_rbac
+    cur.execute('INSERT OR IGNORE INTO user_role(user_id, role_key) VALUES (?,?)', (uid, baseline_role_id))
+sqlite3.IntegrityError: FOREIGN KEY constraint failed
+ERROR:seed_rbac:seed_rbac: error assigning baseline role to user 1
+Traceback (most recent call last):
+  File "/Users/ambermooney/Desktop/TAAIP/services/api/app/seed_rbac.py", line 320, in seed_rbac
+    cur.execute('INSERT OR IGNORE INTO user_role(user_id, role_key) VALUES (?,?)', (uid, baseline_role_id))
+sqlite3.IntegrityError: FOREIGN KEY constraint failed
+INFO:     RBAC seed applied
+INFO:     Export storage dir ensured: ./data/exports
+INFO:     Application startup complete.
+init_schema: requested_path=/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3, test_raw_conn_path=None
+connect: opened new sqlite3 conn for path=/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+INFO:     127.0.0.1:51593 - "GET /openapi.json HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+INFO:     127.0.0.1:51594 - "POST /api/v2/import/upload HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+INFO:     127.0.0.1:51595 - "POST /api/import/upload HTTP/1.1" 400 Bad Request
+WARNING:  WatchFiles detected changes in 'services/api/app/routers/v2.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [82233]
+INFO:     LOCAL_DEV_AUTH_BYPASS=1
+WARNING:root:LOCAL_DEV_AUTH_BYPASS enabled: JWT validation will be bypassed for local development
+WARNING:root:TAAIP_MASTER_MODE enabled: granting master permissions to local user
+INFO:     TAAIP_DB_PATH not set; defaulting to /Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+INFO:     Mounted frontend static assets at /Users/ambermooney/Desktop/TAAIP/apps/web/build/static
+INFO:     Started server process [83008]
+INFO:     Waiting for application startup.
+INFO:     DB path: /Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+INFO:     TAAIP_BACKFILL_ON_STARTUP not enabled; skipping runtime backfills
+INFO:     Runtime migrations applied
+ERROR:seed_rbac:seed_rbac: error assigning baseline role to user 2
+Traceback (most recent call last):
+  File "/Users/ambermooney/Desktop/TAAIP/services/api/app/seed_rbac.py", line 320, in seed_rbac
+    cur.execute('INSERT OR IGNORE INTO user_role(user_id, role_key) VALUES (?,?)', (uid, baseline_role_id))
+sqlite3.IntegrityError: FOREIGN KEY constraint failed
+ERROR:seed_rbac:seed_rbac: error assigning baseline role to user 3
+Traceback (most recent call last):
+  File "/Users/ambermooney/Desktop/TAAIP/services/api/app/seed_rbac.py", line 320, in seed_rbac
+    cur.execute('INSERT OR IGNORE INTO user_role(user_id, role_key) VALUES (?,?)', (uid, baseline_role_id))
+sqlite3.IntegrityError: FOREIGN KEY constraint failed
+ERROR:seed_rbac:seed_rbac: error assigning baseline role to user 1
+Traceback (most recent call last):
+  File "/Users/ambermooney/Desktop/TAAIP/services/api/app/seed_rbac.py", line 320, in seed_rbac
+    cur.execute('INSERT OR IGNORE INTO user_role(user_id, role_key) VALUES (?,?)', (uid, baseline_role_id))
+sqlite3.IntegrityError: FOREIGN KEY constraint failed
+INFO:     RBAC seed applied
+INFO:     Export storage dir ensured: ./data/exports
+INFO:     Application startup complete.
+init_schema: requested_path=/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3, test_raw_conn_path=None
+connect: opened new sqlite3 conn for path=/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+INFO:     127.0.0.1:51603 - "GET /openapi.json HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+INFO:     127.0.0.1:51604 - "POST /api/v2/import/upload HTTP/1.1" 400 Bad Request
+connect: opened new sqlite3 conn for path=/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+INFO:     127.0.0.1:51605 - "POST /api/import/upload HTTP/1.1" 400 Bad Request
+connect: opened new sqlite3 conn for path=/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+INFO:     127.0.0.1:51662 - "POST /api/v2/import/upload HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+INFO:     127.0.0.1:51663 - "POST /api/import/upload HTTP/1.1" 200 OK
+WARNING:  WatchFiles detected changes in 'services/api/app/routers/imports.py', 'services/api/app/routers/v2.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [83008]
+INFO:     LOCAL_DEV_AUTH_BYPASS=1
+WARNING:root:LOCAL_DEV_AUTH_BYPASS enabled: JWT validation will be bypassed for local development
+WARNING:root:TAAIP_MASTER_MODE enabled: granting master permissions to local user
+INFO:     TAAIP_DB_PATH not set; defaulting to /Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+INFO:     Mounted frontend static assets at /Users/ambermooney/Desktop/TAAIP/apps/web/build/static
+INFO:     Started server process [86439]
+INFO:     Waiting for application startup.
+INFO:     DB path: /Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+INFO:     TAAIP_BACKFILL_ON_STARTUP not enabled; skipping runtime backfills
+INFO:     Runtime migrations applied
+ERROR:seed_rbac:seed_rbac: error assigning baseline role to user 2
+Traceback (most recent call last):
+  File "/Users/ambermooney/Desktop/TAAIP/services/api/app/seed_rbac.py", line 320, in seed_rbac
+    cur.execute('INSERT OR IGNORE INTO user_role(user_id, role_key) VALUES (?,?)', (uid, baseline_role_id))
+sqlite3.IntegrityError: FOREIGN KEY constraint failed
+ERROR:seed_rbac:seed_rbac: error assigning baseline role to user 3
+Traceback (most recent call last):
+  File "/Users/ambermooney/Desktop/TAAIP/services/api/app/seed_rbac.py", line 320, in seed_rbac
+    cur.execute('INSERT OR IGNORE INTO user_role(user_id, role_key) VALUES (?,?)', (uid, baseline_role_id))
+sqlite3.IntegrityError: FOREIGN KEY constraint failed
+ERROR:seed_rbac:seed_rbac: error assigning baseline role to user 1
+Traceback (most recent call last):
+  File "/Users/ambermooney/Desktop/TAAIP/services/api/app/seed_rbac.py", line 320, in seed_rbac
+    cur.execute('INSERT OR IGNORE INTO user_role(user_id, role_key) VALUES (?,?)', (uid, baseline_role_id))
+sqlite3.IntegrityError: FOREIGN KEY constraint failed
+INFO:     RBAC seed applied
+INFO:     Export storage dir ensured: ./data/exports
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'services/api/app/routers/datahub.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [86439]
+init_schema: requested_path=/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3, test_raw_conn_path=None
+connect: opened new sqlite3 conn for path=/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+INFO:     LOCAL_DEV_AUTH_BYPASS=1
+WARNING:root:LOCAL_DEV_AUTH_BYPASS enabled: JWT validation will be bypassed for local development
+WARNING:root:TAAIP_MASTER_MODE enabled: granting master permissions to local user
+INFO:     TAAIP_DB_PATH not set; defaulting to /Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+INFO:     Mounted frontend static assets at /Users/ambermooney/Desktop/TAAIP/apps/web/build/static
+INFO:     Started server process [87888]
+INFO:     Waiting for application startup.
+INFO:     DB path: /Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+INFO:     TAAIP_BACKFILL_ON_STARTUP not enabled; skipping runtime backfills
+INFO:     Runtime migrations applied
+ERROR:seed_rbac:seed_rbac: error assigning baseline role to user 2
+Traceback (most recent call last):
+  File "/Users/ambermooney/Desktop/TAAIP/services/api/app/seed_rbac.py", line 320, in seed_rbac
+    cur.execute('INSERT OR IGNORE INTO user_role(user_id, role_key) VALUES (?,?)', (uid, baseline_role_id))
+sqlite3.IntegrityError: FOREIGN KEY constraint failed
+ERROR:seed_rbac:seed_rbac: error assigning baseline role to user 3
+Traceback (most recent call last):
+  File "/Users/ambermooney/Desktop/TAAIP/services/api/app/seed_rbac.py", line 320, in seed_rbac
+    cur.execute('INSERT OR IGNORE INTO user_role(user_id, role_key) VALUES (?,?)', (uid, baseline_role_id))
+sqlite3.IntegrityError: FOREIGN KEY constraint failed
+ERROR:seed_rbac:seed_rbac: error assigning baseline role to user 1
+Traceback (most recent call last):
+  File "/Users/ambermooney/Desktop/TAAIP/services/api/app/seed_rbac.py", line 320, in seed_rbac
+    cur.execute('INSERT OR IGNORE INTO user_role(user_id, role_key) VALUES (?,?)', (uid, baseline_role_id))
+sqlite3.IntegrityError: FOREIGN KEY constraint failed
+INFO:     RBAC seed applied
+INFO:     Export storage dir ensured: ./data/exports
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'services/api/app/routers/uploads.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [87888]
+init_schema: requested_path=/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3, test_raw_conn_path=None
+connect: opened new sqlite3 conn for path=/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+INFO:     LOCAL_DEV_AUTH_BYPASS=1
+WARNING:root:LOCAL_DEV_AUTH_BYPASS enabled: JWT validation will be bypassed for local development
+WARNING:root:TAAIP_MASTER_MODE enabled: granting master permissions to local user
+INFO:     TAAIP_DB_PATH not set; defaulting to /Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+INFO:     Mounted frontend static assets at /Users/ambermooney/Desktop/TAAIP/apps/web/build/static
+INFO:     Started server process [87930]
+INFO:     Waiting for application startup.
+INFO:     DB path: /Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+INFO:     TAAIP_BACKFILL_ON_STARTUP not enabled; skipping runtime backfills
+INFO:     Runtime migrations applied
+ERROR:seed_rbac:seed_rbac: error assigning baseline role to user 2
+Traceback (most recent call last):
+  File "/Users/ambermooney/Desktop/TAAIP/services/api/app/seed_rbac.py", line 320, in seed_rbac
+    cur.execute('INSERT OR IGNORE INTO user_role(user_id, role_key) VALUES (?,?)', (uid, baseline_role_id))
+sqlite3.IntegrityError: FOREIGN KEY constraint failed
+ERROR:seed_rbac:seed_rbac: error assigning baseline role to user 3
+Traceback (most recent call last):
+  File "/Users/ambermooney/Desktop/TAAIP/services/api/app/seed_rbac.py", line 320, in seed_rbac
+    cur.execute('INSERT OR IGNORE INTO user_role(user_id, role_key) VALUES (?,?)', (uid, baseline_role_id))
+sqlite3.IntegrityError: FOREIGN KEY constraint failed
+ERROR:seed_rbac:seed_rbac: error assigning baseline role to user 1
+Traceback (most recent call last):
+  File "/Users/ambermooney/Desktop/TAAIP/services/api/app/seed_rbac.py", line 320, in seed_rbac
+    cur.execute('INSERT OR IGNORE INTO user_role(user_id, role_key) VALUES (?,?)', (uid, baseline_role_id))
+sqlite3.IntegrityError: FOREIGN KEY constraint failed
+INFO:     RBAC seed applied
+INFO:     Export storage dir ensured: ./data/exports
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'services/api/app/routers/imports_mi.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [87930]
+init_schema: requested_path=/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3, test_raw_conn_path=None
+connect: opened new sqlite3 conn for path=/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+INFO:     LOCAL_DEV_AUTH_BYPASS=1
+WARNING:root:LOCAL_DEV_AUTH_BYPASS enabled: JWT validation will be bypassed for local development
+WARNING:root:TAAIP_MASTER_MODE enabled: granting master permissions to local user
+INFO:     TAAIP_DB_PATH not set; defaulting to /Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+INFO:     Mounted frontend static assets at /Users/ambermooney/Desktop/TAAIP/apps/web/build/static
+INFO:     Started server process [87979]
+INFO:     Waiting for application startup.
+INFO:     DB path: /Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+INFO:     TAAIP_BACKFILL_ON_STARTUP not enabled; skipping runtime backfills
+INFO:     Runtime migrations applied
+ERROR:seed_rbac:seed_rbac: error assigning baseline role to user 2
+Traceback (most recent call last):
+  File "/Users/ambermooney/Desktop/TAAIP/services/api/app/seed_rbac.py", line 320, in seed_rbac
+    cur.execute('INSERT OR IGNORE INTO user_role(user_id, role_key) VALUES (?,?)', (uid, baseline_role_id))
+sqlite3.IntegrityError: FOREIGN KEY constraint failed
+ERROR:seed_rbac:seed_rbac: error assigning baseline role to user 3
+Traceback (most recent call last):
+  File "/Users/ambermooney/Desktop/TAAIP/services/api/app/seed_rbac.py", line 320, in seed_rbac
+    cur.execute('INSERT OR IGNORE INTO user_role(user_id, role_key) VALUES (?,?)', (uid, baseline_role_id))
+sqlite3.IntegrityError: FOREIGN KEY constraint failed
+ERROR:seed_rbac:seed_rbac: error assigning baseline role to user 1
+Traceback (most recent call last):
+  File "/Users/ambermooney/Desktop/TAAIP/services/api/app/seed_rbac.py", line 320, in seed_rbac
+    cur.execute('INSERT OR IGNORE INTO user_role(user_id, role_key) VALUES (?,?)', (uid, baseline_role_id))
+sqlite3.IntegrityError: FOREIGN KEY constraint failed
+INFO:     RBAC seed applied
+INFO:     Export storage dir ensured: ./data/exports
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'services/api/app/routers/imports_foundation.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [87979]
+init_schema: requested_path=/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3, test_raw_conn_path=None
+connect: opened new sqlite3 conn for path=/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+INFO:     LOCAL_DEV_AUTH_BYPASS=1
+WARNING:root:LOCAL_DEV_AUTH_BYPASS enabled: JWT validation will be bypassed for local development
+WARNING:root:TAAIP_MASTER_MODE enabled: granting master permissions to local user
+INFO:     TAAIP_DB_PATH not set; defaulting to /Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+INFO:     Mounted frontend static assets at /Users/ambermooney/Desktop/TAAIP/apps/web/build/static
+INFO:     Started server process [88027]
+INFO:     Waiting for application startup.
+INFO:     DB path: /Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+INFO:     TAAIP_BACKFILL_ON_STARTUP not enabled; skipping runtime backfills
+INFO:     Runtime migrations applied
+ERROR:seed_rbac:seed_rbac: error assigning baseline role to user 2
+Traceback (most recent call last):
+  File "/Users/ambermooney/Desktop/TAAIP/services/api/app/seed_rbac.py", line 320, in seed_rbac
+    cur.execute('INSERT OR IGNORE INTO user_role(user_id, role_key) VALUES (?,?)', (uid, baseline_role_id))
+sqlite3.IntegrityError: FOREIGN KEY constraint failed
+ERROR:seed_rbac:seed_rbac: error assigning baseline role to user 3
+Traceback (most recent call last):
+  File "/Users/ambermooney/Desktop/TAAIP/services/api/app/seed_rbac.py", line 320, in seed_rbac
+    cur.execute('INSERT OR IGNORE INTO user_role(user_id, role_key) VALUES (?,?)', (uid, baseline_role_id))
+sqlite3.IntegrityError: FOREIGN KEY constraint failed
+ERROR:seed_rbac:seed_rbac: error assigning baseline role to user 1
+Traceback (most recent call last):
+  File "/Users/ambermooney/Desktop/TAAIP/services/api/app/seed_rbac.py", line 320, in seed_rbac
+    cur.execute('INSERT OR IGNORE INTO user_role(user_id, role_key) VALUES (?,?)', (uid, baseline_role_id))
+sqlite3.IntegrityError: FOREIGN KEY constraint failed
+INFO:     RBAC seed applied
+INFO:     Export storage dir ensured: ./data/exports
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'services/api/app/routers/v2_datahub.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [88027]
+init_schema: requested_path=/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3, test_raw_conn_path=None
+connect: opened new sqlite3 conn for path=/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+INFO:     LOCAL_DEV_AUTH_BYPASS=1
+WARNING:root:LOCAL_DEV_AUTH_BYPASS enabled: JWT validation will be bypassed for local development
+WARNING:root:TAAIP_MASTER_MODE enabled: granting master permissions to local user
+INFO:     TAAIP_DB_PATH not set; defaulting to /Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+INFO:     Mounted frontend static assets at /Users/ambermooney/Desktop/TAAIP/apps/web/build/static
+INFO:     Started server process [88091]
+INFO:     Waiting for application startup.
+INFO:     DB path: /Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+INFO:     TAAIP_BACKFILL_ON_STARTUP not enabled; skipping runtime backfills
+INFO:     Runtime migrations applied
+ERROR:seed_rbac:seed_rbac: error assigning baseline role to user 2
+Traceback (most recent call last):
+  File "/Users/ambermooney/Desktop/TAAIP/services/api/app/seed_rbac.py", line 320, in seed_rbac
+    cur.execute('INSERT OR IGNORE INTO user_role(user_id, role_key) VALUES (?,?)', (uid, baseline_role_id))
+sqlite3.IntegrityError: FOREIGN KEY constraint failed
+ERROR:seed_rbac:seed_rbac: error assigning baseline role to user 3
+Traceback (most recent call last):
+  File "/Users/ambermooney/Desktop/TAAIP/services/api/app/seed_rbac.py", line 320, in seed_rbac
+    cur.execute('INSERT OR IGNORE INTO user_role(user_id, role_key) VALUES (?,?)', (uid, baseline_role_id))
+sqlite3.IntegrityError: FOREIGN KEY constraint failed
+ERROR:seed_rbac:seed_rbac: error assigning baseline role to user 1
+Traceback (most recent call last):
+  File "/Users/ambermooney/Desktop/TAAIP/services/api/app/seed_rbac.py", line 320, in seed_rbac
+    cur.execute('INSERT OR IGNORE INTO user_role(user_id, role_key) VALUES (?,?)', (uid, baseline_role_id))
+sqlite3.IntegrityError: FOREIGN KEY constraint failed
+INFO:     RBAC seed applied
+INFO:     Export storage dir ensured: ./data/exports
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'services/api/app/routers/admin_v2.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [88091]
+init_schema: requested_path=/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3, test_raw_conn_path=None
+connect: opened new sqlite3 conn for path=/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+INFO:     LOCAL_DEV_AUTH_BYPASS=1
+WARNING:root:LOCAL_DEV_AUTH_BYPASS enabled: JWT validation will be bypassed for local development
+WARNING:root:TAAIP_MASTER_MODE enabled: granting master permissions to local user
+INFO:     TAAIP_DB_PATH not set; defaulting to /Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+INFO:     Mounted frontend static assets at /Users/ambermooney/Desktop/TAAIP/apps/web/build/static
+INFO:     Started server process [88130]
+INFO:     Waiting for application startup.
+INFO:     DB path: /Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+INFO:     TAAIP_BACKFILL_ON_STARTUP not enabled; skipping runtime backfills
+INFO:     Runtime migrations applied
+ERROR:seed_rbac:seed_rbac: error assigning baseline role to user 2
+Traceback (most recent call last):
+  File "/Users/ambermooney/Desktop/TAAIP/services/api/app/seed_rbac.py", line 320, in seed_rbac
+    cur.execute('INSERT OR IGNORE INTO user_role(user_id, role_key) VALUES (?,?)', (uid, baseline_role_id))
+sqlite3.IntegrityError: FOREIGN KEY constraint failed
+ERROR:seed_rbac:seed_rbac: error assigning baseline role to user 3
+Traceback (most recent call last):
+  File "/Users/ambermooney/Desktop/TAAIP/services/api/app/seed_rbac.py", line 320, in seed_rbac
+    cur.execute('INSERT OR IGNORE INTO user_role(user_id, role_key) VALUES (?,?)', (uid, baseline_role_id))
+sqlite3.IntegrityError: FOREIGN KEY constraint failed
+ERROR:seed_rbac:seed_rbac: error assigning baseline role to user 1
+Traceback (most recent call last):
+  File "/Users/ambermooney/Desktop/TAAIP/services/api/app/seed_rbac.py", line 320, in seed_rbac
+    cur.execute('INSERT OR IGNORE INTO user_role(user_id, role_key) VALUES (?,?)', (uid, baseline_role_id))
+sqlite3.IntegrityError: FOREIGN KEY constraint failed
+INFO:     RBAC seed applied
+INFO:     Export storage dir ensured: ./data/exports
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'services/api/app/api_ingest.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [88130]
+init_schema: requested_path=/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3, test_raw_conn_path=None
+connect: opened new sqlite3 conn for path=/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+INFO:     LOCAL_DEV_AUTH_BYPASS=1
+WARNING:root:LOCAL_DEV_AUTH_BYPASS enabled: JWT validation will be bypassed for local development
+WARNING:root:TAAIP_MASTER_MODE enabled: granting master permissions to local user
+INFO:     TAAIP_DB_PATH not set; defaulting to /Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+INFO:     Mounted frontend static assets at /Users/ambermooney/Desktop/TAAIP/apps/web/build/static
+INFO:     Started server process [88197]
+INFO:     Waiting for application startup.
+INFO:     DB path: /Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+INFO:     TAAIP_BACKFILL_ON_STARTUP not enabled; skipping runtime backfills
+INFO:     Runtime migrations applied
+ERROR:seed_rbac:seed_rbac: error assigning baseline role to user 2
+Traceback (most recent call last):
+  File "/Users/ambermooney/Desktop/TAAIP/services/api/app/seed_rbac.py", line 320, in seed_rbac
+    cur.execute('INSERT OR IGNORE INTO user_role(user_id, role_key) VALUES (?,?)', (uid, baseline_role_id))
+sqlite3.IntegrityError: FOREIGN KEY constraint failed
+ERROR:seed_rbac:seed_rbac: error assigning baseline role to user 3
+Traceback (most recent call last):
+  File "/Users/ambermooney/Desktop/TAAIP/services/api/app/seed_rbac.py", line 320, in seed_rbac
+    cur.execute('INSERT OR IGNORE INTO user_role(user_id, role_key) VALUES (?,?)', (uid, baseline_role_id))
+sqlite3.IntegrityError: FOREIGN KEY constraint failed
+ERROR:seed_rbac:seed_rbac: error assigning baseline role to user 1
+Traceback (most recent call last):
+  File "/Users/ambermooney/Desktop/TAAIP/services/api/app/seed_rbac.py", line 320, in seed_rbac
+    cur.execute('INSERT OR IGNORE INTO user_role(user_id, role_key) VALUES (?,?)', (uid, baseline_role_id))
+sqlite3.IntegrityError: FOREIGN KEY constraint failed
+INFO:     RBAC seed applied
+INFO:     Export storage dir ensured: ./data/exports
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'tests/test_import_guard.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [88197]
+init_schema: requested_path=/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3, test_raw_conn_path=None
+connect: opened new sqlite3 conn for path=/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+INFO:     LOCAL_DEV_AUTH_BYPASS=1
+WARNING:  WatchFiles detected changes in 'tests/test_import_guard.py'. Reloading...
+INFO:     LOCAL_DEV_AUTH_BYPASS=1
+WARNING:root:LOCAL_DEV_AUTH_BYPASS enabled: JWT validation will be bypassed for local development
+WARNING:root:TAAIP_MASTER_MODE enabled: granting master permissions to local user
+INFO:     TAAIP_DB_PATH not set; defaulting to /Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+INFO:     Mounted frontend static assets at /Users/ambermooney/Desktop/TAAIP/apps/web/build/static
+INFO:     Started server process [88695]
+INFO:     Waiting for application startup.
+INFO:     DB path: /Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+INFO:     TAAIP_BACKFILL_ON_STARTUP not enabled; skipping runtime backfills
+INFO:     Runtime migrations applied
+ERROR:seed_rbac:seed_rbac: error assigning baseline role to user 2
+Traceback (most recent call last):
+  File "/Users/ambermooney/Desktop/TAAIP/services/api/app/seed_rbac.py", line 320, in seed_rbac
+    cur.execute('INSERT OR IGNORE INTO user_role(user_id, role_key) VALUES (?,?)', (uid, baseline_role_id))
+sqlite3.IntegrityError: FOREIGN KEY constraint failed
+ERROR:seed_rbac:seed_rbac: error assigning baseline role to user 3
+Traceback (most recent call last):
+  File "/Users/ambermooney/Desktop/TAAIP/services/api/app/seed_rbac.py", line 320, in seed_rbac
+    cur.execute('INSERT OR IGNORE INTO user_role(user_id, role_key) VALUES (?,?)', (uid, baseline_role_id))
+sqlite3.IntegrityError: FOREIGN KEY constraint failed
+ERROR:seed_rbac:seed_rbac: error assigning baseline role to user 1
+Traceback (most recent call last):
+  File "/Users/ambermooney/Desktop/TAAIP/services/api/app/seed_rbac.py", line 320, in seed_rbac
+    cur.execute('INSERT OR IGNORE INTO user_role(user_id, role_key) VALUES (?,?)', (uid, baseline_role_id))
+sqlite3.IntegrityError: FOREIGN KEY constraint failed
+INFO:     RBAC seed applied
+INFO:     Export storage dir ensured: ./data/exports
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'tests/test_import_guard.py', 'services/api/app/api_ingest.py', 'services/api/app/routers/admin_v2.py', 'services/api/app/routers/v2_datahub.py', 'services/api/app/routers/datahub.py', 'services/api/app/routers/imports_mi.py', 'services/api/app/routers/imports_foundation.py', 'services/api/app/routers/uploads.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [88695]
+init_schema: requested_path=/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3, test_raw_conn_path=None
+connect: opened new sqlite3 conn for path=/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+INFO:     LOCAL_DEV_AUTH_BYPASS=1
+WARNING:root:LOCAL_DEV_AUTH_BYPASS enabled: JWT validation will be bypassed for local development
+WARNING:root:TAAIP_MASTER_MODE enabled: granting master permissions to local user
+INFO:     TAAIP_DB_PATH not set; defaulting to /Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+INFO:     Mounted frontend static assets at /Users/ambermooney/Desktop/TAAIP/apps/web/build/static
+INFO:     Started server process [89640]
+INFO:     Waiting for application startup.
+INFO:     DB path: /Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+INFO:     TAAIP_BACKFILL_ON_STARTUP not enabled; skipping runtime backfills
+INFO:     Runtime migrations applied
+ERROR:seed_rbac:seed_rbac: error assigning baseline role to user 2
+Traceback (most recent call last):
+  File "/Users/ambermooney/Desktop/TAAIP/services/api/app/seed_rbac.py", line 320, in seed_rbac
+    cur.execute('INSERT OR IGNORE INTO user_role(user_id, role_key) VALUES (?,?)', (uid, baseline_role_id))
+sqlite3.IntegrityError: FOREIGN KEY constraint failed
+ERROR:seed_rbac:seed_rbac: error assigning baseline role to user 3
+Traceback (most recent call last):
+  File "/Users/ambermooney/Desktop/TAAIP/services/api/app/seed_rbac.py", line 320, in seed_rbac
+    cur.execute('INSERT OR IGNORE INTO user_role(user_id, role_key) VALUES (?,?)', (uid, baseline_role_id))
+sqlite3.IntegrityError: FOREIGN KEY constraint failed
+ERROR:seed_rbac:seed_rbac: error assigning baseline role to user 1
+Traceback (most recent call last):
+  File "/Users/ambermooney/Desktop/TAAIP/services/api/app/seed_rbac.py", line 320, in seed_rbac
+    cur.execute('INSERT OR IGNORE INTO user_role(user_id, role_key) VALUES (?,?)', (uid, baseline_role_id))
+sqlite3.IntegrityError: FOREIGN KEY constraint failed
+INFO:     RBAC seed applied
+INFO:     Export storage dir ensured: ./data/exports
+INFO:     Application startup complete.
+init_schema: requested_path=/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3, test_raw_conn_path=None
+connect: opened new sqlite3 conn for path=/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+connect: opened new sqlite3 conn for path=/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+INFO:     127.0.0.1:51957 - "GET /api/v2/org/root HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+INFO:     127.0.0.1:51958 - "GET /api/v2/org/units?parent_key=1BDE&echelon=BDE HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+INFO:     127.0.0.1:51964 - "GET /api/v2/org/root HTTP/1.1" 200 OK
+connect: opened new sqlite3 conn for path=/Users/ambermooney/Desktop/TAAIP/data/taaip.sqlite3
+INFO:     127.0.0.1:51965 - "GET /api/v2/org/units?parent_key=1BDE&echelon=BDE HTTP/1.1" 200 OK

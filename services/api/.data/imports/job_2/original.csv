@@ -1,3 +1,2 @@
-org_unit_id,date,metric_key,metric_value
-1,2026-02-01,contracts,5
-1,2026-02-02,contracts,2
+school_id,lead_id
+SCH_001,lead-1

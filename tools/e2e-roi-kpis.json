@@ -1,0 +1,46 @@
+{
+  "status": 200,
+  "json": {
+    "meta": {
+      "unit_rsid": "USAREC",
+      "echelon": "USAREC",
+      "start_date": null,
+      "end_date": null,
+      "compare_mode": "THRESHOLDS"
+    },
+    "thresholds": {
+      "cpl_target": 100,
+      "cpc_target": 2500
+    },
+    "kpis": {
+      "events": 0,
+      "spend_total": 500,
+      "leads_total": 7,
+      "contacts_total": null,
+      "appointments_total": null,
+      "applicants_total": null,
+      "contracts_total": 1,
+      "cpl": 71.42857142857143,
+      "cpc": 500,
+      "flash_to_bang_median_days": 34,
+      "conversion_rates": {}
+    },
+    "status": {
+      "cpl": {
+        "value": 71.42857142857143,
+        "meets_threshold": true,
+        "band": "GREEN"
+      },
+      "cpc": {
+        "value": 500,
+        "meets_threshold": true,
+        "band": "GREEN"
+      },
+      "contracts": {
+        "value": 1,
+        "band": "GREEN"
+      }
+    },
+    "comparisons": {}
+  }
+}

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Body
 from typing import Optional, List, Dict, Any
 from ..db import connect
 from datetime import datetime
@@ -78,5 +78,73 @@ def create_meeting(wg_id: int, payload: Dict[str, Any]):
         write_audit(conn, payload.get('created_by') or 'system', 'create.meeting', 'meeting', mid, payload)
         cur.execute('SELECT * FROM meeting WHERE id=?', (mid,))
         return dict(cur.fetchone())
+    finally:
+        conn.close()
+
+
+@router.post("/{wg_id}/items", summary="Create TWG item", dependencies=[Depends(require_perm('twg.edit'))])
+def create_twg_item(wg_id: int, payload: Dict[str, Any]):
+    conn = connect()
+    try:
+        cur = conn.cursor()
+        now = now_iso()
+        cur.execute('INSERT INTO twg_items(wg_id, title, owner, due, status, notes, created_at) VALUES (?,?,?,?,?,?,?)', (
+            wg_id, payload.get('title'), payload.get('owner'), payload.get('due'), payload.get('status') or 'open', payload.get('notes'), now
+        ))
+        conn.commit()
+        iid = cur.lastrowid
+        cur.execute('SELECT * FROM twg_items WHERE id=?', (iid,))
+        return dict(cur.fetchone())
+    finally:
+        conn.close()
+
+
+@router.get("/{wg_id}/items", summary="List TWG items")
+def list_twg_items(wg_id: int, limit: int = 100, include_archived: bool = False):
+    conn = connect()
+    try:
+        cur = conn.cursor()
+        if include_archived:
+            cur.execute('SELECT * FROM twg_items WHERE wg_id=? ORDER BY id DESC LIMIT ?', (wg_id, limit))
+        else:
+            cur.execute('SELECT * FROM twg_items WHERE wg_id=? AND (archived IS NULL OR archived=0) ORDER BY id DESC LIMIT ?', (wg_id, limit))
+        return [dict(r) for r in cur.fetchall()]
+    finally:
+        conn.close()
+
+
+@router.put("/items/{item_id}", summary="Update TWG item", dependencies=[Depends(require_perm('twg.edit'))])
+def update_twg_item(item_id: int, payload: Dict[str, Any]):
+    conn = connect()
+    try:
+        cur = conn.cursor()
+        cur.execute('SELECT id FROM twg_items WHERE id=?', (item_id,))
+        if not cur.fetchone():
+            raise HTTPException(status_code=404, detail='not found')
+        now = now_iso()
+        cur.execute('UPDATE twg_items SET title=?, owner=?, due=?, status=?, notes=?, updated_at=? WHERE id=?', (
+            payload.get('title'), payload.get('owner'), payload.get('due'), payload.get('status'), payload.get('notes'), now, item_id
+        ))
+        conn.commit()
+        cur.execute('SELECT * FROM twg_items WHERE id=?', (item_id,))
+        return dict(cur.fetchone())
+    finally:
+        conn.close()
+
+
+@router.delete("/items/{item_id}", summary="Delete TWG item", dependencies=[Depends(require_perm('twg.edit'))])
+def delete_twg_item(item_id: int, payload: Dict[str, Any] = Body({})):
+    conn = connect()
+    try:
+        cur = conn.cursor()
+        cur.execute('SELECT id FROM twg_items WHERE id=?', (item_id,))
+        if not cur.fetchone():
+            raise HTTPException(status_code=404, detail='not found')
+        who = None
+        if payload and isinstance(payload, dict):
+            who = payload.get('archived_by')
+        cur.execute('UPDATE twg_items SET archived=1, archived_at=?, archived_by=? WHERE id=?', (now_iso(), who, item_id))
+        conn.commit()
+        return {'status': 'archived'}
     finally:
         conn.close()

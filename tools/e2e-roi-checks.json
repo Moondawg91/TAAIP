@@ -1,0 +1,39 @@
+{
+  "rendered": true,
+  "matches": [
+    {
+      "value": "500",
+      "found": true
+    },
+    {
+      "value": "7",
+      "found": true
+    },
+    {
+      "value": "1",
+      "found": true
+    },
+    {
+      "value": "71.43",
+      "found": true
+    }
+  ],
+  "matches_after_reload": [
+    {
+      "value": "500",
+      "found": true
+    },
+    {
+      "value": "7",
+      "found": true
+    },
+    {
+      "value": "1",
+      "found": true
+    },
+    {
+      "value": "71.43",
+      "found": true
+    }
+  ]
+}

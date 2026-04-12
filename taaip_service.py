@@ -49,9 +49,15 @@ def init_db():
 	exists, set `TAAIP_DB_PATH` for the operational DB module, then call
 	the canonical `init_schema` implementation.
 	"""
-	db_path = os.path.join(os.getcwd(), "data", "taaip.sqlite3")
-	pathlib.Path(os.path.dirname(db_path)).mkdir(parents=True, exist_ok=True)
-	os.environ["TAAIP_DB_PATH"] = db_path
+	# If test harness already set `TAAIP_DB_PATH`, respect it (this allows
+	# higher-level test env vars to force shared in-memory DBs). Otherwise
+	# default to the repo-local `./data/taaip.sqlite3` as tests historically did.
+	if os.environ.get("TAAIP_DB_PATH"):
+		db_path = os.environ.get("TAAIP_DB_PATH")
+	else:
+		db_path = os.path.join(os.getcwd(), "data", "taaip.sqlite3")
+		pathlib.Path(os.path.dirname(db_path)).mkdir(parents=True, exist_ok=True)
+		os.environ["TAAIP_DB_PATH"] = db_path
 
 	# Run both schema initializers: the operational `init_schema` (new)
 	# and the legacy `init_db` (compat) so both singular/plural table

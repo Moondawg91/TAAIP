@@ -1,0 +1,3430 @@
+{
+  "path": "/Users/ambermooney/Desktop/Data Sets/Recruiting Funnel Enriched.xlsx",
+  "sheets": {
+    "Sheet1": {
+      "sheet_name": "Sheet1",
+      "header_mode": "none",
+      "header_row_index": null,
+      "synthetic_columns": true,
+      "column_count": 374,
+      "positional_profile_top100": {
+        "col_000": {
+          "null_ratio": 0.28,
+          "example_values": [
+            "170855000486",
+            "280219000409",
+            "364548",
+            "390451304479",
+            "220054000349"
+          ],
+          "likely_type": "timestamp"
+        },
+        "col_001": {
+          "null_ratio": 0.12,
+          "example_values": [
+            "125804784",
+            "156815491",
+            "131758979",
+            "147080295",
+            "120614435"
+          ],
+          "likely_type": "timestamp"
+        },
+        "col_002": {
+          "null_ratio": 0.12,
+          "example_values": [
+            "125321616",
+            "156815490",
+            "119657995",
+            "137404359",
+            "120614434"
+          ],
+          "likely_type": "timestamp"
+        },
+        "col_003": {
+          "null_ratio": 0.62,
+          "example_values": [
+            "ttxlURnMh6VWMoWBEFNUFOE6OhK7jv6HZw==",
+            "zXO9O/plOsvbj2+GgvdqjfwaxXSb2WSC8w==",
+            "LQlooC63qrsPqYKZJW1FAqHHQW2AEW9egg==",
+            "Q6aVx0Y9ZjdAEMsZsST2O5T1tDCv/a7WuQ==",
+            "anS3kjLM9kshL3FX818gTWnKDp2eB4/52w=="
+          ],
+          "likely_type": "text"
+        },
+        "col_004": {
+          "null_ratio": 0.22,
+          "example_values": [
+            "M",
+            "F"
+          ],
+          "likely_type": "array_text"
+        },
+        "col_005": {
+          "null_ratio": 0.25,
+          "example_values": [
+            "2001-05-26 00:00:00",
+            "2004-10-30 00:00:00",
+            "2000-12-25 00:00:00",
+            "1998-04-29 00:00:00",
+            "2006-06-15 00:00:00"
+          ],
+          "likely_type": "date"
+        },
+        "col_006": {
+          "null_ratio": 0.12,
+          "example_values": [
+            "N"
+          ],
+          "likely_type": "text"
+        },
+        "col_007": {
+          "null_ratio": 0.2,
+          "example_values": [
+            "L",
+            "S"
+          ],
+          "likely_type": "numeric"
+        },
+        "col_008": {
+          "null_ratio": 0.2,
+          "example_values": [
+            "DIPLOMA-GRAD OF PUBLIC/PRIVATE 12-YEAR, TRADITIONAL, CREDIT-BASED DAY PROGRAM OF CLASSROOM INSTRUCTION. INCLUDES FAILED MANDATED EXIT EXAMS.",
+            "AN INDIVIDUAL ATTENDING HIGH SCHOOL AS A SENIOR."
+          ],
+          "likely_type": "array_text"
+        },
+        "col_009": {
+          "null_ratio": 0.86,
+          "example_values": [
+            "Y",
+            "N"
+          ],
+          "likely_type": "text"
+        },
+        "col_010": {
+          "null_ratio": 0.36,
+          "example_values": [
+            "Y"
+          ],
+          "likely_type": "text"
+        },
+        "col_011": {
+          "null_ratio": 0.12,
+          "example_values": [
+            "AV",
+            "TM",
+            "AN",
+            "NW"
+          ],
+          "likely_type": "text"
+        },
+        "col_012": {
+          "null_ratio": 0.13,
+          "example_values": [
+            "SHIPPED",
+            "RCTR TERMINATED IN RZ",
+            "NOT INTERESTED-TERMINATE",
+            "NEW"
+          ],
+          "likely_type": "text"
+        },
+        "col_013": {
+          "null_ratio": 0.12,
+          "example_values": [
+            "A",
+            "G"
+          ],
+          "likely_type": "text"
+        },
+        "col_014": {
+          "null_ratio": 0.12,
+          "example_values": [
+            "ACTIVE",
+            "GUARD"
+          ],
+          "likely_type": "text"
+        },
+        "col_015": {
+          "null_ratio": 0.12,
+          "example_values": [
+            "E"
+          ],
+          "likely_type": "timestamp"
+        },
+        "col_016": {
+          "null_ratio": 0.12,
+          "example_values": [
+            "ENLISTED"
+          ],
+          "likely_type": "text"
+        },
+        "col_017": {
+          "null_ratio": 0.78,
+          "example_values": [
+            "AF",
+            "TX"
+          ],
+          "likely_type": "array_text"
+        },
+        "col_018": {
+          "null_ratio": 0.73,
+          "example_values": [
+            "NO ACTION",
+            "TELEPHONE CALL",
+            "TEXT"
+          ],
+          "likely_type": "text"
+        },
+        "col_019": {
+          "null_ratio": 0.12,
+          "example_values": [
+            "5A6H",
+            "MSFF",
+            "OKA",
+            "OHLF",
+            "LAL"
+          ],
+          "likely_type": "text"
+        },
+        "col_020": {
+          "null_ratio": 0.55,
+          "example_values": [
+            "PATRICKALMER1@HOTMAIL.COM",
+            "jessica.jordan@salve.edu",
+            "Grayson.zanki1@gmail.com",
+            "abigail.hooker216@gmail.com",
+            "Kennedip719@gmail.com"
+          ],
+          "likely_type": "email"
+        },
+        "col_021": {
+          "null_ratio": 0.13,
+          "example_values": [
+            "AYLMER",
+            "LARRY",
+            "JULIAN",
+            "MCCAGUE",
+            "COLE"
+          ],
+          "likely_type": "text"
+        },
+        "col_022": {
+          "null_ratio": 0.13,
+          "example_values": [
+            "PATRICK",
+            "JEQREUIS",
+            "HUNTER",
+            "ERIKA",
+            "EMANDA"
+          ],
+          "likely_type": "text"
+        },
+        "col_023": {
+          "null_ratio": 0.53,
+          "example_values": [
+            "NMN",
+            "M",
+            "C",
+            "L",
+            "COLLIN"
+          ],
+          "likely_type": "text"
+        },
+        "col_024": {
+          "null_ratio": 0.31,
+          "example_values": [
+            "1325 GASLIGHT DR",
+            "2112 NW DEARBORN AVE",
+            "8243 SADDLE RUN",
+            "2557 HOLLYWOOD ST",
+            "850 W HWY 30"
+          ],
+          "likely_type": "text"
+        },
+        "col_025": {
+          "null_ratio": 0.28,
+          "example_values": [
+            "ALGONQUIN",
+            "LAWTON",
+            "POWELL",
+            "BATON ROUGE",
+            "COLLINSTON"
+          ],
+          "likely_type": "text"
+        },
+        "col_026": {
+          "null_ratio": 0.31,
+          "example_values": [
+            "IL",
+            "MS",
+            "OK",
+            "OH",
+            "LA"
+          ],
+          "likely_type": "text"
+        },
+        "col_027": {
+          "null_ratio": 0.28,
+          "example_values": [
+            "60102",
+            "39204",
+            "735075617",
+            "430659548",
+            "708052529"
+          ],
+          "likely_type": "timestamp"
+        },
+        "col_028": {
+          "null_ratio": 0.27,
+          "example_values": [
+            "60102",
+            "39204",
+            "73507",
+            "43065",
+            "70805"
+          ],
+          "likely_type": "timestamp"
+        },
+        "col_029": {
+          "null_ratio": 0.74,
+          "example_values": [
+            "5617",
+            "9548",
+            "2529",
+            "8206",
+            "9240"
+          ],
+          "likely_type": "date"
+        },
+        "col_030": {
+          "null_ratio": 0.45,
+          "example_values": [
+            "2019",
+            "2023",
+            "2021"
+          ],
+          "likely_type": "timestamp"
+        },
+        "col_031": {
+          "null_ratio": 0.17,
+          "example_values": [
+            "847",
+            "580",
+            "614",
+            "225",
+            "435"
+          ],
+          "likely_type": "numeric"
+        },
+        "col_032": {
+          "null_ratio": 0.18,
+          "example_values": [
+            "8487553",
+            "6788540",
+            "9848589",
+            "4750433",
+            "3393806"
+          ],
+          "likely_type": "numeric"
+        },
+        "col_033": {
+          "null_ratio": 0.17,
+          "example_values": [
+            "8478487553",
+            "5806788540",
+            "6149848589",
+            "2254750433",
+            "4353393806"
+          ],
+          "likely_type": "timestamp"
+        },
+        "col_034": {
+          "null_ratio": 0.13,
+          "example_values": [
+            "Z",
+            "A"
+          ],
+          "likely_type": "text"
+        },
+        "col_035": {
+          "null_ratio": 0.13,
+          "example_values": [
+            "SHIPPED",
+            "Lead"
+          ],
+          "likely_type": "text"
+        },
+        "col_036": {
+          "null_ratio": 0.91,
+          "example_values": [
+            "X"
+          ],
+          "likely_type": "text"
+        },
+        "col_037": {
+          "null_ratio": 0.9,
+          "example_values": [
+            "9999"
+          ],
+          "likely_type": "numeric"
+        },
+        "col_038": {
+          "null_ratio": 0.78,
+          "example_values": [
+            "92842496",
+            "168140222",
+            "160354127",
+            "136233653",
+            "177106139"
+          ],
+          "likely_type": "timestamp"
+        },
+        "col_039": {
+          "null_ratio": 0.12,
+          "example_values": [
+            "1534859266000",
+            "1639108830000",
+            "1551326435000",
+            "1606274141000",
+            "1512446421000"
+          ],
+          "likely_type": "timestamp"
+        },
+        "col_040": {
+          "null_ratio": 0.12,
+          "example_values": [
+            "FTFC",
+            "SASVAB",
+            "HSLST"
+          ],
+          "likely_type": "timestamp"
+        },
+        "col_041": {
+          "null_ratio": 0.12,
+          "example_values": [
+            "FACE TO FACE-COMMUNITY",
+            "STUDENT ARMED SERVICES VOCATIONAL APTITUDE BATTERY",
+            "HIGH SCHOOL LIST"
+          ],
+          "likely_type": "array_text"
+        },
+        "col_042": {
+          "null_ratio": 0.5,
+          "example_values": [
+            "125578750",
+            "115683009",
+            "104924753",
+            "106581813",
+            "22769790"
+          ],
+          "likely_type": "timestamp"
+        },
+        "col_043": {
+          "null_ratio": 0.14,
+          "example_values": [
+            "Aug 21, 2018 6:47:46 AM -07:00",
+            "Dec 09, 2021 8:00:30 PM -08:00",
+            "Feb 27, 2019 8:00:35 PM -08:00",
+            "Nov 24, 2020 7:15:41 PM -08:00",
+            "Dec 04, 2017 8:00:21 PM -08:00"
+          ],
+          "likely_type": "timestamp"
+        },
+        "col_044": {
+          "null_ratio": 0.14,
+          "example_values": [
+            "FTFC",
+            "SASVAB",
+            "HSLST"
+          ],
+          "likely_type": "text"
+        },
+        "col_045": {
+          "null_ratio": 0.14,
+          "example_values": [
+            "FACE TO FACE-COMMUNITY",
+            "STUDENT ARMED SERVICES VOCATIONAL APTITUDE BATTERY",
+            "HIGH SCHOOL LIST"
+          ],
+          "likely_type": "date"
+        },
+        "col_046": {
+          "null_ratio": 0.62,
+          "example_values": [
+            "125578750",
+            "115683009",
+            "104924753",
+            "106581813",
+            "22769790"
+          ],
+          "likely_type": "timestamp"
+        },
+        "col_047": {
+          "null_ratio": 0.14,
+          "example_values": [
+            "Aug 21, 2018 6:47:46 AM -07:00",
+            "Dec 09, 2021 8:00:30 PM -08:00",
+            "Feb 27, 2019 8:00:35 PM -08:00",
+            "Nov 24, 2020 7:15:41 PM -08:00",
+            "Dec 04, 2017 8:00:21 PM -08:00"
+          ],
+          "likely_type": "timestamp"
+        },
+        "col_048": {
+          "null_ratio": 0.14,
+          "example_values": [
+            "FTFC",
+            "SASVAB",
+            "HSLST"
+          ],
+          "likely_type": "text"
+        },
+        "col_049": {
+          "null_ratio": 0.14,
+          "example_values": [
+            "FACE TO FACE-COMMUNITY",
+            "STUDENT ARMED SERVICES VOCATIONAL APTITUDE BATTERY",
+            "HIGH SCHOOL LIST"
+          ],
+          "likely_type": "date"
+        },
+        "col_050": {
+          "null_ratio": 0.63,
+          "example_values": [
+            "125578750",
+            "115683009",
+            "104924753",
+            "106581813",
+            "22769790"
+          ],
+          "likely_type": "timestamp"
+        },
+        "col_051": {
+          "null_ratio": 0.14,
+          "example_values": [
+            "1"
+          ],
+          "likely_type": "timestamp"
+        },
+        "col_052": {
+          "null_ratio": 0.35,
+          "example_values": [
+            "Aug 21, 2018 6:47:46 AM -07:00",
+            "Dec 09, 2021 8:00:30 PM -08:00",
+            "Feb 27, 2019 8:00:35 PM -08:00",
+            "Dec 04, 2017 8:00:21 PM -08:00",
+            "Mar 04, 2025 5:21:04 AM -08:00"
+          ],
+          "likely_type": "timestamp"
+        },
+        "col_053": {
+          "null_ratio": 0.35,
+          "example_values": [
+            "FTFC",
+            "SASVAB"
+          ],
+          "likely_type": "text"
+        },
+        "col_054": {
+          "null_ratio": 0.35,
+          "example_values": [
+            "FACE TO FACE-COMMUNITY",
+            "STUDENT ARMED SERVICES VOCATIONAL APTITUDE BATTERY"
+          ],
+          "likely_type": "array_text"
+        },
+        "col_055": {
+          "null_ratio": 0.78,
+          "example_values": [
+            "125578750",
+            "115683009",
+            "106581813",
+            "92842496",
+            "183035098"
+          ],
+          "likely_type": "timestamp"
+        },
+        "col_056": {
+          "null_ratio": 0.35,
+          "example_values": [
+            "Aug 21, 2018 6:47:46 AM -07:00",
+            "Dec 09, 2021 8:00:30 PM -08:00",
+            "Feb 27, 2019 8:00:35 PM -08:00",
+            "Dec 04, 2017 8:00:21 PM -08:00",
+            "Mar 04, 2025 5:21:04 AM -08:00"
+          ],
+          "likely_type": "array_text"
+        },
+        "col_057": {
+          "null_ratio": 0.35,
+          "example_values": [
+            "FTFC",
+            "SASVAB"
+          ],
+          "likely_type": "array_text"
+        },
+        "col_058": {
+          "null_ratio": 0.35,
+          "example_values": [
+            "FACE TO FACE-COMMUNITY",
+            "STUDENT ARMED SERVICES VOCATIONAL APTITUDE BATTERY"
+          ],
+          "likely_type": "timestamp"
+        },
+        "col_059": {
+          "null_ratio": 0.78,
+          "example_values": [
+            "125578750",
+            "115683009",
+            "106581813",
+            "50200343",
+            "110246298"
+          ],
+          "likely_type": "timestamp"
+        },
+        "col_060": {
+          "null_ratio": 0.35,
+          "example_values": [
+            "1"
+          ],
+          "likely_type": "numeric"
+        },
+        "col_061": {
+          "null_ratio": 0.89,
+          "example_values": [
+            "1730525914000, 1740683311000",
+            "1600357341000",
+            "1640809573000",
+            "1679498616000",
+            "1596649387000"
+          ],
+          "likely_type": "timestamp"
+        },
+        "col_062": {
+          "null_ratio": 0.89,
+          "example_values": [
+            "ADHQ, ADHQ",
+            "ADHQ"
+          ],
+          "likely_type": "array_text"
+        },
+        "col_063": {
+          "null_ratio": 0.89,
+          "example_values": [
+            "2",
+            "1"
+          ],
+          "likely_type": "numeric"
+        },
+        "col_064": {
+          "null_ratio": 0.89,
+          "example_values": [
+            "Nov 01, 2024 10:38:34 PM -07:00",
+            "Sep 17, 2020 8:42:21 AM -07:00",
+            "Dec 29, 2021 12:26:13 PM -08:00",
+            "Mar 22, 2023 8:23:36 AM -07:00",
+            "Aug 05, 2020 10:43:07 AM -07:00"
+          ],
+          "likely_type": "array_text"
+        },
+        "col_065": {
+          "null_ratio": 0.89,
+          "example_values": [
+            "2021-11-17 00:00:00",
+            "2019-02-05 00:00:00",
+            "2017-09-19 00:00:00",
+            "2019-11-20 00:00:00",
+            "2015-11-10 00:00:00"
+          ],
+          "likely_type": "date"
+        },
+        "col_066": {
+          "null_ratio": 0.88,
+          "example_values": [
+            "7",
+            "79",
+            "36",
+            "9",
+            "24"
+          ],
+          "likely_type": "numeric"
+        },
+        "col_067": {
+          "null_ratio": 0.17,
+          "example_values": [
+            "1534859400000, 1534859880000, 1534859940000, 1534872720000, 1534962660000, 1535056680000, 1535508096200, 1535566740000, 1535651820000, 1536255840000, 1536863940000, 1537465980000, 1538069700000, 1538673480000, 1539280080000, 1539883380000, 1540488540000, 1541096700000, 1541695440000, 1542302880000, 1542815400000, 1543520640000, 1544463300000, 1544724480000, 1545329700000, 1545934740000, 1546538640000, 1547150880000, 1547746500000, 1548353280000, 1548956880000, 1549561080000, 1550166000000, 1550770380000, 1551375420000, 1551980940000, 1552585020000, 1553195580000, 1553795400000, 1554399180000, 1555003740000, 1555608660000, 1556213280000, 1556818320000, 1557500460000, 1558027560000, 1558030620000, 1558632180000, 1559238840000, 1559845920000, 1560448680000, 1560909736863, 1571277702250",
+            "1644946658436, 1639630857933",
+            "1551789960000",
+            "1606314185000",
+            "1512968494783"
+          ],
+          "likely_type": "timestamp"
+        },
+        "col_068": {
+          "null_ratio": 0.17,
+          "example_values": [
+            "B, C, C, C, C, C, D, D, D, D, D, D, D, D, D, D, D, D, D, D, D, D, D, D, D, D, D, D, D, D, D, D, D, D, D, D, D, D, D, D, D, D, D, D, D, D, D, D, D, D, D, Z, Z",
+            "A, A",
+            "A"
+          ],
+          "likely_type": "array_text"
+        },
+        "col_069": {
+          "null_ratio": 0.18,
+          "example_values": [
+            "PROSPECT, APPLICANT, APPLICANT, APPLICANT, APPLICANT, APPLICANT, DELAYED ENTRY PROGRAM, DELAYED ENTRY PROGRAM, DELAYED ENTRY PROGRAM, DELAYED ENTRY PROGRAM, DELAYED ENTRY PROGRAM, DELAYED ENTRY PROGRAM, DELAYED ENTRY PROGRAM, DELAYED ENTRY PROGRAM, DELAYED ENTRY PROGRAM, DELAYED ENTRY PROGRAM, DELAYED ENTRY PROGRAM, DELAYED ENTRY PROGRAM, DELAYED ENTRY PROGRAM, DELAYED ENTRY PROGRAM, DELAYED ENTRY PROGRAM, DELAYED ENTRY PROGRAM, DELAYED ENTRY PROGRAM, DELAYED ENTRY PROGRAM, DELAYED ENTRY PROGRAM, DELAYED ENTRY PROGRAM, DELAYED ENTRY PROGRAM, DELAYED ENTRY PROGRAM, DELAYED ENTRY PROGRAM, DELAYED ENTRY PROGRAM, DELAYED ENTRY PROGRAM, DELAYED ENTRY PROGRAM, DELAYED ENTRY PROGRAM, DELAYED ENTRY PROGRAM, DELAYED ENTRY PROGRAM, DELAYED ENTRY PROGRAM, DELAYED ENTRY PROGRAM, DELAYED ENTRY PROGRAM, DELAYED ENTRY PROGRAM, DELAYED ENTRY PROGRAM, DELAYED ENTRY PROGRAM, DELAYED ENTRY PROGRAM, DELAYED ENTRY PROGRAM, DELAYED ENTRY PROGRAM, DELAYED ENTRY PROGRAM, DELAYED ENTRY PROGRAM, DELAYED ENTRY PROGRAM, DELAYED ENTRY PROGRAM, DELAYED ENTRY PROGRAM, DELAYED ENTRY PROGRAM, DELAYED ENTRY PROGRAM, SHIPPED, SHIPPED",
+            "Lead, Lead",
+            "Lead"
+          ],
+          "likely_type": "array_text"
+        },
+        "col_070": {
+          "null_ratio": 0.21,
+          "example_values": [
+            "FF, IA, AG, YI, TT, AG, UH, UH, TS, DF, DF, DF, DF, DF, DF, DF, DF, DF, DF, DF, UI, DF, DF, DF, DF, DF, DF, DF, DF, DF, DF, DF, DF, DF, DF, DF, DF, DF, DF, DF, DF, DF, DF, DF, DF, DF, DF, DF, DF, DF, DF, ZB, null",
+            "NA, NA",
+            "AF",
+            "TX",
+            "WM, NA, YL, YL, YV, YU, YL, AH, YM, FF, YV, AH, YL, IA, YL"
+          ],
+          "likely_type": "array_text"
+        },
+        "col_071": {
+          "null_ratio": 0.18,
+          "example_values": [
+            "FACE TO FACE, APPOINTMENT-INITIAL, TEST, TALK TO INFLUENCER OR OBTAIN PARENTAL CONSENT, FOLLOW UP APPOINTMENT, TEST, VERIFY DOCUMENT/SCAN TO RECORD, VERIFY DOCUMENT/SCAN TO RECORD, FUTURE SOLDIER ORIENTATION, FUTURE SOLDIER TRAINING, FUTURE SOLDIER TRAINING, FUTURE SOLDIER TRAINING, FUTURE SOLDIER TRAINING, FUTURE SOLDIER TRAINING, FUTURE SOLDIER TRAINING, FUTURE SOLDIER TRAINING, FUTURE SOLDIER TRAINING, FUTURE SOLDIER TRAINING, FUTURE SOLDIER TRAINING, FUTURE SOLDIER TRAINING, VERIFY STATUS / UPDATE RECORD, FUTURE SOLDIER TRAINING, FUTURE SOLDIER TRAINING, FUTURE SOLDIER TRAINING, FUTURE SOLDIER TRAINING, FUTURE SOLDIER TRAINING, FUTURE SOLDIER TRAINING, FUTURE SOLDIER TRAINING, FUTURE SOLDIER TRAINING, FUTURE SOLDIER TRAINING, FUTURE SOLDIER TRAINING, FUTURE SOLDIER TRAINING, FUTURE SOLDIER TRAINING, FUTURE SOLDIER TRAINING, FUTURE SOLDIER TRAINING, FUTURE SOLDIER TRAINING, FUTURE SOLDIER TRAINING, FUTURE SOLDIER TRAINING, FUTURE SOLDIER TRAINING, FUTURE SOLDIER TRAINING, FUTURE SOLDIER TRAINING, FUTURE SOLDIER TRAINING, FUTURE SOLDIER TRAINING, FUTURE SOLDIER TRAINING, FUTURE SOLDIER TRAINING, FUTURE SOLDIER TRAINING, FUTURE SOLDIER TRAINING, FUTURE SOLDIER TRAINING, FUTURE SOLDIER TRAINING, FUTURE SOLDIER TRAINING, FUTURE SOLDIER TRAINING, VALIDATE AFTER SHIP VERIFIED, null",
+            "NO ACTION, NO ACTION",
+            "TELEPHONE CALL",
+            "TEXT",
+            "NO ACTION"
+          ],
+          "likely_type": "array_text"
+        },
+        "col_072": {
+          "null_ratio": 0.18,
+          "example_values": [
+            "A, B, B, S, B, B, S, B, B, B, I, B, I, I, I, I, I, I, B, I, S, B, E, B, B, H, I, I, B, B, I, I, I, B, I, I, B, I, I, I, B, B, B, B, B, B, B, B, I, B, I, null, null",
+            "O, A",
+            "A",
+            "J"
+          ],
+          "likely_type": "array_text"
+        },
+        "col_073": {
+          "null_ratio": 0.18,
+          "example_values": [
+            "CONTACTED, CONDUCTED, CONDUCTED, NOT CONDUCTED, CONDUCTED, CONDUCTED, NOT CONDUCTED, CONDUCTED, CONDUCTED, CONDUCTED, ATTENDED, CONDUCTED, ATTENDED, ATTENDED, ATTENDED, ATTENDED, ATTENDED, ATTENDED, CONDUCTED, ATTENDED, NOT CONDUCTED, CONDUCTED, CANCELLED, CONDUCTED, CONDUCTED, NO SHOW, ATTENDED, ATTENDED, CONDUCTED, CONDUCTED, ATTENDED, ATTENDED, ATTENDED, CONDUCTED, ATTENDED, ATTENDED, CONDUCTED, ATTENDED, ATTENDED, ATTENDED, CONDUCTED, CONDUCTED, CONDUCTED, CONDUCTED, CONDUCTED, CONDUCTED, CONDUCTED, CONDUCTED, ATTENDED, CONDUCTED, ATTENDED, null, null",
+            "NOT CONTACTED, CONTACTED",
+            "CONTACTED",
+            "SENT"
+          ],
+          "likely_type": "array_text"
+        },
+        "col_074": {
+          "null_ratio": 0.2,
+          "example_values": [
+            "IA, WC, YI, WT, WC, WT, WK, WS, WK, WK, WK, WK, WK, WK, WK, WK, WK, WK, WK, WA, WK, WK, WK, WK, WK, WK, WK, WK, WK, WK, WK, WK, WK, WK, WK, WK, WK, WK, WK, WK, WK, WK, WK, WK, WK, WK, WK, WK, WK, WK, WK, ZB, AV",
+            "TM, NW",
+            "AN",
+            "NW",
+            "WD, WF, YL, YL, EV, YV, YU, YV, YL, IA, YM, WD, YL, WF, YL"
+          ],
+          "likely_type": "array_text"
+        },
+        "col_075": {
+          "null_ratio": 0.2,
+          "example_values": [
+            "APPOINTMENT INITIAL, TEST, TALK TO INFLUENCER, FOLLOW UP APPOINTMENT, TEST, FOLLOW UP APPOINTMENT, FUTURE SOLDIER TRAINER, FUTURE SOLDIER ORIENTATION, FUTURE SOLDIER TRAINER, FUTURE SOLDIER TRAINER, FUTURE SOLDIER TRAINER, FUTURE SOLDIER TRAINER, FUTURE SOLDIER TRAINER, FUTURE SOLDIER TRAINER, FUTURE SOLDIER TRAINER, FUTURE SOLDIER TRAINER, FUTURE SOLDIER TRAINER, FUTURE SOLDIER TRAINER, FUTURE SOLDIER TRAINER, HT / WT UPDATE, FUTURE SOLDIER TRAINER, FUTURE SOLDIER TRAINER, FUTURE SOLDIER TRAINER, FUTURE SOLDIER TRAINER, FUTURE SOLDIER TRAINER, FUTURE SOLDIER TRAINER, FUTURE SOLDIER TRAINER, FUTURE SOLDIER TRAINER, FUTURE SOLDIER TRAINER, FUTURE SOLDIER TRAINER, FUTURE SOLDIER TRAINER, FUTURE SOLDIER TRAINER, FUTURE SOLDIER TRAINER, FUTURE SOLDIER TRAINER, FUTURE SOLDIER TRAINER, FUTURE SOLDIER TRAINER, FUTURE SOLDIER TRAINER, FUTURE SOLDIER TRAINER, FUTURE SOLDIER TRAINER, FUTURE SOLDIER TRAINER, FUTURE SOLDIER TRAINER, FUTURE SOLDIER TRAINER, FUTURE SOLDIER TRAINER, FUTURE SOLDIER TRAINER, FUTURE SOLDIER TRAINER, FUTURE SOLDIER TRAINER, FUTURE SOLDIER TRAINER, FUTURE SOLDIER TRAINER, FUTURE SOLDIER TRAINER, FUTURE SOLDIER TRAINER, FUTURE SOLDIER TRAINER, VALIDATE SHIP STATUS, SHIPPED",
+            "RCTR TERMINATED IN RZ, NEW",
+            "NOT INTERESTED-TERMINATE",
+            "NEW",
+            "PHYSICAL, SUBMIT 2807 / MEDICAL READ, WAITING MED DOCUMENTS, WAITING MED DOCUMENTS, TERMINATE - NO REASON GIVEN, ADDITIONAL MED DOCUMENTS, CONSULT, ADDITIONAL MED DOCUMENTS, WAITING MED DOCUMENTS, APPOINTMENT INITIAL, WAITING EDUCATION DOCUMENTS, PHYSICAL, WAITING MED DOCUMENTS, SUBMIT 2807 / MEDICAL READ, WAITING MED DOCUMENTS"
+          ],
+          "likely_type": "array_text"
+        },
+        "col_076": {
+          "null_ratio": 0.21,
+          "example_values": [
+            "FTFC, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null",
+            "null, null",
+            "BLK",
+            "ATTMPT",
+            "null, null, null, null, null, null, null, null, null, FTFC, null, null, null, null, null"
+          ],
+          "likely_type": "array_text"
+        },
+        "col_077": {
+          "null_ratio": 0.21,
+          "example_values": [
+            "FACE TO FACE-COMMUNITY, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null",
+            "null, null",
+            "AD HOC BULK LEADS",
+            "QUICK ATTEMPT ACTIVITY",
+            "null, null, null, null, null, null, null, null, null, FACE TO FACE-COMMUNITY, null, null, null, null, null"
+          ],
+          "likely_type": "array_text"
+        },
+        "col_078": {
+          "null_ratio": 0.18,
+          "example_values": [
+            "HT / WT 72 / 153 NO LAW, MED, TATTOO, PIERCING, DEP, AGREE TO PROCESS, 10/10; WANT TO DO IT, COMING IN TOMORROW WITH DAD, BOTH PARENTS CAME IN TODAY AND SIGNED PC. HE WILL TEST TOMORROW AFTER SCHOOL AND THEN WE WILL SIT DOWN AND REVIEW OPTIONS AND SCHEDULE PHYSICAL/ENLIST., PASSED THE TEST AND PACKET IS BUILT READY FOR QC, SYSTEM GENERATED BY MPA BATCH PROCESS, WILL CONDUCT FSO TOMORROW, ATTENDED FST AND CONDUCTED FSO.  WILL BE ATTENDING FST NEXT WEEK AND IS STILL MOTIVATED, STILL COMMITTED; CAME TO FST; HAS NO ISSUES, CAME IN FOR TRAINING, STILL MOTIVATED AND NO NEW ISSUES., BROUGHT IN A REFERRAL, FRIEND FROM SCHOOL. CONDUCTED FST, NO NEW ISSUES AND CONTINUES TO SHOW MOTIVATION. CONDUCTED SAFETY BRIEF FOR THE WEEK, CAME IN FOR FST, STILL MOTIVATED, NO NEW ISSUES., ATTENDED FUTURE SOLDIER TRAINING, NO NEW ISSUES REPORTED STILL MOTIVATED., STILL MOTIVATED. NO ISSUES AND KEEPS BRINING IN REFERRALS. IS STILL IN GOOD STANDING AT SCHOOL AND WILL KEEP PUSHING FOR REFERRALS.  WILL BE AT FST NEXT WEEK., ATTENDED TRAINING AND HAS NO ISSUES TO REPORT.  STILL MOTIVATED AND STILL HUNGRY TO FIND REFERRALS., ATTENDED TRAINING AND HAS NO ISSUES TO REPORT. STILL MOTIVATED AND STILL HUNGRY TO FIND REFERRALS., ATTENDED FST AND WAS MOTIVATED.  HE IS PASSING ALL OF HIS CLASSES FOR HIGH SCHOOL.  HE IS ALSO PROVIDING LEADS FOR THE OFFICE., ATTENDED FST TODAY AND REPORTED NO ISSUES. HE IS STILL MOTIVATED AND WORKING WITH FRIENDS TO SEE IF HE CAN GET REFERRALS. WILL BE IN NEXT WEEK FOR TRAINING., ATTENDED FUTURE SOLDIER TRAINING, CONDUCTED UPPER BODY CIRCUIT AND COLD WEATHER INJURY TRAINING.  NO ISSUES TO REPORT, MOTIVATED TO SHIP., THERE WILL BE SPOKE WITH HIM OVER THE PHONE AND HE WILL BE IN FOR TRAINING NEXT WEEK.  STILL MOTIVATED, COULD NOT MAKE IT TO TRAINING THIS WEEK BECAUSE OF WORK.  SAYS HE HAD A GOOD THANKSGIVING AND WILL BE IN FOR TRAINING NEXT WEEK., FST WAS CANCELLED DUE TO ATM.  SPOKE OVER THE PHONE AND HE HAS NO ISSUES.  SAYS HE MAY BRING SOMEONE TO FST THIS WEEK, BUT IS NOT FOR SURE.  WILL FU THIS WEEK TO SEE IF HE IS STILL BRINGING SOMEONE IN., CONDUCTED FUTURE SOLDIER TRAINING, RUN AND UPPER BODY CIRCUIT, FUTURE SOLDIER IS MOTIVATED WITH NO ISSUES, CAME IN FOR FST; MOTIVATED AND STILL COMMITTED IN HIS COMMITMENT, UNABLE TO ATTEND TRAINING THIS WEEK BUT CONDUCTED TELEPHONIC FU AND HE HAS NO ISSUES TO REPORT., ATTENDED FST.  HE IS MOTIVATED AND READY TO LEAVE FOR BASIC.  STILL IN GOOD STANDING TO GRADUATE HS.  STILL TALKING TO HIS FRIENDS ABOUT THE ARMY AND SAYS HE WILL HAVE SOME REFERRALS BY NEXT WEEK., CONDUCTED FST. NO ISSUES AT THIS TIME. CONTINUES TO SHOW MOTIVATION. GAVE SAFETY BRIEF FOR THE WEEK., CONDUCTED FST. NO ISSUES AT THIS TIME. CONTINUES TO SHOW MOTIVATION. GAVE SAFETY BRIEF FOR THE WEEK., CONDUCTED FST. NO ISSUES AT THIS TIME. CONTINUES TO SHOW MOTIVATION. WILL ATTEND NEXT WEEK, ATTENDED FST NO NEW ISSUES REPORTED STILL MOTIVATED, NO REFERRALS PROVIDED, ATTENDED TRAINING AND HAS NO ISSUES.  IS TRYING TO GET A COUPLE OF HIS FRIENDS TO COME IN FOR INFORMATION.  WILL BE AT NEXT WEEKS TRAINING., CAME IN; NO ISSUES TO REPORT, CAME IN; NO ISSUES TO REPORT, CAME IN; NO ISSUES TO REPORT, CAME IN FOR FUTURE SOLIDER TRAINING NO NEW ISSUES REPORTED OR REFERRALS PROVIDED., COULD NOT ATTEND DUE TO A FAMILY GATHERING NO ISSUES, STILL MOTIVATED, ATTENDED FST TODAY AND REPORTED NO ISSUES. HE IS STILL MOTIVATED AND WORKING WITH FRIENDS TO SEE IF HE CAN GET REFERRALS. WILL BE IN NEXT WEEK FOR TRAINING., CAME INTO FST HAS NO ISSUES TO REPORT.  HE HAS BEEN TALKING TO A COUPLE DIFFERENT KIDS AT SCHOOL.  SAYS THEY ARE SCARED TO COME IN TO THE OFFICE.  WILL TRY TO MAKE CONTACT AT THE SCHOOL., CAME IN FOR TRAINING; CONDUCTED FST, TEAM BUILDING EXERCISES; NO ISSUES TO REPORT, STATED IS PASSING ALL CLASSES WITH A'S AND B'S AND BROUGHT SCHOOL LETTER; WILL BE IN FOR TRAINING NEXT WEEK, CONDUCTED CIRCUIT TRAINING; STILL MOTIVATED; WILL ATTEND NEXT WEEK; WENT OVER WHAT TO EXPECT THE FIRST FEW WEEKS OF BCT AND AIT, CONDUCTED CIRCUIT TRAINING; STILL MOTIVATED; WILL ATTEND NEXT WEEK; TRAINED ON FIRST AID, CONDUCTED 30:60'S / 60:120'S AND 300 YD SHUTTLE RUN; STILL MOTIVATED; WILL ATTEND NEXT WEEK; TRAINED ON ARMY VALUES, CONDUCTED CIRCUIT TRAINING INDOORS DUE TO WEATHER; STILL MOTIVATED; WILL ATTEND NEXT WEEK; TRAINED ON RADIO COMMUNICATIONS, CAME IN FOR FSAI NO ISSUES TO REPORT WILL BE IN NEXT WEEK ., CONDUCTED OPAT; STILL MOTIVATED; WILL ATTEND NEXT WEEK, CONDUCTED TRAINING, CONDUCTED PU/SU DRILL AND SPRINTS; STILL MOTIVATED; CONDUCTED SHARP TRAINING AND WILL ATTEND NEXT WEEK, CONDUCTED COMMUNITY SPRING CLEANUP; STILL MOTIVATED; WILL ATTEND NEXT WEEK, COULD NOT COME IN TODAY DUE TO WORK.  WILL BE IN NEXT WEEK., CAME IN WITH ALL OF HIS DOCUMENTS AND IS READY TO GO NEXT WEEK.  WILL BE HERE ON MONDAY, null, null",
+            "RECRUITER TERMINATED THROUGH RZ, ACTION ZONE DETERMINED NO ACTION TAKEN BY USER",
+            "NOT INTERESTED.",
+            "QUICK CONTACT ATTEMPT",
+            "ACTION ZONE DETERMINED NO ACTION TAKEN BY USER"
+          ],
+          "likely_type": "array_text"
+        },
+        "col_079": {
+          "null_ratio": 0.23,
+          "example_values": [
+            "117195290, 116152213, 116152213, 117195290, 83481936, 117195290, null, 117195290, 117195290, 116813424, 120239844, 115916769, 120239844, 116152173, 117195290, 117195290, 116813424, 117195290, 83481936, 128508253, 117195290, 117195290, 117195290, 128508253, 116813424, 116152173, 117195290, 116152213, 128508253, 116813424, 116152173, 117195290, 116152213, 128508253, 116813424, 116152173, 117195290, 116152213, 117195290, 116152213, 116813424, 116813424, 116813424, 116813424, 83481936, 116813424, 116813424, 116813424, 116813424, 117195290, 117195290, null, null",
+            "28901499, null",
+            "115683009",
+            "104924753",
+            "166741221, 166741221, 141623716, 166741221, 166741221, 166741221, 166741221, 166741221, 141623716, 166741221, 166741221, 166741221, 166741221, 166741221, 166741221"
+          ],
+          "likely_type": "timestamp"
+        },
+        "col_080": {
+          "null_ratio": 0.22,
+          "example_values": [
+            "R, R, R, R, R, R, null, R, R, R, R, R, R, R, R, R, R, R, R, R, R, R, R, R, R, R, R, R, R, R, R, R, R, R, R, R, R, R, R, R, R, R, R, R, R, R, R, R, R, R, R, null, null",
+            "R, null",
+            "R",
+            "R, X, R, R, R, R, R, R, R, R, R, R, R, R, R"
+          ],
+          "likely_type": "array_text"
+        },
+        "col_081": {
+          "null_ratio": 0.2,
+          "example_values": [
+            "53",
+            "2",
+            "1"
+          ],
+          "likely_type": "numeric"
+        },
+        "col_082": {
+          "null_ratio": 0.2,
+          "example_values": [
+            "Aug 21, 2018 6:50:00 AM -07:00",
+            "Dec 15, 2021 9:00:57 PM -08:00",
+            "Mar 05, 2019 4:46:00 AM -08:00",
+            "Nov 25, 2020 6:23:05 AM -08:00",
+            "Dec 10, 2017 9:01:34 PM -08:00"
+          ],
+          "likely_type": "array_text"
+        },
+        "col_083": {
+          "null_ratio": 0.2,
+          "example_values": [
+            "B",
+            "A"
+          ],
+          "likely_type": "text"
+        },
+        "col_084": {
+          "null_ratio": 0.2,
+          "example_values": [
+            "PROSPECT",
+            "Lead"
+          ],
+          "likely_type": "text"
+        },
+        "col_085": {
+          "null_ratio": 0.31,
+          "example_values": [
+            "FF",
+            "AF",
+            "TX"
+          ],
+          "likely_type": "text"
+        },
+        "col_086": {
+          "null_ratio": 0.2,
+          "example_values": [
+            "FACE TO FACE",
+            "NO ACTION",
+            "TELEPHONE CALL",
+            "TEXT"
+          ],
+          "likely_type": "text"
+        },
+        "col_087": {
+          "null_ratio": 0.21,
+          "example_values": [
+            "A",
+            "J"
+          ],
+          "likely_type": "text"
+        },
+        "col_088": {
+          "null_ratio": 0.2,
+          "example_values": [
+            "CONTACTED",
+            "SENT"
+          ],
+          "likely_type": "text"
+        },
+        "col_089": {
+          "null_ratio": 0.36,
+          "example_values": [
+            "IA",
+            "NW",
+            "AN"
+          ],
+          "likely_type": "text"
+        },
+        "col_090": {
+          "null_ratio": 0.36,
+          "example_values": [
+            "APPOINTMENT INITIAL",
+            "NEW",
+            "NOT INTERESTED-TERMINATE"
+          ],
+          "likely_type": "text"
+        },
+        "col_091": {
+          "null_ratio": 0.46,
+          "example_values": [
+            "FTFC",
+            "BLK",
+            "ATTMPT"
+          ],
+          "likely_type": "text"
+        },
+        "col_092": {
+          "null_ratio": 0.46,
+          "example_values": [
+            "FACE TO FACE-COMMUNITY",
+            "AD HOC BULK LEADS",
+            "QUICK ATTEMPT ACTIVITY"
+          ],
+          "likely_type": "text"
+        },
+        "col_093": {
+          "null_ratio": 0.3,
+          "example_values": [
+            "117195290",
+            "115683009",
+            "104924753",
+            "166741221",
+            "147638183"
+          ],
+          "likely_type": "timestamp"
+        },
+        "col_094": {
+          "null_ratio": 0.3,
+          "example_values": [
+            "R"
+          ],
+          "likely_type": "text"
+        },
+        "col_095": {
+          "null_ratio": 0.2,
+          "example_values": [
+            "Oct 16, 2019 7:01:42 PM -07:00",
+            "Feb 15, 2022 9:37:38 AM -08:00",
+            "Mar 05, 2019 4:46:00 AM -08:00",
+            "Nov 25, 2020 6:23:05 AM -08:00",
+            "Dec 10, 2017 9:01:34 PM -08:00"
+          ],
+          "likely_type": "array_text"
+        },
+        "col_096": {
+          "null_ratio": 0.24,
+          "example_values": [
+            "Z",
+            "A"
+          ],
+          "likely_type": "text"
+        },
+        "col_097": {
+          "null_ratio": 0.24,
+          "example_values": [
+            "SHIPPED",
+            "Lead"
+          ],
+          "likely_type": "text"
+        },
+        "col_098": {
+          "null_ratio": 0.45,
+          "example_values": [
+            "AF",
+            "TX",
+            "YV"
+          ],
+          "likely_type": "text"
+        },
+        "col_099": {
+          "null_ratio": 0.39,
+          "example_values": [
+            "NO ACTION",
+            "TELEPHONE CALL",
+            "TEXT",
+            "ADDITIONAL MED DOCS / SUB TO MEPS FOR REVIEW"
+          ],
+          "likely_type": "text"
+        },
+        "col_100": {
+          "null_ratio": 0.38,
+          "example_values": [
+            "O",
+            "A",
+            "J",
+            "RC"
+          ],
+          "likely_type": "text"
+        },
+        "col_101": {
+          "null_ratio": 0.41,
+          "example_values": [
+            "NOT CONTACTED",
+            "CONTACTED",
+            "SENT",
+            "RECEIVED"
+          ],
+          "likely_type": "text"
+        },
+        "col_102": {
+          "null_ratio": 0.26,
+          "example_values": [
+            "AV",
+            "TM",
+            "AN",
+            "NW",
+            "EV"
+          ],
+          "likely_type": "text"
+        },
+        "col_103": {
+          "null_ratio": 0.27,
+          "example_values": [
+            "SHIPPED",
+            "RCTR TERMINATED IN RZ",
+            "NOT INTERESTED-TERMINATE",
+            "NEW",
+            "TERMINATE - NO REASON GIVEN"
+          ],
+          "likely_type": "text"
+        },
+        "col_104": {
+          "null_ratio": 0.82,
+          "example_values": [
+            "BLK",
+            "ATTMPT",
+            "CLGLST",
+            "ADNG",
+            "HSLST"
+          ],
+          "likely_type": "text"
+        },
+        "col_105": {
+          "null_ratio": 0.82,
+          "example_values": [
+            "AD HOC BULK LEADS",
+            "QUICK ATTEMPT ACTIVITY",
+            "COLLEGE LIST",
+            "ADVERTISING ARNG",
+            "HIGH SCHOOL LIST"
+          ],
+          "likely_type": "text"
+        },
+        "col_106": {
+          "null_ratio": 0.4,
+          "example_values": [
+            "28901499",
+            "115683009",
+            "104924753",
+            "166741221",
+            "63194024"
+          ],
+          "likely_type": "timestamp"
+        },
+        "col_107": {
+          "null_ratio": 0.4,
+          "example_values": [
+            "R"
+          ],
+          "likely_type": "text"
+        },
+        "col_108": {
+          "null_ratio": 0.36,
+          "example_values": [
+            "1534859400000",
+            "1551789960000",
+            "1741094580000",
+            "1705500960000",
+            "1737987540000, 1732314094023"
+          ],
+          "likely_type": "timestamp"
+        },
+        "col_109": {
+          "null_ratio": 0.36,
+          "example_values": [
+            "B",
+            "A",
+            "A, A"
+          ],
+          "likely_type": "array_text"
+        },
+        "col_110": {
+          "null_ratio": 0.36,
+          "example_values": [
+            "PROSPECT",
+            "Lead",
+            "Lead, Lead"
+          ],
+          "likely_type": "array_text"
+        },
+        "col_111": {
+          "null_ratio": 0.36,
+          "example_values": [
+            "FF",
+            "AF",
+            "AF, AF"
+          ],
+          "likely_type": "array_text"
+        },
+        "col_112": {
+          "null_ratio": 0.37,
+          "example_values": [
+            "FACE TO FACE",
+            "TELEPHONE CALL",
+            "TELEPHONE CALL, TELEPHONE CALL"
+          ],
+          "likely_type": "array_text"
+        },
+        "col_113": {
+          "null_ratio": 0.36,
+          "example_values": [
+            "A",
+            "A, A"
+          ],
+          "likely_type": "array_text"
+        },
+        "col_114": {
+          "null_ratio": 0.36,
+          "example_values": [
+            "CONTACTED",
+            "CONTACTED, CONTACTED"
+          ],
+          "likely_type": "array_text"
+        },
+        "col_115": {
+          "null_ratio": 0.36,
+          "example_values": [
+            "IA",
+            "AN",
+            "AH, YX"
+          ],
+          "likely_type": "array_text"
+        },
+        "col_116": {
+          "null_ratio": 0.36,
+          "example_values": [
+            "APPOINTMENT INITIAL",
+            "NOT INTERESTED-TERMINATE",
+            "INTERESTED - FOLLOW UP, null"
+          ],
+          "likely_type": "array_text"
+        },
+        "col_117": {
+          "null_ratio": 0.41,
+          "example_values": [
+            "FTFC",
+            "BLK",
+            "CLGLST, null"
+          ],
+          "likely_type": "array_text"
+        },
+        "col_118": {
+          "null_ratio": 0.42,
+          "example_values": [
+            "FACE TO FACE-COMMUNITY",
+            "AD HOC BULK LEADS",
+            "COLLEGE LIST, null"
+          ],
+          "likely_type": "array_text"
+        },
+        "col_119": {
+          "null_ratio": 0.36,
+          "example_values": [
+            "HT / WT 72 / 153 NO LAW, MED, TATTOO, PIERCING, DEP",
+            "NOT INTERESTED.",
+            "18Y0,NPS, NO MED, NO LAW, 12L, NO DEPENDENTS. INTERESTED IN 11X OP 4",
+            "20240117; 23YR; NPS; NO MED; NO LAW; 12L; SINGLE-NO DEP; NO TEST; INTERESTED N CAREER OPPORTUNITIES;",
+            "NI AT THE MOMENT PLEASE SEND MESSAGE AFTER MAY, RW/INT IN HPSP MC"
+          ],
+          "likely_type": "array_text"
+        },
+        "col_120": {
+          "null_ratio": 0.37,
+          "example_values": [
+            "117195290",
+            "115683009",
+            "166741221",
+            "147638183",
+            "63194024, 107412283"
+          ],
+          "likely_type": "timestamp"
+        },
+        "col_121": {
+          "null_ratio": 0.37,
+          "example_values": [
+            "R",
+            "R, L"
+          ],
+          "likely_type": "array_text"
+        },
+        "col_122": {
+          "null_ratio": 0.37,
+          "example_values": [
+            "1",
+            "2"
+          ],
+          "likely_type": "numeric"
+        },
+        "col_123": {
+          "null_ratio": 0.36,
+          "example_values": [
+            "Aug 21, 2018 6:50:00 AM -07:00",
+            "Mar 05, 2019 4:46:00 AM -08:00",
+            "Mar 04, 2025 5:23:00 AM -08:00",
+            "Jan 17, 2024 6:16:00 AM -08:00",
+            "Nov 22, 2024 2:21:34 PM -08:00"
+          ],
+          "likely_type": "array_text"
+        },
+        "col_124": {
+          "null_ratio": 0.36,
+          "example_values": [
+            "B",
+            "A"
+          ],
+          "likely_type": "text"
+        },
+        "col_125": {
+          "null_ratio": 0.36,
+          "example_values": [
+            "PROSPECT",
+            "Lead"
+          ],
+          "likely_type": "text"
+        },
+        "col_126": {
+          "null_ratio": 0.36,
+          "example_values": [
+            "FF",
+            "AF"
+          ],
+          "likely_type": "text"
+        },
+        "col_127": {
+          "null_ratio": 0.36,
+          "example_values": [
+            "FACE TO FACE",
+            "TELEPHONE CALL"
+          ],
+          "likely_type": "text"
+        },
+        "col_128": {
+          "null_ratio": 0.36,
+          "example_values": [
+            "A"
+          ],
+          "likely_type": "text"
+        },
+        "col_129": {
+          "null_ratio": 0.36,
+          "example_values": [
+            "CONTACTED"
+          ],
+          "likely_type": "text"
+        },
+        "col_130": {
+          "null_ratio": 0.41,
+          "example_values": [
+            "IA",
+            "AN",
+            "YX"
+          ],
+          "likely_type": "text"
+        },
+        "col_131": {
+          "null_ratio": 0.42,
+          "example_values": [
+            "APPOINTMENT INITIAL",
+            "NOT INTERESTED-TERMINATE",
+            "INTERESTED - FOLLOW UP"
+          ],
+          "likely_type": "text"
+        },
+        "col_132": {
+          "null_ratio": 0.51,
+          "example_values": [
+            "FTFC",
+            "BLK",
+            "ADNG"
+          ],
+          "likely_type": "text"
+        },
+        "col_133": {
+          "null_ratio": 0.51,
+          "example_values": [
+            "FACE TO FACE-COMMUNITY",
+            "AD HOC BULK LEADS",
+            "ADVERTISING ARNG"
+          ],
+          "likely_type": "text"
+        },
+        "col_134": {
+          "null_ratio": 0.36,
+          "example_values": [
+            "117195290",
+            "115683009",
+            "166741221",
+            "147638183",
+            "107412283"
+          ],
+          "likely_type": "timestamp"
+        },
+        "col_135": {
+          "null_ratio": 0.36,
+          "example_values": [
+            "R",
+            "L"
+          ],
+          "likely_type": "text"
+        },
+        "col_136": {
+          "null_ratio": 0.36,
+          "example_values": [
+            "Aug 21, 2018 6:50:00 AM -07:00",
+            "Mar 05, 2019 4:46:00 AM -08:00",
+            "Mar 04, 2025 5:23:00 AM -08:00",
+            "Jan 17, 2024 6:16:00 AM -08:00",
+            "Jan 27, 2025 6:19:00 AM -08:00"
+          ],
+          "likely_type": "array_text"
+        },
+        "col_137": {
+          "null_ratio": 0.36,
+          "example_values": [
+            "B",
+            "A"
+          ],
+          "likely_type": "text"
+        },
+        "col_138": {
+          "null_ratio": 0.36,
+          "example_values": [
+            "PROSPECT",
+            "Lead"
+          ],
+          "likely_type": "text"
+        },
+        "col_139": {
+          "null_ratio": 0.36,
+          "example_values": [
+            "FF",
+            "AF"
+          ],
+          "likely_type": "text"
+        },
+        "col_140": {
+          "null_ratio": 0.36,
+          "example_values": [
+            "FACE TO FACE",
+            "TELEPHONE CALL"
+          ],
+          "likely_type": "text"
+        },
+        "col_141": {
+          "null_ratio": 0.36,
+          "example_values": [
+            "A"
+          ],
+          "likely_type": "text"
+        },
+        "col_142": {
+          "null_ratio": 0.36,
+          "example_values": [
+            "CONTACTED"
+          ],
+          "likely_type": "text"
+        },
+        "col_143": {
+          "null_ratio": 0.36,
+          "example_values": [
+            "IA",
+            "AN",
+            "AH"
+          ],
+          "likely_type": "text"
+        },
+        "col_144": {
+          "null_ratio": 0.36,
+          "example_values": [
+            "APPOINTMENT INITIAL",
+            "NOT INTERESTED-TERMINATE",
+            "INTERESTED - FOLLOW UP"
+          ],
+          "likely_type": "text"
+        },
+        "col_145": {
+          "null_ratio": 0.54,
+          "example_values": [
+            "FTFC",
+            "BLK",
+            "CLGLST"
+          ],
+          "likely_type": "text"
+        },
+        "col_146": {
+          "null_ratio": 0.54,
+          "example_values": [
+            "FACE TO FACE-COMMUNITY",
+            "AD HOC BULK LEADS",
+            "COLLEGE LIST"
+          ],
+          "likely_type": "text"
+        },
+        "col_147": {
+          "null_ratio": 0.38,
+          "example_values": [
+            "117195290",
+            "115683009",
+            "166741221",
+            "147638183",
+            "63194024"
+          ],
+          "likely_type": "timestamp"
+        },
+        "col_148": {
+          "null_ratio": 0.37,
+          "example_values": [
+            "R"
+          ],
+          "likely_type": "text"
+        },
+        "col_149": {
+          "null_ratio": 0.67,
+          "example_values": [
+            "D",
+            "B"
+          ],
+          "likely_type": "text"
+        },
+        "col_150": {
+          "null_ratio": 0.67,
+          "example_values": [
+            "WHITE -- A PERSON HAVING ORIGINS IN ANY OF THE ORIGINAL PEOPLES OF EUROPE, NORTH AFRICA, OR THE MIDDLE EAST",
+            "ASIAN/PACIFIC ISLANDER -- A PERSON HAVING ORIGINS IN ANY OF THE ORIGINAL PEOPLES OF THE FAR EAST, SOUTHEAST ASIA, THE INDIAN SUBCONTINENT, OR TH"
+          ],
+          "likely_type": "array_text"
+        },
+        "col_151": {
+          "null_ratio": 0.97,
+          "example_values": [
+            "Y",
+            "null, null, null"
+          ],
+          "likely_type": "text"
+        },
+        "col_152": {
+          "null_ratio": 0.82,
+          "example_values": [
+            "111111",
+            "111113",
+            "311111"
+          ],
+          "likely_type": "date"
+        },
+        "col_153": {
+          "null_ratio": 0.82,
+          "example_values": [
+            "Aug 27, 2018 5:00:00 PM -07:00",
+            "Mar 18, 2025 5:00:00 PM -07:00",
+            "Jan 30, 2024 4:00:00 PM -08:00",
+            "Feb 13, 2025 4:00:00 PM -08:00",
+            "Feb 10, 2016 4:00:00 PM -08:00"
+          ],
+          "likely_type": "array_text"
+        },
+        "col_154": {
+          "null_ratio": 0.77,
+          "example_values": [
+            "Aug 22, 2018 5:00:00 PM -07:00",
+            "Oct 19, 2023 5:00:00 PM -07:00",
+            "Jan 29, 2024 4:00:00 PM -08:00",
+            "Feb 02, 2025 4:00:00 PM -08:00",
+            "Oct 04, 2015 6:00:00 PM -07:00"
+          ],
+          "likely_type": "array_text"
+        },
+        "col_155": {
+          "null_ratio": 0.77,
+          "example_values": [
+            "82",
+            "61",
+            "24",
+            "95",
+            "55"
+          ],
+          "likely_type": "numeric"
+        },
+        "col_156": {
+          "null_ratio": 0.46,
+          "example_values": [
+            "5A6H",
+            "6J1N",
+            "1B3G",
+            "9E1A",
+            "3N5B"
+          ],
+          "likely_type": "text"
+        },
+        "col_157": {
+          "null_ratio": 0.49,
+          "example_values": [
+            "1534859400000",
+            "1741094580000",
+            "1705500960000",
+            "1591110000000",
+            "1736425980000"
+          ],
+          "likely_type": "timestamp"
+        },
+        "col_158": {
+          "null_ratio": 0.49,
+          "example_values": [
+            "2018",
+            "2025",
+            "2024",
+            "2020"
+          ],
+          "likely_type": "array_text"
+        },
+        "col_159": {
+          "null_ratio": 0.5,
+          "example_values": [
+            "117195290",
+            "166741221",
+            "147638183",
+            "128555378",
+            "147556882"
+          ],
+          "likely_type": "timestamp"
+        },
+        "col_160": {
+          "null_ratio": 0.49,
+          "example_values": [
+            "5A6H",
+            "6J1N",
+            "1B3G",
+            "9E1A",
+            "3N5B"
+          ],
+          "likely_type": "array_text"
+        },
+        "col_161": {
+          "null_ratio": 0.49,
+          "example_values": [
+            "Aug 21, 2018 6:50:00 AM -07:00",
+            "Mar 04, 2025 5:23:00 AM -08:00",
+            "Jan 17, 2024 6:16:00 AM -08:00",
+            "Jun 02, 2020 8:00:00 AM -07:00",
+            "Jan 09, 2025 4:33:00 AM -08:00"
+          ],
+          "likely_type": "array_text"
+        },
+        "col_162": {
+          "null_ratio": 0.49,
+          "example_values": [
+            "117195290",
+            "166741221",
+            "147638183",
+            "128555378",
+            "147556882"
+          ],
+          "likely_type": "timestamp"
+        },
+        "col_163": {
+          "null_ratio": 0.49,
+          "example_values": [
+            "5A6H",
+            "6J1N",
+            "1B3G",
+            "9E1A",
+            "3N5B"
+          ],
+          "likely_type": "text"
+        },
+        "col_164": {
+          "null_ratio": 0.49,
+          "example_values": [
+            "2018",
+            "2025",
+            "2024",
+            "2020"
+          ],
+          "likely_type": "date"
+        },
+        "col_165": {
+          "null_ratio": 0.5,
+          "example_values": [
+            "Aug 21, 2018 6:50:00 AM -07:00",
+            "Mar 04, 2025 5:23:00 AM -08:00",
+            "Jan 17, 2024 6:16:00 AM -08:00",
+            "Jun 02, 2020 8:00:00 AM -07:00",
+            "Jan 09, 2025 4:33:00 AM -08:00"
+          ],
+          "likely_type": "array_text"
+        },
+        "col_166": {
+          "null_ratio": 0.49,
+          "example_values": [
+            "117195290",
+            "166741221",
+            "147638183",
+            "128555378",
+            "147556882"
+          ],
+          "likely_type": "timestamp"
+        },
+        "col_167": {
+          "null_ratio": 0.49,
+          "example_values": [
+            "5A6H",
+            "6J1N",
+            "1B3G",
+            "9E1A",
+            "3N5B"
+          ],
+          "likely_type": "text"
+        },
+        "col_168": {
+          "null_ratio": 0.49,
+          "example_values": [
+            "2018",
+            "2025",
+            "2024",
+            "2020"
+          ],
+          "likely_type": "date"
+        },
+        "col_169": {
+          "null_ratio": 0.49,
+          "example_values": [
+            "1"
+          ],
+          "likely_type": "numeric"
+        },
+        "col_170": {
+          "null_ratio": 0.57,
+          "example_values": [
+            "1534859880000",
+            "1741109340000",
+            "1705510500000",
+            "1591113600000",
+            "1738581720000"
+          ],
+          "likely_type": "timestamp"
+        },
+        "col_171": {
+          "null_ratio": 0.57,
+          "example_values": [
+            "117195290",
+            "166741221",
+            "147638183",
+            "128555378",
+            "147556882"
+          ],
+          "likely_type": "timestamp"
+        },
+        "col_172": {
+          "null_ratio": 0.57,
+          "example_values": [
+            "5A6H",
+            "6J1N",
+            "1B3G",
+            "9E1A",
+            "3N5B"
+          ],
+          "likely_type": "array_text"
+        },
+        "col_173": {
+          "null_ratio": 0.57,
+          "example_values": [
+            "Aug 21, 2018 6:58:00 AM -07:00",
+            "Mar 04, 2025 9:29:00 AM -08:00",
+            "Jan 17, 2024 8:55:00 AM -08:00",
+            "Jun 02, 2020 9:00:00 AM -07:00",
+            "Feb 03, 2025 3:22:00 AM -08:00"
+          ],
+          "likely_type": "array_text"
+        },
+        "col_174": {
+          "null_ratio": 0.57,
+          "example_values": [
+            "117195290",
+            "166741221",
+            "147638183",
+            "128555378",
+            "147556882"
+          ],
+          "likely_type": "timestamp"
+        },
+        "col_175": {
+          "null_ratio": 0.57,
+          "example_values": [
+            "5A6H",
+            "6J1N",
+            "1B3G",
+            "9E1A",
+            "3N5B"
+          ],
+          "likely_type": "text"
+        },
+        "col_176": {
+          "null_ratio": 0.57,
+          "example_values": [
+            "Aug 21, 2018 6:58:00 AM -07:00",
+            "Mar 04, 2025 9:29:00 AM -08:00",
+            "Jan 17, 2024 8:55:00 AM -08:00",
+            "Jun 02, 2020 9:00:00 AM -07:00",
+            "Feb 03, 2025 3:22:00 AM -08:00"
+          ],
+          "likely_type": "array_text"
+        },
+        "col_177": {
+          "null_ratio": 0.57,
+          "example_values": [
+            "117195290",
+            "166741221",
+            "147638183",
+            "128555378",
+            "147556882"
+          ],
+          "likely_type": "timestamp"
+        },
+        "col_178": {
+          "null_ratio": 0.57,
+          "example_values": [
+            "5A6H",
+            "6J1N",
+            "1B3G",
+            "9E1A",
+            "3N5B"
+          ],
+          "likely_type": "text"
+        },
+        "col_179": {
+          "null_ratio": 0.57,
+          "example_values": [
+            "1"
+          ],
+          "likely_type": "numeric"
+        },
+        "col_180": {
+          "null_ratio": 0.75,
+          "example_values": [
+            "2018-08-23 00:00:00",
+            "2023-10-20 00:00:00",
+            "2024-01-30 00:00:00",
+            "2025-02-03 00:00:00",
+            "2015-10-05 00:00:00"
+          ],
+          "likely_type": "date"
+        },
+        "col_181": {
+          "null_ratio": 0.75,
+          "example_values": [
+            "82",
+            "61",
+            "24",
+            "95",
+            "55"
+          ],
+          "likely_type": "numeric"
+        },
+        "col_182": {
+          "null_ratio": 0.75,
+          "example_values": [
+            "2018-08-23 00:00:00",
+            "2023-10-20 00:00:00",
+            "2020-03-30 00:00:00",
+            "2025-02-03 00:00:00",
+            "2015-10-05 00:00:00"
+          ],
+          "likely_type": "date"
+        },
+        "col_183": {
+          "null_ratio": 0.76,
+          "example_values": [
+            "82",
+            "61",
+            "30",
+            "95",
+            "55"
+          ],
+          "likely_type": "numeric"
+        },
+        "col_184": {
+          "null_ratio": 0.76,
+          "example_values": [
+            "1",
+            "2"
+          ],
+          "likely_type": "numeric"
+        },
+        "col_185": {
+          "null_ratio": 0.46,
+          "example_values": [
+            "G",
+            "Other"
+          ],
+          "likely_type": "text"
+        },
+        "col_186": {
+          "null_ratio": 0.47,
+          "example_values": [
+            "A",
+            "4",
+            " | ASVAB_Unknown"
+          ],
+          "likely_type": "text"
+        },
+        "col_187": {
+          "null_ratio": 0.46,
+          "example_values": [
+            "GA",
+            "G4",
+            "Other | ASVAB_Unknown"
+          ],
+          "likely_type": "text"
+        },
+        "col_188": {
+          "null_ratio": 0.77,
+          "example_values": [
+            "B54",
+            "C78",
+            "A06, A02",
+            "A17",
+            "B28"
+          ],
+          "likely_type": "text"
+        },
+        "col_189": {
+          "null_ratio": 0.81,
+          "example_values": [
+            "null, null, null",
+            "null, null, null, null",
+            "null, null, null, null, null",
+            "null, null, null, null, null, null, null, null, null, null, null, null, null, null, null"
+          ],
+          "likely_type": "array_text"
+        },
+        "col_190": {
+          "null_ratio": 0.78,
+          "example_values": [
+            "2019-06-17 17:00:00, 2018-08-27 16:00:00, 2018-08-23 16:01:00",
+            "2025-03-21 15:30:00, 2025-03-17 15:00:00, 2025-03-18 15:00:00, 2025-03-08 09:00:00",
+            "2024-01-30 17:00:00, 2024-01-30 15:00:00, 2024-02-19 17:00:00, 2024-02-08 00:30:00, 2024-02-05 16:00:00",
+            "2025-02-18 06:00:00, 2025-04-20 17:00:00, 2025-02-08 06:00:00, 2025-02-14 06:00:00",
+            "2017-06-11 17:00:00, 2017-03-07 19:00:00, 2016-02-10 17:00:00, 2015-12-07 08:00:00, 2015-12-07 08:00:00, 2015-12-07 08:00:00, 2015-12-07 08:00:00, 2015-12-07 08:00:00, 2015-12-07 08:00:00, 2015-12-07 08:00:00, 2015-12-03 13:00:00, 2015-12-03 13:00:00, 2015-12-03 11:00:00, 2015-12-03 09:00:00, 2015-12-03 09:00:00"
+          ],
+          "likely_type": "array_text"
+        },
+        "col_191": {
+          "null_ratio": 0.77,
+          "example_values": [
+            "B, D, X",
+            "D, D, D, X",
+            "D, X, B, X, D",
+            "D, B, X, D",
+            "C, A, A, X, X, X, X, X, X, X, X, X, X, X, X"
+          ],
+          "likely_type": "array_text"
+        },
+        "col_192": {
+          "null_ratio": 0.78,
+          "example_values": [
+            "Y, Y, Y",
+            "Y, Y, Y, Y",
+            "Y, Y, Y, Y, Y",
+            "Y, Y, Y, Y, null, null, null, null, null, null, null, null, null, null, null"
+          ],
+          "likely_type": "array_text"
+        },
+        "col_193": {
+          "null_ratio": 0.77,
+          "example_values": [
+            "P, P, P",
+            "P, P, P, P",
+            "P, P, P, P, P",
+            "P, P, P, P, P, P, P, P, P, P, P, P, P, P, P"
+          ],
+          "likely_type": "array_text"
+        },
+        "col_194": {
+          "null_ratio": 0.78,
+          "example_values": [
+            "P, P, N",
+            "P, C, P, W",
+            "P, N, P, P, P",
+            "P, P, P, T",
+            "P, P, P, P, W, W, W, W, W, W, W, W, W, W, W"
+          ],
+          "likely_type": "array_text"
+        },
+        "col_195": {
+          "null_ratio": 0.78,
+          "example_values": [
+            "DAR, DAR, DAR",
+            "DAR, DAR, DAR, DAR",
+            "DAR, DAR, DAR, DAR, DAR",
+            "DAG, DAG, DAG, DAG, DAG, DAG, DAG, DAG, DAG, DAG, DAG, DAG, DAG, DAG, DAG"
+          ],
+          "likely_type": "array_text"
+        },
+        "col_196": {
+          "null_ratio": 0.77,
+          "example_values": [
+            "2019-05-19 04:46:06.006, 2018-08-23 22:06:41.02, 2018-08-22 17:57:46.8",
+            "2025-03-19 14:43:19.466, 2025-03-13 11:40:19.856, 2025-03-13 11:53:37.406, 2025-03-06 14:20:16.093",
+            "2024-01-25 16:49:03.21, 2024-01-24 16:51:49.5, 2024-02-20 00:00:00, 2024-02-01 08:37:32.67, 2024-02-02 06:17:12.146",
+            "2025-02-18 14:28:27.936, 2025-04-21 00:00:00, 2025-02-03 14:31:54.543, 2025-02-03 14:34:29.016",
+            "2017-05-13 04:44:56.36, 2017-03-02 16:01:57.7, 2016-02-08 09:10:10.616, 2015-12-04 13:32:25.176, null, null, null, null, null, null, null, null, null, null, null"
+          ],
+          "likely_type": "array_text"
+        },
+        "col_197": {
+          "null_ratio": 0.77,
+          "example_values": [
+            "2019-06-17 17:00:00",
+            "2025-03-21 15:30:00",
+            "2024-02-19 17:00:00",
+            "2025-04-20 17:00:00",
+            "2017-06-11 17:00:00"
+          ],
+          "likely_type": "date"
+        },
+        "col_198": {
+          "null_ratio": 0.96,
+          "example_values": [
+            "122988323",
+            "180123201",
+            "113558184",
+            "169066960"
+          ],
+          "likely_type": "timestamp"
+        },
+        "col_199": {
+          "null_ratio": 0.78,
+          "example_values": [
+            "B",
+            "D",
+            "C"
+          ],
+          "likely_type": "text"
+        },
+        "col_200": {
+          "null_ratio": 0.77,
+          "example_values": [
+            "P"
+          ],
+          "likely_type": "text"
+        },
+        "col_201": {
+          "null_ratio": 0.78,
+          "example_values": [
+            "DAR",
+            "DAG"
+          ],
+          "likely_type": "text"
+        },
+        "col_202": {
+          "null_ratio": 0.8,
+          "example_values": [
+            "Y"
+          ],
+          "likely_type": "text"
+        },
+        "col_203": {
+          "null_ratio": 0.78,
+          "example_values": [
+            "P",
+            "W"
+          ],
+          "likely_type": "text"
+        },
+        "col_204": {
+          "null_ratio": 0.81,
+          "example_values": [
+            "2019-05-19 04:46:06.006000",
+            "2025-03-19 14:43:19.466000",
+            "2024-02-20 00:00:00",
+            "2025-04-21 00:00:00",
+            "2023-10-02 09:57:50.246000"
+          ],
+          "likely_type": "date"
+        },
+        "col_205": {
+          "null_ratio": 0.78,
+          "example_values": [
+            "2018-08-23 16:01:00",
+            "2025-03-08 09:00:00",
+            "2024-01-30 15:00:00",
+            "2025-02-08 06:00:00",
+            "2015-12-03 09:00:00"
+          ],
+          "likely_type": "date"
+        },
+        "col_206": {
+          "null_ratio": 0.96,
+          "example_values": [
+            "122988323",
+            "180123201",
+            "113558184",
+            "169066960"
+          ],
+          "likely_type": "timestamp"
+        },
+        "col_207": {
+          "null_ratio": 0.77,
+          "example_values": [
+            "X"
+          ],
+          "likely_type": "text"
+        },
+        "col_208": {
+          "null_ratio": 0.77,
+          "example_values": [
+            "P"
+          ],
+          "likely_type": "text"
+        },
+        "col_209": {
+          "null_ratio": 0.77,
+          "example_values": [
+            "DAR",
+            "DAG"
+          ],
+          "likely_type": "text"
+        },
+        "col_210": {
+          "null_ratio": 0.77,
+          "example_values": [
+            "Y"
+          ],
+          "likely_type": "text"
+        },
+        "col_211": {
+          "null_ratio": 0.77,
+          "example_values": [
+            "N",
+            "W",
+            "P"
+          ],
+          "likely_type": "text"
+        },
+        "col_212": {
+          "null_ratio": 0.77,
+          "example_values": [
+            "2018-08-22 17:57:46.800000",
+            "2025-03-06 14:20:16.093000",
+            "2024-01-24 16:51:49.500000",
+            "2025-02-03 14:31:54.543000",
+            "2015-12-04 13:32:25.176000"
+          ],
+          "likely_type": "date"
+        },
+        "col_213": {
+          "null_ratio": 0.77,
+          "example_values": [
+            "3",
+            "4",
+            "5",
+            "15"
+          ],
+          "likely_type": "numeric"
+        },
+        "col_214": {
+          "null_ratio": 0.94,
+          "example_values": [
+            "-4, -3, -1, -2",
+            "-2, -3, -1",
+            "-1",
+            "1"
+          ],
+          "likely_type": "array_text"
+        },
+        "col_215": {
+          "null_ratio": 0.94,
+          "example_values": [
+            "2025-06-20, 2025-06-20, 2025-06-20, 2025-06-20, 2025-05-27, 2025-05-27, 2025-05-27, 2025-05-27, 2025-05-27, 2025-03-24, 2025-03-24, 2025-03-24, 2025-03-24, 2025-03-24, 2025-04-21, 2025-04-21, 2025-04-21, 2025-04-21, 2025-04-21",
+            "2015-01-28, 2015-01-28, 2015-01-28, 2015-02-01, 2015-02-01, 2015-02-01, 2015-02-05, 2015-02-05",
+            "2023-11-06, 2023-11-06, 2023-11-06, 2023-11-06",
+            "2013-05-28, 2013-05-28, 2013-05-28, 2013-05-28",
+            "AA"
+          ],
+          "likely_type": "array_text"
+        },
+        "col_216": {
+          "null_ratio": 0.94,
+          "example_values": [
+            "D, D, D, D, RW, RW, RW, RW, RW, RW, RW, RW, RW, RW, RW, RW, RW, RW, RW",
+            "RW, RW, RW, A, A, A, RW, RW",
+            "D, D, D, D",
+            "A, A, A, A",
+            "2024-08-13 00:00:00"
+          ],
+          "likely_type": "array_text"
+        },
+        "col_217": {
+          "null_ratio": 0.94,
+          "example_values": [
+            "DISAPPROVED, DISAPPROVED, DISAPPROVED, DISAPPROVED, RETURNED WITHOUT ACTION, RETURNED WITHOUT ACTION, RETURNED WITHOUT ACTION, RETURNED WITHOUT ACTION, RETURNED WITHOUT ACTION, RETURNED WITHOUT ACTION, RETURNED WITHOUT ACTION, RETURNED WITHOUT ACTION, RETURNED WITHOUT ACTION, RETURNED WITHOUT ACTION, RETURNED WITHOUT ACTION, RETURNED WITHOUT ACTION, RETURNED WITHOUT ACTION, RETURNED WITHOUT ACTION, RETURNED WITHOUT ACTION",
+            "RETURNED WITHOUT ACTION, RETURNED WITHOUT ACTION, RETURNED WITHOUT ACTION, APPROVED, APPROVED, APPROVED, RETURNED WITHOUT ACTION, RETURNED WITHOUT ACTION",
+            "DISAPPROVED, DISAPPROVED, DISAPPROVED, DISAPPROVED",
+            "APPROVED, APPROVED, APPROVED, APPROVED",
+            "2024-08-13 19:37:14"
+          ],
+          "likely_type": "array_text"
+        },
+        "col_218": {
+          "null_ratio": 0.94,
+          "example_values": [
+            "G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G",
+            "G, G, G, G, G, G, K, K",
+            "G, G, G, G",
+            "Q"
+          ],
+          "likely_type": "array_text"
+        },
+        "col_219": {
+          "null_ratio": 0.94,
+          "example_values": [
+            "MEDICAL, MEDICAL, MEDICAL, MEDICAL, MEDICAL, MEDICAL, MEDICAL, MEDICAL, MEDICAL, MEDICAL, MEDICAL, MEDICAL, MEDICAL, MEDICAL, MEDICAL, MEDICAL, MEDICAL, MEDICAL, MEDICAL",
+            "MEDICAL, MEDICAL, MEDICAL, MEDICAL, MEDICAL, MEDICAL, LICENSE WAIVER, LICENSE WAIVER",
+            "MEDICAL, MEDICAL, MEDICAL, MEDICAL",
+            "GOARMY.COM"
+          ],
+          "likely_type": "array_text"
+        },
+        "col_220": {
+          "null_ratio": 0.94,
+          "example_values": [
+            "Y, Y, Y, Y, Y, Y, Y, Y, Y, Y, Y, Y, Y, Y, Y, Y, Y, Y, Y",
+            "null, null, Y, Y, null, Y, null, Y",
+            "Y, Y, Y, Y",
+            "KY"
+          ],
+          "likely_type": "array_text"
+        },
+        "col_221": {
+          "null_ratio": 0.94,
+          "example_values": [
+            "2025-06-20, 2025-06-16, 2025-06-16, 2025-06-17, 2025-05-23, 2025-05-22, 2025-05-23, 2025-05-22, 2025-05-27, 2025-03-21, 2025-03-21, 2025-03-21, 2025-03-24, 2025-03-24, 2025-04-17, 2025-04-17, 2025-04-18, 2025-04-21, 2025-04-17",
+            "2015-01-28, 2015-01-22, 2015-01-22, 2015-02-01, 2015-01-30, 2015-01-28, 2015-02-05, 2015-01-21",
+            "2023-11-06, 2023-11-06, 2023-11-06, 2023-11-06",
+            "2013-05-28, 2013-05-22, 2013-05-21, 2013-05-21",
+            "40121"
+          ],
+          "likely_type": "array_text"
+        },
+        "col_222": {
+          "null_ratio": 0.94,
+          "example_values": [
+            "null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null",
+            "null, null, null, null, null, null, null, null",
+            "null, null, null, null",
+            "0"
+          ],
+          "likely_type": "array_text"
+        },
+        "col_223": {
+          "null_ratio": 0.94,
+          "example_values": [
+            "2025-03-24 00:00:00",
+            "2015-01-28 00:00:00",
+            "2023-11-06 00:00:00",
+            "2013-05-28 00:00:00",
+            "0"
+          ],
+          "likely_type": "date"
+        },
+        "col_224": {
+          "null_ratio": 0.94,
+          "example_values": [
+            "2025-06-20 00:00:00",
+            "2015-02-05 00:00:00",
+            "2023-11-06 00:00:00",
+            "2013-05-28 00:00:00",
+            "AMRG"
+          ],
+          "likely_type": "date"
+        },
+        "col_225": {
+          "null_ratio": 0.94,
+          "example_values": [
+            "D",
+            "RW",
+            "A",
+            "RA/USAR/ROTC"
+          ],
+          "likely_type": "text"
+        },
+        "col_226": {
+          "null_ratio": 0.95,
+          "example_values": [
+            "DISAPPROVED",
+            "RETURNED WITHOUT ACTION",
+            "APPROVED"
+          ],
+          "likely_type": "text"
+        },
+        "col_227": {
+          "null_ratio": 0.94,
+          "example_values": [
+            "G",
+            "K",
+            "AMRG"
+          ],
+          "likely_type": "text"
+        },
+        "col_228": {
+          "null_ratio": 0.94,
+          "example_values": [
+            "MEDICAL",
+            "LICENSE WAIVER",
+            "2018-10-01 00:00:00"
+          ],
+          "likely_type": "text"
+        },
+        "col_229": {
+          "null_ratio": 0.95,
+          "example_values": [
+            "Y",
+            "2030-01-01 00:00:00"
+          ],
+          "likely_type": "text"
+        },
+        "col_230": {
+          "null_ratio": 0.95,
+          "example_values": [
+            "2025-06-20 00:00:00",
+            "2015-02-05 00:00:00",
+            "2023-11-06 00:00:00",
+            "2013-05-28 00:00:00",
+            "2019-02-28 00:00:00"
+          ],
+          "likely_type": "date"
+        },
+        "col_231": {
+          "null_ratio": 0.98,
+          "example_values": [
+            "WOODWARDN50@GMAIL.COM",
+            "169066960"
+          ],
+          "likely_type": "text"
+        },
+        "col_232": {
+          "null_ratio": 0.94,
+          "example_values": [
+            "4",
+            "3",
+            "1",
+            "0"
+          ],
+          "likely_type": "numeric"
+        },
+        "col_233": {
+          "null_ratio": 0.85,
+          "example_values": [
+            "V",
+            "J"
+          ],
+          "likely_type": "text"
+        },
+        "col_234": {
+          "null_ratio": 0.85,
+          "example_values": [
+            "SHIPPED",
+            "DTP LOSS"
+          ],
+          "likely_type": "text"
+        },
+        "col_235": {
+          "null_ratio": 0.86,
+          "example_values": [
+            "2019-06-18 00:00:00",
+            "2024-02-20 00:00:00",
+            "2025-04-21 00:00:00",
+            "2017-03-08 00:00:00",
+            "2013-12-27 00:00:00"
+          ],
+          "likely_type": "date"
+        },
+        "col_236": {
+          "null_ratio": 0.87,
+          "example_values": [
+            "2019-06-18",
+            "2024-02-20",
+            "2025-04-21",
+            "2017-06-12",
+            "2014-02-05"
+          ],
+          "likely_type": "date"
+        },
+        "col_237": {
+          "null_ratio": 0.92,
+          "example_values": [
+            "75127580",
+            "122988323",
+            "180123201",
+            "140192773",
+            "113558184"
+          ],
+          "likely_type": "timestamp"
+        },
+        "col_238": {
+          "null_ratio": 0.86,
+          "example_values": [
+            "2018-08-28 00:00:00",
+            "2024-03-20 00:00:00",
+            "2025-02-18 00:00:00",
+            "2017-03-08 00:00:00",
+            "2013-12-27 00:00:00"
+          ],
+          "likely_type": "date"
+        },
+        "col_239": {
+          "null_ratio": 0.99,
+          "example_values": [
+            "AA"
+          ],
+          "likely_type": "text"
+        },
+        "col_240": {
+          "null_ratio": 0.99,
+          "example_values": [
+            "2024-08-13 00:00:00"
+          ],
+          "likely_type": "text"
+        },
+        "col_241": {
+          "null_ratio": 0.99,
+          "example_values": [
+            "2024-08-13 19:37:14"
+          ],
+          "likely_type": "text"
+        },
+        "col_242": {
+          "null_ratio": 0.88,
+          "example_values": [
+            "19K1",
+            "68W1",
+            "35G1",
+            "11B1",
+            "91B1"
+          ],
+          "likely_type": "text"
+        },
+        "col_243": {
+          "null_ratio": 0.86,
+          "example_values": [
+            "E01",
+            "E03"
+          ],
+          "likely_type": "text"
+        },
+        "col_244": {
+          "null_ratio": 0.84,
+          "example_values": [
+            "5A6H",
+            "1B3G",
+            "3N5B",
+            "ALIQ",
+            "9A3L"
+          ],
+          "likely_type": "text"
+        },
+        "col_245": {
+          "null_ratio": 0.84,
+          "example_values": [
+            "117195290",
+            "147638183",
+            "147556882",
+            "26879481",
+            "12168402"
+          ],
+          "likely_type": "timestamp"
+        },
+        "col_246": {
+          "null_ratio": 0.84,
+          "example_values": [
+            "A"
+          ],
+          "likely_type": "text"
+        },
+        "col_247": {
+          "null_ratio": 0.85,
+          "example_values": [
+            "2018",
+            "2024",
+            "2025",
+            "2017",
+            "2015"
+          ],
+          "likely_type": "date"
+        },
+        "col_248": {
+          "null_ratio": 0.84,
+          "example_values": [
+            "12",
+            "5",
+            "6",
+            "9"
+          ],
+          "likely_type": "numeric"
+        },
+        "col_249": {
+          "null_ratio": 0.84,
+          "example_values": [
+            "2018-08-28 00:00:00",
+            "2024-02-06 00:00:00",
+            "2025-02-18 00:00:00",
+            "2017-03-08 00:00:00",
+            "2015-06-22 00:00:00"
+          ],
+          "likely_type": "date"
+        },
+        "col_250": {
+          "null_ratio": 0.85,
+          "example_values": [
+            "117195290",
+            "147638183",
+            "147556882",
+            "26879481",
+            "12168402"
+          ],
+          "likely_type": "timestamp"
+        },
+        "col_251": {
+          "null_ratio": 0.84,
+          "example_values": [
+            "2018",
+            "2024",
+            "2025",
+            "2017",
+            "2015"
+          ],
+          "likely_type": "date"
+        },
+        "col_252": {
+          "null_ratio": 0.84,
+          "example_values": [
+            "12",
+            "5",
+            "6",
+            "9"
+          ],
+          "likely_type": "numeric"
+        },
+        "col_253": {
+          "null_ratio": 0.84,
+          "example_values": [
+            "2018-08-28 00:00:00",
+            "2024-02-06 00:00:00",
+            "2025-02-18 00:00:00",
+            "2017-03-08 00:00:00",
+            "2015-06-22 00:00:00"
+          ],
+          "likely_type": "date"
+        },
+        "col_254": {
+          "null_ratio": 0.84,
+          "example_values": [
+            "2018",
+            "2024",
+            "2025",
+            "2017",
+            "2015"
+          ],
+          "likely_type": "date"
+        },
+        "col_255": {
+          "null_ratio": 0.85,
+          "example_values": [
+            "12",
+            "5",
+            "6",
+            "9"
+          ],
+          "likely_type": "numeric"
+        },
+        "col_256": {
+          "null_ratio": 0.86,
+          "example_values": [
+            "117195290",
+            "147638183",
+            "147556882",
+            "26879481",
+            "12168402"
+          ],
+          "likely_type": "timestamp"
+        },
+        "col_257": {
+          "null_ratio": 0.85,
+          "example_values": [
+            "5A6H",
+            "1B3G",
+            "3N5B",
+            "ALIQ",
+            "9A3L"
+          ],
+          "likely_type": "text"
+        },
+        "col_258": {
+          "null_ratio": 0.91,
+          "example_values": [
+            "1535414400000",
+            "1707177600000",
+            "1739836800000",
+            "1371686400000",
+            "1356566400000"
+          ],
+          "likely_type": "timestamp"
+        },
+        "col_259": {
+          "null_ratio": 0.91,
+          "example_values": [
+            "2018-08-23",
+            "2024-03-19",
+            "2025-02-03",
+            "2013-03-19",
+            "2012-12-26"
+          ],
+          "likely_type": "date"
+        },
+        "col_260": {
+          "null_ratio": 0.91,
+          "example_values": [
+            "2018-08-23 20:38:00.000",
+            "2024-01-31 17:13:00.000",
+            "2025-02-05 10:46:00.000",
+            "2013-05-29 15:25:50.683",
+            "2012-12-20 10:58:12.000"
+          ],
+          "likely_type": "date"
+        },
+        "col_261": {
+          "null_ratio": 0.91,
+          "example_values": [
+            "5A6H",
+            "1B3G",
+            "3N5B",
+            "5D4N",
+            "3G5W"
+          ],
+          "likely_type": "text"
+        },
+        "col_262": {
+          "null_ratio": 0.91,
+          "example_values": [
+            "2018-08-21 13:50:00",
+            "2024-01-17 14:16:00",
+            "2025-01-09 12:33:00",
+            "2013-02-27 16:20:00",
+            "2012-12-12 18:13:00"
+          ],
+          "likely_type": "date"
+        },
+        "col_263": {
+          "null_ratio": 0.91,
+          "example_values": [
+            "2018-08-21 13:58:00",
+            "2024-01-17 16:55:00",
+            "2025-02-03 11:22:00",
+            "2013-03-13 16:16:57",
+            "2012-12-17 14:53:30"
+          ],
+          "likely_type": "date"
+        },
+        "col_264": {
+          "null_ratio": 0.91,
+          "example_values": [
+            "2018-08-21 13:47:46",
+            "2024-01-17 16:14:21",
+            "2025-01-09 12:32:26",
+            "2012-09-26 01:00:42",
+            "2012-12-12 18:09:46"
+          ],
+          "likely_type": "date"
+        },
+        "col_265": {
+          "null_ratio": 0.91,
+          "example_values": [
+            "FTFC",
+            "INST",
+            "HSLST",
+            "RG"
+          ],
+          "likely_type": "text"
+        },
+        "col_266": {
+          "null_ratio": 1.0,
+          "example_values": [],
+          "likely_type": "text"
+        },
+        "col_267": {
+          "null_ratio": 0.91,
+          "example_values": [
+            "1730526538710, 1740683448896",
+            "1600358660316",
+            "1640810398430",
+            "1679498730176",
+            "1596650144983"
+          ],
+          "likely_type": "timestamp"
+        },
+        "col_268": {
+          "null_ratio": 0.91,
+          "example_values": [
+            "436276516, 436276516",
+            "433239526",
+            "433915944",
+            "434810722",
+            "433182222"
+          ],
+          "likely_type": "timestamp"
+        },
+        "col_269": {
+          "null_ratio": 0.91,
+          "example_values": [
+            "1, 2",
+            "2",
+            "1"
+          ],
+          "likely_type": "numeric"
+        },
+        "col_270": {
+          "null_ratio": 0.99,
+          "example_values": [
+            "null, null"
+          ],
+          "likely_type": "text"
+        },
+        "col_271": {
+          "null_ratio": 0.91,
+          "example_values": [
+            "B099, CKE2",
+            "AKXV",
+            "BCXE",
+            "BNKV",
+            "AFTU"
+          ],
+          "likely_type": "text"
+        },
+        "col_272": {
+          "null_ratio": 0.91,
+          "example_values": [
+            "MC, MC",
+            "R1",
+            "MC",
+            "AA"
+          ],
+          "likely_type": "text"
+        },
+        "col_273": {
+          "null_ratio": 0.97,
+          "example_values": [
+            "WEB, EVENT",
+            "MEDIA"
+          ],
+          "likely_type": "text"
+        },
+        "col_274": {
+          "null_ratio": 0.91,
+          "example_values": [
+            "Nov 01, 2024 10:48:58 PM -07:00",
+            "Sep 17, 2020 9:04:20 AM -07:00",
+            "Dec 29, 2021 12:39:58 PM -08:00",
+            "Mar 22, 2023 8:25:30 AM -07:00",
+            "Aug 05, 2020 10:55:44 AM -07:00"
+          ],
+          "likely_type": "array_text"
+        },
+        "col_275": {
+          "null_ratio": 0.91,
+          "example_values": [
+            "Feb 27, 2025 11:10:48 AM -08:00",
+            "Sep 17, 2020 9:04:20 AM -07:00",
+            "Dec 29, 2021 12:39:58 PM -08:00",
+            "Mar 22, 2023 8:25:30 AM -07:00",
+            "Aug 05, 2020 10:55:44 AM -07:00"
+          ],
+          "likely_type": "array_text"
+        },
+        "col_276": {
+          "null_ratio": 0.91,
+          "example_values": [
+            "436276516",
+            "433239526",
+            "433915944",
+            "434810722",
+            "433182222"
+          ],
+          "likely_type": "timestamp"
+        },
+        "col_277": {
+          "null_ratio": 0.91,
+          "example_values": [
+            "1",
+            "2"
+          ],
+          "likely_type": "numeric"
+        },
+        "col_278": {
+          "null_ratio": 1.0,
+          "example_values": [],
+          "likely_type": "text"
+        },
+        "col_279": {
+          "null_ratio": 0.91,
+          "example_values": [
+            "B099",
+            "AKXV",
+            "BCXE",
+            "BNKV",
+            "AFTU"
+          ],
+          "likely_type": "text"
+        },
+        "col_280": {
+          "null_ratio": 0.91,
+          "example_values": [
+            "MC",
+            "R1",
+            "AA"
+          ],
+          "likely_type": "text"
+        },
+        "col_281": {
+          "null_ratio": 0.97,
+          "example_values": [
+            "WEB",
+            "MEDIA"
+          ],
+          "likely_type": "text"
+        },
+        "col_282": {
+          "null_ratio": 0.91,
+          "example_values": [
+            "436276516",
+            "433239526",
+            "433915944",
+            "434810722",
+            "433182222"
+          ],
+          "likely_type": "timestamp"
+        },
+        "col_283": {
+          "null_ratio": 0.91,
+          "example_values": [
+            "2",
+            "1"
+          ],
+          "likely_type": "numeric"
+        },
+        "col_284": {
+          "null_ratio": 1.0,
+          "example_values": [],
+          "likely_type": "text"
+        },
+        "col_285": {
+          "null_ratio": 0.91,
+          "example_values": [
+            "CKE2",
+            "AKXV",
+            "BCXE",
+            "BNKV",
+            "AFTU"
+          ],
+          "likely_type": "text"
+        },
+        "col_286": {
+          "null_ratio": 0.91,
+          "example_values": [
+            "MC",
+            "R1",
+            "AA"
+          ],
+          "likely_type": "text"
+        },
+        "col_287": {
+          "null_ratio": 0.97,
+          "example_values": [
+            "EVENT",
+            "MEDIA"
+          ],
+          "likely_type": "text"
+        },
+        "col_288": {
+          "null_ratio": 0.97,
+          "example_values": [
+            "1730526538710, 1740683449090",
+            "1741842202113",
+            "1736829506610"
+          ],
+          "likely_type": "timestamp"
+        },
+        "col_289": {
+          "null_ratio": 0.97,
+          "example_values": [
+            "GOARMY.COM, GOARMY.COM",
+            "GOARMY.COM",
+            "GOARMY CONTACT CENTER"
+          ],
+          "likely_type": "text"
+        },
+        "col_290": {
+          "null_ratio": 0.97,
+          "example_values": [
+            "PRIORITY U, PRIORITY U",
+            "PRIORITY 2"
+          ],
+          "likely_type": "text"
+        },
+        "col_291": {
+          "null_ratio": 0.97,
+          "example_values": [
+            "U, U",
+            "2"
+          ],
+          "likely_type": "text"
+        },
+        "col_292": {
+          "null_ratio": 0.99,
+          "example_values": [
+            "null, null"
+          ],
+          "likely_type": "text"
+        },
+        "col_293": {
+          "null_ratio": 0.99,
+          "example_values": [
+            "null, null"
+          ],
+          "likely_type": "text"
+        },
+        "col_294": {
+          "null_ratio": 0.99,
+          "example_values": [
+            "null, null"
+          ],
+          "likely_type": "text"
+        },
+        "col_295": {
+          "null_ratio": 0.97,
+          "example_values": [
+            "PRIORITY U, PRIORITY U",
+            "PRIORITY 2"
+          ],
+          "likely_type": "text"
+        },
+        "col_296": {
+          "null_ratio": 0.97,
+          "example_values": [
+            "U, U",
+            "2"
+          ],
+          "likely_type": "text"
+        },
+        "col_297": {
+          "null_ratio": 0.99,
+          "example_values": [
+            "null, null"
+          ],
+          "likely_type": "text"
+        },
+        "col_298": {
+          "null_ratio": 0.97,
+          "example_values": [
+            "Nov 01, 2024 10:48:58 PM -07:00",
+            "Mar 12, 2025 10:03:22 PM -07:00",
+            "Jan 13, 2025 8:38:26 PM -08:00"
+          ],
+          "likely_type": "array_text"
+        },
+        "col_299": {
+          "null_ratio": 0.97,
+          "example_values": [
+            "Feb 27, 2025 11:10:49 AM -08:00",
+            "Mar 12, 2025 10:03:22 PM -07:00",
+            "Jan 13, 2025 8:38:26 PM -08:00"
+          ],
+          "likely_type": "array_text"
+        },
+        "col_300": {
+          "null_ratio": 0.97,
+          "example_values": [
+            "GOARMY.COM",
+            "GOARMY CONTACT CENTER"
+          ],
+          "likely_type": "text"
+        },
+        "col_301": {
+          "null_ratio": 0.97,
+          "example_values": [
+            "PRIORITY U",
+            "PRIORITY 2"
+          ],
+          "likely_type": "text"
+        },
+        "col_302": {
+          "null_ratio": 1.0,
+          "example_values": [],
+          "likely_type": "text"
+        },
+        "col_303": {
+          "null_ratio": 1.0,
+          "example_values": [],
+          "likely_type": "text"
+        },
+        "col_304": {
+          "null_ratio": 0.97,
+          "example_values": [
+            "PRIORITY U",
+            "PRIORITY 2"
+          ],
+          "likely_type": "text"
+        },
+        "col_305": {
+          "null_ratio": 1.0,
+          "example_values": [],
+          "likely_type": "text"
+        },
+        "col_306": {
+          "null_ratio": 0.97,
+          "example_values": [
+            "GOARMY.COM",
+            "GOARMY CONTACT CENTER"
+          ],
+          "likely_type": "text"
+        },
+        "col_307": {
+          "null_ratio": 0.97,
+          "example_values": [
+            "PRIORITY U",
+            "PRIORITY 2"
+          ],
+          "likely_type": "text"
+        },
+        "col_308": {
+          "null_ratio": 1.0,
+          "example_values": [],
+          "likely_type": "text"
+        },
+        "col_309": {
+          "null_ratio": 1.0,
+          "example_values": [],
+          "likely_type": "text"
+        },
+        "col_310": {
+          "null_ratio": 0.97,
+          "example_values": [
+            "PRIORITY U",
+            "PRIORITY 2"
+          ],
+          "likely_type": "text"
+        },
+        "col_311": {
+          "null_ratio": 1.0,
+          "example_values": [],
+          "likely_type": "text"
+        },
+        "col_312": {
+          "null_ratio": 0.97,
+          "example_values": [
+            "PRIORITY U",
+            "PRIORITY 2"
+          ],
+          "likely_type": "text"
+        },
+        "col_313": {
+          "null_ratio": 1.0,
+          "example_values": [],
+          "likely_type": "text"
+        },
+        "col_314": {
+          "null_ratio": 1.0,
+          "example_values": [],
+          "likely_type": "text"
+        },
+        "col_315": {
+          "null_ratio": 0.97,
+          "example_values": [
+            "PRIORITY U",
+            "PRIORITY 2"
+          ],
+          "likely_type": "text"
+        },
+        "col_316": {
+          "null_ratio": 0.97,
+          "example_values": [
+            "PRIORITY U",
+            "PRIORITY 2"
+          ],
+          "likely_type": "text"
+        },
+        "col_317": {
+          "null_ratio": 1.0,
+          "example_values": [],
+          "likely_type": "text"
+        },
+        "col_318": {
+          "null_ratio": 1.0,
+          "example_values": [],
+          "likely_type": "text"
+        },
+        "col_319": {
+          "null_ratio": 0.97,
+          "example_values": [
+            "PRIORITY U",
+            "PRIORITY 2"
+          ],
+          "likely_type": "text"
+        },
+        "col_320": {
+          "null_ratio": 1.0,
+          "example_values": [],
+          "likely_type": "text"
+        },
+        "col_321": {
+          "null_ratio": 1.0,
+          "example_values": [],
+          "likely_type": "text"
+        },
+        "col_322": {
+          "null_ratio": 1.0,
+          "example_values": [],
+          "likely_type": "text"
+        },
+        "col_323": {
+          "null_ratio": 0.65,
+          "example_values": [
+            "3",
+            "36",
+            "22",
+            "53",
+            "57"
+          ],
+          "likely_type": "numeric"
+        },
+        "col_324": {
+          "null_ratio": 0.65,
+          "example_values": [
+            "Life Builders",
+            "Status Quo",
+            "Rejectors",
+            "Goal-Getters",
+            "Finance Focused"
+          ],
+          "likely_type": "text"
+        },
+        "col_325": {
+          "null_ratio": 0.65,
+          "example_values": [
+            "Tier 2",
+            "Tier 4",
+            "Tier 1",
+            "Tier 3"
+          ],
+          "likely_type": "text"
+        },
+        "col_326": {
+          "null_ratio": 0.79,
+          "example_values": [
+            "1548233085",
+            "1641764384",
+            "1589116239",
+            "1640886141",
+            "1256370170"
+          ],
+          "likely_type": "timestamp"
+        },
+        "col_327": {
+          "null_ratio": 0.86,
+          "example_values": [
+            "2019-06-18",
+            "2024-02-20",
+            "2025-04-21",
+            "2017-03-08",
+            "2013-06-20"
+          ],
+          "likely_type": "date"
+        },
+        "col_328": {
+          "null_ratio": 0.46,
+          "example_values": [
+            "JACOBS HARRY D HIGH SCHOOL",
+            "PROVINE HIGH SCHOOL",
+            "GREAT PLAINS AREA VOCATIONAL TECHNICAL SCHOOL",
+            "WORTHINGTON KILBOURNE HIGH SCHOOL",
+            "BELAIRE HIGH SCHOOL"
+          ],
+          "likely_type": "text"
+        },
+        "col_329": {
+          "null_ratio": 0.46,
+          "example_values": [
+            "1",
+            "2"
+          ],
+          "likely_type": "numeric"
+        },
+        "col_330": {
+          "null_ratio": 0.46,
+          "example_values": [
+            "HIGH SCHOOL",
+            "COLLEGE, UNIVERSITY, MILITARY COLLEGE"
+          ],
+          "likely_type": "array_text"
+        },
+        "col_331": {
+          "null_ratio": 0.98,
+          "example_values": [
+            "CLOF",
+            "CKPR, CKPR"
+          ],
+          "likely_type": "text"
+        },
+        "col_332": {
+          "null_ratio": 0.98,
+          "example_values": [
+            "436567560",
+            "436410305, 436410305"
+          ],
+          "likely_type": "text"
+        },
+        "col_333": {
+          "null_ratio": 0.98,
+          "example_values": [
+            "1",
+            "1, 2"
+          ],
+          "likely_type": "text"
+        },
+        "col_334": {
+          "null_ratio": 0.98,
+          "example_values": [
+            "AA",
+            "AR, NG"
+          ],
+          "likely_type": "text"
+        },
+        "col_335": {
+          "null_ratio": 0.98,
+          "example_values": [
+            "2025-03-13 00:00:00",
+            "2025-01-13 00:00:00, 2025-01-13 00:00:00"
+          ],
+          "likely_type": "text"
+        },
+        "col_336": {
+          "null_ratio": 0.98,
+          "example_values": [
+            "2025-03-13 05:03:21",
+            "2025-01-14 04:38:26, 2025-01-14 04:38:26"
+          ],
+          "likely_type": "text"
+        },
+        "col_337": {
+          "null_ratio": 0.98,
+          "example_values": [
+            "Q",
+            "Q, Q"
+          ],
+          "likely_type": "text"
+        },
+        "col_338": {
+          "null_ratio": 0.98,
+          "example_values": [
+            "ORGANIC SOCIAL FY2025",
+            "PAID MEDIA C3 PAID SEARCH, PAID MEDIA C3 PAID SEARCH"
+          ],
+          "likely_type": "text"
+        },
+        "col_339": {
+          "null_ratio": 0.99,
+          "example_values": [
+            "null, null"
+          ],
+          "likely_type": "text"
+        },
+        "col_340": {
+          "null_ratio": 0.99,
+          "example_values": [
+            "null, null"
+          ],
+          "likely_type": "text"
+        },
+        "col_341": {
+          "null_ratio": 0.98,
+          "example_values": [
+            "0",
+            "0.0, 0.0"
+          ],
+          "likely_type": "text"
+        },
+        "col_342": {
+          "null_ratio": 0.98,
+          "example_values": [
+            "0",
+            "0.0, 0.0"
+          ],
+          "likely_type": "text"
+        },
+        "col_343": {
+          "null_ratio": 0.98,
+          "example_values": [
+            "AMRG",
+            "AMRG, AMRG"
+          ],
+          "likely_type": "text"
+        },
+        "col_344": {
+          "null_ratio": 0.98,
+          "example_values": [
+            "RA",
+            "USAR, USAR"
+          ],
+          "likely_type": "text"
+        },
+        "col_345": {
+          "null_ratio": 0.99,
+          "example_values": [
+            "NA, NA"
+          ],
+          "likely_type": "text"
+        },
+        "col_346": {
+          "null_ratio": 0.98,
+          "example_values": [
+            "AMRG",
+            "AMRG, AMRG"
+          ],
+          "likely_type": "text"
+        },
+        "col_347": {
+          "null_ratio": 0.98,
+          "example_values": [
+            "2025-01-02 00:00:00",
+            "2024-11-16 00:00:00, 2024-11-16 00:00:00"
+          ],
+          "likely_type": "text"
+        },
+        "col_348": {
+          "null_ratio": 0.98,
+          "example_values": [
+            "2025-11-16 00:00:00",
+            "2025-11-15 00:00:00, 2025-11-15 00:00:00"
+          ],
+          "likely_type": "text"
+        },
+        "col_349": {
+          "null_ratio": 0.99,
+          "example_values": [
+            "null, null"
+          ],
+          "likely_type": "text"
+        },
+        "col_350": {
+          "null_ratio": 0.98,
+          "example_values": [
+            "EWALHAY@GMAIL.COM",
+            "HOOKSTOMIE321@GMAIL.COM, HOOKSTOMIE321@GMAIL.COM"
+          ],
+          "likely_type": "email"
+        },
+        "col_351": {
+          "null_ratio": 0.98,
+          "example_values": [
+            "0",
+            "1"
+          ],
+          "likely_type": "text"
+        },
+        "col_352": {
+          "null_ratio": 0.98,
+          "example_values": [
+            "CLOF",
+            "CKPR"
+          ],
+          "likely_type": "text"
+        },
+        "col_353": {
+          "null_ratio": 0.98,
+          "example_values": [
+            "ORGANIC SOCIAL FY2025",
+            "PAID MEDIA C3 PAID SEARCH"
+          ],
+          "likely_type": "text"
+        },
+        "col_354": {
+          "null_ratio": 0.98,
+          "example_values": [
+            "AMRG"
+          ],
+          "likely_type": "text"
+        },
+        "col_355": {
+          "null_ratio": 1.0,
+          "example_values": [],
+          "likely_type": "text"
+        },
+        "col_356": {
+          "null_ratio": 0.98,
+          "example_values": [
+            "AMRG"
+          ],
+          "likely_type": "text"
+        },
+        "col_357": {
+          "null_ratio": 0.98,
+          "example_values": [
+            "1"
+          ],
+          "likely_type": "text"
+        },
+        "col_358": {
+          "null_ratio": 0.98,
+          "example_values": [
+            "AA",
+            "AR"
+          ],
+          "likely_type": "text"
+        },
+        "col_359": {
+          "null_ratio": 0.98,
+          "example_values": [
+            "2025-03-13",
+            "2025-01-13"
+          ],
+          "likely_type": "date"
+        },
+        "col_360": {
+          "null_ratio": 0.98,
+          "example_values": [
+            "2025-03-13 05:03:21",
+            "2025-01-14 04:38:26"
+          ],
+          "likely_type": "date"
+        },
+        "col_361": {
+          "null_ratio": 0.98,
+          "example_values": [
+            "Q"
+          ],
+          "likely_type": "text"
+        },
+        "col_362": {
+          "null_ratio": 0.98,
+          "example_values": [
+            "EWALHAY@GMAIL.COM",
+            "HOOKSTOMIE321@GMAIL.COM"
+          ],
+          "likely_type": "email"
+        },
+        "col_363": {
+          "null_ratio": 0.98,
+          "example_values": [
+            "CLOF",
+            "CKPR"
+          ],
+          "likely_type": "text"
+        },
+        "col_364": {
+          "null_ratio": 0.98,
+          "example_values": [
+            "ORGANIC SOCIAL FY2025",
+            "PAID MEDIA C3 PAID SEARCH"
+          ],
+          "likely_type": "text"
+        },
+        "col_365": {
+          "null_ratio": 0.98,
+          "example_values": [
+            "AMRG"
+          ],
+          "likely_type": "text"
+        },
+        "col_366": {
+          "null_ratio": 1.0,
+          "example_values": [],
+          "likely_type": "text"
+        },
+        "col_367": {
+          "null_ratio": 0.98,
+          "example_values": [
+            "AMRG"
+          ],
+          "likely_type": "text"
+        },
+        "col_368": {
+          "null_ratio": 0.98,
+          "example_values": [
+            "1",
+            "2"
+          ],
+          "likely_type": "text"
+        },
+        "col_369": {
+          "null_ratio": 0.98,
+          "example_values": [
+            "AA",
+            "NG"
+          ],
+          "likely_type": "text"
+        },
+        "col_370": {
+          "null_ratio": 0.98,
+          "example_values": [
+            "2025-03-13",
+            "2025-01-13"
+          ],
+          "likely_type": "date"
+        },
+        "col_371": {
+          "null_ratio": 0.98,
+          "example_values": [
+            "2025-03-13 05:03:21",
+            "2025-01-14 04:38:26"
+          ],
+          "likely_type": "date"
+        },
+        "col_372": {
+          "null_ratio": 0.98,
+          "example_values": [
+            "Q"
+          ],
+          "likely_type": "text"
+        },
+        "col_373": {
+          "null_ratio": 0.98,
+          "example_values": [
+            "EWALHAY@GMAIL.COM",
+            "HOOKSTOMIE321@GMAIL.COM"
+          ],
+          "likely_type": "email"
+        }
+      }
+    }
+  }
+}

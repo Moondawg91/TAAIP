@@ -5,6 +5,8 @@ and to persist/get annotations, decisions, and outcomes.
 from typing import Optional, List, Dict, Any
 import json
 from datetime import datetime
+from .doctrine import ENGINE as DOCTRINE_ENGINE
+from .confidence import score_confidence
 
 
 DOCTRINE_REFERENCES = {
@@ -85,12 +87,12 @@ def generate_explanation_from_recommendation(rec: Dict[str, Any]) -> Dict[str, A
 
     expected_effect = rec.get('expected_effect') or 'Increase engagement or contracts in target area'
 
-    # confidence mapping: scale fusion_score -> [0.15, 0.95]
+    # legacy numeric confidence (kept for compatibility) is mapped from fusion_score
     try:
         f = float(score) if score is not None else 0.2
-        confidence = round(min(0.95, max(0.15, f * 4.0)), 2)
+        legacy_confidence = round(min(0.95, max(0.15, f * 4.0)), 2)
     except Exception:
-        confidence = 0.5
+        legacy_confidence = 0.5
 
     assumptions = [
         'Market data is current',
@@ -99,18 +101,19 @@ def generate_explanation_from_recommendation(rec: Dict[str, Any]) -> Dict[str, A
 
     data_quality = 'medium'
 
-    # determine doctrine refs via simple rule engine
-    doctrine_refs = []
-    rtype = (rec.get('recommendation_type') or '').lower()
-    if 'school' in rtype or 'target' in rtype:
-        doctrine_refs = ['UR 27-4', 'UR 601-210']
-    elif 'mission' in rtype or 'allocation' in rtype:
-        doctrine_refs = ['UR 350-1', 'UR 601-106']
-    elif 'market' in rtype or 'analysis' in rtype:
-        doctrine_refs = ['UM 3-0', 'UTP 3-10.2']
-    else:
+    # evaluate doctrine rules using the DoctrineEngine
+    context = {
+        'recommendation': rec,
+        'market': market or {},
+        'school': school or {},
+        'mission': mission or {},
+        'evidence': ev,
+        'data_quality': data_quality
+    }
+    doctrine_eval = DOCTRINE_ENGINE.evaluate(context)
+    doctrine_refs = doctrine_eval.get('doctrine_refs', [])
+    if not doctrine_refs:
         doctrine_refs = ['UM 3-0']
-
     doctrine_summary = '; '.join([DOCTRINE_REFERENCES.get(k, k) for k in doctrine_refs])
 
     struct = {
@@ -119,10 +122,36 @@ def generate_explanation_from_recommendation(rec: Dict[str, Any]) -> Dict[str, A
         'evidence': evidence_struct,
         'risk': risks,
         'expected_effect': expected_effect,
-        'confidence': confidence,
+        'confidence': legacy_confidence,
         'assumptions': assumptions,
         'data_quality': data_quality
     }
+
+    # include triggered rules and alignment score in the explanation struct
+    struct['doctrine'] = {
+        'refs': doctrine_refs,
+        'triggered_rules': doctrine_eval.get('triggered_rules', []),
+        'rationale': doctrine_eval.get('rationale', []),
+        'rule_alignment_score': doctrine_eval.get('rule_alignment_score', 0.0)
+    }
+
+    # compute explainable confidence on top of doctrine + evidence
+    try:
+        conf_detail = score_confidence(doctrine_eval, ev or {}, prior_fusion_score=score)
+        struct['confidence_detail'] = conf_detail
+        # If there's no evidence and either no doctrine triggers or only heuristic
+        # triggers derived from recommendation_type, prefer legacy fusion mapping
+        trig = doctrine_eval.get('triggered_rules') or []
+        only_heuristic = len(trig) > 0 and all(r.get('category') == 'Heuristic' for r in trig)
+        if (not ev) and (not trig or only_heuristic):
+            struct['confidence'] = legacy_confidence
+        else:
+            # keep compatibility numeric value mapped to [0.15,0.95]
+            mapped = 0.15 + conf_detail.get('score', 0.0) * (0.95 - 0.15)
+            struct['confidence'] = round(mapped, 2)
+    except Exception:
+        # on failure, leave legacy confidence
+        struct['confidence_detail'] = {'score': 0.0, 'band': 'low'}
 
     return {
         'explanation': json.dumps(struct),
@@ -184,3 +213,112 @@ def persist_outcome(conn, recommendation_table: str, recommendation_id: int, dec
                    VALUES (?,?,?,?,?,?,?,?)''', (recommendation_table, recommendation_id, decision_id, outcome_type, outcome_value, observed_at, notes, _short_timestamp()))
     conn.commit()
     return cur.lastrowid
+
+
+def fetch_decision_history(conn, unit_rsid: Optional[str] = None, limit: int = 50):
+    cur = conn.cursor()
+    # fetch latest decisions, optionally filter by unit_rsid contained in notes JSON
+    q = "SELECT id, recommendation_table, recommendation_id, action, notes, user_id, created_at FROM user_decisions ORDER BY created_at DESC LIMIT ?"
+    cur.execute(q, (limit,))
+    rows = [dict(zip([c[0] for c in cur.description], row)) for row in cur.fetchall()]
+    results = []
+    for r in rows:
+        rec = r.copy()
+        # parse notes JSON if present
+        try:
+            rec_notes = json.loads(rec.get('notes') or '{}')
+        except Exception:
+            rec_notes = {}
+        # if unit_rsid filter supplied, skip mismatches
+        if unit_rsid and rec_notes.get('unit_rsid') and rec_notes.get('unit_rsid') != unit_rsid:
+            continue
+        # attach parsed fields
+        rec['unit_rsid'] = rec_notes.get('unit_rsid')
+        rec['coa_type'] = rec_notes.get('coa_type')
+        rec['coa_title'] = rec_notes.get('coa_title')
+        rec['fusion_target'] = rec_notes.get('fusion_target')
+        rec['lead_line'] = rec_notes.get('lead_line')
+        # fetch an outcome linked to this decision if present
+        cur.execute('SELECT outcome_value, outcome_type, observed_at, notes, id FROM outcome_records WHERE decision_id=? ORDER BY created_at DESC LIMIT 1', (rec['id'],))
+        orow = cur.fetchone()
+        if orow:
+            cols = [c[0] for c in cur.description]
+            out = dict(zip(cols, orow))
+            # try parse outcome_value
+            try:
+                out['outcome_parsed'] = json.loads(out.get('outcome_value') or '{}')
+            except Exception:
+                out['outcome_parsed'] = None
+            rec['outcome'] = out
+        else:
+            rec['outcome'] = None
+        results.append(rec)
+    return results
+
+
+def compute_decision_summary(conn, unit_rsid: Optional[str] = None):
+    # Aggregate minimal LMS summary metrics from recent decisions/outcomes
+    decisions = fetch_decision_history(conn, unit_rsid=unit_rsid, limit=500)
+    summary = {
+        'decision_count_by_type': {},
+        'success_rate_by_type': {},
+        'avg_contracts_by_type': {},
+        'avg_variance_by_type': {},
+        'most_used_targets': [],
+        'recent_outcomes': []
+    }
+    counts = {}
+    success = {}
+    contracts_sum = {}
+    variance_sum = {}
+    target_counts = {}
+    recent_outcomes = []
+    for d in decisions:
+        t = (d.get('coa_type') or 'UNKNOWN').upper()
+        counts[t] = counts.get(t, 0) + 1
+        # variance
+        var = None
+        try:
+            var = float(d.get('lead_line', {}) and d.get('lead_line', {}).get('variance')) if d.get('lead_line') else None
+        except Exception:
+            var = None
+        if var is not None:
+            variance_sum[t] = variance_sum.get(t, 0.0) + var
+        # outcome parsing
+        out = d.get('outcome')
+        achieved = 0
+        if out and out.get('outcome_parsed'):
+            try:
+                achieved = int(out['outcome_parsed'].get('contracts_achieved') or 0)
+            except Exception:
+                achieved = 0
+        contracts_sum[t] = contracts_sum.get(t, 0) + achieved
+        success[t] = success.get(t, 0) + (1 if achieved > 0 else 0)
+        # target counts
+        tgt = d.get('fusion_target')
+        if tgt:
+            target_counts[tgt] = target_counts.get(tgt, 0) + 1
+        # collect recent outcome row for feed
+        if out:
+            recent_outcomes.append({
+                'decision_id': d.get('id'),
+                'coa_type': t,
+                'fusion_target': d.get('fusion_target'),
+                'contracts_achieved': achieved,
+                'observed_at': out.get('observed_at')
+            })
+
+    # compute metrics per type
+    for t, cnt in counts.items():
+        summary['decision_count_by_type'][t] = cnt
+        success_count = success.get(t, 0)
+        summary['success_rate_by_type'][t] = round((success_count / cnt) if cnt else 0.0, 2)
+        summary['avg_contracts_by_type'][t] = round((contracts_sum.get(t, 0) / cnt) if cnt else 0.0, 2)
+        summary['avg_variance_by_type'][t] = round((variance_sum.get(t, 0.0) / cnt) if cnt and variance_sum.get(t) is not None else 0.0, 2)
+
+    # most used targets (top 5)
+    most_used = sorted(target_counts.items(), key=lambda x: x[1], reverse=True)[:5]
+    summary['most_used_targets'] = [{'target': k, 'count': v} for k, v in most_used]
+    # recent outcomes (last 10)
+    summary['recent_outcomes'] = recent_outcomes[:10]
+    return summary

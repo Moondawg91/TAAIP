@@ -51,7 +51,7 @@ def test_commit_v3_compat():
     conn.close()
 
     # call compat commit endpoint with v3 id
-    resp = client.post('/api/api/import/compat/commit_v3', json={'import_job_id': v3id, 'mode': 'append'})
+    resp = client.post('/api/import/compat/commit_v3', json={'import_job_id': v3id, 'mode': 'append'})
     assert resp.status_code == 200, resp.text
     data = resp.json()
     assert data.get('status') == 'ok'

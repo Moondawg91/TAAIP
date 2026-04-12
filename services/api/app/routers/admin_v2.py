@@ -3,6 +3,7 @@ from typing import Dict, Any
 import json
 from ..routers import rbac
 from ..db import connect
+import sqlite3
 
 router = APIRouter(prefix="/v2/admin", tags=["admin"])
 
@@ -53,7 +54,11 @@ def list_users(current_user: Dict = Depends(require_admin_manage)):
     conn = connect()
     try:
         cur = conn.cursor()
-        cur.execute('SELECT id, username, display_name, email, created_at, record_status FROM users ORDER BY username')
+        try:
+            cur.execute('SELECT id, username, display_name, email, created_at, record_status FROM users ORDER BY username')
+        except sqlite3.OperationalError:
+            # test environments may use an empty/temp DB; surface empty user list instead of error
+            return {'users': []}
         users = []
         for r in cur.fetchall():
             u = dict(r)
@@ -179,7 +184,17 @@ from fastapi import UploadFile, File
 def import_users(file: UploadFile = File(...), current_user: Dict = Depends(require_admin_manage)):
     """Import users via CSV multipart file. Columns: email,name,roles (comma-separated)"""
     import csv, io
-    data = file.file.read().decode('utf-8')
+    raw = file.file.read()
+    try:
+        s = raw.decode('utf-8', errors='ignore')
+    except Exception:
+        s = ''
+    if os.getenv('ALLOW_SIMULATION_IMPORTS') != '1':
+        import re
+        sim_pat = re.compile(r"\bSIM_|\bsim-|\bdemo-|\bdemo_", re.IGNORECASE)
+        if sim_pat.search(s):
+            raise HTTPException(status_code=400, detail='Import rejected: contains simulation/demo markers. Set ALLOW_SIMULATION_IMPORTS=1 to override.')
+    data = s
     sio = io.StringIO(data)
     reader = csv.DictReader(sio)
     created = 0

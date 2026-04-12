@@ -23,10 +23,11 @@ def _build_org_unit_cache():
     rows = cur.fetchall()
     mapping = {'by_name': {}, 'names': [], 'by_cbsa': {}, 'by_zip': {}}
     for r in rows:
-        rsid = r.get('rsid')
-        name = (r.get('name') or '').strip()
-        cbsa = r.get('cbsa')
-        zipc = r.get('location_zip')
+        rd = _db.row_to_dict(cur, r)
+        rsid = rd.get('rsid')
+        name = (rd.get('name') or '').strip()
+        cbsa = rd.get('cbsa')
+        zipc = rd.get('location_zip')
         if name:
             mapping['by_name'][name.lower()] = rsid
             mapping['names'].append(name)
@@ -88,6 +89,7 @@ def map_unit_rsid(row: dict) -> Tuple[Optional[str], float, str]:
             try:
                 cur.execute("SELECT rsid FROM org_unit WHERE lower(name) LIKE ? LIMIT 1", (f"%{n.lower()}%",))
                 r = cur.fetchone()
+                r = _db.row_to_dict(cur, r)
                 if r and r.get('rsid'):
                     return (r['rsid'], 0.8, f'name_like:{n}')
             except Exception:

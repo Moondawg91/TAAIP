@@ -169,11 +169,23 @@ def marketing_summary(start: Optional[str] = Query(None), end: Optional[str] = Q
         row = q.one_or_none()
     if not row:
         return {"status": "ok", "data": {}}
-    impressions = int(row['impressions'] or 0)
-    engagements = int(row['engagements'] or 0)
-    clicks = int(row['clicks'] or 0)
-    conversions = int(row['conversions'] or 0)
-    cost = float(row['cost'] or 0.0)
+
+    # Normalize SQLAlchemy row/tuple/dict to a mapping for safe access
+    if hasattr(row, '_mapping'):
+        rmap = row._mapping
+    elif isinstance(row, dict):
+        rmap = row
+    else:
+        try:
+            rmap = dict(row)
+        except Exception:
+            rmap = {}
+
+    impressions = int(rmap.get('impressions') or 0)
+    engagements = int(rmap.get('engagements') or 0)
+    clicks = int(rmap.get('clicks') or 0)
+    conversions = int(rmap.get('conversions') or 0)
+    cost = float(rmap.get('cost') or 0.0)
     cpl = cost / max(1, conversions) if conversions else None
     return {"status": "ok", "data": _format_datetimes({
         'impressions': impressions,

@@ -1,0 +1,27 @@
+[
+  {
+    "url": "https://taaip.app/projects",
+    "method": "GET",
+    "resourceType": "document"
+  },
+  {
+    "url": "https://taaip.app/assets/index-gUAnDrob.js",
+    "method": "GET",
+    "resourceType": "script"
+  },
+  {
+    "url": "https://taaip.app/assets/index-ceUyExNy.css",
+    "method": "GET",
+    "resourceType": "stylesheet"
+  },
+  {
+    "url": "https://taaip.app:3000/api/v2/standings/companies",
+    "method": "GET",
+    "resourceType": "fetch"
+  },
+  {
+    "url": "https://taaip.app/vite.svg",
+    "method": "GET",
+    "resourceType": "other"
+  }
+]

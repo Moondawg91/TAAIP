@@ -69,3 +69,59 @@ def post_outcome(payload: Dict[str, Any], user=Depends(auth.get_current_user)):
         return {'outcome_id': oid}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get('/v2/ai-lms/decision-history')
+def get_decision_history(unit_rsid: Optional[str] = None, limit: int = 50):
+    """Return recent decision history rows with parsed notes and linked outcome."""
+    try:
+        from ..db import connect
+        conn = connect()
+        from ..services.ai_lms import fetch_decision_history
+        rows = fetch_decision_history(conn, unit_rsid=unit_rsid, limit=limit)
+        return {'items': rows}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        try:
+            conn.close()
+        except Exception:
+            pass
+
+
+@router.get('/v2/ai-lms/decision-summary')
+def get_decision_summary(unit_rsid: Optional[str] = None):
+    """Return small aggregated LMS summary for decisions/outcomes."""
+    try:
+        from ..db import connect
+        conn = connect()
+        from ..services.ai_lms import compute_decision_summary
+        s = compute_decision_summary(conn, unit_rsid=unit_rsid)
+        return s
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        try:
+            conn.close()
+        except Exception:
+            pass
+
+
+@router.get('/v2/ai-lms/decisions')
+def get_decisions_compat(unit_rsid: Optional[str] = None, limit: int = 50):
+    """Compatibility shim: older clients call GET /v2/ai-lms/decisions to list recent decisions.
+    Map to the `decision-history` implementation so GET works.
+    """
+    try:
+        from ..db import connect
+        conn = connect()
+        from ..services.ai_lms import fetch_decision_history
+        rows = fetch_decision_history(conn, unit_rsid=unit_rsid, limit=limit)
+        return {'items': rows}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        try:
+            conn.close()
+        except Exception:
+            pass

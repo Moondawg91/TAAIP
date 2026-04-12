@@ -1,0 +1,17 @@
+[Unit]
+Description=TAAIP FastAPI app
+After=network.target
+
+[Service]
+Type=simple
+User=taaip
+Group=www-data
+WorkingDirectory=/opt/TAAIP
+# Load environment file
+EnvironmentFile=/opt/TAAIP/.env
+ExecStart=/usr/bin/env uvicorn services.api.app.main:app --host 127.0.0.1 --port ${PORT:-8001} --workers ${WORKERS:-2}
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target

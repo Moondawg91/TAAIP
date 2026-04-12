@@ -803,6 +803,10 @@ async def get_fusion_sessions(
 @router.post("/seed-420t-data")
 async def seed_420t_data():
     """Seed database with sample 420T data for testing"""
+    # Gate: seeding endpoint must be explicitly enabled via env var
+    if os.getenv('TAAIP_ALLOW_SEED') != '1':
+        raise HTTPException(status_code=403, detail='Seeding endpoint disabled in this environment. Set TAAIP_ALLOW_SEED=1 to enable')
+
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     

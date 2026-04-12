@@ -1,0 +1,147 @@
+Perfect. That’s the breakpoint we needed. 🔥
+Routing is 100% confirmed working.
+
+⸻
+
+🚀 Now we move — no delays
+
+🎯 Objective
+
+Replace the placeholder with the real Command Center (live backend data)
+
+⸻
+
+🔧 STEP 1 — Replace the page with real logic
+
+Go to:
+
+src/pages/operations/CommandCenterPage.tsx
+
+Replace EVERYTHING with this:
+
+import { useEffect, useState } from "react";
+
+export default function CommandCenterPage() {
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch("http://127.0.0.1:8000/api/command_center/summary", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        mission_analytics: {
+          filename: "FY27_Seattle_BN_ROP.pdf",
+          analytics_input: {
+            market_priorities: ["Senior Market"],
+            operational_loes: ["School Recruiting"],
+            targeting_tasks: ["focus high school seniors"],
+            school_tasks: ["School engagement is critical"],
+            commander_intent: "expand senior market share",
+            unit_mission: "increase battalion production",
+          },
+        },
+      }),
+    })
+      .then((res) => res.json())
+      .then((res) => {
+        setData(res.command_center);
+        setLoading(false);
+      })
+      .catch((err) => {
+        setError("Failed to load Command Center");
+        setLoading(false);
+      });
+  }, []);
+
+  if (loading) return <div>Loading Command Center...</div>;
+  if (error) return <div>{error}</div>;
+
+  return (
+    <div>
+      <h1>Command Center</h1>
+
+      <h2>Headline Summary</h2>
+      <ul>
+        {data.headline_summary.map((item: string, i: number) => (
+          <li key={i}>{item}</li>
+        ))}
+      </ul>
+
+      <h2>Mission Analytics</h2>
+      <pre>{JSON.stringify(data.mission_analytics, null, 2)}</pre>
+
+      <h2>Funnel Summary</h2>
+      <pre>{JSON.stringify(data.funnel_summary, null, 2)}</pre>
+
+      <h2>ROI Summary</h2>
+      <pre>{JSON.stringify(data.roi_summary, null, 2)}</pre>
+
+      <h2>Portal Records</h2>
+      <pre>{JSON.stringify(data.portal_records, null, 2)}</pre>
+
+      <h2>Recommendations</h2>
+      <pre>{JSON.stringify(data.recommendations, null, 2)}</pre>
+    </div>
+  );
+}
+
+
+⸻
+
+🔧 STEP 2 — Make sure backend is running
+
+uvicorn services.api.app.main:app --reload --port 8000
+
+
+⸻
+
+🔍 STEP 3 — Reload browser
+
+Go to:
+
+http://127.0.0.1:5173/operations/command-center
+
+
+⸻
+
+✅ What success looks like
+
+You should now see:
+	•	Headline summary (bullet points)
+	•	JSON blocks for:
+	•	mission analytics
+	•	funnel
+	•	ROI
+	•	portal
+	•	recommendations
+
+⸻
+
+🚨 If it fails, tell me EXACTLY which:
+	•	“Loading forever”
+	•	“Failed to load Command Center”
+	•	“Blank page”
+	•	“Backend error”
+
+No guessing — we fix fast.
+
+⸻
+
+🧠 Where you are now
+
+
+You just crossed:
+✅ Frontend shell
+✅ Routing
+
+Next:
+👉 Live operational dashboard
+👉 then AI brain
+
+⸻
+
+Run this and tell me what you see.olo

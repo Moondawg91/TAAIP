@@ -1,0 +1,50 @@
+mission_allocation_runs|CREATE TABLE mission_allocation_runs (
+            run_id TEXT PRIMARY KEY,
+            unit_rsid TEXT,
+            mission_total INTEGER,
+            status TEXT DEFAULT 'created',
+            notes TEXT,
+            approved_allocation INTEGER,
+            decision_status TEXT,
+            decision_notes TEXT,
+            approved_by TEXT,
+            approved_at TEXT,
+            created_at TEXT,
+            started_at TEXT,
+            completed_at TEXT
+        )
+import_job|CREATE TABLE import_job (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                created_at TEXT,
+                source_system TEXT,
+                filename TEXT,
+                file_hash TEXT,
+                stored_path TEXT,
+                status TEXT,
+                preview_json TEXT,
+                mapping_json TEXT,
+                commit_result_json TEXT,
+                row_count_detected INTEGER DEFAULT 0
+            , filename_original TEXT, file_type TEXT, file_size_bytes INTEGER, sha256_hash TEXT, uploaded_by_user_id TEXT, uploaded_at TEXT, target_domain TEXT, updated_at TEXT)
+mission_assessments|CREATE TABLE mission_assessments (
+                id TEXT PRIMARY KEY,
+                period_type TEXT,
+                period_value TEXT,
+                scope TEXT,
+                metrics_json TEXT,
+                narrative TEXT,
+                created_at TEXT,
+                updated_at TEXT
+            )
+projects|CREATE TABLE projects (
+                project_id TEXT PRIMARY KEY,
+                title TEXT,
+                description TEXT,
+                owner TEXT,
+                status TEXT,
+                percent_complete REAL DEFAULT 0,
+                created_at TEXT,
+                updated_at TEXT,
+                import_job_id TEXT,
+                record_status TEXT DEFAULT 'active'
+            , planned_cost REAL DEFAULT 0, actual_cost REAL DEFAULT 0, fy INTEGER, qtr INTEGER, month INTEGER, echelon_type TEXT, unit_value TEXT, funding_line TEXT, keep_until TEXT, archived_at TEXT, org_unit_id INTEGER, station_id TEXT, category TEXT, start_date TEXT, end_date TEXT, scope_type TEXT, scope_value TEXT, station_rsid TEXT, reported_at TEXT, reporting_date TEXT, ingested_at TEXT)

@@ -1,0 +1,15 @@
+[
+  {
+    "id": 3,
+    "twg_id": "test-twg",
+    "title": "twg-item-temp",
+    "description": "desc",
+    "linked_recommendation_id": null,
+    "created_at": "2026-04-02T19:18:27.652698",
+    "updated_at": null,
+    "archived": 0,
+    "archived_at": null,
+    "archived_by": null,
+    "created_by": null
+  }
+]

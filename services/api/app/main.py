@@ -20,14 +20,17 @@ from . import database
 from . import api_org
 from . import api_auth
 from .routers import compat_org
+from .routers import compat_roi
 from fastapi.middleware.cors import CORSMiddleware
 from . import api_ingest
+from . import models_refresh
 from . import api_domain
 from .db import init_db, get_db_path
 from . import migrations
 from fastapi.staticfiles import StaticFiles
 from fastapi.openapi.utils import get_openapi
 import warnings
+from fastapi.responses import RedirectResponse
 
 
 
@@ -43,6 +46,12 @@ app = FastAPI(title="TAAIP API", description="TAAIP API service. © 2026 TAAIP. 
 # This simplifies local E2E (Playwright) by avoiding CORS and proxying.
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
 FRONTEND_BUILD = os.path.join(ROOT_DIR, "apps", "web", "build")
+# Ensure a stable default DB path (absolute) so relative cwd doesn't create
+# different DB files when the server is started from another working dir
+if not os.getenv('TAAIP_DB_PATH'):
+    default_db = os.path.join(ROOT_DIR, 'data', 'taaip.sqlite3')
+    os.environ['TAAIP_DB_PATH'] = default_db
+    _log.info(f"TAAIP_DB_PATH not set; defaulting to {default_db}")
 if os.path.isdir(FRONTEND_BUILD):
     try:
         # Mount static asset directory at /static — index.html will be served
@@ -55,6 +64,46 @@ if os.path.isdir(FRONTEND_BUILD):
 # Create a single API router mounted under /api so all app endpoints live
 # under a common namespace.
 api_router = APIRouter()
+
+# Compatibility redirects: accept both trailing-slash and non-trailing forms
+# for common collection endpoints that some legacy frontend builds call
+def _register_compat_collection(path_no_slash, target_with_slash, methods=("GET","POST","PUT","DELETE","PATCH")):
+    from fastapi import Request as _Request
+    for m in methods:
+        try:
+            # Use status 307 to preserve method on redirect
+            def _redir(request: _Request, _t=target_with_slash):
+                return RedirectResponse(_t, status_code=307)
+            app.add_api_route(path_no_slash, _redir, methods=[m])
+        except Exception:
+            # ignore duplicate route errors
+            pass
+
+# Register known collection compatibility redirects
+_register_compat_collection('/api/working-groups', '/api/working-groups/')
+_register_compat_collection('/api/fusion_process', '/api/fusion_process/')
+_register_compat_collection('/api/tickets', '/api/tickets/')
+# No compatibility redirect for /api/projects/loes to avoid redirect loops;
+# the canonical route is registered by the `projects` router at /api/projects/loes
+
+# Compatibility redirect: legacy dashboards path -> new dash prefix
+from fastapi import Request as _Request
+try:
+    def _redir_perf(request: _Request, _t='/api/dash/performance/dashboard'):
+        return RedirectResponse(_t, status_code=307)
+    # register both trailing and non-trailing forms
+    app.add_api_route('/api/dashboards/performance', _redir_perf, methods=['GET'])
+    app.add_api_route('/api/dashboards/performance/', _redir_perf, methods=['GET'])
+except Exception:
+    pass
+
+# Compatibility redirect for legacy auth endpoint used by older frontends
+try:
+    def _redir_auth_me(request: _Request):
+        return RedirectResponse('/api/auth/me', status_code=307)
+    app.add_api_route('/auth/me', _redir_auth_me, methods=['GET'])
+except Exception:
+    pass
 
 # Configure CORS. Use explicit local dev origins when available to allow credentialed
 # requests from the frontend. For deployed environments set `ALLOW_ORIGINS` env var
@@ -86,9 +135,12 @@ app.add_middleware(
 )
 
 api_router.include_router(compat_org.router)
+api_router.include_router(compat_roi.router)
 api_router.include_router(api_auth.router)
 api_router.include_router(api_org.router)
 api_router.include_router(api_ingest.router)
+from .routers import refresh as refresh_router
+api_router.include_router(refresh_router.router)
 # v1/v2 routers will be included later after domain routers to ensure
 # domain (SQLAlchemy) endpoints take precedence over older compatibility routes.
 from .routers import powerbi_feed
@@ -137,6 +189,14 @@ from .routers import projects as projects_router
 api_router.include_router(projects_router.router)
 from .routers import working_groups as wg_router
 api_router.include_router(wg_router.router)
+from .routers import fusion_workspace as fusion_workspace_router
+api_router.include_router(fusion_workspace_router.router)
+from .routers import twg_workspace as twg_workspace_router
+api_router.include_router(twg_workspace_router.router)
+from .routers import board_workspace as board_workspace_router
+api_router.include_router(board_workspace_router.router)
+from .routers import helpdesk as helpdesk_router
+api_router.include_router(helpdesk_router.router)
 from .routers import docs as docs_router
 api_router.include_router(docs_router.router)
 from .routers import resources as resources_router
@@ -149,18 +209,26 @@ from .routers import home as home_router
 api_router.include_router(home_router.router)
 from .routers import v2_home as v2_home_router
 api_router.include_router(v2_home_router.router)
+from .routers import debug_org as debug_org_router
+api_router.include_router(debug_org_router.router)
 from .routers import v2_org as v2_org_router
 api_router.include_router(v2_org_router.router)
 from .routers import v2_mission_feasibility as v2_mf_router
 api_router.include_router(v2_mf_router.router)
 from .routers import v2_analytics as v2_analytics_router
 api_router.include_router(v2_analytics_router.router)
+from .routers import v2_mission_leadline as v2_mission_leadline_router
+api_router.include_router(v2_mission_leadline_router.router)
 from .routers import v2_datahub as v2_datahub_router
 api_router.include_router(v2_datahub_router.router)
 from .routers import v2_mission_allocation as v2_mission_allocation_router
 api_router.include_router(v2_mission_allocation_router.router)
 from .routers import v2_fusion as v2_fusion_router
 api_router.include_router(v2_fusion_router.router)
+from .routers import fusion_process as fusion_process_router
+api_router.include_router(fusion_process_router.router)
+from .routers import v2_coa_compare as v2_coa_compare_router
+api_router.include_router(v2_coa_compare_router.router)
 from .routers import v2_ai_lms as v2_ai_lms_router
 api_router.include_router(v2_ai_lms_router.router)
 from .routers import compat_helpers as compat_helpers_router
@@ -202,8 +270,44 @@ from .routers import coa as coa_router
 api_router.include_router(coa_router.router)
 from .routers import market_intel as market_intel_router
 api_router.include_router(market_intel_router.router)
+from .routers import market_core as market_core_router
+api_router.include_router(market_core_router.router)
+from .routers import asset_recommendations as asset_recommendations_router
+api_router.include_router(asset_recommendations_router.router)
+from services.api.app.routers import asset_recommendations
+app.include_router(asset_recommendations.router, prefix="/api")
+from services.api.app.routers import mission_alignment
+app.include_router(mission_alignment.router, prefix="/api")
+from services.api.app.routers import mission_alignment_scoring
+app.include_router(mission_alignment_scoring.router, prefix="/api")
+from services.api.app.routers import mission_documents
+app.include_router(mission_documents.router, prefix="/api")
+from services.api.app.routers import mission_to_targeting
+app.include_router(mission_to_targeting.router, prefix="/api")
+from services.api.app.routers import mission_bundle
+app.include_router(mission_bundle.router, prefix="/api")
+from services.api.app.routers import mission_bundle_pipeline
+app.include_router(mission_bundle_pipeline.router, prefix="/api")
+from services.api.app.routers import mission_uploads
+app.include_router(mission_uploads.router, prefix="/api")
+from services.api.app.routers import mission_extraction
+app.include_router(mission_extraction.router, prefix="/api")
+from services.api.app.routers import mission_pipeline
+app.include_router(mission_pipeline.router, prefix="/api")
+from services.api.app.routers import mission_uploads_real
+app.include_router(mission_uploads_real.router, prefix="/api")
+from services.api.app.routers import mission_upload_pipeline
+app.include_router(mission_upload_pipeline.router, prefix="/api")
+from .routers import emm_integration as emm_integration_router
+api_router.include_router(emm_integration_router.router)
 from .routers import phonetics as phonetics_router
 api_router.include_router(phonetics_router.router)
+from .routers import emm_sync as emm_sync_router
+api_router.include_router(emm_sync_router.router)
+from .routers import commander_intent as commander_intent_router
+api_router.include_router(commander_intent_router.router)
+from .routers import commander_intent_ingest as commander_intent_ingest_router
+api_router.include_router(commander_intent_ingest_router.router)
 from .routers import home_feed as home_feed_router
 api_router.include_router(home_feed_router.router)
 from .routers import imports_mi as imports_mi_router
@@ -216,6 +320,8 @@ from .routers import imports_foundation as imports_foundation_router
 api_router.include_router(imports_foundation_router.router)
 from .routers import school_program as school_program_router
 api_router.include_router(school_program_router.router)
+from .routers import ai_opportunity as ai_opportunity_router
+api_router.include_router(ai_opportunity_router.router)
 from .routers import school_recruiting as school_recruiting_router
 api_router.include_router(school_recruiting_router.router)
 from .routers import performance_dashboard as performance_dashboard_router
@@ -404,7 +510,9 @@ if os.path.isfile(INDEX_FILE):
         # Don't intercept API or static asset requests — let the router return 404s
         if full_path.startswith('api') or full_path.startswith('static'):
             raise HTTPException(status_code=404)
-        return FileResponse(INDEX_FILE, media_type="text/html")
+        # Return index.html with no-store headers to avoid stale service-worker
+        # or cached-bundle issues during automated E2E runs.
+        return FileResponse(INDEX_FILE, media_type="text/html", headers={"Cache-Control": "no-store, no-cache, must-revalidate, max-age=0"})
 
 
 # No compatibility redirect required; routers with accidental '/api' prefixes

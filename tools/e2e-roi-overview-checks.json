@@ -1,0 +1,18 @@
+{
+  "route": "/budget/roi-overview",
+  "usable": true,
+  "checks": [
+    {
+      "value": "500",
+      "found": true
+    },
+    {
+      "value": "7",
+      "found": true
+    },
+    {
+      "value": "1",
+      "found": true
+    }
+  ]
+}

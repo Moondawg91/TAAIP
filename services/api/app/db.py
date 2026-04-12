@@ -29,6 +29,29 @@ def set_test_raw_conn(conn):
             _test_raw_conn_path = None
         except Exception:
             pass
+        # Ensure targeting-cycle columns exist on possibly-older tables
+        try:
+            _add_column_if_missing(cur, 'fusion_agenda_items', 'fusion_id', 'TEXT')
+            _add_column_if_missing(cur, 'fusion_notes', 'fusion_id', 'TEXT')
+            _add_column_if_missing(cur, 'fusion_findings', 'fusion_id', 'TEXT')
+            _add_column_if_missing(cur, 'fusion_recommendations', 'fusion_id', 'TEXT')
+            _add_column_if_missing(cur, 'fusion_recommendations', 'linked_to_twg', 'INTEGER DEFAULT 0')
+
+            _add_column_if_missing(cur, 'twg_agenda_items', 'twg_id', 'TEXT')
+            _add_column_if_missing(cur, 'twg_minutes', 'twg_id', 'TEXT')
+            _add_column_if_missing(cur, 'twg_tasks', 'twg_id', 'TEXT')
+            _add_column_if_missing(cur, 'twg_board_items', 'twg_id', 'TEXT')
+            _add_column_if_missing(cur, 'twg_board_items', 'linked_recommendation_id', 'INTEGER')
+
+            _add_column_if_missing(cur, 'board_decisions', 'board_id', 'TEXT')
+            _add_column_if_missing(cur, 'board_resource_allocations', 'board_id', 'TEXT')
+            _add_column_if_missing(cur, 'board_execution_items', 'board_id', 'TEXT')
+            conn.commit()
+        except Exception:
+            try:
+                conn.rollback()
+            except Exception:
+                pass
         # If we previously patched sqlite3.connect, restore the original.
         try:
             orig = getattr(sqlite3, '_orig_connect', None)
@@ -104,6 +127,11 @@ def get_db_path() -> str:
     return os.getenv("TAAIP_DB_PATH", "./data/taaip.sqlite3")
 
 
+def now_iso() -> str:
+    """Return current UTC time as ISO string for use in DB timestamps."""
+    return datetime.utcnow().isoformat()
+
+
 def get_documents_path() -> str:
     """Return path to the documents storage directory. Created if missing."""
     p = os.getenv('TAAIP_DOCUMENTS_PATH', './data/documents')
@@ -160,15 +188,34 @@ def connect() -> sqlite3.Connection:
                 # database file (this preserves test isolation semantics).
                 try:
                     # Create a fresh sqlite3 connection to the requested path
-                    new_conn = sqlite3.connect(requested, check_same_thread=False, timeout=30)
+                    # If tests configured a URI-style in-memory DB (file:...?),
+                    # enable URI mode for sqlite3.connect.
+                    if isinstance(requested, str) and requested.startswith('file:') or os.getenv('TAAIP_SQLITE_URI') == '1':
+                        new_conn = sqlite3.connect(requested, check_same_thread=False, timeout=30, uri=True)
+                    else:
+                        new_conn = sqlite3.connect(requested, check_same_thread=False, timeout=30)
                     new_conn.row_factory = _row_factory
                     cur = new_conn.cursor()
-                    cur.executescript("""
-                    PRAGMA foreign_keys=ON;
-                    PRAGMA journal_mode=WAL;
-                    PRAGMA synchronous=NORMAL;
-                    PRAGMA busy_timeout=20000;
-                    """)
+                    # Respect TAAIP_DISABLE_WAL when creating connections.
+                    if os.getenv('TAAIP_DISABLE_WAL') == '1':
+                        _journal = 'DELETE'
+                    else:
+                        _journal = 'WAL'
+                    for _attempt in range(6):
+                        try:
+                            cur.executescript(f"""
+                            PRAGMA foreign_keys=ON;
+                            PRAGMA journal_mode={_journal};
+                            PRAGMA synchronous=NORMAL;
+                            PRAGMA busy_timeout=20000;
+                            """)
+                            break
+                        except sqlite3.OperationalError:
+                            # transient lock; retry briefly
+                            if _attempt < 5:
+                                sleep(0.05 * (_attempt + 1))
+                                continue
+                            raise
                     try:
                         print(f"connect: opened new sqlite3 conn (from test_raw_conn) for path={path}")
                     except Exception:
@@ -204,18 +251,56 @@ def connect() -> sqlite3.Connection:
         pass
 
     # Use a plain sqlite3 connection for predictable DB-API behavior.
-    conn = sqlite3.connect(path, check_same_thread=False, timeout=30)
+    # Use URI mode when requested (supports shared in-memory DBs like
+    # 'file:memdb1?mode=memory&cache=shared'). Tests may set
+    # `TAAIP_SQLITE_URI=1` to enable this behavior.
+    if isinstance(path, str) and path.startswith('file:') or os.getenv('TAAIP_SQLITE_URI') == '1':
+        conn = sqlite3.connect(path, check_same_thread=False, timeout=30, uri=True)
+    else:
+        conn = sqlite3.connect(path, check_same_thread=False, timeout=30)
     conn.row_factory = _row_factory
     cur = conn.cursor()
-    cur.executescript("""
-    PRAGMA foreign_keys=ON;
-    PRAGMA journal_mode=WAL;
-    PRAGMA synchronous=NORMAL;
-    PRAGMA busy_timeout=20000;
-    """)
+    # Allow disabling WAL in test environments that cannot use WAL files.
+    if os.getenv('TAAIP_DISABLE_WAL') == '1':
+        journal = 'DELETE'
+    else:
+        journal = 'WAL'
+    for attempt in range(6):
+        try:
+            cur.executescript(f"""
+            PRAGMA foreign_keys=ON;
+            PRAGMA journal_mode={journal};
+            PRAGMA synchronous=NORMAL;
+            PRAGMA busy_timeout=20000;
+            """)
+            break
+        except sqlite3.OperationalError:
+            if attempt < 5:
+                sleep(0.05 * (attempt + 1))
+                continue
+            raise
     conn.commit()
     try:
         print(f"connect: opened new sqlite3 conn for path={path}")
+    except Exception:
+        pass
+    # If this DB file appears uninitialized (missing core tables), ensure
+    # the canonical schema is created on this connection before returning.
+    try:
+        try:
+            cur.execute("PRAGMA table_info(import_job)")
+            rows = cur.fetchall()
+            if not rows:
+                try:
+                    init_schema(conn=conn)
+                except Exception:
+                    pass
+        except Exception:
+            # If pragma fails for any reason, attempt best-effort init
+            try:
+                init_schema(conn=conn)
+            except Exception:
+                pass
     except Exception:
         pass
     return conn
@@ -355,7 +440,7 @@ def get_db_conn() -> sqlite3.Connection:
     return connect()
 
 
-def init_schema() -> None:
+def init_schema(conn: Optional[sqlite3.Connection] = None) -> None:
     """Idempotent creation of the core operational schema.
 
     This function focuses on ensuring the core tables required by tests
@@ -370,16 +455,74 @@ def init_schema() -> None:
     # connection, then attempt to run the same DDL through SQLAlchemy's
     # raw connection when available.
     try:
-        # Debug trace: show which DB path we're initializing and whether
-        # a test raw connection is present and its path.
+        # If a caller provided an explicit sqlite3.Connection, use it
+        # to initialize the schema on that connection. This avoids
+        # recursive calls to `connect()` (which would otherwise call
+        # `init_schema()` again) and ensures callers that open a
+        # connection to an alternate DB path get the canonical schema.
+        using_raw_engine = False
+        if conn is None:
+            # Debug trace: show which DB path we're initializing and whether
+            # a test raw connection is present and its path.
+            try:
+                global _test_raw_conn_path
+                print(f"init_schema: requested_path={get_db_path()}, test_raw_conn_path={_test_raw_conn_path}")
+            except Exception:
+                pass
+            conn = connect()
+        cur = conn.cursor()
+        # Ensure any lightweight runtime migrations are applied for this
+        # DB file so tables expected by runtime services (e.g. mission
+        # allocation) exist even when modules import the DB during tests.
         try:
-            global _test_raw_conn_path
-            print(f"init_schema: requested_path={get_db_path()}, test_raw_conn_path={_test_raw_conn_path}")
+            from services.api.app import migrations as _migrations
+            try:
+                _migrations.apply_migrations(conn)
+            except Exception:
+                pass
         except Exception:
             pass
-        conn = connect()
-        cur = conn.cursor()
-        using_raw_engine = False
+        # Optional demo seed for local test/dev runs. Controlled via
+        # TAAIP_AUTO_SEED=1 to avoid seeding in CI/production.
+        try:
+            if os.getenv('TAAIP_AUTO_SEED', '0') == '1':
+                try:
+                    # Minimal deterministic seed used by QA scripts
+                    cur.execute("INSERT OR REPLACE INTO mission_allocation_runs (run_id, unit_rsid, mission_total, created_at) VALUES (?,?,?,datetime('now'))", ('mal_seed_demo','STN_DEMO_01', 24))
+                    cur.execute("INSERT OR REPLACE INTO fact_lead_journey (lead_id, unit_rsid, created_dt, contract_flag, source_system) VALUES (?,?,?,?,?)", ('lead_demo_1','STN_DEMO_01','2026-03-01',1,'SEED'))
+                    try:
+                        import json as _json
+                        cur.execute("INSERT OR REPLACE INTO fusion_recommendations (fusion_run_id, unit_rsid, school_id, market_key, zip5, fusion_score, evidence_json, recommendation_type, recommendation_text, created_at) VALUES (?,?,?,?,?,?,?,?,?,datetime('now'))", ('fus_seed_1','STN_DEMO_01','S123','MK1','12345',0.95,_json.dumps({'note':'demo'}),'SCHOOL_PUSH','Target S123 (demo target) - high priority'))
+                    except Exception:
+                        pass
+                    try:
+                        # Seed a minimal mission_assessment so dashboards have an assessment
+                        cur.execute("INSERT OR REPLACE INTO mission_assessments (id, period_type, period_value, scope, metrics_json, narrative, created_at, updated_at) VALUES (?,?,?,?,?,?,datetime('now'),datetime('now'))",
+                                    ('ma_demo_1','fy','2026','command','{"kpi": 100}','Demo mission assessment'))
+                    except Exception:
+                        pass
+                    try:
+                        # Seed a minimal project so project-based dashboards show data
+                        cur.execute("INSERT OR REPLACE INTO projects (project_id, title, description, owner, status, percent_complete, created_at, updated_at, station_rsid) VALUES (?,?,?,?,?,?,datetime('now'),datetime('now'),?)",
+                                    ('proj_demo_1','Demo Project 1','Autogenerated demo project for validation','admin','active',100,'STN_DEMO_01'))
+                    except Exception:
+                        pass
+                    conn.commit()
+                    try:
+                        from services.api.app.services.coa_engine import run_coa_generation as _run_coa
+                        try:
+                            _run_coa('STN_DEMO_01')
+                        except Exception:
+                            pass
+                    except Exception:
+                        pass
+                except Exception:
+                    try:
+                        conn.rollback()
+                    except Exception:
+                        pass
+        except Exception:
+            pass
     except Exception:
         # As a fallback, attempt to use SQLAlchemy engine if connect fails
         try:
@@ -779,7 +922,124 @@ def init_schema() -> None:
                 notes TEXT
             );
 
-            CREATE TABLE IF NOT EXISTS asset_capabilities (
+                -- Targeting cycle child tables (additive)
+                CREATE TABLE IF NOT EXISTS fusion_agenda_items (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    fusion_id TEXT NOT NULL,
+                    title TEXT,
+                    description TEXT,
+                    order_idx INTEGER DEFAULT 0,
+                    created_by TEXT,
+                    created_at TEXT,
+                    updated_at TEXT
+                );
+
+                CREATE TABLE IF NOT EXISTS fusion_notes (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    fusion_id TEXT NOT NULL,
+                    note_text TEXT,
+                    author TEXT,
+                    created_at TEXT,
+                    updated_at TEXT
+                );
+
+                CREATE TABLE IF NOT EXISTS fusion_findings (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    fusion_id TEXT NOT NULL,
+                    finding_text TEXT,
+                    severity TEXT,
+                    created_by TEXT,
+                    created_at TEXT,
+                    updated_at TEXT
+                );
+
+                CREATE TABLE IF NOT EXISTS fusion_recommendations (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    fusion_id TEXT NOT NULL,
+                    recommendation_text TEXT,
+                    status TEXT DEFAULT 'open',
+                    linked_to_twg BOOLEAN DEFAULT 0,
+                    created_by TEXT,
+                    created_at TEXT,
+                    updated_at TEXT
+                );
+
+                CREATE TABLE IF NOT EXISTS twg_agenda_items (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    twg_id TEXT NOT NULL,
+                    title TEXT,
+                    description TEXT,
+                    order_idx INTEGER DEFAULT 0,
+                    created_by TEXT,
+                    created_at TEXT,
+                    updated_at TEXT
+                );
+
+                CREATE TABLE IF NOT EXISTS twg_minutes (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    twg_id TEXT NOT NULL,
+                    minute_text TEXT,
+                    recorded_by TEXT,
+                    created_at TEXT,
+                    updated_at TEXT
+                );
+
+                CREATE TABLE IF NOT EXISTS twg_tasks (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    twg_id TEXT NOT NULL,
+                    title TEXT,
+                    details TEXT,
+                    assignee TEXT,
+                    status TEXT DEFAULT 'open',
+                    due_date TEXT,
+                    created_at TEXT,
+                    updated_at TEXT
+                );
+
+                CREATE TABLE IF NOT EXISTS twg_board_items (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    twg_id TEXT NOT NULL,
+                    title TEXT,
+                    description TEXT,
+                    linked_recommendation_id INTEGER,
+                    created_at TEXT,
+                    updated_at TEXT
+                );
+
+                CREATE TABLE IF NOT EXISTS board_decisions (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    board_id TEXT NOT NULL,
+                    decision_text TEXT,
+                    status TEXT DEFAULT 'pending',
+                    decided_at TEXT,
+                    created_by TEXT,
+                    created_at TEXT,
+                    updated_at TEXT
+                );
+
+                CREATE TABLE IF NOT EXISTS board_resource_allocations (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    board_id TEXT NOT NULL,
+                    resource_type TEXT,
+                    quantity INTEGER,
+                    notes TEXT,
+                    created_at TEXT,
+                    updated_at TEXT
+                );
+
+                CREATE TABLE IF NOT EXISTS board_execution_items (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    board_id TEXT NOT NULL,
+                    title TEXT,
+                    details TEXT,
+                    status TEXT DEFAULT 'open',
+                    created_at TEXT,
+                    updated_at TEXT
+                );
+
+                    -- Ensure archive columns exist on targeting-cycle tables (added idempotently below)
+
+                CREATE TABLE IF NOT EXISTS asset_capabilities (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 asset_id TEXT,
                 capability_key TEXT,
@@ -862,6 +1122,9 @@ def init_schema() -> None:
                 source_system TEXT,
                 ingest_run_id INTEGER
             );
+
+                -- Idempotently add archive columns to targeting-cycle tables so older DBs gain archive support
+                PRAGMA user_version = PRAGMA_USER_VERSION;
 
             CREATE TABLE IF NOT EXISTS fact_mission_category (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -2218,8 +2481,17 @@ def init_schema() -> None:
                 education_level TEXT,
                 cbsa_code TEXT,
                 campaign_source TEXT,
+                -- canonical lead target fields: prefer these for lead-link lookups
+                school_id TEXT,
+                zip5 TEXT,
                 created_at TEXT
             );
+            -- Ensure canonical lead target columns exist on existing DB files
+            PRAGMA user_version; -- noop placeholder to keep inline DDL block clear
+            -- Create helpful indexes for leads filters if the columns exist
+            -- Use conditional creation to remain safe for legacy schemas.
+            -- We'll check columns via PRAGMA below (best-effort, non-fatal)
+            ;
 
             CREATE TABLE IF NOT EXISTS budgets (
                 budget_id TEXT PRIMARY KEY,
@@ -2872,40 +3144,42 @@ def init_schema() -> None:
             """
         )
         # run lightweight schema migrations
-        # Seed minimal demo data for Mission Feasibility (idempotent)
+        # Seed minimal demo data ONLY when explicitly enabled via env var
+        # This repository must not auto-populate demo data in operational/production runs.
         try:
-            try:
-                cur.execute("SELECT COUNT(1) as c FROM mission_target WHERE unit_rsid=? AND fy=?", ('USAREC', 2025))
-                r = cur.fetchone()
-                c = 0
+            if os.environ.get('TAAIP_ENABLE_DEMO_SEED', '0') == '1':
                 try:
-                    # sqlite3.Row may return mapping-like rows
-                    c = int(r['c'])
-                except Exception:
+                    cur.execute("SELECT COUNT(1) as c FROM mission_target WHERE unit_rsid=? AND fy=?", ('USAREC', 2025))
+                    r = cur.fetchone()
+                    c = 0
                     try:
-                        c = int(r[0])
+                        # sqlite3.Row may return mapping-like rows
+                        c = int(r['c'])
                     except Exception:
-                        c = 0
-                if c == 0:
-                    now = datetime.utcnow().isoformat()
-                    # Insert an annual mission target for demo
-                    cur.execute('INSERT INTO mission_target (unit_rsid, fy, qtr, month, mission_contracts, created_at) VALUES (?,?,?,?,?,?)', ('USAREC', 2025, None, None, 1200, now))
-                    # Populate a 12-month recruiter strength history (simple demo values)
-                    months = [f"2024-{m:02d}-01" for m in range(1,13)]
-                    for m in months:
-                        cur.execute('INSERT INTO recruiter_strength (unit_rsid, month, recruiters_assigned, producers_available, created_at) VALUES (?,?,?,?,?)', ('USAREC', m, 50, 45, now))
-                    # Add a simple market capacity estimate row
-                    cur.execute('INSERT INTO market_capacity (unit_rsid, cbsa, zip, market_index, urbanicity, snapshot_month, created_at) VALUES (?,?,?,?,?,?,?)', ('USAREC', None, None, 1000.0, 'mixed', '2024-01-01', now))
-                    # Add a handful of demo contracts to lead_journey_fact to allow WR_actual computation
-                    for i in range(1,51):
-                        lead_id = f"demo-usarec-lead-{i}"
-                        contract_dt = f"2024-{((i-1)%12)+1:02d}-15"
                         try:
-                            cur.execute('INSERT OR IGNORE INTO lead_journey_fact (lead_id, person_key, unit_rsid, contract_flag, contract_dt, created_at) VALUES (?,?,?,?,?,?)', (lead_id, f"person-{i}", 'USAREC', 1, contract_dt, now))
+                            c = int(r[0])
                         except Exception:
-                            pass
-            except Exception:
-                pass
+                            c = 0
+                    if c == 0:
+                        now = datetime.utcnow().isoformat()
+                        # Insert an annual mission target for demo
+                        cur.execute('INSERT INTO mission_target (unit_rsid, fy, qtr, month, mission_contracts, created_at) VALUES (?,?,?,?,?,?)', ('USAREC', 2025, None, None, 1200, now))
+                        # Populate a 12-month recruiter strength history (simple demo values)
+                        months = [f"2024-{m:02d}-01" for m in range(1,13)]
+                        for m in months:
+                            cur.execute('INSERT INTO recruiter_strength (unit_rsid, month, recruiters_assigned, producers_available, created_at) VALUES (?,?,?,?,?)', ('USAREC', m, 50, 45, now))
+                        # Add a simple market capacity estimate row
+                        cur.execute('INSERT INTO market_capacity (unit_rsid, cbsa, zip, market_index, urbanicity, snapshot_month, created_at) VALUES (?,?,?,?,?,?,?)', ('USAREC', None, None, 1000.0, 'mixed', '2024-01-01', now))
+                        # Add a handful of demo contracts to lead_journey_fact to allow WR_actual computation
+                        for i in range(1,51):
+                            lead_id = f"demo-usarec-lead-{i}"
+                            contract_dt = f"2024-{((i-1)%12)+1:02d}-15"
+                            try:
+                                cur.execute('INSERT OR IGNORE INTO lead_journey_fact (lead_id, person_key, unit_rsid, contract_flag, contract_dt, created_at) VALUES (?,?,?,?,?,?)', (lead_id, f"person-{i}", 'USAREC', 1, contract_dt, now))
+                            except Exception:
+                                pass
+                except Exception:
+                    pass
         except Exception:
             pass
         try:
@@ -2979,7 +3253,9 @@ def init_schema() -> None:
 
         # Create uniqueness indexes to support deterministic replace semantics (Phase-4)
         unique_statements = [
-            "CREATE UNIQUE INDEX IF NOT EXISTS ux_fact_production_org_date_metric ON fact_production(org_unit_id, date_key, metric_key);",
+            # Promote uniqueness to include import_job_id so each import_job's rows are preserved
+            "DROP INDEX IF EXISTS ux_fact_production_org_date_metric;",
+            "CREATE UNIQUE INDEX IF NOT EXISTS ux_fact_production_org_date_metric_job ON fact_production(org_unit_id, date_key, metric_key, import_job_id);",
             "CREATE UNIQUE INDEX IF NOT EXISTS ux_fact_marketing_org_date_campaign_channel ON fact_marketing(org_unit_id, date_key, campaign, channel);",
             "CREATE UNIQUE INDEX IF NOT EXISTS ux_event_metrics_event_captured ON event_metrics(event_id, captured_at);",
             "CREATE UNIQUE INDEX IF NOT EXISTS ux_projects_project_id ON projects(project_id);",
@@ -3238,6 +3514,22 @@ def init_schema() -> None:
                         ''')
                     except Exception:
                         pass
+        except Exception:
+            pass
+
+        # Ensure leads table has canonical target columns (school_id, zip5)
+        try:
+            lcols = table_columns('leads')
+            if 'school_id' not in lcols:
+                try:
+                    cur.execute("ALTER TABLE leads ADD COLUMN school_id TEXT")
+                except Exception:
+                    pass
+            if 'zip5' not in lcols:
+                try:
+                    cur.execute("ALTER TABLE leads ADD COLUMN zip5 TEXT")
+                except Exception:
+                    pass
         except Exception:
             pass
 
@@ -4256,6 +4548,128 @@ def init_db() -> str:
         except Exception:
             pass
         cur = conn.cursor()
+        # Ensure leads.notes exists so operator inline notes persist.
+        try:
+            safe_add_column(conn, 'leads', 'notes', 'TEXT')
+        except Exception:
+            pass
+        # Add archive columns for targeting-cycle child tables (idempotent)
+        try:
+            safe_add_column(conn, 'fusion_agenda_items', 'archived', 'INTEGER DEFAULT 0')
+            safe_add_column(conn, 'fusion_agenda_items', 'archived_at', 'TEXT')
+            safe_add_column(conn, 'fusion_agenda_items', 'archived_by', 'TEXT')
+
+            safe_add_column(conn, 'fusion_notes', 'archived', 'INTEGER DEFAULT 0')
+            safe_add_column(conn, 'fusion_notes', 'archived_at', 'TEXT')
+            safe_add_column(conn, 'fusion_notes', 'archived_by', 'TEXT')
+
+            safe_add_column(conn, 'fusion_findings', 'archived', 'INTEGER DEFAULT 0')
+            safe_add_column(conn, 'fusion_findings', 'archived_at', 'TEXT')
+            safe_add_column(conn, 'fusion_findings', 'archived_by', 'TEXT')
+
+            safe_add_column(conn, 'fusion_recommendations', 'archived', 'INTEGER DEFAULT 0')
+            safe_add_column(conn, 'fusion_recommendations', 'archived_at', 'TEXT')
+            safe_add_column(conn, 'fusion_recommendations', 'archived_by', 'TEXT')
+
+            safe_add_column(conn, 'twg_agenda_items', 'archived', 'INTEGER DEFAULT 0')
+            safe_add_column(conn, 'twg_agenda_items', 'archived_at', 'TEXT')
+            safe_add_column(conn, 'twg_agenda_items', 'archived_by', 'TEXT')
+
+            safe_add_column(conn, 'twg_minutes', 'archived', 'INTEGER DEFAULT 0')
+            safe_add_column(conn, 'twg_minutes', 'archived_at', 'TEXT')
+            safe_add_column(conn, 'twg_minutes', 'archived_by', 'TEXT')
+
+            safe_add_column(conn, 'twg_tasks', 'archived', 'INTEGER DEFAULT 0')
+            safe_add_column(conn, 'twg_tasks', 'archived_at', 'TEXT')
+            safe_add_column(conn, 'twg_tasks', 'archived_by', 'TEXT')
+
+            safe_add_column(conn, 'twg_items', 'archived', 'INTEGER DEFAULT 0')
+            safe_add_column(conn, 'twg_items', 'archived_at', 'TEXT')
+            safe_add_column(conn, 'twg_items', 'archived_by', 'TEXT')
+
+            safe_add_column(conn, 'twg_board_items', 'archived', 'INTEGER DEFAULT 0')
+            safe_add_column(conn, 'twg_board_items', 'archived_at', 'TEXT')
+            safe_add_column(conn, 'twg_board_items', 'archived_by', 'TEXT')
+
+            safe_add_column(conn, 'board_decisions', 'archived', 'INTEGER DEFAULT 0')
+            safe_add_column(conn, 'board_decisions', 'archived_at', 'TEXT')
+            safe_add_column(conn, 'board_decisions', 'archived_by', 'TEXT')
+
+            safe_add_column(conn, 'board_resource_allocations', 'archived', 'INTEGER DEFAULT 0')
+            safe_add_column(conn, 'board_resource_allocations', 'archived_at', 'TEXT')
+            safe_add_column(conn, 'board_resource_allocations', 'archived_by', 'TEXT')
+
+            safe_add_column(conn, 'board_execution_items', 'archived', 'INTEGER DEFAULT 0')
+            safe_add_column(conn, 'board_execution_items', 'archived_at', 'TEXT')
+            safe_add_column(conn, 'board_execution_items', 'archived_by', 'TEXT')
+            # Legacy compatibility: ensure `created_by` exists where code expects it
+            try:
+                safe_add_column(conn, 'fusion_agenda_items', 'created_by', 'TEXT')
+                safe_add_column(conn, 'fusion_notes', 'created_by', 'TEXT')
+                safe_add_column(conn, 'fusion_findings', 'created_by', 'TEXT')
+                safe_add_column(conn, 'fusion_recommendations', 'created_by', 'TEXT')
+                safe_add_column(conn, 'fusion_recommendations', 'linked_to_twg', 'INTEGER DEFAULT 0')
+
+                safe_add_column(conn, 'twg_agenda_items', 'created_by', 'TEXT')
+                safe_add_column(conn, 'twg_minutes', 'created_by', 'TEXT')
+                safe_add_column(conn, 'twg_tasks', 'created_by', 'TEXT')
+                safe_add_column(conn, 'twg_items', 'created_by', 'TEXT')
+                safe_add_column(conn, 'twg_board_items', 'created_by', 'TEXT')
+
+                safe_add_column(conn, 'board_decisions', 'created_by', 'TEXT')
+                safe_add_column(conn, 'board_resource_allocations', 'created_by', 'TEXT')
+                safe_add_column(conn, 'board_execution_items', 'created_by', 'TEXT')
+            except Exception:
+                pass
+        except Exception:
+            pass
+        # Create helpful indexes for leads filters (idempotent and safe)
+        try:
+            try:
+                cur.execute("PRAGMA table_info(leads)")
+                lead_cols = [r[1] for r in cur.fetchall()]
+            except Exception:
+                lead_cols = []
+            if 'school_id' in lead_cols:
+                try:
+                    cur.execute('CREATE INDEX IF NOT EXISTS idx_leads_school_id ON leads(school_id)')
+                except Exception:
+                    pass
+            if 'zip5' in lead_cols:
+                try:
+                    cur.execute('CREATE INDEX IF NOT EXISTS idx_leads_zip5 ON leads(zip5)')
+                except Exception:
+                    pass
+            if 'status' in lead_cols:
+                try:
+                    cur.execute('CREATE INDEX IF NOT EXISTS idx_leads_status ON leads(status)')
+                except Exception:
+                    pass
+            if 'current_stage' in lead_cols:
+                try:
+                    cur.execute('CREATE INDEX IF NOT EXISTS idx_leads_current_stage ON leads(current_stage)')
+                except Exception:
+                    pass
+            if 'created_at' in lead_cols:
+                try:
+                    cur.execute('CREATE INDEX IF NOT EXISTS idx_leads_created_at ON leads(created_at)')
+                except Exception:
+                    pass
+            # Composite index to support common pattern: WHERE status = ? ORDER BY created_at DESC
+            if 'status' in lead_cols and 'created_at' in lead_cols:
+                try:
+                    cur.execute('CREATE INDEX IF NOT EXISTS idx_leads_status_created_at ON leads(status, created_at DESC)')
+                except Exception:
+                    pass
+            try:
+                conn.commit()
+            except Exception:
+                pass
+        except Exception:
+            try:
+                conn.rollback()
+            except Exception:
+                pass
         now = datetime.utcnow().isoformat()
         # mission_target
         cur.execute('INSERT OR IGNORE INTO mission_target(unit_rsid,fy,annual_contract_mission,created_at) VALUES(?,?,?,?)', ('USAREC', 2026, 60000, now))

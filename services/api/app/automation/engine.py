@@ -45,10 +45,17 @@ def simple_event_recommendation(event_id: int, created_by: str = 'automation') -
         }
 
         # persist to ai_recommendation table
-        cur.execute('INSERT INTO ai_recommendation(scope_type, scope_id, fy, qtr, prompt_hash, output_json, created_at) VALUES (?,?,?,?,?,?,?)', (
-            'event', event_id, None, None, None, json.dumps(rec), now_iso()
-        ))
-        conn.commit()
+        try:
+            cur.execute('INSERT INTO ai_recommendation(scope_type, scope_id, fy, qtr, prompt_hash, output_json, created_at) VALUES (?,?,?,?,?,?,?)', (
+                'event', event_id, None, None, None, json.dumps(rec), now_iso()
+            ))
+            conn.commit()
+        except Exception as e:
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+            return {'error': 'persist_failed', 'reason': str(e)}
         return rec
     finally:
         conn.close()
@@ -66,14 +73,36 @@ def run_automation_for(trigger: str, target_type: str = 'event', target_id: int 
         run_id = cur.lastrowid
 
         results = None
-        if target_type == 'event' and target_id is not None:
-            results = simple_event_recommendation(target_id, created_by=initiated_by)
-        else:
-            results = {'note': 'no-op for this trigger/target'}
+        try:
+            if target_type == 'event' and target_id is not None:
+                results = simple_event_recommendation(target_id, created_by=initiated_by)
+            else:
+                results = {'note': 'no-op for this trigger/target'}
+        except Exception as e:
+            # mark run as failed and capture the error
+            try:
+                finished = now_iso()
+                cur.execute('UPDATE automation_run_log SET finished_at=?, status=?, output_json=? WHERE id=?', (finished, 'failed', json.dumps({'error': str(e)}), run_id))
+                conn.commit()
+            except Exception:
+                try:
+                    conn.rollback()
+                except Exception:
+                    pass
+            finally:
+                conn.close()
+            return {'run_id': run_id, 'status': 'failed', 'result': {'error': str(e)}}
 
         finished = now_iso()
-        cur.execute('UPDATE automation_run_log SET finished_at=?, status=?, output_json=? WHERE id=?', (finished, 'completed', json.dumps(results), run_id))
-        conn.commit()
-        return {'run_id': run_id, 'status': 'completed', 'result': results}
+        status = 'completed'
+        try:
+            cur.execute('UPDATE automation_run_log SET finished_at=?, status=?, output_json=? WHERE id=?', (finished, status, json.dumps(results), run_id))
+            conn.commit()
+        except Exception:
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+        return {'run_id': run_id, 'status': status, 'result': results}
     finally:
         conn.close()

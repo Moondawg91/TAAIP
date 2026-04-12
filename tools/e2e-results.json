@@ -1,0 +1,107 @@
+[
+  {
+    "route": "/command-center/twg",
+    "actions": [
+      "created group: E2E WG",
+      "created item: E2E Issue 1",
+      {
+        "verify_after_create": true
+      },
+      "edited item title to E2E Issue 1 - edited",
+      {
+        "present_after_refresh": true
+      }
+    ]
+  },
+  {
+    "route": "/working-groups",
+    "actions": [
+      "created group: E2E WG OPS",
+      "created item: E2E Ops Issue",
+      {
+        "verify_after_create": true
+      },
+      "deleted ops item",
+      {
+        "present_after_refresh": false
+      }
+    ]
+  },
+  {
+    "route": "/command-center/fusion-cell",
+    "actions": [
+      "created fusion: E2E-F1",
+      {
+        "verify_after_create": true
+      },
+      "edited fusion id to E2E-F1-EDIT",
+      "deleted fusion",
+      {
+        "present_after_refresh": true
+      }
+    ]
+  },
+  {
+    "route": "/command-center",
+    "actions": [
+      {
+        "progress_ui_found": false
+      }
+    ]
+  },
+  {
+    "route": "/command-center/lines-of-effort",
+    "actions": [
+      "created LOE: E2E LOE 1",
+      {
+        "present_after_create": true,
+        "createdId": 62
+      },
+      {
+        "saveClicked": true,
+        "saveMethod": "global-save-loe"
+      },
+      "edited LOE title to E2E LOE 1 EDIT",
+      {
+        "wrote_list_dump": "./tools/e2e-loe-list-62.json"
+      },
+      {
+        "present_after_refresh": true,
+        "check_method": "id:62",
+        "compare": "./tools/e2e-compare-62.json"
+      },
+      "deleted LOE",
+      {
+        "wrote_list_after_delete": "./tools/e2e-loe-list-after-delete-62.json",
+        "delete_compare": "./tools/e2e-delete-compare-62.json"
+      },
+      {
+        "present_after_delete": false,
+        "deleted": true
+      }
+    ]
+  },
+  {
+    "route": "/help/submit-ticket",
+    "actions": [
+      "submitted ticket: E2E Ticket"
+    ]
+  },
+  {
+    "route": "/help/ticket-status",
+    "actions": [
+      {
+        "ticket_list_shows_ticket": true
+      }
+    ]
+  },
+  {
+    "route": "/projects",
+    "actions": [
+      {
+        "cascading_selector_present": true
+      },
+      "applied selector"
+    ]
+  }
+]

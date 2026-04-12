@@ -1,5 +1,6 @@
-from fastapi import APIRouter, UploadFile, File, Form
+from fastapi import APIRouter, UploadFile, File, Form, HTTPException
 from ..db import connect
+import os
 from typing import Optional
 import csv
 import io
@@ -27,7 +28,17 @@ REQUIRED_COLUMNS = {
 @router.post('/imports/foundation/preview')
 async def preview_foundation_import(dataset_key: str = Form(...), file: UploadFile = File(...)):
     """Return CSV header detection, required columns, missing, row_count and sample rows."""
-    content = await file.read()
+    raw = await file.read()
+    # guard against SIM/demo content
+    if os.getenv('ALLOW_SIMULATION_IMPORTS') != '1':
+        sim_pat = __import__('re').compile(r"\bSIM_|\bsim-|\bdemo-|\bdemo_", __import__('re').IGNORECASE)
+        try:
+            s = raw.decode('utf-8', errors='ignore')
+        except Exception:
+            s = ''
+        if sim_pat.search(s):
+            raise HTTPException(status_code=400, detail='Import rejected: contains simulation/demo markers. Set ALLOW_SIMULATION_IMPORTS=1 to override.')
+    content = raw
     try:
         s = content.decode('utf-8', errors='replace')
     except Exception:
@@ -55,7 +66,16 @@ async def preview_foundation_import(dataset_key: str = Form(...), file: UploadFi
 @router.post('/imports/foundation/commit')
 async def commit_foundation_import(dataset_key: str = Form(...), file: UploadFile = File(...), mode: str = Form('replace'), mapping: Optional[str] = Form(None)):
     """Commit CSV into the canonical table. mode=replace|append"""
-    content = await file.read()
+    raw = await file.read()
+    if os.getenv('ALLOW_SIMULATION_IMPORTS') != '1':
+        sim_pat = __import__('re').compile(r"\bSIM_|\bsim-|\bdemo-|\bdemo_", __import__('re').IGNORECASE)
+        try:
+            s = raw.decode('utf-8', errors='ignore')
+        except Exception:
+            s = ''
+        if sim_pat.search(s):
+            raise HTTPException(status_code=400, detail='Import rejected: contains simulation/demo markers. Set ALLOW_SIMULATION_IMPORTS=1 to override.')
+    content = raw
     try:
         s = content.decode('utf-8', errors='replace')
     except Exception:

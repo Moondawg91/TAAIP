@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from . import schemas, database, auth, rbac, models
 
-router = APIRouter(prefix="/api/org", tags=["org"])
+router = APIRouter(prefix="/org", tags=["org"])
 
 
 @router.get("/stations/{rsid}/zip-coverage", response_model=schemas.StationZipCoverageResponse)

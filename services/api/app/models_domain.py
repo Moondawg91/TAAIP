@@ -195,3 +195,20 @@ class FsLossEvent(Base):
     source_file = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
+class CoaRecommendation(Base):
+    __tablename__ = "coa_recommendations"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    coa_run_id = Column(String, nullable=False)
+    unit_rsid = Column(String(4), nullable=False)
+    coa_type = Column(String, nullable=False)
+    coa_title = Column(String, nullable=False)
+    coa_summary = Column(Text, nullable=True)
+    recommended_actions_json = Column(JSON, nullable=True)
+    expected_benefit = Column(String, nullable=True)
+    risk_level = Column(String, nullable=True)
+    assumptions_json = Column(JSON, nullable=True)
+    doctrine_refs_json = Column(JSON, nullable=True)
+    supporting_evidence_json = Column(JSON, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())

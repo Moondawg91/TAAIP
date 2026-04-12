@@ -108,15 +108,32 @@ def create_funnel_transition(db: Session, payload: dict):
     pfx = _prefixes_from_rsid(payload.get('station_rsid'))
     ft = domain.FunnelTransition(**payload, **pfx)
     db.add(ft)
+    # Instrument commit lifecycle when requested
+    import os
+    if os.getenv('TAAIP_INSTRUMENT_FUNNEL') == '1':
+        try:
+            print(f"INSTR: create_funnel_transition called; payload_lead={payload.get('lead_id') or payload.get('lead_key')}")
+        except Exception:
+            pass
     # Commit with retry to tolerate transient sqlite 'database is locked' errors
     retries = 5
     delay = 0.02
     for attempt in range(retries):
         try:
+            if os.getenv('TAAIP_INSTRUMENT_FUNNEL') == '1':
+                try:
+                    print(f"INSTR: create_funnel_transition commit attempt={attempt}")
+                except Exception:
+                    pass
             db.commit()
             return ft
         except OperationalError as e:
             msg = str(e).lower()
+            if os.getenv('TAAIP_INSTRUMENT_FUNNEL') == '1':
+                try:
+                    print(f"INSTR: create_funnel_transition commit failed attempt={attempt} err={e}")
+                except Exception:
+                    pass
             if 'locked' in msg and attempt < retries - 1:
                 try:
                     db.rollback()

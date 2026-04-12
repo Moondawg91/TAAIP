@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import os
-os.environ['TAAIP_DB_PATH'] = './taaip_dev.db'
+os.environ.setdefault('TAAIP_DB_PATH', './taaip_dev.db')
 
 from services.api.app.database import engine, SessionLocal
 from services.api.app.models import Base

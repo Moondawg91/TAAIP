@@ -1,0 +1,1 @@
+ma_demo_1|fy|2026|command|{"kpi": 100}|Demo mission assessment

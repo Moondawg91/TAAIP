@@ -1,0 +1,9 @@
+{
+  "route": "/data-hub",
+  "usable": true,
+  "checks": [
+    {
+      "headerPresent": true
+    }
+  ]
+}

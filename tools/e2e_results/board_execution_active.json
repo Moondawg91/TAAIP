@@ -1,0 +1,15 @@
+[
+  {
+    "id": 1,
+    "board_id": "test-board",
+    "title": "exec-temp",
+    "details": "do it",
+    "status": "open",
+    "created_at": "2026-04-02T19:21:24.786312",
+    "updated_at": null,
+    "archived": 0,
+    "archived_at": null,
+    "archived_by": null,
+    "created_by": null
+  }
+]

@@ -1,0 +1,443 @@
+
+==================================== ERRORS ====================================
+___________________ ERROR collecting qa_coa_linkage_test.py ____________________
+.venv/lib/python3.9/site-packages/_pytest/runner.py:341: in from_call
+    result: Optional[TResult] = func()
+.venv/lib/python3.9/site-packages/_pytest/runner.py:372: in <lambda>
+    call = CallInfo.from_call(lambda: list(collector.collect()), "collect")
+.venv/lib/python3.9/site-packages/_pytest/python.py:531: in collect
+    self._inject_setup_module_fixture()
+.venv/lib/python3.9/site-packages/_pytest/python.py:545: in _inject_setup_module_fixture
+    self.obj, ("setUpModule", "setup_module")
+.venv/lib/python3.9/site-packages/_pytest/python.py:310: in obj
+    self._obj = obj = self._getobj()
+.venv/lib/python3.9/site-packages/_pytest/python.py:528: in _getobj
+    return self._importtestmodule()
+.venv/lib/python3.9/site-packages/_pytest/python.py:617: in _importtestmodule
+    mod = import_path(self.path, mode=importmode, root=self.config.rootpath)
+.venv/lib/python3.9/site-packages/_pytest/pathlib.py:565: in import_path
+    importlib.import_module(module_name)
+/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/importlib/__init__.py:127: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+<frozen importlib._bootstrap>:1030: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1007: in _find_and_load
+    ???
+<frozen importlib._bootstrap>:986: in _find_and_load_unlocked
+    ???
+<frozen importlib._bootstrap>:680: in _load_unlocked
+    ???
+.venv/lib/python3.9/site-packages/_pytest/assertion/rewrite.py:178: in exec_module
+    exec(co, module.__dict__)
+qa_coa_linkage_test.py:14: in <module>
+    raise SystemExit(1)
+E   SystemExit: 1
+------------------------------- Captured stdout --------------------------------
+init_schema: requested_path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db, test_raw_conn_path=None
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d342d692ce824fa48b146741e8a12831.db
+NO_COAS
+____________ ERROR collecting tools/ui_e2e/org_selector_api_test.py ____________
+.venv/lib/python3.9/site-packages/_pytest/runner.py:341: in from_call
+    result: Optional[TResult] = func()
+.venv/lib/python3.9/site-packages/_pytest/runner.py:372: in <lambda>
+    call = CallInfo.from_call(lambda: list(collector.collect()), "collect")
+.venv/lib/python3.9/site-packages/_pytest/python.py:531: in collect
+    self._inject_setup_module_fixture()
+.venv/lib/python3.9/site-packages/_pytest/python.py:545: in _inject_setup_module_fixture
+    self.obj, ("setUpModule", "setup_module")
+.venv/lib/python3.9/site-packages/_pytest/python.py:310: in obj
+    self._obj = obj = self._getobj()
+.venv/lib/python3.9/site-packages/_pytest/python.py:528: in _getobj
+    return self._importtestmodule()
+.venv/lib/python3.9/site-packages/_pytest/python.py:617: in _importtestmodule
+    mod = import_path(self.path, mode=importmode, root=self.config.rootpath)
+.venv/lib/python3.9/site-packages/_pytest/pathlib.py:565: in import_path
+    importlib.import_module(module_name)
+/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/importlib/__init__.py:127: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+<frozen importlib._bootstrap>:1030: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1007: in _find_and_load
+    ???
+<frozen importlib._bootstrap>:986: in _find_and_load_unlocked
+    ???
+<frozen importlib._bootstrap>:680: in _load_unlocked
+    ???
+.venv/lib/python3.9/site-packages/_pytest/assertion/rewrite.py:178: in exec_module
+    exec(co, module.__dict__)
+tools/ui_e2e/org_selector_api_test.py:21: in <module>
+    sys.exit(1)
+E   SystemExit: 1
+------------------------------- Captured stdout --------------------------------
+Fetching root...
+{
+  "brigades": []
+}
+No brigades found
+=============================== warnings summary ===============================
+services/api/app/schemas.py:5
+  /Users/ambermooney/Desktop/TAAIP/services/api/app/schemas.py:5: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class ZipCoverageItem(BaseModel):
+
+.venv/lib/python3.9/site-packages/pydantic/_internal/_config.py:383
+.venv/lib/python3.9/site-packages/pydantic/_internal/_config.py:383
+  /Users/ambermooney/Desktop/TAAIP/.venv/lib/python3.9/site-packages/pydantic/_internal/_config.py:383: UserWarning: Valid config keys have changed in V2:
+  * 'orm_mode' has been renamed to 'from_attributes'
+    warnings.warn(message, UserWarning)
+
+services/api/app/schemas_domain.py:22
+  /Users/ambermooney/Desktop/TAAIP/services/api/app/schemas_domain.py:22: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class EventOut(BaseModel):
+
+services/api/app/main.py:411
+  /Users/ambermooney/Desktop/TAAIP/services/api/app/main.py:411: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    @app.on_event("startup")
+
+.venv/lib/python3.9/site-packages/fastapi/applications.py:4579
+  /Users/ambermooney/Desktop/TAAIP/.venv/lib/python3.9/site-packages/fastapi/applications.py:4579: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    return self.router.on_event(event_type)
+
+.venv/lib/python3.9/site-packages/urllib3/__init__.py:35
+  /Users/ambermooney/Desktop/TAAIP/.venv/lib/python3.9/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+ERROR qa_coa_linkage_test.py - SystemExit: 1
+ERROR tools/ui_e2e/org_selector_api_test.py - SystemExit: 1
+!!!!!!!!!!!!!!!!!!! Interrupted: 2 errors during collection !!!!!!!!!!!!!!!!!!!!
+7 warnings, 2 errors in 4.52s

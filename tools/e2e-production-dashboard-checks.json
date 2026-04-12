@@ -1,0 +1,11 @@
+{
+  "route": "/performance/production-dashboard",
+  "usable": true,
+  "checks": [
+    {
+      "hasHeader": true,
+      "hasCount": true,
+      "rows": 1
+    }
+  ]
+}

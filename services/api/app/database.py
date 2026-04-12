@@ -22,7 +22,12 @@ def _create_engine_from_env():
             if isinstance(dbapi_connection, sqlite3.Connection):
                 cursor = dbapi_connection.cursor()
                 try:
-                    cursor.execute("PRAGMA journal_mode=WAL;")
+                    # Allow tests to disable WAL if the filesystem or CI
+                    # environment doesn't support it reliably.
+                    if os.getenv('TAAIP_DISABLE_WAL') == '1':
+                        cursor.execute("PRAGMA journal_mode=DELETE;")
+                    else:
+                        cursor.execute("PRAGMA journal_mode=WAL;")
                     cursor.execute("PRAGMA synchronous=NORMAL;")
                     cursor.execute("PRAGMA foreign_keys=ON;")
                     cursor.execute("PRAGMA busy_timeout=10000;")

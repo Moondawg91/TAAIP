@@ -211,7 +211,7 @@ def compute_roi_score(payload: Dict[str, Any], allowed_orgs: Optional[list] = De
         conn.close()
 
 
-@router.get('/v2/roi/kpis')
+@router.get('/kpis')
 def roi_kpis(unit_rsid: Optional[str] = None, echelon: Optional[str] = None, start_date: Optional[str] = None, end_date: Optional[str] = None, compare_mode: str = 'THRESHOLDS', allowed_orgs: Optional[list] = Depends(require_scope('BN'))):
     """Return KPI summary for a unit scope."""
     conn = db.connect()
@@ -376,7 +376,7 @@ def roi_kpis(unit_rsid: Optional[str] = None, echelon: Optional[str] = None, sta
         conn.close()
 
 
-@router.get('/v2/roi/breakdown')
+@router.get('/breakdown')
 def roi_breakdown(unit_rsid: Optional[str] = None, start_date: Optional[str] = None, end_date: Optional[str] = None, allowed_orgs: Optional[list] = Depends(require_scope('BN'))):
     """Return breakdown by event_type, source_type, and child unit."""
     conn = db.connect()
@@ -407,7 +407,7 @@ def roi_breakdown(unit_rsid: Optional[str] = None, start_date: Optional[str] = N
         conn.close()
 
 
-@router.get('/v2/roi/funnel')
+@router.get('/funnel')
 def roi_funnel(unit_rsid: Optional[str] = None, start_date: Optional[str] = None, end_date: Optional[str] = None, allowed_orgs: Optional[list] = Depends(require_scope('BN'))):
     conn = db.connect()
     try:
@@ -425,15 +425,54 @@ def roi_funnel(unit_rsid: Optional[str] = None, start_date: Optional[str] = None
             params.append(end_date)
 
         cur.execute(f"SELECT COUNT(*) as leads FROM lead_journey_fact {where}", params)
-        leads = cur.fetchone()['leads']
-        cur.execute(f"SELECT COUNT(*) as contacts FROM lead_journey_fact WHERE contact_made_dt IS NOT NULL {where.replace('lead_created_dt','contact_made_dt')}", params)
-        contacts = cur.fetchone()['contacts'] if cur.rowcount!=0 else None
-        cur.execute(f"SELECT COUNT(*) as appts FROM lead_journey_fact WHERE appointment_dt IS NOT NULL {where.replace('lead_created_dt','appointment_dt')}", params)
-        appts = cur.fetchone()['appts'] if cur.rowcount!=0 else None
-        cur.execute(f"SELECT COUNT(*) as applicants FROM lead_journey_fact WHERE applicant_dt IS NOT NULL {where.replace('lead_created_dt','applicant_dt')}", params)
-        applicants = cur.fetchone()['applicants'] if cur.rowcount!=0 else None
-        cur.execute(f"SELECT COUNT(*) as contracts FROM lead_journey_fact WHERE contract_flag=1 {where}", params)
-        contracts = cur.fetchone()['contracts'] if cur.rowcount!=0 else None
+        r = cur.fetchone()
+        if r is None:
+            leads = 0
+        else:
+            try:
+                leads = r['leads']
+            except Exception:
+                leads = r[0]
+
+        contact_where = where.replace('lead_created_dt','contact_made_dt')
+        if contact_where.strip().upper().startswith('WHERE'):
+            contact_where = contact_where.replace('WHERE', ' AND', 1)
+        cur.execute(f"SELECT COUNT(*) as contacts FROM lead_journey_fact WHERE contact_made_dt IS NOT NULL {contact_where}", params)
+        r = cur.fetchone()
+        try:
+            contacts = r['contacts'] if (r is not None and hasattr(r, 'keys')) else (r[0] if r is not None else None)
+        except Exception:
+            contacts = r[0] if r is not None else None
+
+        appt_where = where.replace('lead_created_dt','appointment_dt')
+        if appt_where.strip().upper().startswith('WHERE'):
+            appt_where = appt_where.replace('WHERE', ' AND', 1)
+        cur.execute(f"SELECT COUNT(*) as appts FROM lead_journey_fact WHERE appointment_dt IS NOT NULL {appt_where}", params)
+        r = cur.fetchone()
+        try:
+            appts = r['appts'] if (r is not None and hasattr(r, 'keys')) else (r[0] if r is not None else None)
+        except Exception:
+            appts = r[0] if r is not None else None
+
+        applicant_where = where.replace('lead_created_dt','applicant_dt')
+        if applicant_where.strip().upper().startswith('WHERE'):
+            applicant_where = applicant_where.replace('WHERE', ' AND', 1)
+        cur.execute(f"SELECT COUNT(*) as applicants FROM lead_journey_fact WHERE applicant_dt IS NOT NULL {applicant_where}", params)
+        r = cur.fetchone()
+        try:
+            applicants = r['applicants'] if (r is not None and hasattr(r, 'keys')) else (r[0] if r is not None else None)
+        except Exception:
+            applicants = r[0] if r is not None else None
+
+        contract_flag_where = where
+        if contract_flag_where.strip().upper().startswith('WHERE'):
+            contract_flag_where = contract_flag_where.replace('WHERE', ' AND', 1)
+        cur.execute(f"SELECT COUNT(*) as contracts FROM lead_journey_fact WHERE contract_flag=1 {contract_flag_where}", params)
+        r = cur.fetchone()
+        try:
+            contracts = r['contracts'] if (r is not None and hasattr(r, 'keys')) else (r[0] if r is not None else None)
+        except Exception:
+            contracts = r[0] if r is not None else None
 
         conv = {}
         try:
@@ -449,7 +488,7 @@ def roi_funnel(unit_rsid: Optional[str] = None, start_date: Optional[str] = None
         conn.close()
 
 
-@router.get('/v2/roi/event/{event_id}')
+@router.get('/event/{event_id}')
 def roi_event_detail(event_id: str, unit_rsid: Optional[str] = None, allowed_orgs: Optional[list] = Depends(require_scope('BN'))):
     conn = db.connect()
     try:

@@ -1,0 +1,16 @@
+{
+  "route": "/budget/funding-allocations",
+  "usable": true,
+  "details": [
+    {
+      "key": "by_source",
+      "found": true,
+      "sample": "[{\"source_type\":\"demo\",\"leads\":7}]"
+    },
+    {
+      "key": "by_event",
+      "found": true,
+      "sample": "[]"
+    }
+  ]
+}

@@ -44,7 +44,19 @@ def get_descendant_units(conn, unit_rsid: str, max_depth: int = 50) -> List[str]
             SELECT o.id, o.rsid, subs.depth+1 FROM org_unit o JOIN subs ON o.parent_id = subs.id WHERE subs.depth < {int(max_depth)}
         ) SELECT rsid FROM subs WHERE rsid IS NOT NULL;'''
         cur.execute(sql, (oid,))
-        rows = [r.get('rsid') for r in cur.fetchall() if r.get('rsid')]
+        fetched = cur.fetchall()
+        # sqlite3.Row supports mapping access by key; use explicit indexing to avoid relying on .get
+        rows = []
+        for r in fetched:
+            try:
+                val = r['rsid']
+            except Exception:
+                try:
+                    val = r[1]
+                except Exception:
+                    val = None
+            if val:
+                rows.append(val)
         return rows if rows else [unit_rsid]
     except Exception:
         return [unit_rsid]

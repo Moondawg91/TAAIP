@@ -1,0 +1,1 @@
+{"status":"ok","data_as_of":"2026-04-05T23:16:27.809484Z","filters":{},"kpis":{"total_events":0,"total_cost":0.0,"total_outcomes":0,"cost_per_outcome":0.0,"avg_event_cost":0.0},"breakdowns":{"by_event_type":[],"by_funding_line":[],"by_project":[]},"trends":{"outcomes_over_time":[],"spend_over_time":[]},"missing_data":[]}

@@ -39,7 +39,17 @@ def _safe_float(v):
 async def preview(dataset_key: str = Form(...), file: UploadFile = File(...)):
     if dataset_key not in REQUIRED_COLUMNS:
         raise HTTPException(status_code=400, detail='unknown dataset_key')
-    content = (await file.read()).decode('utf-8', errors='replace')
+    # read and validate content
+    raw = await file.read()
+    if os.getenv('ALLOW_SIMULATION_IMPORTS') != '1':
+        sim_pat = __import__('re').compile(r"\bSIM_|\bsim-|\bdemo-|\bdemo_", __import__('re').IGNORECASE)
+        try:
+            s = raw.decode('utf-8', errors='ignore')
+        except Exception:
+            s = ''
+        if sim_pat.search(s):
+            raise HTTPException(status_code=400, detail='Import rejected: contains simulation/demo markers. Set ALLOW_SIMULATION_IMPORTS=1 to override.')
+    content = raw.decode('utf-8', errors='replace')
     f = io.StringIO(content)
     try:
         reader = csv.DictReader(f)
@@ -50,6 +60,11 @@ async def preview(dataset_key: str = Form(...), file: UploadFile = File(...)):
     errors = []
     sample = []
     for i, r in enumerate(reader):
+        # normalize incoming CSV headers to lowercase for case-insensitive access
+        try:
+            r = {k.lower() if k is not None else k: v for k, v in r.items()}
+        except Exception:
+            pass
         if i < 20:
             sample.append(r)
         rows.append(r)
@@ -64,7 +79,16 @@ async def commit(dataset_key: str = Form(...), file: UploadFile = File(...), mod
         raise HTTPException(status_code=400, detail='unknown dataset_key')
     if mode != 'replace':
         raise HTTPException(status_code=400, detail='only replace mode supported')
-    content = (await file.read()).decode('utf-8', errors='replace')
+    raw = await file.read()
+    if os.getenv('ALLOW_SIMULATION_IMPORTS') != '1':
+        sim_pat = __import__('re').compile(r"\bSIM_|\bsim-|\bdemo-|\bdemo_", __import__('re').IGNORECASE)
+        try:
+            s = raw.decode('utf-8', errors='ignore')
+        except Exception:
+            s = ''
+        if sim_pat.search(s):
+            raise HTTPException(status_code=400, detail='Import rejected: contains simulation/demo markers. Set ALLOW_SIMULATION_IMPORTS=1 to override.')
+    content = raw.decode('utf-8', errors='replace')
     f = io.StringIO(content)
     try:
         reader = csv.DictReader(f)
@@ -85,6 +109,11 @@ async def commit(dataset_key: str = Form(...), file: UploadFile = File(...), mod
     inserted = 0
     now = _now_iso()
     for r in reader:
+        # normalize incoming CSV headers to lowercase for case-insensitive access
+        try:
+            r = {k.lower() if k is not None else k: v for k, v in r.items()}
+        except Exception:
+            pass
         # normalize fields
         if dataset_key == 'mi_zip_fact':
             zip5 = (r.get('zip5') or r.get('zip') or '').strip()
@@ -111,9 +140,23 @@ async def commit(dataset_key: str = Form(...), file: UploadFile = File(...), mod
                 cur.execute("INSERT INTO mi_zip_fact(id, fy, qtr, rsid_prefix, zip5, cbsa_code, cbsa_name, station_name, component, market_category, army_potential, dod_potential, army_share_of_potential, potential_remaining, contracts_ga, contracts_sa, contracts_vol, p2p, as_of_date, created_at, updated_at, demo_json, ingested_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                             ((r.get('id') or None), _safe_int(r.get('fy')), r.get('qtr'), r.get('rsid_prefix'), zip5, cbsa_code, cbsa_name, station_name, component, market_category, army_potential, dod_potential, army_share_of_potential, potential_remaining, contracts_ga, contracts_sa, contracts_vol, p2p, as_of_date, created_at, updated_at, json.dumps({}), now))
                 inserted += 1
-            except Exception as e:
-                # ignore row but continue
-                continue
+            except Exception:
+                # fallback: permissive insert only into columns that exist in the table
+                try:
+                    cur.execute("PRAGMA table_info(mi_zip_fact)")
+                    existing = [c[1] for c in cur.fetchall()]
+                    cols = ['id','fy','qtr','rsid_prefix','zip5','cbsa_code','cbsa_name','station_name','component','market_category','army_potential','dod_potential','army_share_of_potential','potential_remaining','contracts_ga','contracts_sa','contracts_vol','p2p','as_of_date','created_at','updated_at','demo_json','ingested_at']
+                    vals = [(r.get('id') or None), _safe_int(r.get('fy')), r.get('qtr'), r.get('rsid_prefix'), zip5, cbsa_code, cbsa_name, station_name, component, market_category, army_potential, dod_potential, army_share_of_potential, potential_remaining, contracts_ga, contracts_sa, contracts_vol, p2p, as_of_date, created_at, updated_at, json.dumps({}), now]
+                    insert_cols = [c for c in cols if c in existing]
+                    if insert_cols:
+                        insert_vals = [vals[i] for i, c in enumerate(cols) if c in existing]
+                        placeholders = ','.join(['?'] * len(insert_vals))
+                        sql = f"INSERT INTO mi_zip_fact({','.join(insert_cols)}) VALUES ({placeholders})"
+                        cur.execute(sql, tuple(insert_vals))
+                        inserted += 1
+                except Exception:
+                    # ignore row but continue
+                    continue
         elif dataset_key == 'mi_cbsa_fact':
             cbsa_code = (r.get('cbsa_code') or '').strip()
             cbsa_name = (r.get('cbsa_name') or '').strip()
@@ -136,7 +179,21 @@ async def commit(dataset_key: str = Form(...), file: UploadFile = File(...), mod
                             ((r.get('id') or None), _safe_int(r.get('fy')), r.get('qtr'), r.get('rsid_prefix'), cbsa_code, cbsa_name, station_name, component, market_category, army_potential, dod_potential, army_share_of_potential, potential_remaining, contracts_ga, contracts_sa, contracts_vol, p2p, as_of_date, created_at, updated_at, json.dumps({}), now))
                 inserted += 1
             except Exception:
-                continue
+                # permissive fallback: insert only existing columns
+                try:
+                    cur.execute("PRAGMA table_info(mi_cbsa_fact)")
+                    existing = [c[1] for c in cur.fetchall()]
+                    cols = ['id','fy','qtr','rsid_prefix','cbsa_code','cbsa_name','station_name','component','market_category','army_potential','dod_potential','army_share_of_potential','potential_remaining','contracts_ga','contracts_sa','contracts_vol','p2p','as_of_date','created_at','updated_at','demo_json','ingested_at']
+                    vals = [(r.get('id') or None), _safe_int(r.get('fy')), r.get('qtr'), r.get('rsid_prefix'), cbsa_code, cbsa_name, station_name, component, market_category, army_potential, dod_potential, army_share_of_potential, potential_remaining, contracts_ga, contracts_sa, contracts_vol, p2p, as_of_date, created_at, updated_at, json.dumps({}), now]
+                    insert_cols = [c for c in cols if c in existing]
+                    if insert_cols:
+                        insert_vals = [vals[i] for i, c in enumerate(cols) if c in existing]
+                        placeholders = ','.join(['?'] * len(insert_vals))
+                        sql = f"INSERT INTO mi_cbsa_fact({','.join(insert_cols)}) VALUES ({placeholders})"
+                        cur.execute(sql, tuple(insert_vals))
+                        inserted += 1
+                except Exception:
+                    continue
     try:
         conn.commit()
     except Exception:

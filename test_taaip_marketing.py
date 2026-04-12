@@ -1,15 +1,13 @@
 import os
 import time
 
-# Ensure fresh DB for tests
-DB_PATH = os.path.join(os.path.dirname(__file__), "data", "taaip.sqlite3")
-if os.path.exists(DB_PATH):
-    try:
-        os.remove(DB_PATH)
-    except Exception:
-        pass
+# Ensure tests use the configured test DB path so they run under the
+# same session-managed DB prepared by the test harness. If no test
+# env var is present, default to `./taaip_test.db` to match conftest.
+os.environ['TAAIP_DB_PATH'] = os.environ.get('TAAIP_DB_PATH', './taaip_test.db')
 
 from taaip_service import app, init_db
+# Initialize schema for this test module (harmless if already done).
 init_db()
 
 from fastapi.testclient import TestClient
@@ -101,8 +99,21 @@ def test_funnel_attribution_endpoint():
         "cbsa_code": "00001",
         "campaign_source": "pytest"
     }
-    rlead = client.post("/api/v1/ingestLead", json=lead_payload)
-    assert rlead.status_code == 200
+    # Retry briefly on transient sqlite locking seen in CI/test runs
+    rlead = None
+    # Increase retries to tolerate brief DB locks in CI/test environments
+    for attempt in range(20):
+        try:
+            rlead = client.post("/api/v1/ingestLead", json=lead_payload)
+            if rlead is not None and rlead.status_code == 200:
+                break
+        except Exception as e:
+            if 'database is locked' in str(e).lower():
+                time.sleep(0.1)
+                continue
+            raise
+        time.sleep(0.1)
+    assert rlead is not None and rlead.status_code == 200
 
     # Transition lead through funnel
     t1 = client.post("/api/v2/funnel/transition", json={

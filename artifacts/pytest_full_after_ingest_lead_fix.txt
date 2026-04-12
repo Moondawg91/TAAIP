@@ -1,0 +1,605 @@
+.............FF.......................................F................. [ 72%]
+...........................                                              [100%]
+=================================== FAILURES ===================================
+_______________________ test_funnel_attribution_endpoint _______________________
+
+    def test_funnel_attribution_endpoint():
+        # Create a lead and move through stages to allow attribution
+        lead_payload = {
+            "lead_id": "lead_py_001",
+            "first_name": "Test",
+            "last_name": "User",
+            "email": "testuser@example.com",
+            "phone": "555-0001",
+            "source": "emm",
+            "age": 20,
+            "education_level": "High School",
+            "cbsa_code": "00001",
+            "campaign_source": "pytest"
+        }
+        # Retry briefly on transient sqlite locking seen in CI/test runs
+        rlead = None
+        # Increase retries to tolerate brief DB locks in CI/test environments
+        for attempt in range(20):
+            try:
+                rlead = client.post("/api/v1/ingestLead", json=lead_payload)
+                if rlead is not None and rlead.status_code == 200:
+                    break
+            except Exception as e:
+                if 'database is locked' in str(e).lower():
+                    time.sleep(0.1)
+                    continue
+                raise
+            time.sleep(0.1)
+>       assert rlead is not None and rlead.status_code == 200
+E       assert (None is not None)
+
+test_taaip_marketing.py:116: AssertionError
+________________________ test_ingest_survey_and_segment ________________________
+
+self = <sqlalchemy.engine.base.Connection object at 0x12a13e3a0>
+dialect = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x108c4dfd0>
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x12a13e280>
+statement = <sqlalchemy.dialects.sqlite.base.SQLiteCompiler object at 0x12a13e520>
+parameters = [('sv_001', 'lead_seg_001', '{"age": "24", "interest": "tech"}', '2026-04-06 20:58:10.376106')]
+
+    def _exec_single_context(
+        self,
+        dialect: Dialect,
+        context: ExecutionContext,
+        statement: Union[str, Compiled],
+        parameters: Optional[_AnyMultiExecuteParams],
+    ) -> CursorResult[Any]:
+        """continue the _execute_context() method for a single DBAPI
+        cursor.execute() or cursor.executemany() call.
+    
+        """
+        if dialect.bind_typing is BindTyping.SETINPUTSIZES:
+            generic_setinputsizes = context._prepare_set_input_sizes()
+    
+            if generic_setinputsizes:
+                try:
+                    dialect.do_set_input_sizes(
+                        context.cursor, generic_setinputsizes, context
+                    )
+                except BaseException as e:
+                    self._handle_dbapi_exception(
+                        e, str(statement), parameters, None, context
+                    )
+    
+        cursor, str_statement, parameters = (
+            context.cursor,
+            context.statement,
+            context.parameters,
+        )
+    
+        effective_parameters: Optional[_AnyExecuteParams]
+    
+        if not context.executemany:
+            effective_parameters = parameters[0]
+        else:
+            effective_parameters = parameters
+    
+        if self._has_events or self.engine._has_events:
+            for fn in self.dispatch.before_cursor_execute:
+                str_statement, effective_parameters = fn(
+                    self,
+                    cursor,
+                    str_statement,
+                    effective_parameters,
+                    context,
+                    context.executemany,
+                )
+    
+        if self._echo:
+            self._log_info(str_statement)
+    
+            stats = context._get_cache_stats()
+    
+            if not self.engine.hide_parameters:
+                self._log_info(
+                    "[%s] %r",
+                    stats,
+                    sql_util._repr_params(
+                        effective_parameters,
+                        batches=10,
+                        ismulti=context.executemany,
+                    ),
+                )
+            else:
+                self._log_info(
+                    "[%s] [SQL parameters hidden due to hide_parameters=True]",
+                    stats,
+                )
+    
+        evt_handled: bool = False
+        try:
+            if context.execute_style is ExecuteStyle.EXECUTEMANY:
+                effective_parameters = cast(
+                    "_CoreMultiExecuteParams", effective_parameters
+                )
+                if self.dialect._has_events:
+                    for fn in self.dialect.dispatch.do_executemany:
+                        if fn(
+                            cursor,
+                            str_statement,
+                            effective_parameters,
+                            context,
+                        ):
+                            evt_handled = True
+                            break
+                if not evt_handled:
+                    self.dialect.do_executemany(
+                        cursor,
+                        str_statement,
+                        effective_parameters,
+                        context,
+                    )
+            elif not effective_parameters and context.no_parameters:
+                if self.dialect._has_events:
+                    for fn in self.dialect.dispatch.do_execute_no_params:
+                        if fn(cursor, str_statement, context):
+                            evt_handled = True
+                            break
+                if not evt_handled:
+                    self.dialect.do_execute_no_params(
+                        cursor, str_statement, context
+                    )
+            else:
+                effective_parameters = cast(
+                    "_CoreSingleExecuteParams", effective_parameters
+                )
+                if self.dialect._has_events:
+                    for fn in self.dialect.dispatch.do_execute:
+                        if fn(
+                            cursor,
+                            str_statement,
+                            effective_parameters,
+                            context,
+                        ):
+                            evt_handled = True
+                            break
+                if not evt_handled:
+>                   self.dialect.do_execute(
+                        cursor, str_statement, effective_parameters, context
+                    )
+
+.venv/lib/python3.9/site-packages/sqlalchemy/engine/base.py:1967: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x108c4dfd0>
+cursor = <sqlite3.Cursor object at 0x12a13b1f0>
+statement = 'INSERT INTO surveys(survey_id,lead_id,responses_json,created_at) VALUES(?,?,?,?)'
+parameters = ('sv_001', 'lead_seg_001', '{"age": "24", "interest": "tech"}', '2026-04-06 20:58:10.376106')
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x12a13e280>
+
+    def do_execute(self, cursor, statement, parameters, context=None):
+>       cursor.execute(statement, parameters)
+E       sqlite3.OperationalError: database is locked
+
+.venv/lib/python3.9/site-packages/sqlalchemy/engine/default.py:952: OperationalError
+
+The above exception was the direct cause of the following exception:
+
+    def test_ingest_survey_and_segment():
+        payload = {
+            "lead_id": "lead_seg_001",
+            "survey_id": "sv_001",
+            "responses": {"age": "24", "interest": "tech"}
+        }
+>       r = client.post("/api/v2/ingest/survey", json=payload)
+
+test_taaip_segmentation.py:22: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.9/site-packages/starlette/testclient.py:552: in post
+    return super().post(
+.venv/lib/python3.9/site-packages/httpx/_client.py:1144: in post
+    return self.request(
+.venv/lib/python3.9/site-packages/starlette/testclient.py:451: in request
+    return super().request(
+.venv/lib/python3.9/site-packages/httpx/_client.py:825: in request
+    return self.send(request, auth=auth, follow_redirects=follow_redirects)
+.venv/lib/python3.9/site-packages/httpx/_client.py:914: in send
+    response = self._send_handling_auth(
+.venv/lib/python3.9/site-packages/httpx/_client.py:942: in _send_handling_auth
+    response = self._send_handling_redirects(
+.venv/lib/python3.9/site-packages/httpx/_client.py:979: in _send_handling_redirects
+    response = self._send_single_request(request)
+.venv/lib/python3.9/site-packages/httpx/_client.py:1014: in _send_single_request
+    response = transport.handle_request(request)
+.venv/lib/python3.9/site-packages/starlette/testclient.py:354: in handle_request
+    raise exc
+.venv/lib/python3.9/site-packages/starlette/testclient.py:351: in handle_request
+    portal.call(self.app, scope, receive, send)
+.venv/lib/python3.9/site-packages/anyio/from_thread.py:321: in call
+    return cast(T_Retval, self.start_task_soon(func, *args).result())
+/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/concurrent/futures/_base.py:445: in result
+    return self.__get_result()
+/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/concurrent/futures/_base.py:390: in __get_result
+    raise self._exception
+.venv/lib/python3.9/site-packages/anyio/from_thread.py:252: in _call_func
+    retval = await retval_or_awaitable
+.venv/lib/python3.9/site-packages/fastapi/applications.py:1138: in __call__
+    await super().__call__(scope, receive, send)
+.venv/lib/python3.9/site-packages/starlette/applications.py:113: in __call__
+    await self.middleware_stack(scope, receive, send)
+.venv/lib/python3.9/site-packages/starlette/middleware/errors.py:186: in __call__
+    raise exc
+.venv/lib/python3.9/site-packages/starlette/middleware/errors.py:164: in __call__
+    await self.app(scope, receive, _send)
+.venv/lib/python3.9/site-packages/starlette/middleware/cors.py:85: in __call__
+    await self.app(scope, receive, send)
+.venv/lib/python3.9/site-packages/starlette/middleware/exceptions.py:63: in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+.venv/lib/python3.9/site-packages/starlette/_exception_handler.py:53: in wrapped_app
+    raise exc
+.venv/lib/python3.9/site-packages/starlette/_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+.venv/lib/python3.9/site-packages/fastapi/middleware/asyncexitstack.py:18: in __call__
+    await self.app(scope, receive, send)
+.venv/lib/python3.9/site-packages/starlette/routing.py:716: in __call__
+    await self.middleware_stack(scope, receive, send)
+.venv/lib/python3.9/site-packages/starlette/routing.py:736: in app
+    await route.handle(scope, receive, send)
+.venv/lib/python3.9/site-packages/starlette/routing.py:290: in handle
+    await self.app(scope, receive, send)
+.venv/lib/python3.9/site-packages/fastapi/routing.py:121: in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+.venv/lib/python3.9/site-packages/starlette/_exception_handler.py:53: in wrapped_app
+    raise exc
+.venv/lib/python3.9/site-packages/starlette/_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+.venv/lib/python3.9/site-packages/fastapi/routing.py:107: in app
+    response = await f(request)
+.venv/lib/python3.9/site-packages/fastapi/routing.py:426: in app
+    raw_response = await run_endpoint_function(
+.venv/lib/python3.9/site-packages/fastapi/routing.py:316: in run_endpoint_function
+    return await run_in_threadpool(dependant.call, **values)
+.venv/lib/python3.9/site-packages/starlette/concurrency.py:38: in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+.venv/lib/python3.9/site-packages/anyio/to_thread.py:56: in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+.venv/lib/python3.9/site-packages/anyio/_backends/_asyncio.py:2485: in run_sync_in_worker_thread
+    return await future
+.venv/lib/python3.9/site-packages/anyio/_backends/_asyncio.py:976: in run
+    result = context.run(func, *args)
+services/api/app/routers/v2.py:53: in ingest_survey
+    db.execute(stmt, params)
+.venv/lib/python3.9/site-packages/sqlalchemy/orm/session.py:2351: in execute
+    return self._execute_internal(
+.venv/lib/python3.9/site-packages/sqlalchemy/orm/session.py:2258: in _execute_internal
+    result = conn.execute(
+.venv/lib/python3.9/site-packages/sqlalchemy/engine/base.py:1419: in execute
+    return meth(
+.venv/lib/python3.9/site-packages/sqlalchemy/sql/elements.py:527: in _execute_on_connection
+    return connection._execute_clauseelement(
+.venv/lib/python3.9/site-packages/sqlalchemy/engine/base.py:1641: in _execute_clauseelement
+    ret = self._execute_context(
+.venv/lib/python3.9/site-packages/sqlalchemy/engine/base.py:1846: in _execute_context
+    return self._exec_single_context(
+.venv/lib/python3.9/site-packages/sqlalchemy/engine/base.py:1986: in _exec_single_context
+    self._handle_dbapi_exception(
+.venv/lib/python3.9/site-packages/sqlalchemy/engine/base.py:2363: in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+.venv/lib/python3.9/site-packages/sqlalchemy/engine/base.py:1967: in _exec_single_context
+    self.dialect.do_execute(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x108c4dfd0>
+cursor = <sqlite3.Cursor object at 0x12a13b1f0>
+statement = 'INSERT INTO surveys(survey_id,lead_id,responses_json,created_at) VALUES(?,?,?,?)'
+parameters = ('sv_001', 'lead_seg_001', '{"age": "24", "interest": "tech"}', '2026-04-06 20:58:10.376106')
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x12a13e280>
+
+    def do_execute(self, cursor, statement, parameters, context=None):
+>       cursor.execute(statement, parameters)
+E       sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) database is locked
+E       [SQL: INSERT INTO surveys(survey_id,lead_id,responses_json,created_at) VALUES(?,?,?,?)]
+E       [parameters: ('sv_001', 'lead_seg_001', '{"age": "24", "interest": "tech"}', '2026-04-06 20:58:10.376106')]
+E       (Background on this error at: https://sqlalche.me/e/20/e3q8)
+
+.venv/lib/python3.9/site-packages/sqlalchemy/engine/default.py:952: OperationalError
+______________________ test_funnel_stages_and_transition _______________________
+
+self = <sqlalchemy.engine.base.Connection object at 0x12b1e8eb0>
+dialect = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x12a8eaaf0>
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x12b1ea0d0>
+statement = <sqlalchemy.dialects.sqlite.base.SQLiteCompiler object at 0x12b1197c0>
+parameters = [('1', 'B1', 1)]
+
+    def _exec_single_context(
+        self,
+        dialect: Dialect,
+        context: ExecutionContext,
+        statement: Union[str, Compiled],
+        parameters: Optional[_AnyMultiExecuteParams],
+    ) -> CursorResult[Any]:
+        """continue the _execute_context() method for a single DBAPI
+        cursor.execute() or cursor.executemany() call.
+    
+        """
+        if dialect.bind_typing is BindTyping.SETINPUTSIZES:
+            generic_setinputsizes = context._prepare_set_input_sizes()
+    
+            if generic_setinputsizes:
+                try:
+                    dialect.do_set_input_sizes(
+                        context.cursor, generic_setinputsizes, context
+                    )
+                except BaseException as e:
+                    self._handle_dbapi_exception(
+                        e, str(statement), parameters, None, context
+                    )
+    
+        cursor, str_statement, parameters = (
+            context.cursor,
+            context.statement,
+            context.parameters,
+        )
+    
+        effective_parameters: Optional[_AnyExecuteParams]
+    
+        if not context.executemany:
+            effective_parameters = parameters[0]
+        else:
+            effective_parameters = parameters
+    
+        if self._has_events or self.engine._has_events:
+            for fn in self.dispatch.before_cursor_execute:
+                str_statement, effective_parameters = fn(
+                    self,
+                    cursor,
+                    str_statement,
+                    effective_parameters,
+                    context,
+                    context.executemany,
+                )
+    
+        if self._echo:
+            self._log_info(str_statement)
+    
+            stats = context._get_cache_stats()
+    
+            if not self.engine.hide_parameters:
+                self._log_info(
+                    "[%s] %r",
+                    stats,
+                    sql_util._repr_params(
+                        effective_parameters,
+                        batches=10,
+                        ismulti=context.executemany,
+                    ),
+                )
+            else:
+                self._log_info(
+                    "[%s] [SQL parameters hidden due to hide_parameters=True]",
+                    stats,
+                )
+    
+        evt_handled: bool = False
+        try:
+            if context.execute_style is ExecuteStyle.EXECUTEMANY:
+                effective_parameters = cast(
+                    "_CoreMultiExecuteParams", effective_parameters
+                )
+                if self.dialect._has_events:
+                    for fn in self.dialect.dispatch.do_executemany:
+                        if fn(
+                            cursor,
+                            str_statement,
+                            effective_parameters,
+                            context,
+                        ):
+                            evt_handled = True
+                            break
+                if not evt_handled:
+                    self.dialect.do_executemany(
+                        cursor,
+                        str_statement,
+                        effective_parameters,
+                        context,
+                    )
+            elif not effective_parameters and context.no_parameters:
+                if self.dialect._has_events:
+                    for fn in self.dialect.dispatch.do_execute_no_params:
+                        if fn(cursor, str_statement, context):
+                            evt_handled = True
+                            break
+                if not evt_handled:
+                    self.dialect.do_execute_no_params(
+                        cursor, str_statement, context
+                    )
+            else:
+                effective_parameters = cast(
+                    "_CoreSingleExecuteParams", effective_parameters
+                )
+                if self.dialect._has_events:
+                    for fn in self.dialect.dispatch.do_execute:
+                        if fn(
+                            cursor,
+                            str_statement,
+                            effective_parameters,
+                            context,
+                        ):
+                            evt_handled = True
+                            break
+                if not evt_handled:
+>                   self.dialect.do_execute(
+                        cursor, str_statement, effective_parameters, context
+                    )
+
+.venv/lib/python3.9/site-packages/sqlalchemy/engine/base.py:1967: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x12a8eaaf0>
+cursor = <sqlite3.Cursor object at 0x12b1f9030>
+statement = 'INSERT INTO brigades (brigade_prefix, display, command_id) VALUES (?, ?, ?) RETURNING id, created_at'
+parameters = ('1', 'B1', 1)
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x12b1ea0d0>
+
+    def do_execute(self, cursor, statement, parameters, context=None):
+>       cursor.execute(statement, parameters)
+E       sqlite3.IntegrityError: UNIQUE constraint failed: brigades.brigade_prefix, brigades.command_id
+
+.venv/lib/python3.9/site-packages/sqlalchemy/engine/default.py:952: IntegrityError
+
+The above exception was the direct cause of the following exception:
+
+    def test_funnel_stages_and_transition():
+        db = SessionLocal()
+>       create_org(db)
+
+services/api/tests/test_domain_funnel_metrics.py:55: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+services/api/tests/test_domain_funnel_metrics.py:32: in create_org
+    db.add(bde); db.commit()
+.venv/lib/python3.9/site-packages/sqlalchemy/orm/session.py:2030: in commit
+    trans.commit(_to_root=True)
+<string>:2: in commit
+    ???
+.venv/lib/python3.9/site-packages/sqlalchemy/orm/state_changes.py:137: in _go
+    ret_value = fn(self, *arg, **kw)
+.venv/lib/python3.9/site-packages/sqlalchemy/orm/session.py:1311: in commit
+    self._prepare_impl()
+<string>:2: in _prepare_impl
+    ???
+.venv/lib/python3.9/site-packages/sqlalchemy/orm/state_changes.py:137: in _go
+    ret_value = fn(self, *arg, **kw)
+.venv/lib/python3.9/site-packages/sqlalchemy/orm/session.py:1286: in _prepare_impl
+    self.session.flush()
+.venv/lib/python3.9/site-packages/sqlalchemy/orm/session.py:4331: in flush
+    self._flush(objects)
+.venv/lib/python3.9/site-packages/sqlalchemy/orm/session.py:4467: in _flush
+    transaction.rollback(_capture_exception=True)
+.venv/lib/python3.9/site-packages/sqlalchemy/util/langhelpers.py:121: in __exit__
+    raise exc_value.with_traceback(exc_tb)
+.venv/lib/python3.9/site-packages/sqlalchemy/orm/session.py:4427: in _flush
+    flush_context.execute()
+.venv/lib/python3.9/site-packages/sqlalchemy/orm/unitofwork.py:466: in execute
+    rec.execute(self)
+.venv/lib/python3.9/site-packages/sqlalchemy/orm/unitofwork.py:642: in execute
+    util.preloaded.orm_persistence.save_obj(
+.venv/lib/python3.9/site-packages/sqlalchemy/orm/persistence.py:93: in save_obj
+    _emit_insert_statements(
+.venv/lib/python3.9/site-packages/sqlalchemy/orm/persistence.py:1233: in _emit_insert_statements
+    result = connection.execute(
+.venv/lib/python3.9/site-packages/sqlalchemy/engine/base.py:1419: in execute
+    return meth(
+.venv/lib/python3.9/site-packages/sqlalchemy/sql/elements.py:527: in _execute_on_connection
+    return connection._execute_clauseelement(
+.venv/lib/python3.9/site-packages/sqlalchemy/engine/base.py:1641: in _execute_clauseelement
+    ret = self._execute_context(
+.venv/lib/python3.9/site-packages/sqlalchemy/engine/base.py:1846: in _execute_context
+    return self._exec_single_context(
+.venv/lib/python3.9/site-packages/sqlalchemy/engine/base.py:1986: in _exec_single_context
+    self._handle_dbapi_exception(
+.venv/lib/python3.9/site-packages/sqlalchemy/engine/base.py:2363: in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+.venv/lib/python3.9/site-packages/sqlalchemy/engine/base.py:1967: in _exec_single_context
+    self.dialect.do_execute(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x12a8eaaf0>
+cursor = <sqlite3.Cursor object at 0x12b1f9030>
+statement = 'INSERT INTO brigades (brigade_prefix, display, command_id) VALUES (?, ?, ?) RETURNING id, created_at'
+parameters = ('1', 'B1', 1)
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x12b1ea0d0>
+
+    def do_execute(self, cursor, statement, parameters, context=None):
+>       cursor.execute(statement, parameters)
+E       sqlalchemy.exc.IntegrityError: (sqlite3.IntegrityError) UNIQUE constraint failed: brigades.brigade_prefix, brigades.command_id
+E       [SQL: INSERT INTO brigades (brigade_prefix, display, command_id) VALUES (?, ?, ?) RETURNING id, created_at]
+E       [parameters: ('1', 'B1', 1)]
+E       (Background on this error at: https://sqlalche.me/e/20/gkpj)
+
+.venv/lib/python3.9/site-packages/sqlalchemy/engine/default.py:952: IntegrityError
+---------------------------- Captured stdout setup -----------------------------
+init_schema: requested_path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d7jmxjo4.sqlite3, test_raw_conn_path=None
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d7jmxjo4.sqlite3
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d7jmxjo4.sqlite3
+init_schema: requested_path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d7jmxjo4.sqlite3, test_raw_conn_path=None
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d7jmxjo4.sqlite3
+connect: opened new sqlite3 conn for path=/var/folders/00/0wxh235d3q741fcdsf_dd1w40000gn/T/taaip_test_d7jmxjo4.sqlite3
+=============================== warnings summary ===============================
+services/api/app/schemas.py:5
+  /Users/ambermooney/Desktop/TAAIP/services/api/app/schemas.py:5: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class ZipCoverageItem(BaseModel):
+
+.venv/lib/python3.9/site-packages/pydantic/_internal/_config.py:383
+.venv/lib/python3.9/site-packages/pydantic/_internal/_config.py:383
+tests/contract/test_api_contract.py::test_openapi_paths_exist
+tests/contract/test_api_contract.py::test_openapi_paths_exist
+tests/contract/test_api_contract.py::test_openapi_paths_exist
+tests/contract/test_api_contract.py::test_openapi_paths_exist
+tests/contract/test_api_contract.py::test_openapi_paths_exist
+tests/contract/test_api_contract.py::test_openapi_paths_exist
+  /Users/ambermooney/Desktop/TAAIP/.venv/lib/python3.9/site-packages/pydantic/_internal/_config.py:383: UserWarning: Valid config keys have changed in V2:
+  * 'orm_mode' has been renamed to 'from_attributes'
+    warnings.warn(message, UserWarning)
+
+services/api/app/schemas_domain.py:22
+  /Users/ambermooney/Desktop/TAAIP/services/api/app/schemas_domain.py:22: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class EventOut(BaseModel):
+
+services/api/app/main.py:411
+services/api/tests/test_documents_api.py::test_upload_list_download_roundtrip
+  /Users/ambermooney/Desktop/TAAIP/services/api/app/main.py:411: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    @app.on_event("startup")
+
+.venv/lib/python3.9/site-packages/fastapi/applications.py:4579
+services/api/tests/test_documents_api.py::test_upload_list_download_roundtrip
+  /Users/ambermooney/Desktop/TAAIP/.venv/lib/python3.9/site-packages/fastapi/applications.py:4579: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    return self.router.on_event(event_type)
+
+.venv/lib/python3.9/site-packages/urllib3/__init__.py:35
+  /Users/ambermooney/Desktop/TAAIP/.venv/lib/python3.9/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+    warnings.warn(
+
+test_taaip_features.py::test_api_health
+  /Users/ambermooney/Desktop/TAAIP/.venv/lib/python3.9/site-packages/_pytest/python.py:198: PytestReturnNotNoneWarning: Expected None, but test_taaip_features.py::test_api_health returned True, which will be an error in a future version of pytest.  Did you mean to use `assert` instead of `return`?
+    warnings.warn(
+
+test_taaip_features.py::test_company_standings
+  /Users/ambermooney/Desktop/TAAIP/.venv/lib/python3.9/site-packages/_pytest/python.py:198: PytestReturnNotNoneWarning: Expected None, but test_taaip_features.py::test_company_standings returned False, which will be an error in a future version of pytest.  Did you mean to use `assert` instead of `return`?
+    warnings.warn(
+
+test_taaip_features.py::test_user_access
+  /Users/ambermooney/Desktop/TAAIP/.venv/lib/python3.9/site-packages/_pytest/python.py:198: PytestReturnNotNoneWarning: Expected None, but test_taaip_features.py::test_user_access returned False, which will be an error in a future version of pytest.  Did you mean to use `assert` instead of `return`?
+    warnings.warn(
+
+test_taaip_features.py::test_helpdesk_submission
+  /Users/ambermooney/Desktop/TAAIP/.venv/lib/python3.9/site-packages/_pytest/python.py:198: PytestReturnNotNoneWarning: Expected None, but test_taaip_features.py::test_helpdesk_submission returned False, which will be an error in a future version of pytest.  Did you mean to use `assert` instead of `return`?
+    warnings.warn(
+
+test_taaip_features.py::test_helpdesk_retrieval
+  /Users/ambermooney/Desktop/TAAIP/.venv/lib/python3.9/site-packages/_pytest/python.py:198: PytestReturnNotNoneWarning: Expected None, but test_taaip_features.py::test_helpdesk_retrieval returned False, which will be an error in a future version of pytest.  Did you mean to use `assert` instead of `return`?
+    warnings.warn(
+
+test_taaip_features.py::test_standings_update
+  /Users/ambermooney/Desktop/TAAIP/.venv/lib/python3.9/site-packages/_pytest/python.py:198: PytestReturnNotNoneWarning: Expected None, but test_taaip_features.py::test_standings_update returned False, which will be an error in a future version of pytest.  Did you mean to use `assert` instead of `return`?
+    warnings.warn(
+
+test_taaip_features.py::test_brigade_filtering
+  /Users/ambermooney/Desktop/TAAIP/.venv/lib/python3.9/site-packages/_pytest/python.py:198: PytestReturnNotNoneWarning: Expected None, but test_taaip_features.py::test_brigade_filtering returned False, which will be an error in a future version of pytest.  Did you mean to use `assert` instead of `return`?
+    warnings.warn(
+
+services/api/tests/test_domain_burden_ratio.py::test_burden_input_and_latest
+  /Users/ambermooney/Desktop/TAAIP/services/api/tests/conftest.py:392: SAWarning: transaction already deassociated from connection
+    trans.rollback()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test_taaip_marketing.py::test_funnel_attribution_endpoint - assert (No...
+FAILED test_taaip_segmentation.py::test_ingest_survey_and_segment - sqlalchem...
+FAILED services/api/tests/test_domain_funnel_metrics.py::test_funnel_stages_and_transition
+3 failed, 96 passed, 2 skipped, 23 warnings in 241.60s (0:04:01)

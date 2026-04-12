@@ -143,6 +143,18 @@ def get_effective_user(authorization: str = Header(None)) -> dict:
         permissions = payload.get('permissions') or payload.get('perms') or []
         if isinstance(permissions, str):
             permissions = [permissions]
+        # Shortcut: if token carries a SYSADMIN role, grant wildcard perms
+        try:
+            if any(str(r).upper() == 'SYSADMIN' for r in roles) or str(payload.get('role') or '').upper() == 'SYSADMIN':
+                return {
+                    "sub": payload.get('sub') or payload.get('username'),
+                    "name": payload.get('name') or payload.get('sub') or '',
+                    "roles": roles,
+                    "permissions": ['*'],
+                    "org": {"level": payload.get('org_level') or '', "rsid_prefix": payload.get('rsid_prefix') or ''}
+                }
+        except Exception:
+            pass
         # If token did not carry permissions, attempt to load permissions from DB
         try:
             if not permissions:

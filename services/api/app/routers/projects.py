@@ -1,12 +1,15 @@
 from fastapi import APIRouter, HTTPException, Depends
 from typing import Optional, List, Dict, Any
-from ..db import connect, row_to_dict
+from ..db import connect, row_to_dict, get_db_path
 from datetime import datetime
 import json
+import logging
 from .rbac import require_scope, require_roles, require_any_role, get_current_user, require_perm
 from uuid import uuid4
 
 router = APIRouter(prefix="/projects", tags=["projects"])
+
+_log = logging.getLogger('taaip.projects')
 
 
 def now_iso():
@@ -176,11 +179,35 @@ def create_loe(payload: Dict[str, Any], current_user: Dict = Depends(require_any
     try:
         cur = conn.cursor()
         try:
-            cur.execute('INSERT INTO loe(org_unit_id, fy, qtr, name, description, created_at) VALUES (?,?,?,?,?,?)', (
-                payload.get('org_unit_id'), payload.get('fy'), payload.get('qtr'), payload.get('name'), payload.get('description'), now_iso()
+            cur.execute('INSERT INTO loe(org_unit_id, fy, qtr, name, description, status, progress, created_at) VALUES (?,?,?,?,?,?,?,?)', (
+                payload.get('org_unit_id'), payload.get('fy'), payload.get('qtr'), payload.get('name'), payload.get('description'), payload.get('status') or 'open', payload.get('progress') or 0.0, now_iso()
             ))
             conn.commit()
-            return {'id': cur.lastrowid}
+            # trace write for E2E diagnostics
+            try:
+                with open('/tmp/taaip_loe_db_traces.log','a') as _tf:
+                    _tf.write(json.dumps({'route':'create','db_path': get_db_path(), 'table':'loe', 'insert_id': cur.lastrowid, 'payload_keys': list(payload.keys()) if isinstance(payload,dict) else None, 'ts': now_iso()}) + "\n")
+            except Exception:
+                pass
+            lid = cur.lastrowid
+            # if progress provided, ensure a corresponding loe_metric exists
+            try:
+                progress = payload.get('progress') if isinstance(payload, dict) else None
+                if progress is not None:
+                    mid = f"progress_{lid}"
+                    cur.execute('SELECT id FROM loe_metrics WHERE id=?', (mid,))
+                    if cur.fetchone():
+                        cur.execute('UPDATE loe_metrics SET current_value=?, status=?, last_evaluated_at=?, created_at=? WHERE id=?', (float(progress), 'OK', now_iso(), now_iso(), mid))
+                    else:
+                        cur.execute('INSERT INTO loe_metrics(id,loe_id,metric_name,current_value,status,created_at) VALUES(?,?,?,?,?,?)', (mid, lid, 'progress', float(progress), 'OK', now_iso()))
+                    conn.commit()
+            except Exception:
+                pass
+            cur.execute('SELECT * FROM loe WHERE id=?', (lid,))
+            row = cur.fetchone()
+            if row:
+                return row_to_dict(cur, row)
+            return {'id': lid}
         except Exception as e:
             conn.rollback()
             raise HTTPException(status_code=500, detail=str(e))
@@ -203,10 +230,19 @@ def list_loes(limit: int = 100, scope: Optional[str] = None):
             except Exception:
                 # non-numeric scope - ignore filter
                 pass
+        # exclude archived LOEs by default
+        sql += ' AND (archived IS NULL OR archived=0)'
         sql += ' ORDER BY id DESC LIMIT ?'
         params.append(limit)
         cur.execute(sql, tuple(params))
-        return [row_to_dict(cur, r) for r in cur.fetchall()]
+        rows = cur.fetchall()
+        # trace read for diagnostics
+        try:
+            with open('/tmp/taaip_loe_db_traces.log','a') as _tf:
+                _tf.write(json.dumps({'route':'list','db_path': get_db_path(), 'table':'loe', 'sql': sql, 'params': params, 'rows_returned': len(rows), 'ts': now_iso()}) + "\n")
+        except Exception:
+            pass
+        return [row_to_dict(cur, r) for r in rows]
     finally:
         conn.close()
 
@@ -216,16 +252,60 @@ def update_loe(loe_id: int, payload: Dict[str, Any], current_user: Dict = Depend
     conn = connect()
     try:
         cur = conn.cursor()
+        try:
+            _log.info('update_loe called', extra={'loe_id': loe_id, 'payload_keys': list(payload.keys()) if isinstance(payload, dict) else None})
+        except Exception:
+            _log.info('update_loe called loe_id=%s', loe_id)
         # allow updating name, description, fy, qtr, org_unit_id
-        cur.execute('UPDATE loe SET name=?, description=?, fy=?, qtr=?, org_unit_id=? WHERE id=?', (
-            payload.get('name'), payload.get('description'), payload.get('fy'), payload.get('qtr'), payload.get('org_unit_id'), loe_id
-        ))
-        conn.commit()
+        try:
+            cur.execute('UPDATE loe SET name=?, description=?, fy=?, qtr=?, org_unit_id=?, status=?, progress=?, updated_at=? WHERE id=?', (
+                payload.get('name'), payload.get('description'), payload.get('fy'), payload.get('qtr'), payload.get('org_unit_id'), payload.get('status') or 'open', payload.get('progress') or 0.0, now_iso(), loe_id
+            ))
+            conn.commit()
+            # trace update for diagnostics
+            try:
+                with open('/tmp/taaip_loe_db_traces.log','a') as _tf:
+                    _tf.write(json.dumps({'route':'update','db_path': get_db_path(), 'table':'loe', 'loe_id': loe_id, 'payload_keys': list(payload.keys()) if isinstance(payload,dict) else None, 'ts': now_iso()}) + "\n")
+            except Exception:
+                pass
+        except Exception as e:
+            conn.rollback()
+            _log.exception('update_loe: update failed for id=%s', loe_id)
+            raise HTTPException(status_code=500, detail=str(e))
+
         cur.execute('SELECT * FROM loe WHERE id=?', (loe_id,))
         row = cur.fetchone()
         if not row:
+            _log.warning('update_loe: no row found after update for id=%s', loe_id)
             raise HTTPException(status_code=404, detail='not found')
-        return row_to_dict(cur, row)
+        # if progress included, upsert into loe_metrics so command rollups reflect LOE progress
+        try:
+            progress = payload.get('progress') if isinstance(payload, dict) else None
+            if progress is not None:
+                mid = f"progress_{loe_id}"
+                cur.execute('SELECT id FROM loe_metrics WHERE id=?', (mid,))
+                if cur.fetchone():
+                    cur.execute('UPDATE loe_metrics SET current_value=?, status=?, last_evaluated_at=?, created_at=? WHERE id=?', (float(progress), 'OK', now_iso(), now_iso(), mid))
+                else:
+                    cur.execute('INSERT INTO loe_metrics(id,loe_id,metric_name,current_value,status,created_at) VALUES(?,?,?,?,?,?)', (mid, loe_id, 'progress', float(progress), 'OK', now_iso()))
+                conn.commit()
+        except Exception:
+            pass
+        ro = row_to_dict(cur, row)
+        # write a small debug trace to disk so E2E runs can assert the backend saw the update
+        try:
+            try:
+                with open('/tmp/taaip_loe_updates.log', 'a') as _f:
+                    _f.write(json.dumps({'loe_id': loe_id, 'payload': payload, 'returned': ro, 'ts': now_iso()}) + "\n")
+            except Exception:
+                pass
+        except Exception:
+            pass
+        try:
+            _log.info('update_loe: returning updated row', extra={'loe_id': loe_id, 'row': ro})
+        except Exception:
+            _log.info('update_loe: returning updated row id=%s', loe_id)
+        return ro
     finally:
         conn.close()
 
@@ -239,7 +319,12 @@ def delete_loe(loe_id: int, current_user: Dict = Depends(require_any_role('USARE
         row = cur.fetchone()
         if not row:
             raise HTTPException(status_code=404, detail='not found')
-        cur.execute('DELETE FROM loe WHERE id=?', (loe_id,))
+        # soft-delete: mark archived flag and updated_at
+        try:
+            cur.execute('UPDATE loe SET archived=1, updated_at=? WHERE id=?', (now_iso(), loe_id))
+        except Exception:
+            # fallback to hard delete if update fails
+            cur.execute('DELETE FROM loe WHERE id=?', (loe_id,))
         conn.commit()
         return {'status': 'ok'}
     finally:

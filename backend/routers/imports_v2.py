@@ -626,6 +626,20 @@ def process_batch(batch_id: str, sync: bool = Query(True)):
         df = df.dropna(how="all")
         df.columns = [str(c).strip() for c in df.columns]
 
+        # Hardening: reject imports that contain simulation/demo markers unless explicitly allowed
+        if os.getenv('ALLOW_SIMULATION_IMPORTS') != '1':
+            import re as _re
+            sim_pat = _re.compile(r'(?i)\bSIM_|\bsim-|\bdemo-|\bdemo_')
+            try:
+                # inspect cell values conservatively
+                for v in df.fillna('').astype(str).values.flatten():
+                    if isinstance(v, str) and sim_pat.search(v):
+                        raise HTTPException(status_code=400, detail="Import rejected: contains simulation/demo markers. Set ALLOW_SIMULATION_IMPORTS=1 to override.")
+            except HTTPException:
+                raise
+            except Exception:
+                raise HTTPException(status_code=400, detail="Import validation failed; refused to process file")
+
         # Persist raw rows for auditing/UI and update batch metadata
         try:
             raw_count = _persist_raw_rows(con, batch_id, df)

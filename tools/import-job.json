@@ -1,0 +1,17 @@
+{
+  "id": "6946635a9a2842f8afe913d55463432d",
+  "created_at": "2026-04-03T14:31:12Z",
+  "created_by": null,
+  "dataset_key": "production",
+  "source_system": "manual",
+  "filename": "import-production.csv",
+  "file_sha256": "1aaf98bc16e00687f36a9a433215ed76f7381c8e39ab97bf4c5d0c7f0693c841",
+  "status": "mapped",
+  "row_count": 2,
+  "error_count": 0,
+  "updated_at": "2026-04-03T14:33:22Z",
+  "notes": "{\"columns\": [\"org_unit_id\", \"date_key\", \"metric_key\", \"metric_value\"], \"preview_sample_count\": 2}",
+  "scope_org_unit_id": null,
+  "completed_at": null,
+  "summary_json": null
+}

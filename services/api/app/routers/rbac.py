@@ -12,6 +12,7 @@ import json
 from typing import Any, Dict, Optional
 from fastapi import Request, HTTPException, Depends, APIRouter
 from ..db import connect
+import sqlite3
 
 # Permission alias map: allow uppercase canonical keys to map to existing dotted keys
 PERM_ALIASES = {
@@ -286,8 +287,11 @@ def require_scope(min_level: str = 'STATION'):
             if not u:
                 return []
             uid = u[0]
-            cur.execute('SELECT org_unit_id, scope_level FROM user_scope WHERE user_id=?', (uid,))
-            rows = cur.fetchall()
+            try:
+                cur.execute('SELECT org_unit_id, scope_level FROM user_scope WHERE user_id=?', (uid,))
+                rows = cur.fetchall()
+            except sqlite3.OperationalError:
+                rows = []
             allowed = set()
             for oid, scope_level in rows:
                 try:
@@ -300,8 +304,11 @@ def require_scope(min_level: str = 'STATION'):
                     allowed.add(oid)
         # prefix/hierarchy RBAC: also check user's scopes for prefix coverage and log denials
             # collect user scopes from user_scope table if available
-            cur.execute('SELECT scope_value FROM user_scope WHERE user_id=?', (uid,))
-            user_scope_vals = [r[0] for r in cur.fetchall() if r and r[0]]
+            try:
+                cur.execute('SELECT scope_value FROM user_scope WHERE user_id=?', (uid,))
+                user_scope_vals = [r[0] for r in cur.fetchall() if r and r[0]]
+            except sqlite3.OperationalError:
+                user_scope_vals = []
             # if at least one user_scope covers the min_level required, allow unrestricted (None)
             for usv in user_scope_vals:
                 if _scope_allows(usv, min_level) or _scope_allows(usv, 'USAREC'):

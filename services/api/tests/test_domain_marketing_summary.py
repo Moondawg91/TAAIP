@@ -13,7 +13,7 @@ def setup_module(module):
     Base.metadata.create_all(bind=engine)
     import os
     from services.api.app.db import init_db
-    os.environ['TAAIP_DB_PATH'] = './taaip_dev.db'
+    os.environ.setdefault('TAAIP_DB_PATH', './taaip_dev.db')
     init_db()
     # Ensure test DB starts with a clean marketing_activities table to avoid
     # pre-seeded rows from other tests or previous runs interfering with

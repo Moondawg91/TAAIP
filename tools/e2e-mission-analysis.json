@@ -1,0 +1,19 @@
+{
+  "status": 200,
+  "json": {
+    "latest_assessment": {
+      "id": "8cff8cef-d7a1-4907-a073-c0e2d0bd6d3f",
+      "period_type": "monthly",
+      "period_value": "2026-03",
+      "scope": "USAREC",
+      "metrics_json": "{\"kpis\":{\"score\":85,\"leads\":7,\"contracts\":1}}",
+      "narrative": "Auto-seeded mission assessment",
+      "created_at": "2026-04-02T03:05:22Z",
+      "updated_at": "2026-04-02T03:05:22Z"
+    },
+    "kpis": {
+      "latest_date": null,
+      "latest_total": 5
+    }
+  }
+}

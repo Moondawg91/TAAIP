@@ -1,36 +1,48 @@
 from fastapi import APIRouter, Depends
 from services.api.app.db import get_db_conn
+from services.api.app import auth
+from sqlalchemy import text
+from sqlalchemy.orm import Session
 from services.api.app.routers.rbac import get_current_user
 from services.api.app import ingest_registry
 from datetime import datetime
 import uuid
+import os
 
 router = APIRouter(prefix="/v1")
 
 
 @router.post("/ingestLead")
-async def ingest_lead(payload: dict, user: dict = Depends(get_current_user)):
-    conn = get_db_conn()
-    cur = conn.cursor()
+async def ingest_lead(payload: dict, user: dict = Depends(get_current_user), db: Session = Depends(auth.get_db)):
+    # Use shared SQLAlchemy session to avoid cross-connection sqlite locking
     lid = payload.get("lead_id") or ("lead_" + uuid.uuid4().hex[:10])
-    cur.execute(
-        "INSERT OR REPLACE INTO leads(lead_id,first_name,last_name,email,phone,source,age,education_level,cbsa_code,campaign_source,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?)",
-        (
-            lid,
-            payload.get("first_name"),
-            payload.get("last_name"),
-            payload.get("email"),
-            payload.get("phone"),
-            payload.get("source"),
-            payload.get("age"),
-            payload.get("education_level"),
-            payload.get("cbsa_code"),
-            payload.get("campaign_source"),
-            datetime.utcnow().isoformat(),
-        ),
+    if os.getenv('TAAIP_INSTRUMENT_FUNNEL') == '1':
+        try:
+            print("INSTR: ingestLead executing insert into leads (shared session)")
+        except Exception:
+            pass
+    stmt = text(
+        "INSERT OR REPLACE INTO leads(lead_id,first_name,last_name,email,phone,source,age,education_level,cbsa_code,campaign_source,created_at) VALUES(:lead_id,:first_name,:last_name,:email,:phone,:source,:age,:education_level,:cbsa_code,:campaign_source,:created_at)"
     )
-    conn.commit()
-    conn.close()
+    params = {
+        'lead_id': lid,
+        'first_name': payload.get('first_name'),
+        'last_name': payload.get('last_name'),
+        'email': payload.get('email'),
+        'phone': payload.get('phone'),
+        'source': payload.get('source'),
+        'age': payload.get('age'),
+        'education_level': payload.get('education_level'),
+        'cbsa_code': payload.get('cbsa_code'),
+        'campaign_source': payload.get('campaign_source'),
+        'created_at': datetime.utcnow().isoformat(),
+    }
+    try:
+        db.execute(stmt, params)
+        db.commit()
+    except Exception:
+        # Let tests surface the error
+        raise
     return {"status": "ok", "lead_id": lid}
 
 

@@ -336,3 +336,62 @@ def geo_summary(fy: Optional[int] = Query(None), qtr: Optional[str] = Query(None
         try: conn.close()
         except Exception: pass
     return resp
+
+
+# Compatibility shim: mission-allocation summary at /api/operations/mission-allocation/summary
+@router.get('/operations/mission-allocation/summary')
+def mission_allocation_summary():
+    conn = connect(); cur = conn.cursor()
+    try:
+        cur.execute('SELECT COUNT(*), COALESCE(SUM(mission_total),0) FROM mission_allocation_runs')
+        cnt, total = cur.fetchone()
+        cur.execute('SELECT COALESCE(AVG(mission_total),0) FROM mission_allocation_runs')
+        avg = cur.fetchone()[0]
+        return {'status': 'ok', 'run_count': cnt or 0, 'mission_total_sum': total or 0, 'mission_total_avg': avg or 0}
+    except Exception:
+        return {'status': 'ok', 'run_count': 0, 'mission_total_sum': 0, 'mission_total_avg': 0}
+    finally:
+        try: conn.close()
+        except Exception: pass
+
+
+# Compatibility shim: ROI summary at /api/operations/roi/summary
+@router.get('/operations/roi/summary')
+def roi_summary():
+    conn = connect(); cur = conn.cursor()
+    try:
+        cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name IN ('event_roi','event_metrics') LIMIT 1")
+        t = cur.fetchone()
+        if t:
+            tbl = t[0]
+            # attempt to use roi_value column if present
+            try:
+                cur.execute(f'SELECT COUNT(*), COALESCE(SUM(roi_value),0) FROM {tbl}')
+                cnt, total = cur.fetchone()
+            except Exception:
+                cur.execute(f'SELECT COUNT(*) FROM {tbl}')
+                cnt = cur.fetchone()[0]
+                total = 0
+        else:
+            cnt, total = 0, 0
+        return {'status': 'ok', 'rows': cnt or 0, 'total_roi': total or 0}
+    except Exception:
+        return {'status': 'ok', 'rows': 0, 'total_roi': 0}
+    finally:
+        try: conn.close()
+        except Exception: pass
+
+
+# Compatibility shim: rollups summary at /api/operations/rollups/summary
+@router.get('/operations/rollups/summary')
+def rollups_summary():
+    conn = connect(); cur = conn.cursor()
+    try:
+        cur.execute("SELECT COUNT(*) FROM agg_kpis_period")
+        cnt = cur.fetchone()[0]
+        return {'status': 'ok', 'agg_kpis_period_count': cnt or 0}
+    except Exception:
+        return {'status': 'ok', 'agg_kpis_period_count': 0}
+    finally:
+        try: conn.close()
+        except Exception: pass

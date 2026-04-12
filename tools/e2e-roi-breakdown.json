@@ -1,0 +1,12 @@
+{
+  "status": 200,
+  "json": {
+    "by_source": [
+      {
+        "source_type": "demo",
+        "leads": 7
+      }
+    ],
+    "by_event": []
+  }
+}

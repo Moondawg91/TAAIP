@@ -11,7 +11,7 @@ import csv
 from io import StringIO
 from fastapi.responses import Response
 import os
-from typing import Dict
+from typing import Dict, Optional
 import json
 from services.api.app.database import engine
 from sqlalchemy import text
@@ -21,7 +21,14 @@ from fastapi import Depends
 from services.api.app.services import school_targeting
 from services.api.app.db import get_db_conn
 import math
+import time
+import os
 from services.api.app.services import mission_risk_engine
+from services.api.app.services import coa_engine
+from typing import Dict
+from ..importers import registry as importer_registry
+from services.api.app import db as _db
+import os as _os
 
 # single router instance for v2 endpoints
 router = APIRouter(prefix="/v2")
@@ -31,15 +38,41 @@ router = APIRouter(prefix="/v2")
 
 
 @router.post("/ingest/survey")
-def ingest_survey(payload: Dict):
-    conn = get_db_conn()
-    cur = conn.cursor()
-    # store raw survey responses in a simple surveys table
-    cur.execute("CREATE TABLE IF NOT EXISTS surveys(id INTEGER PRIMARY KEY AUTOINCREMENT, survey_id TEXT, lead_id TEXT, responses_json TEXT, created_at TEXT)")
-    execute_with_retry(cur, 'INSERT INTO surveys(survey_id,lead_id,responses_json,created_at) VALUES(?,?,?,?)', (payload.get('survey_id'), payload.get('lead_id'), json.dumps(payload.get('responses') or {}), datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S.%f')))
-    conn.commit()
-    conn.close()
-    return {"status": "ok"}
+def ingest_survey(payload: Dict, db: Session = Depends(auth.get_db)):
+    # Use shared SQLAlchemy session to avoid cross-connection sqlite locking
+    try:
+        stmt = text('INSERT INTO surveys(survey_id,lead_id,responses_json,created_at) VALUES(:survey_id,:lead_id,:responses_json,:created_at)')
+        params = {
+            'survey_id': payload.get('survey_id'),
+            'lead_id': payload.get('lead_id'),
+            'responses_json': json.dumps(payload.get('responses') or {}),
+            'created_at': datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S.%f')
+        }
+        db.execute(stmt, params)
+        db.commit()
+        return {"status": "ok"}
+    except Exception:
+        # allow exception to bubble for tests to surface issues
+        raise
+
+
+# COA endpoints
+@router.post('/coa/run')
+def run_coa(payload: dict = None):
+    payload = payload or {}
+    unit = payload.get('unit_rsid')
+    if not unit:
+        raise HTTPException(status_code=400, detail='unit_rsid required')
+    res = coa_engine.run_coa_generation(unit, fusion_run_id=payload.get('fusion_run_id'), mission_run_id=payload.get('mission_run_id'))
+    return {'status': 'ok', 'result': res}
+
+
+@router.get('/coa/latest')
+def coa_latest(unit_rsid: Optional[str] = None, limit: int = 10):
+    if not unit_rsid:
+        raise HTTPException(status_code=400, detail='unit_rsid query param required')
+    rows = coa_engine.fetch_latest_for_unit(unit_rsid, limit=limit)
+    return {'status': 'ok', 'data': rows}
 
 
 @router.get('/segments/{lead_id}')
@@ -81,26 +114,142 @@ def get_segment(lead_id: str):
     return {"status": "ok", "lead_id": lead_id, "profile": payload, "segments": segments}
 
 
+# Backwards-compatible AI recommendations route expected by frontend
+# Register under '/ai/...' so combined with router prefix '/v2' this
+# becomes the expected '/api/v2/ai/recommendations/markets' path.
+@router.get('/ai/recommendations/markets')
+def ai_recommendations_markets(top_n: int = 5):
+    """Return simple market recommendations derived from market_zip_metrics.
+
+    This provides a lightweight compatibility shim for clients expecting
+    `/api/v2/ai/recommendations/markets`.
+    """
+    try:
+        from services.api.app.db import connect
+        conn = connect()
+        cur = conn.cursor()
+        # select top zips by opportunity_score (if present) else potential_remaining
+        q = "SELECT zip, zip5, population, opportunity_score, potential_remaining, cbsa_code FROM market_zip_metrics ORDER BY COALESCE(opportunity_score, potential_remaining, 0) DESC LIMIT ?"
+        cur.execute(q, (int(top_n),))
+        rows = cur.fetchall()
+        cols = [c[0] for c in cur.description]
+        recs = []
+        for r in rows:
+            rr = dict(zip(cols, r))
+            score = rr.get('opportunity_score') or rr.get('potential_remaining') or 0
+            recs.append({
+                'market_id': rr.get('zip5') or rr.get('zip'),
+                'zip': rr.get('zip5') or rr.get('zip'),
+                'cbsa_code': rr.get('cbsa_code'),
+                'population': rr.get('population') or 0,
+                'opportunity_score': score,
+                'explanation': f"Top zip by opportunity: {rr.get('zip5') or rr.get('zip')}"
+            })
+        try:
+            conn.close()
+        except Exception:
+            pass
+        return {'status': 'ok', 'recommendations': recs}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# Lightweight compatibility shim for mission-allocation operations summary
+@router.get('/api/operations/mission-allocation/summary')
+def ops_mission_allocation_summary():
+    try:
+        from services.api.app.db import connect
+        conn = connect()
+        cur = conn.cursor()
+        cur.execute('SELECT COUNT(*), COALESCE(SUM(mission_total),0) FROM mission_allocation_runs')
+        cnt, total_mission = cur.fetchone()
+        cur.execute('SELECT COALESCE(AVG(mission_total),0) FROM mission_allocation_runs')
+        avg = cur.fetchone()[0]
+        try:
+            conn.close()
+        except Exception:
+            pass
+        return {'status': 'ok', 'run_count': cnt, 'mission_total_sum': total_mission, 'mission_total_avg': avg}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# Lightweight compatibility shim for ROI summary
+@router.get('/api/operations/roi/summary')
+def ops_roi_summary():
+    try:
+        from services.api.app.db import connect
+        conn = connect()
+        cur = conn.cursor()
+        # return simple aggregates from event_roi or event_metrics if present
+        cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name IN ('event_roi','event_metrics') LIMIT 1")
+        tbl = cur.fetchone()
+        if tbl:
+            tblname = tbl[0]
+            cur.execute(f'SELECT COUNT(*), COALESCE(SUM(roi_value),0) FROM {tblname}')
+            cnt, total_roi = cur.fetchone()
+        else:
+            cnt, total_roi = 0, 0
+        try:
+            conn.close()
+        except Exception:
+            pass
+        return {'status': 'ok', 'rows': cnt, 'total_roi': total_roi}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# Lightweight compatibility shim for rollups summary
+@router.get('/api/operations/rollups/summary')
+def ops_rollups_summary():
+    try:
+        from services.api.app.db import connect
+        conn = connect()
+        cur = conn.cursor()
+        cur.execute("SELECT COUNT(*) FROM agg_kpis_period")
+        cnt = cur.fetchone()[0]
+        try:
+            conn.close()
+        except Exception:
+            pass
+        return {'status': 'ok', 'agg_kpis_period_count': cnt}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.post("/ingest/census")
-def ingest_census(payload: Dict):
-    conn = get_db_conn()
-    cur = conn.cursor()
-    cur.execute('CREATE TABLE IF NOT EXISTS external_census(id INTEGER PRIMARY KEY AUTOINCREMENT, geography_code TEXT, attributes_json TEXT, created_at TEXT)')
-    cur.execute('INSERT INTO external_census(geography_code,attributes_json,created_at) VALUES(?,?,?)', (payload.get('geography_code'), json.dumps(payload.get('attributes') or {}), datetime.utcnow().isoformat()))
-    conn.commit()
-    conn.close()
-    return {"status": "ok"}
+def ingest_census(payload: Dict, db: Session = Depends(auth.get_db)):
+    try:
+        db.execute(text('CREATE TABLE IF NOT EXISTS external_census(id INTEGER PRIMARY KEY AUTOINCREMENT, geography_code TEXT, attributes_json TEXT, created_at TEXT)'))
+        stmt = text('INSERT INTO external_census(geography_code,attributes_json,created_at) VALUES(:geography_code,:attributes_json,:created_at)')
+        params = {
+            'geography_code': payload.get('geography_code'),
+            'attributes_json': json.dumps(payload.get('attributes') or {}),
+            'created_at': datetime.utcnow().isoformat()
+        }
+        db.execute(stmt, params)
+        db.commit()
+        return {"status": "ok"}
+    except Exception:
+        raise
 
 
 @router.post("/ingest/social")
-def ingest_social(payload: Dict):
-    conn = get_db_conn()
-    cur = conn.cursor()
-    cur.execute('CREATE TABLE IF NOT EXISTS external_social(id INTEGER PRIMARY KEY AUTOINCREMENT, external_id TEXT, handle TEXT, signals_json TEXT, created_at TEXT)')
-    cur.execute('INSERT INTO external_social(external_id,handle,signals_json,created_at) VALUES(?,?,?,?)', (payload.get('external_id'), payload.get('handle'), json.dumps(payload.get('signals') or {}), datetime.utcnow().isoformat()))
-    conn.commit()
-    conn.close()
-    return {"status": "ok"}
+def ingest_social(payload: Dict, db: Session = Depends(auth.get_db)):
+    try:
+        db.execute(text('CREATE TABLE IF NOT EXISTS external_social(id INTEGER PRIMARY KEY AUTOINCREMENT, external_id TEXT, handle TEXT, signals_json TEXT, created_at TEXT)'))
+        stmt = text('INSERT INTO external_social(external_id,handle,signals_json,created_at) VALUES(:external_id,:handle,:signals_json,:created_at)')
+        params = {
+            'external_id': payload.get('external_id'),
+            'handle': payload.get('handle'),
+            'signals_json': json.dumps(payload.get('signals') or {}),
+            'created_at': datetime.utcnow().isoformat()
+        }
+        db.execute(stmt, params)
+        db.commit()
+        return {"status": "ok"}
+    except Exception:
+        raise
 
 # Note: startup init is handled by the application entrypoint; keep router stateless
 
@@ -265,6 +414,8 @@ def marketing_sync(payload: dict, db: Session = Depends(auth.get_db)):
     created = 0
     try:
         data = payload.get('sync_data') if isinstance(payload, dict) else {}
+        # Single raw DB-API connection for any fallback paths in this request
+        conn = get_db_conn()
         # Ensure funding_source is provided per-item or at top-level when enforced.
         default_fs = payload.get('funding_source') or payload.get('fundingSource') or payload.get('fundingSource') or payload.get('source_system')
         enforce = os.environ.get('ENFORCE_FUNDING')
@@ -320,8 +471,8 @@ def marketing_sync(payload: dict, db: Session = Depends(auth.get_db)):
             except Exception:
                 # fall back to DB-API insertion if the domain helper fails
                 try:
-                    cur = get_db_conn().cursor()
-                    # Compatibility: insert only columns present in DB
+                    # Use a single raw DB-API connection for fallback compatibility
+                    cur = conn.cursor()
                     cur.execute('PRAGMA table_info(marketing_activities)')
                     fcols = [r[1] for r in cur.fetchall()]
                     insert_cols = []
@@ -331,13 +482,48 @@ def marketing_sync(payload: dict, db: Session = Depends(auth.get_db)):
                         if c in fcols:
                             insert_cols.append(c)
                             insert_vals.append(params.get(c))
-                    placeholders = ','.join(['?'] * len(insert_cols))
+                    if not insert_cols:
+                        raise Exception('no insertable columns')
+                    # build named params for SQLAlchemy execution
                     col_list = ','.join(insert_cols)
-                    cur.execute(f'INSERT INTO marketing_activities({col_list}) VALUES({placeholders})', tuple(insert_vals))
-                    get_db_conn().commit()
+                    param_names = []
+                    param_map = {}
+                    for i, val in enumerate(insert_vals):
+                        pname = f'p{i}'
+                        param_names.append(':' + pname)
+                        param_map[pname] = val
+                    placeholders = ','.join(param_names)
+                    sql = text(f'INSERT INTO marketing_activities({col_list}) VALUES({placeholders})')
+                    db.execute(sql, param_map)
+                    try:
+                        db.commit()
+                    except Exception:
+                        pass
                     created += 1
                 except Exception:
-                    pass
+                    # As a last-resort compatibility fallback, attempt a
+                    # raw DB-API insert using `get_db_conn()` when the
+                    # SQLAlchemy insert path fails. This preserves the
+                    # original behavior for legacy schemas and avoids
+                    # dropping data in sync flows.
+                    try:
+                        cur2 = conn.cursor()
+                        cur2.execute('PRAGMA table_info(marketing_activities)')
+                        fcols2 = [r[1] for r in cur2.fetchall()]
+                        insert_cols2 = []
+                        insert_vals2 = []
+                        for c in preferred_order:
+                            if c in fcols2:
+                                insert_cols2.append(c)
+                                insert_vals2.append(params.get(c))
+                        if insert_cols2:
+                            placeholders2 = ','.join(['?'] * len(insert_cols2))
+                            col_list2 = ','.join(insert_cols2)
+                            cur2.execute(f'INSERT INTO marketing_activities({col_list2}) VALUES({placeholders2})', tuple(insert_vals2))
+                            conn.commit()
+                            created += 1
+                    except Exception:
+                        pass
         try:
             db.commit()
         except Exception:
@@ -345,6 +531,216 @@ def marketing_sync(payload: dict, db: Session = Depends(auth.get_db)):
     except Exception:
         pass
     return {"status": "ok", "activities_created": created}
+
+
+@router.get('/connectors/status')
+def connectors_status():
+    """Return status info for known connectors (EMM, Vantage, AIE).
+    Derive availability from importer registry, loader presence, and DB tables.
+    """
+    conn = _db.connect()
+    cur = conn.cursor()
+    out = {}
+    # Helper to inspect last import run for a given source identifier
+    def last_run_for(source_like):
+        try:
+            cur.execute("SELECT * FROM import_run WHERE source_system LIKE ? ORDER BY finished_at DESC LIMIT 1", (source_like,))
+            r = cur.fetchone()
+            return dict(r) if r else None
+        except Exception:
+            return None
+
+    # EMM
+    try:
+        emm_loader_path = _os.path.join(_os.getcwd(), 'services', 'api', 'app', 'importers', 'loaders', 'load_emm.py')
+        emm_loader_exists = _os.path.isfile(emm_loader_path)
+        # check for target tables
+        cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name IN ('fact_emm_events','fact_emm_activity','emm_event') LIMIT 1")
+        table = cur.fetchone()
+        emm_tables_present = bool(table)
+        last = last_run_for('%EMM%') or last_run_for('EMM')
+        out['emm'] = {
+            'available': bool(emm_loader_exists and emm_tables_present),
+            'loader_present': bool(emm_loader_exists),
+            'target_tables_present': bool(emm_tables_present),
+            'last_sync': last['finished_at'] if last and 'finished_at' in last else None,
+            'last_run_summary': { 'rows_in': last.get('rows_in') if last else None, 'rows_inserted': last.get('rows_inserted') if last else None } if last else None,
+            'status': 'ready' if emm_loader_exists and emm_tables_present else ('partial' if emm_loader_exists else 'not_configured')
+        }
+    except Exception:
+        out['emm'] = {'available': False, 'status': 'error'}
+
+    # Vantage
+    try:
+        # presence inferred from registry entries in DB
+        cur.execute("SELECT COUNT(1) FROM registry WHERE dataset_key LIKE '%VANTAGE%'")
+        cnt = 0
+        try:
+            cnt = cur.fetchone()[0]
+        except Exception:
+            cnt = 0
+        last_v = last_run_for('%VANTAGE%')
+        out['vantage'] = {
+            'available': bool(cnt),
+            'registry_present': bool(cnt),
+            'last_sync': last_v['finished_at'] if last_v and 'finished_at' in last_v else None,
+            'status': 'not_implemented'
+        }
+    except Exception:
+        out['vantage'] = {'available': False, 'status': 'error'}
+
+    # AIE
+    try:
+        cur.execute("SELECT COUNT(1) FROM registry WHERE dataset_key LIKE '%AIE%' OR dataset_key LIKE '%AIE_LEADS%'")
+        cnt2 = 0
+        try:
+            cnt2 = cur.fetchone()[0]
+        except Exception:
+            cnt2 = 0
+        last_a = last_run_for('%AIE%')
+        out['aie'] = {
+            'available': bool(cnt2),
+            'registry_present': bool(cnt2),
+            'last_sync': last_a['finished_at'] if last_a and 'finished_at' in last_a else None,
+            'status': 'not_implemented'
+        }
+    except Exception:
+        out['aie'] = {'available': False, 'status': 'error'}
+
+    try:
+        conn.close()
+    except Exception:
+        pass
+    return { 'status': 'ok', 'connectors': out }
+
+
+@router.post('/connectors/emm/sync')
+def connectors_emm_sync(dry_run: int = 0):
+    """Trigger an on-demand EMM import based on the latest EMM upload known to the system.
+
+    Behavior:
+    - locate most recent import_file linked to an import_job_v3 with source_system or filename suggesting EMM
+    - run importer_registry.detect_importer and importer_registry.run_import
+    - create/update an import_run row and update import_job_v3.summary_json
+    """
+    conn = _db.connect()
+    cur = conn.cursor()
+    try:
+        # try to find an import_file linked to a v3 job with EMM source
+        try:
+            cur.execute("SELECT f.stored_path, f.id, j.id as job_id, j.source_system FROM import_file f JOIN import_job_v3 j ON f.import_job_id = j.id WHERE j.source_system LIKE '%EMM%' OR j.dataset_key LIKE '%emm%' ORDER BY f.uploaded_at DESC LIMIT 1")
+            row = cur.fetchone()
+        except Exception:
+            row = None
+        if not row:
+            # fallback: if import_file table lacks import_job_id, pick most recent import_file row
+            try:
+                cur.execute("SELECT stored_path, id, original_filename, sha256 FROM import_file ORDER BY uploaded_at DESC LIMIT 1")
+                row = cur.fetchone()
+            except Exception:
+                row = None
+            # fallback: find most recent import_run that detected EMM
+            try:
+                cur.execute("SELECT import_file_id FROM import_run WHERE source_system LIKE '%EMM%' ORDER BY finished_at DESC LIMIT 1")
+                r2 = cur.fetchone()
+                if r2 and r2[0]:
+                    cur.execute('SELECT stored_path, id FROM import_file WHERE id=? LIMIT 1', (r2[0],))
+                    row = cur.fetchone()
+            except Exception:
+                row = None
+        if not row:
+            raise HTTPException(status_code=404, detail='no EMM upload found to sync')
+        # normalize row access
+        try:
+            path = row['stored_path'] if hasattr(row, 'keys') and 'stored_path' in row.keys() else row[0]
+        except Exception:
+            path = row[0]
+        if not _os.path.isfile(path):
+            raise HTTPException(status_code=500, detail='stored file missing')
+        with open(path, 'rb') as fh:
+            body = fh.read()
+
+        # detect
+        detection = importer_registry.detect_importer(body, _os.path.basename(path))
+
+        # create an import_run record
+        started = __import__('datetime').datetime.utcnow().isoformat()
+        # Use SQLAlchemy engine to create the import_run record so writes
+        # use the same connection family as the application's sessions.
+        with engine.begin() as exec_conn:
+            res = exec_conn.execute(
+                text("INSERT INTO import_run (import_file_id, source_system, dataset_key, status, started_at, detected_signature_json, dry_run) VALUES (:import_file_id, :source_system, :dataset_key, :status, :started_at, :detected_signature_json, :dry_run)"),
+                {
+                    'import_file_id': None,
+                    'source_system': detection.get('source_system'),
+                    'dataset_key': detection.get('dataset_key'),
+                    'status': 'RECEIVED',
+                    'started_at': started,
+                    'detected_signature_json': json.dumps(detection),
+                    'dry_run': 1 if dry_run else 0,
+                }
+            )
+            try:
+                import_run_id = res.lastrowid
+            except Exception:
+                # Fallback: attempt to select last inserted id via sqlite_sequence
+                import_run_id = None
+
+        # run import (not dry-run by default)
+        result = importer_registry.run_import(detection, body, import_run_id, dry_run=bool(dry_run))
+        status = 'VALIDATED' if dry_run else ( 'IMPORTED' if result.get('success', True) else 'FAILED')
+        finished = __import__('datetime').datetime.utcnow().isoformat()
+        with engine.begin() as exec_conn:
+            exec_conn.execute(
+                text("UPDATE import_run SET status = :status, finished_at = :finished_at, rows_in = :rows_in, rows_inserted = :rows_inserted, rows_rejected = :rows_rejected, warnings_json = :warnings_json, errors_json = :errors_json WHERE id = :id"),
+                {
+                    'status': status,
+                    'finished_at': finished,
+                    'rows_in': result.get('rows_in', 0),
+                    'rows_inserted': result.get('rows_inserted', 0),
+                    'rows_rejected': result.get('rows_rejected', 0),
+                    'warnings_json': json.dumps(result.get('warnings', [])) if result.get('warnings') is not None else None,
+                    'errors_json': json.dumps(result.get('errors', [])) if result.get('errors') is not None else None,
+                    'id': import_run_id,
+                }
+            )
+        # update import_job_v3 summary if possible
+        try:
+            # find v3 job id associated with this file (if any)
+            cur.execute('SELECT import_job_id FROM import_file WHERE stored_path=? LIMIT 1', (path,))
+            fj = cur.fetchone()
+            if fj:
+                jid = fj['import_job_id'] if hasattr(fj, 'keys') and 'import_job_id' in fj.keys() else (fj[0] if len(fj)>0 else None)
+                if jid:
+                    with engine.begin() as exec_conn:
+                        exec_conn.execute(
+                            text('UPDATE import_job_v3 SET status=:status, updated_at=:updated_at, summary_json=:summary_json WHERE id=:id'),
+                            {
+                                'status': ('committed' if status=='IMPORTED' else status.lower()),
+                                'updated_at': finished,
+                                'summary_json': json.dumps(result),
+                                'id': jid,
+                            }
+                        )
+        except Exception:
+            pass
+        conn.commit()
+        return { 'status': 'ok', 'import_run_id': import_run_id, 'result': {k: result.get(k) for k in ('rows_in','rows_inserted','rows_rejected','warnings','errors')} }
+    finally:
+        try:
+            conn.close()
+        except Exception:
+            pass
+
+
+@router.post('/connectors/vantage/sync')
+def connectors_vantage_sync():
+    return { 'status': 'not_implemented', 'message': 'Vantage on-demand sync is not implemented' }
+
+
+@router.post('/connectors/aie/sync')
+def connectors_aie_sync():
+    return { 'status': 'not_implemented', 'message': 'AIE on-demand sync is not implemented' }
 
 
 @router.get("/marketing/analytics")
@@ -365,6 +761,175 @@ def marketing_analytics(event_id: str = None, db: Session = Depends(auth.get_db)
         "avg_awareness": avg_awareness,
         "total_activations": total_activations,
     }
+
+
+@router.post('/leads/mark_contacted')
+def mark_lead_contacted(payload: Dict):
+    """Simple compatibility endpoint to mark a lead as contacted.
+
+    Body: { lead_id: <id>, status?: 'contacted', note?: 'quick note' }
+    This attempts to update common lead columns if present, and will
+    add a `status` column if the schema doesn't contain one (best-effort).
+    """
+    lead_id = payload.get('lead_id') or payload.get('id')
+    if not lead_id:
+        raise HTTPException(status_code=400, detail='lead_id required')
+    conn = get_db_conn()
+    try:
+        cur = conn.cursor()
+        try:
+            cur.execute('PRAGMA table_info(leads)')
+            cols = [r[1] for r in cur.fetchall()]
+        except Exception:
+            cols = []
+
+        updates = []
+        params = []
+        new_status = payload.get('status') or 'contacted'
+        if 'status' in cols:
+            updates.append('status = ?')
+            params.append(new_status)
+        if 'current_stage' in cols:
+            updates.append('current_stage = ?')
+            params.append(new_status)
+        if 'notes' in cols and payload.get('note') is not None:
+            updates.append('notes = ?')
+            params.append(payload.get('note'))
+        # If a note was provided but the column is missing, try to add it and include it
+        if payload.get('note') is not None and 'notes' not in cols:
+            try:
+                cur.execute("ALTER TABLE leads ADD COLUMN notes TEXT")
+                conn.commit()
+                updates.append('notes = ?')
+                params.append(payload.get('note'))
+                # refresh cols list
+                cols.append('notes')
+            except Exception:
+                pass
+
+        # If no writable columns exist, try to add a status column (best-effort)
+        if not updates:
+            try:
+                cur.execute("ALTER TABLE leads ADD COLUMN status TEXT")
+                conn.commit()
+                updates.append('status = ?')
+                params.append(new_status)
+            except Exception:
+                pass
+
+        if updates:
+            # match by lead_id and only include `id` if the column exists
+            has_id = 'id' in cols
+            if has_id:
+                params.append(lead_id)
+                params.append(lead_id)
+                stmt = f"UPDATE leads SET {', '.join(updates)} WHERE lead_id = ? OR id = ?"
+            else:
+                params.append(lead_id)
+                stmt = f"UPDATE leads SET {', '.join(updates)} WHERE lead_id = ?"
+            cur.execute(stmt, tuple(params))
+            conn.commit()
+            return {'status': 'ok'}
+        else:
+            raise HTTPException(status_code=500, detail='no updatable lead columns')
+    finally:
+        try:
+            conn.close()
+        except Exception:
+            pass
+
+
+@router.get('/leads')
+def list_leads(school_id: Optional[str] = None, zip5: Optional[str] = None, status: Optional[str] = None, status_ne: Optional[str] = None, sort_by: Optional[str] = None, sort_dir: Optional[str] = None, limit: int = 25, offset: int = 0):
+    """List leads with simple server-side pagination and filtering.
+
+    Query params supported:
+      - school_id
+      - zip5
+      - status
+      - limit (page size)
+      - offset
+
+    Returns: { status: 'ok', total: <int>, rows: [ ... ] }
+    """
+    conn = get_db_conn()
+    cur = conn.cursor()
+    try:
+        try:
+            cur.execute('PRAGMA table_info(leads)')
+            cols = [r[1] for r in cur.fetchall()]
+        except Exception:
+            cols = []
+
+        where = []
+        params = []
+        if school_id and 'school_id' in cols:
+            where.append('school_id = ?')
+            params.append(school_id)
+        if zip5 and 'zip5' in cols:
+            where.append('zip5 = ?')
+            params.append(zip5)
+        if status:
+            if 'status' in cols:
+                where.append('status = ?')
+                params.append(status)
+            elif 'current_stage' in cols:
+                where.append('current_stage = ?')
+                params.append(status)
+        if status_ne:
+            # support negative filter (e.g., status_ne=contacted to get unworked leads)
+            if 'status' in cols:
+                where.append('status != ?')
+                params.append(status_ne)
+            elif 'current_stage' in cols:
+                where.append('current_stage != ?')
+                params.append(status_ne)
+
+        where_clause = (' WHERE ' + ' AND '.join(where)) if where else ''
+
+        # total count
+        total = 0
+        try:
+            count_q = f"SELECT COUNT(1) as cnt FROM leads{where_clause}"
+            cur.execute(count_q, tuple(params))
+            crow = cur.fetchone()
+            total = int(crow[0]) if crow else 0
+        except Exception:
+            total = 0
+
+        # determine ordering: validate requested sort_by against actual columns
+        # provide safe fallback to created_at or rowid
+        allowed_cols = set(cols)
+        if sort_by and sort_by in allowed_cols:
+            order_col = sort_by
+        else:
+            order_col = 'created_at' if 'created_at' in cols else 'rowid'
+
+        dir_norm = (sort_dir or 'desc').lower()
+        if dir_norm not in ('asc', 'desc'):
+            dir_norm = 'desc'
+
+        q = f"SELECT * FROM leads{where_clause} ORDER BY {order_col} {dir_norm.upper()} LIMIT ? OFFSET ?"
+        exec_params = tuple(params + [limit, offset])
+        try:
+            cur.execute(q, exec_params)
+            rows = cur.fetchall()
+            out = []
+            for r in rows:
+                try:
+                    out.append(dict(r))
+                except Exception:
+                    # fallback when sqlite3.Row not mapping
+                    out.append({k: r[i] for i, k in enumerate([c[0] for c in cur.description])})
+        except Exception:
+            out = []
+
+        return {'status': 'ok', 'total': total, 'rows': out}
+    finally:
+        try:
+            conn.close()
+        except Exception:
+            pass
 
 
 # Compatibility / convenience endpoints expected by the frontend UI.
@@ -717,7 +1282,11 @@ async def v2_import_upload(file: UploadFile = File(...), uploaded_by: str = None
         # delegate to legacy async handler
         return await legacy_upload(file=file, uploaded_by=uploaded_by, target_domain=target_domain)
     except Exception as e:
-        # If delegation fails, return a simple 500-like structure for callers
+        # If the legacy handler raised an HTTPException, re-raise so the
+        # client receives the correct HTTP status code and message.
+        if isinstance(e, HTTPException):
+            raise e
+        # Otherwise return an error blob for callers expecting compat payloads
         return { 'status': 'error', 'error': str(e) }
 
 
@@ -833,12 +1402,61 @@ def exports_run(x_api_key: str = Header(None)):
 def lms_courses():
     conn = get_db_conn()
     cur = conn.cursor()
-    cur.execute("SELECT course_id,title,description FROM lms_courses")
-    rows = cur.fetchall()
-    courses = [{"course_id": r[0], "title": r[1], "description": r[2]} for r in rows]
+    # Inspect table schema and add minimal columns if missing (conservative)
+    try:
+        cur.execute("PRAGMA table_info(lms_courses)")
+        fcols = [r[1] for r in cur.fetchall()]
+    except Exception:
+        fcols = []
+
+    # If the physical table exists but is missing our optional columns, add them.
+    if fcols:
+        try:
+            if 'roles' not in fcols:
+                cur.execute('ALTER TABLE lms_courses ADD COLUMN roles TEXT')
+        except Exception:
+            pass
+        try:
+            if 'workflow' not in fcols:
+                cur.execute('ALTER TABLE lms_courses ADD COLUMN workflow TEXT')
+        except Exception:
+            pass
+
+    # Build a select that includes optional columns when present
+    try:
+        if fcols:
+            select_cols = ['course_id','title','description']
+            if 'roles' in fcols:
+                select_cols.append('roles')
+            if 'workflow' in fcols:
+                select_cols.append('workflow')
+            q = 'SELECT ' + ','.join(select_cols) + ' FROM lms_courses'
+            cur.execute(q)
+            rows = cur.fetchall()
+            courses = []
+            for r in rows:
+                # map by available columns
+                entry = {"course_id": r[0], "title": r[1], "description": r[2]}
+                idx = 3
+                if 'roles' in select_cols and len(r) > idx:
+                    roles_raw = r[idx]
+                    entry['roles'] = [s.strip() for s in (roles_raw or '').split(',') if s.strip()]
+                    idx += 1
+                else:
+                    entry['roles'] = []
+                if 'workflow' in select_cols and len(r) > idx:
+                    entry['workflow'] = r[idx] or ''
+                else:
+                    entry['workflow'] = ''
+                courses.append(entry)
+        else:
+            courses = []
+    except Exception:
+        # If anything fails, fall back to an empty list and ensure UI still sees a catalog
+        courses = []
     # ensure usarec-101 present
     if not any(c.get("course_id") == "usarec-101" for c in courses):
-        courses.insert(0, {"course_id": "usarec-101", "title": "USAREC Orientation", "description": ""})
+        courses.insert(0, {"course_id": "usarec-101", "title": "USAREC Orientation", "description": "", "roles": [], "workflow": "TAAIP Fundamentals"})
     return {"status": "ok", "count": len(courses), "courses": courses}
 
 
@@ -917,13 +1535,52 @@ def funnel_stages():
 def funnel_transition(payload: dict = None):
     payload = payload or {}
     tid = "ft_" + uuid.uuid4().hex[:10]
-    # Prefer SQLAlchemy-backed create path which includes commit retry
-    # semantics; fall back to raw sqlite path for compatibility if needed.
+
+    # Instrument start for this path when requested
+    if os.getenv('TAAIP_INSTRUMENT_FUNNEL') == '1':
+        try:
+            print(f"INSTR: /funnel/transition start; payload_lead={payload.get('lead_id') or payload.get('lead_key')} db_path={os.getenv('TAAIP_DB_PATH')}")
+        except Exception:
+            pass
+
+    # Prefer SQLAlchemy-backed create path which includes commit retry semantics;
+    # fall back to raw sqlite path for compatibility if needed.
     try:
         db = SessionLocal()
         try:
-            obj = crud_domain.create_funnel_transition(db, payload or {})
-            return {"status": "ok", "data": {"id": getattr(obj, 'id', tid)}}
+            last_exc = None
+            for attempt in range(6):
+                try:
+                    if os.getenv('TAAIP_INSTRUMENT_FUNNEL') == '1':
+                        try:
+                            print(f"INSTR: create_funnel_transition attempt={attempt} using SQLAlchemy session db={db}")
+                        except Exception:
+                            pass
+                    obj = crud_domain.create_funnel_transition(db, payload or {})
+                    if os.getenv('TAAIP_INSTRUMENT_FUNNEL') == '1':
+                        try:
+                            print(f"INSTR: create_funnel_transition succeeded; obj_id={getattr(obj,'id',None)}")
+                        except Exception:
+                            pass
+                    return {"status": "ok", "data": {"id": getattr(obj, 'id', tid)}}
+                except Exception as e:
+                    msg = str(e).lower()
+                    last_exc = e
+                    if isinstance(e, sqlite3.OperationalError) and 'database is locked' in msg:
+                        if os.getenv('TAAIP_INSTRUMENT_FUNNEL') == '1':
+                            try:
+                                print(f"INSTR: create_funnel_transition locked on attempt={attempt}: {e}")
+                            except Exception:
+                                pass
+                        try:
+                            db.rollback()
+                        except Exception:
+                            pass
+                        time.sleep(0.05 * (attempt + 1))
+                        continue
+                    raise
+            if last_exc:
+                raise last_exc
         finally:
             try:
                 db.close()
@@ -933,13 +1590,14 @@ def funnel_transition(payload: dict = None):
         # Fall back to raw sqlite insert for older DB variants
         conn = get_db_conn()
         cur = conn.cursor()
+
     # be tolerant of legacy schema variants: some DBs use `lead_key`, others `lead_id`.
     try:
         cur.execute('PRAGMA table_info(funnel_transitions)')
         fcols = [r[1] for r in cur.fetchall()]
     except Exception:
         fcols = []
-    lead_val = payload.get("lead_key") or payload.get("lead_id")
+    lead_val = payload.get('lead_key') or payload.get('lead_id')
     # build insert dynamically based on available columns
     cols = ["id"]
     vals = [tid]
@@ -1128,8 +1786,37 @@ def create_loe_metric(id: str, payload: dict, user: dict = Depends(require_roles
     cur.execute('CREATE TABLE IF NOT EXISTS loes(id TEXT PRIMARY KEY, scope_type TEXT, scope_value TEXT, title TEXT, description TEXT, created_by TEXT, created_at TEXT)')
     cur.execute('SELECT id FROM loes WHERE id=?', (id,))
     if not cur.fetchone():
-        # some DB variants declare scope_type/scope_value NOT NULL; insert default non-null values
-        cur.execute('INSERT INTO loes(id,scope_type,scope_value,title,description,created_by,created_at) VALUES(?,?,?,?,?,?,?)', (id, 'UNSPECIFIED', 'UNSPECIFIED', 'imported', None, (user or {}).get('username') or 'system', datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S.%f')))
+        # Some DB variants declare scope_type/scope_value NOT NULL.
+        # Use the shared SQLAlchemy session (db) to insert the parent LOE
+        # so writes occur on the same connection used by the test harness
+        # and avoid cross-connection SQLite locking.
+        try:
+            from services.api.app import models_domain as domain_models
+            existing = db.query(domain_models.Loe).filter(domain_models.Loe.id == id).one_or_none()
+            if not existing:
+                loe_obj = domain_models.Loe(
+                    id=id,
+                    scope_type='UNSPECIFIED',
+                    scope_value='UNSPECIFIED',
+                    title='imported',
+                    description=None,
+                    created_by=((user or {}).get('username') if isinstance(user, dict) else getattr(user, 'username', 'system')) or 'system'
+                )
+                try:
+                    db.add(loe_obj)
+                    db.commit()
+                except Exception:
+                    try:
+                        db.rollback()
+                    except Exception:
+                        pass
+        except Exception:
+            # If ORM path fails for any unexpected reason, fall back to the
+            # raw insert to preserve existing behavior (best-effort).
+            try:
+                cur.execute('INSERT INTO loes(id,scope_type,scope_value,title,description,created_by,created_at) VALUES(?,?,?,?,?,?,?)', (id, 'UNSPECIFIED', 'UNSPECIFIED', 'imported', None, (user or {}).get('username') or 'system', datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S.%f')))
+            except Exception:
+                pass
     # Prefer using SQLAlchemy ORM to insert the metric so it participates in
     # the application's session/transaction handling and is visible to tests
     mid = payload.get('id') or ("loem_" + uuid.uuid4().hex[:10])

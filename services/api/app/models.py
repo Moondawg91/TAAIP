@@ -99,3 +99,11 @@ class User(Base):
     role = Column(Enum(UserRole), nullable=False)
     scope = Column(String, nullable=True)  # e.g., brigade_prefix, battalion_prefix, company_prefix, station_rsid, or 'USAREC'
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+# Import optional extension models so metadata includes them when
+# `models` package is imported by DB initialization logic.
+try:
+    from . import models_refresh  # noqa: F401
+except Exception:
+    pass

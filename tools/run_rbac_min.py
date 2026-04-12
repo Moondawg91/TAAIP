@@ -10,7 +10,7 @@ from services.api.app import auth, models
 
 Base.metadata.drop_all(bind=engine)
 Base.metadata.create_all(bind=engine)
-os.environ['TAAIP_DB_PATH'] = './taaip_dev.db'
+os.environ.setdefault('TAAIP_DB_PATH', './taaip_dev.db')
 dbmod.init_db()
 
 # create user

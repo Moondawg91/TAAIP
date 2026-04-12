@@ -1,0 +1,10 @@
+{
+  "route": "/operations/mission-analysis",
+  "usable": true,
+  "checks": [
+    {
+      "header": true,
+      "kpiFound": true
+    }
+  ]
+}

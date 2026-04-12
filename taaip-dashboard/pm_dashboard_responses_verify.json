@@ -1,0 +1,26 @@
+[
+  {
+    "url": "https://taaip.app/dashboard/index.html",
+    "status": 200,
+    "contentType": "text/html",
+    "bodySnippet": ""
+  },
+  {
+    "url": "https://taaip.app/dashboard/app.js",
+    "status": 200,
+    "contentType": "application/javascript",
+    "bodySnippet": ""
+  },
+  {
+    "url": "https://taaip.app/api/v2/funnel/stages",
+    "status": 200,
+    "contentType": "application/json",
+    "bodySnippet": "{\"stages\":[{\"stage_id\":\"lead\",\"stage_name\":\"Lead\",\"sequence_order\":1,\"description\":\"Raw prospect, initial capture from marketing channels\"},{\"stage_id\":\"prospect\",\"stage_name\":\"Prospect\",\"sequence_order\":2,\"description\":\"Qualified demographic match, engaged with content\"},{\"stage_id\":\"appointment_made\",\"stage_name\":\"Appointment Made\",\"sequence_order\":3,\"description\":\"Scheduled appointment with recruiter\"},{\"stage_id\":\"appointment_conducted\",\"stage_name\":\"Appointment Conducted\",\"sequence_order\":4,\"description\":\"Met with recruiter, initial discussion completed\"},{\"stage_id\":\"test\",\"stage_name\":\"Test\",\"sequence_order\":5,\"description\":\"ASVAB or qualification test administered\"},{\"stage_id\":\"test_pass\",\"stage_name\":\"Test Pass\",\"sequence_order\":6,\"description\":\"Passed ASVAB with qualifying score\"},{\"stage_id\":\"physical\",\"stage_name\":\"Physical\",\"sequence_order\":7,\"description\":\"Medical examination and physical qualification completed\"},{\"stage_id\":\"enlist\",\"stage_name\":\"Enlist\",\"sequence_order\":8,\"description\":\"Contract signed, enlisted into service\"}]}"
+  },
+  {
+    "url": "https://taaip.app/favicon.ico",
+    "status": 404,
+    "contentType": "text/html",
+    "bodySnippet": ""
+  }
+]
