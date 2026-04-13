@@ -4,6 +4,7 @@ from sqlalchemy import text
 
 from services.api.app import models
 from services.api.app import models_domain as domain
+from services.api.app.services import market_engine
 from services.api.app.services.market_targeting import (
     enrich_reason_codes_with_market,
     get_market_targeting_overlays,
@@ -272,6 +273,18 @@ def _targeting_guidance(market_category: str, opportunity: float, effort_signal:
 
 def recommendations_for_scope(db, scope_type: str, scope_value: str, top_n: int = 20) -> Dict:
     prefix = _scope_prefix(scope_type, scope_value)
+    market_payload = market_engine.summarize_market_engine(
+        db,
+        scope_type=scope_type,
+        scope_value=scope_value,
+        actor_scope_type=scope_type,
+        actor_scope_value=scope_value,
+        top_n=500,
+    )
+    market_priority_rows = {
+        f"{str(r.get('station_rsid') or '')}:{str(r.get('zip') or '')}": r
+        for r in ((market_payload.get("market_engine") or {}).get("prioritized_market_zip") or [])
+    }
     market_overlays = get_market_targeting_overlays(
         db,
         scope_type=scope_type,
@@ -309,7 +322,12 @@ def recommendations_for_scope(db, scope_type: str, scope_value: str, top_n: int 
         market_weight_raw = float(weights.get(market_category, 1.0))
         market_weight = _clamp01(market_weight_raw / max_weight)
 
-        opportunity = market_weight
+        market_key = f"{station}:{row.zip_code}"
+        market_row = market_priority_rows.get(market_key, {})
+        if market_row:
+            opportunity = _clamp01(float(market_row.get("market_capability_score") or 0.0) / 100.0)
+        else:
+            opportunity = market_weight
         burden_ratio = float(burden_map.get(station, 1.0))
         burden_pressure = _clamp01((burden_ratio - 1.0) / 1.5)
 
@@ -330,8 +348,9 @@ def recommendations_for_scope(db, scope_type: str, scope_value: str, top_n: int 
         )
 
         base_reasons = _reason_codes(opportunity, burden_pressure, production_signal, effort_signal)
-        market_key = f"{station}:{row.zip_code}"
         merged_reasons = enrich_reason_codes_with_market(base_reasons, market_overlays.get(market_key, {}))
+        if market_row and str(market_row.get("opportunity_band") or "") == "weak" and "high_qma_low_output" not in merged_reasons:
+            merged_reasons.append("high_qma_low_output")
 
         recs.append(
             {
@@ -341,6 +360,7 @@ def recommendations_for_scope(db, scope_type: str, scope_value: str, top_n: int 
                 "zip_code": row.zip_code,
                 "market_category": market_category,
                 "market_potential_score": round(opportunity * 100.0, 2),
+                "market_opportunity_band": str(market_row.get("opportunity_band") or "unknown"),
                 "burden_ratio": round(burden_ratio, 4),
                 "warning_severity": round(warning_severity, 4),
                 "production_signal": round(production_signal, 4),

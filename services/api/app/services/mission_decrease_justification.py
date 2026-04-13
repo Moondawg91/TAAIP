@@ -12,7 +12,7 @@ from services.api.app.services import (
     accountability_engine,
     execution_quality,
     loe_engine,
-    market_qma,
+    market_engine,
     school_access,
     targeting_expansion,
 )
@@ -172,7 +172,7 @@ def _safe_timestamp(output: Dict, top_key: str) -> Optional[str]:
 
 
 def _collect_signal_summaries(db, scope_type: str, scope_value: str) -> Dict:
-    market = market_qma.summarize_market_qma(db, scope_type, scope_value, scope_type, scope_value, top_n=15)
+    market = market_engine.summarize_market_engine(db, scope_type, scope_value, scope_type, scope_value, top_n=15)
     access = school_access.summarize_school_access(db, scope_type, scope_value, scope_type, scope_value, top_n=15)
     execution = execution_quality.summarize_execution_quality(db, scope_type, scope_value, scope_type, scope_value)
     accountability = accountability_engine.classify_scope(db, scope_type, scope_value)
@@ -182,8 +182,8 @@ def _collect_signal_summaries(db, scope_type: str, scope_value: str) -> Dict:
     return {
         "market": {
             "raw": market,
-            "summary": _safe_summary(market, "market_qma", "summary"),
-            "data_as_of": _safe_timestamp(market, "market_qma"),
+            "summary": _safe_summary(market, "market_engine", "summary"),
+            "data_as_of": _safe_timestamp(market, "market_engine"),
         },
         "access": {
             "raw": access,
@@ -246,10 +246,10 @@ def _compute_factor_candidates(
             "factor_id": "market_capability",
             "label": "Market capability",
             "impact": float(market_summary.get("market_capability_score") or 0.0) - 0.5,
-            "source": "market_qma",
+            "source": "market_engine",
             "signal_key": "market",
             "recency_score": 1.0 if signals["market"].get("data_as_of") else 0.4,
-            "agreement_tokens": ["market_decrease_risk"] if str(market_summary.get("overall_market_status")) == "market_constrained" else ["market_supportive"],
+            "agreement_tokens": ["market_decrease_risk"] if str(market_summary.get("overall_market_status")) in {"weak", "market_constrained"} else ["market_supportive"],
             "rationale": f"overall_market_status={market_summary.get('overall_market_status', 'unknown')}",
         },
         {
@@ -426,7 +426,7 @@ def _has_access_market_failure_signals(signals: Dict) -> bool:
     access_summary = (signals.get("access") or {}).get("summary") or {}
     market_summary = (signals.get("market") or {}).get("summary") or {}
     market_status = str(market_summary.get("overall_market_status") or "unknown").lower()
-    return _access_is_weak(access_summary) or market_status in {"market_constrained", "constrained", "failure", "degraded"}
+    return _access_is_weak(access_summary) or market_status in {"market_constrained", "constrained", "failure", "degraded", "weak"}
 
 
 def _magnitude_from_delta(

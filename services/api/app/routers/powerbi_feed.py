@@ -5,6 +5,8 @@ from .rbac import get_allowed_org_units
 from fastapi.responses import StreamingResponse
 import csv
 import io
+from services.api.app import database as _dbmod
+from services.api.app.services import accountability_engine, execution_quality, market_engine, school_access
 
 router = APIRouter(prefix="/powerbi", tags=["powerbi"])
 
@@ -533,6 +535,36 @@ def export_fact_marketing_csv(org_unit_id: Optional[str] = None, start: Optional
         return rows
     finally:
         conn.close()
+
+
+@router.get('/operational/command_dataset')
+def operational_command_dataset(scope_type: str = 'USAREC', scope_value: str = 'USAREC'):
+    st = (scope_type or 'USAREC').upper()
+    sv = (scope_value or 'USAREC')
+    db = next(_dbmod.get_db())
+    try:
+        market = market_engine.summarize_market_engine(db, st, sv, st, sv)
+        access = school_access.summarize_school_access(db, st, sv, st, sv)
+        execq = execution_quality.summarize_execution_quality(db, st, sv, st, sv)
+        accountability = accountability_engine.classify_scope(db, st, sv)
+
+        return {
+            'status': 'ok',
+            'data': {
+                'scope_type': st,
+                'scope_value': sv,
+                'market_engine_summary': market.get('market_engine', {}).get('summary', {}),
+                'school_access_summary': access.get('school_access', {}).get('summary', {}),
+                'execution_quality_summary': execq.get('execution_quality', {}).get('summary', {}),
+                'accountability': accountability,
+            }
+        }
+    finally:
+        try:
+            if _dbmod._shared_session is None:
+                db.close()
+        except Exception:
+            pass
 
 
 @router.get('/fact_funnel')
