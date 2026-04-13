@@ -1,6 +1,7 @@
 import json
 from ..db import connect
 from datetime import datetime
+from ..services import roi_engine as _roi_engine
 
 
 def now_iso():
@@ -8,11 +9,11 @@ def now_iso():
 
 
 def simple_event_recommendation(event_id: int, created_by: str = 'automation') -> dict:
-    """Generate deterministic recommendations for an event without external models.
+    """Generate deterministic recommendations for an event.
 
     - staffing_estimate: use LOE (level of effort) if present, default heuristic
-    - estimated_costs: sum of event_cost rows (if any)
-    - roi_estimate: simple heuristic based on leads per LOE (placeholder)
+    - estimated_costs: sum from spend_fact (authoritative) with event_cost fallback
+    - roi_score: authoritative deterministic score from roi_engine scoring formula
     """
     conn = connect()
     try:
@@ -25,23 +26,74 @@ def simple_event_recommendation(event_id: int, created_by: str = 'automation') -
         loe = evd.get('loe') or 1
         staffing = max(1, int(float(loe) / 5))
 
-        # sum costs
-        cur.execute('SELECT SUM(amount) FROM event_cost WHERE event_id=?', (event_id,))
-        row = cur.fetchone()
-        total_cost = row[0] if row and row[0] is not None else 0
+        # Cost: use spend_fact (authoritative) with event_cost as legacy fallback
+        total_cost = 0.0
+        try:
+            cur.execute('SELECT IFNULL(SUM(amount),0) FROM spend_fact WHERE event_id=?', (str(event_id),))
+            row = cur.fetchone()
+            if row and row[0]:
+                total_cost = float(row[0])
+        except Exception:
+            pass
+        if total_cost == 0.0:
+            try:
+                cur.execute('SELECT IFNULL(SUM(amount),0) FROM event_cost WHERE event_id=?', (event_id,))
+                row = cur.fetchone()
+                if row and row[0]:
+                    total_cost = float(row[0])
+            except Exception:
+                pass
 
-        # simple ROI heuristic
-        roi = None
-        if total_cost and loe:
-            roi = round((loe * 1.0) / (total_cost + 1), 4)
+        # Leads/contracts from lead_journey_fact
+        leads_count = 0
+        contracts_count = 0
+        try:
+            cur.execute(
+                'SELECT COUNT(DISTINCT lead_id), '
+                'SUM(CASE WHEN contract_flag=1 THEN 1 ELSE 0 END) '
+                'FROM lead_journey_fact WHERE event_id=?',
+                (str(event_id),)
+            )
+            row = cur.fetchone()
+            if row:
+                leads_count = int(row[0] or 0)
+                contracts_count = int(row[1] or 0)
+        except Exception:
+            pass
+
+        # Load thresholds from roi_thresholds table
+        cpl_target = _roi_engine._CPL_TARGET_DEFAULT
+        cpc_target = _roi_engine._CPC_TARGET_DEFAULT
+        try:
+            cur.execute('SELECT metric_key, value FROM roi_thresholds')
+            for r in cur.fetchall():
+                if r[0] == 'cpl_target':
+                    cpl_target = float(r[1])
+                elif r[0] == 'cpc_target':
+                    cpc_target = float(r[1])
+        except Exception:
+            pass
+
+        # Authoritative deterministic scoring via roi_engine formulas
+        contract_s = _roi_engine.compute_contract_outcome_score(contracts_count, total_cost, cpc_target)
+        lead_s = _roi_engine.compute_lead_outcome_score(leads_count, total_cost, cpl_target)
+        cost_eff_s = _roi_engine.compute_cost_efficiency_score(leads_count, contracts_count)
+        # market/targeting alignment not available via raw connection — use neutral 50
+        roi_score = _roi_engine.compute_roi_score(contract_s, lead_s, cost_eff_s, 50.0, 50.0)
 
         rec = {
             'event_id': event_id,
             'staffing_estimate': staffing,
             'estimated_cost': total_cost,
-            'roi_estimate': roi,
+            'leads_count': leads_count,
+            'contracts_count': contracts_count,
+            'contract_outcome_score': round(contract_s, 2),
+            'lead_outcome_score': round(lead_s, 2),
+            'cost_efficiency_score': round(cost_eff_s, 2),
+            'roi_score': roi_score,
+            'effectiveness_band': _roi_engine.effectiveness_band(roi_score),
             'generated_at': now_iso(),
-            'method': 'simple_heuristic_v1'
+            'method': 'roi_engine_v1',
         }
 
         # persist to ai_recommendation table
