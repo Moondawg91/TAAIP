@@ -21,6 +21,7 @@ from services.api.app.services import (
     twg_engine,
     targeting_board_engine,
     asset_engine,
+    targeting_execution_tracker,
 )
 
 WEIGHTS = {
@@ -190,6 +191,15 @@ def _collect_signal_summaries(db, scope_type: str, scope_value: str) -> Dict:
     twg = twg_engine.summarize_twg_engine(db, scope_type, scope_value, scope_type, scope_value, top_n=15)
     board = targeting_board_engine.summarize_targeting_board_engine(db, scope_type, scope_value, scope_type, scope_value, top_n=15)
     assets = asset_engine.summarize_asset_engine(db, scope_type, scope_value, scope_type, scope_value, top_n=15)
+    execution_tracker = targeting_execution_tracker.summarize_targeting_execution_tracker(
+        db,
+        scope_type,
+        scope_value,
+        scope_type,
+        scope_value,
+        top_n=15,
+        include_mission_signal=False,
+    )
 
     return {
         "market": {
@@ -269,6 +279,12 @@ def _collect_signal_summaries(db, scope_type: str, scope_value: str) -> Dict:
             "data_as_of": _safe_timestamp(assets, "asset_engine"),
             "rows_used": len(((assets.get("asset_engine") or {}).get("asset_distribution") or [])),
         },
+        "execution_tracker": {
+            "raw": execution_tracker,
+            "summary": _safe_summary(execution_tracker, "targeting_execution_tracker", "summary"),
+            "data_as_of": datetime.utcnow().isoformat() + "Z",
+            "rows_used": len(((execution_tracker.get("targeting_execution_tracker") or {}).get("execution_items") or [])),
+        },
     }
 
 
@@ -285,6 +301,7 @@ def _compute_factor_candidates(
     loe_summary = signals["loe"]["summary"]
     roi_summary = signals.get("roi", {}).get("summary") or {}
     twg_summary = signals.get("twg", {}).get("summary") or {}
+    execution_tracker_summary = signals.get("execution_tracker", {}).get("summary") or {}
 
     loe_counts = loe_summary.get("status_counts") or {}
     loe_total = float(loe_summary.get("total_metrics") or 0.0)
@@ -433,6 +450,28 @@ def _compute_factor_candidates(
                 f"posture={signals.get('board', {}).get('summary', {}).get('overall_board_posture', 'unknown')}"
             ),
         },
+        {
+            "factor_id": "execution_tracker_pressure",
+            "label": "Execution tracker stall pressure",
+            "impact": -1.0
+            * (
+                float(execution_tracker_summary.get("blocked") or 0)
+                + float(execution_tracker_summary.get("off_track") or 0)
+            )
+            / float(max(1, execution_tracker_summary.get("total_tasks") or 1)),
+            "source": "targeting_execution_tracker",
+            "signal_key": "execution_tracker",
+            "recency_score": 1.0 if signals.get("execution_tracker", {}).get("data_as_of") else 0.4,
+            "agreement_tokens": ["execution_decrease_risk"]
+            if str(execution_tracker_summary.get("execution_posture") or "unknown") in {"watch", "failing"}
+            else ["execution_supportive"],
+            "rationale": (
+                f"execution_posture={execution_tracker_summary.get('execution_posture', 'unknown')}, "
+                f"blocked={execution_tracker_summary.get('blocked', 0)}, "
+                f"off_track={execution_tracker_summary.get('off_track', 0)}, "
+                f"total_tasks={execution_tracker_summary.get('total_tasks', 0)}"
+            ),
+        },
     ]
     return factors
 
@@ -494,6 +533,7 @@ def _compute_confidence(ranked_factors: List[Dict], signals: Dict, mission_has_d
         bool(signals["school_plan"]["summary"]),
         bool((signals.get("roi", {}).get("raw", {}).get("roi_engine") or {}).get("prioritized_events")),
         bool((signals.get("twg", {}).get("raw", {}).get("twg_engine") or {}).get("prioritized_items")),
+        bool((signals.get("execution_tracker", {}).get("raw", {}).get("targeting_execution_tracker") or {}).get("execution_items")),
         mission_has_data,
     ]
     completeness = sum(1 for x in completeness_checks if x) / float(len(completeness_checks))
@@ -514,6 +554,7 @@ def _compute_confidence(ranked_factors: List[Dict], signals: Dict, mission_has_d
         bool(signals["school_plan"].get("data_as_of")),
         bool(signals.get("roi", {}).get("data_as_of")),
         bool(signals.get("twg", {}).get("data_as_of")),
+        bool(signals.get("execution_tracker", {}).get("data_as_of")),
     ]
     recency_signal = sum(1 for x in recency_checks if x) / float(len(recency_checks))
 
@@ -1122,7 +1163,7 @@ def _build_evidence_list(request_id: str, signals: Dict, mission_current: Missio
         },
     ]
 
-    for key in ("market", "access", "execution", "funnel", "accountability", "loe", "targeting", "school_plan", "roi", "twg"):
+    for key in ("market", "access", "execution", "funnel", "accountability", "loe", "targeting", "school_plan", "roi", "twg", "execution_tracker"):
         sig = signals.get(key) or {}
         evidence.append(
             {

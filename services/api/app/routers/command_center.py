@@ -14,6 +14,7 @@ from services.api.app.services import roi_engine as _roi_engine_mod
 from services.api.app.services import twg_engine as _twg_engine_mod
 from services.api.app.services import targeting_board_engine as _targeting_board_engine_mod
 from services.api.app.services import asset_engine as _asset_engine_mod
+from services.api.app.services import targeting_execution_tracker as _targeting_execution_tracker_mod
 from services.api.app.services import ai_recommendation_engine, execution_quality, school_access
 
 router = APIRouter(prefix="/command-center", tags=["command-center"])
@@ -191,6 +192,14 @@ def overview(fy: Optional[int] = None, qtr: Optional[int] = None, month: Optiona
                         top_n=10,
                     ),
                     'asset_engine': _asset_engine_mod.summarize_asset_engine(
+                        db,
+                        scope_type=scope_type_eff,
+                        scope_value=scope_value_eff,
+                        actor_scope_type=scope_type_eff,
+                        actor_scope_value=scope_value_eff,
+                        top_n=10,
+                    ),
+                    'targeting_execution_tracker': _targeting_execution_tracker_mod.summarize_targeting_execution_tracker(
                         db,
                         scope_type=scope_type_eff,
                         scope_value=scope_value_eff,
