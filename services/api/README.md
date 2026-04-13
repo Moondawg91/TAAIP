@@ -20,6 +20,8 @@ python -m uvicorn services.api.app.main:app --host 127.0.0.1 --port 8000 --reloa
 Notes:
 - This README intentionally does not enable any demo seeding. The service will start with an empty database and empty-state UX.
 - If you need XLSX parsing support, install `openpyxl` into the `services/api` virtualenv: `pip install openpyxl`.
+- Alembic under `services/api/alembic` is the only supported schema migration system for this repository.
+- Legacy `migrate*.py`, `backend/migrate.py`, and runtime schema bootstrap helpers are deprecated and blocked by default.
 # TAAIP - API Service (FastAPI)
 
 This service provides the backend API for TAAIP. It contains importers for RSIDs and ZIP coverage and implements basic endpoints for ZIP coverage lookups.
@@ -48,8 +50,8 @@ python scripts/import_zips.py /path/to/Zip\ Codes\ in\ USAREC.xlsx
 ```
 
 Notes:
-- The project uses SQLAlchemy and creates tables automatically on startup for local dev.
-- For Postgres in production, set `DATABASE_URL` env var and run Alembic (alembic support is scaffolded in requirements).
+- Schema changes must be applied through Alembic only.
+- The application no longer treats startup-time table creation or script-based migrations as supported schema management paths.
 
 ## Phase 1 - Local Dev & Testing
 
@@ -64,9 +66,11 @@ export PYTHONPATH="$(pwd)"
 ### Run Migrations
 
 ```bash
-cd services/api
-alembic upgrade head
+./.venv/bin/python -m alembic -c services/api/alembic.ini upgrade head
 ```
+
+This is the single supported migration command path for this repository.
+If needed, override the target DB per invocation: `DATABASE_URL=sqlite:///./data/taaip.sqlite3 ./.venv/bin/python -m alembic -c services/api/alembic.ini upgrade head`.
 
 ### Run API
 
@@ -80,6 +84,20 @@ API Health Check:
 GET http://localhost:8000/health
 ```
 
+## Router Ownership Map
+
+The API entrypoint is `services/api/app/main.py`, and these functional areas have a single owning router module:
+
+- command center: `services/api/app/routers/command_center.py` (`/api/command-center/*`)
+- domain v2: `services/api/app/api_domain.py` (`/api/v2/*` SQLAlchemy domain endpoints)
+- powerbi feed: `services/api/app/routers/powerbi_feed.py` (`/api/powerbi/*`)
+- school recruiting: `services/api/app/routers/school_recruiting.py` (`/api/school/*`)
+- refresh: `services/api/app/routers/refresh.py` (`/api/refresh/*`)
+
+Known overlap to preserve compatibility:
+
+- Legacy compatibility `v2` router and `api_domain` both serve under `/api/v2/*`. Keep include order in `main.py` so compatibility routes are evaluated before domain routes.
+
 ## Seeding and Imports (important — no demo data)
 
 This service does NOT seed demo or synthetic operational data. Only system defaults and reference tables are safe to seed.
@@ -91,6 +109,7 @@ python services/api/scripts/seed_defaults.py
 ```
 
 This will create only the `market_category_weights` defaults and `funnel_stages` baseline. It will not create events, metrics, funnel transitions, burden inputs, LOEs, or station/ZIP coverage.
+Run the Alembic migration command above before seeding defaults.
 
 2) Optional admin users (ONLY when explicitly requested):
 
@@ -129,4 +148,41 @@ CI should run:
 ```bash
 pytest -q services/api/tests
 ```
+
+## Decision Output - Mission Decrease Justification
+
+The domain v2 router includes a decision-output endpoint for commander-ready mission decrease analysis.
+
+Generate:
+
+```bash
+POST /api/v2/decision-output/mission-decrease-justification
+```
+
+Request payload:
+
+```json
+{
+	"org_id": "1A1",
+	"period_start": "2026-01-01",
+	"period_end": "2026-01-31",
+	"baseline_start": "2025-12-01",
+	"baseline_end": "2025-12-31",
+	"include_evidence": true,
+	"force_refresh": false
+}
+```
+
+Retrieve cached result by request id:
+
+```bash
+GET /api/v2/decision-output/mission-decrease-justification/{request_id}
+```
+
+Response highlights:
+- `mission_delta_summary`: current vs baseline totals and percent delta.
+- `causal_factors`: deterministic ranking by weighted score desc then factor code asc.
+- `confidence`: score, band (`low|medium|high`), completeness, and agreement.
+- `one_slide_payload`: compact briefing payload for command syncs.
+- `evidence`: traceable source snapshots (when `include_evidence=true`).
 
