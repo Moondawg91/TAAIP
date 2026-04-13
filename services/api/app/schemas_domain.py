@@ -98,6 +98,8 @@ class LoeMetricCreate(BaseModel):
     target_value: Optional[float]
     warn_threshold: Optional[float]
     fail_threshold: Optional[float]
+    current_value: Optional[float] = None
+    rationale: Optional[str] = None
 
 
 class DecisionCreate(BaseModel):

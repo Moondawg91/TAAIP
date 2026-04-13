@@ -5,6 +5,7 @@ All responses are structured as {"status":"ok","data":...}.
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from typing import List, Optional
+import os
 from . import auth, database, rbac
 from . import crud_domain as crud
 from . import models_domain as domain_models
@@ -12,6 +13,20 @@ from . import schemas_domain as schemas
 from . import models
 from sqlalchemy.orm import Session
 from sqlalchemy import func
+from services.api.app.services import (
+    accountability_engine,
+    ai_recommendation_engine,
+    decision_writeback,
+    execution_quality,
+    forecasting,
+    ingest_contracts,
+    lms_performance_bridge,
+    loe_engine,
+    market_qma,
+    school_access,
+    targeting_expansion,
+    what_if,
+)
 
 router = APIRouter(prefix="/v2", tags=["domain"])
 
@@ -258,8 +273,13 @@ def burden_latest(scope_type: str = Query(...), scope_value: str = Query(...), d
 
 @router.post('/loes')
 def create_loe(payload: schemas.LoeCreate, db: Session = Depends(auth.get_db), user=Depends(require_user)):
+    loe_engine.validate_scope(payload.scope_type, payload.scope_value)
+    loe_engine.can_user_manage_loe(user, payload.scope_type, payload.scope_value)
+    role_name = getattr(getattr(user, 'role', None), 'name', str(getattr(user, 'role', '')))
+    company_loe_write_enabled = os.getenv("ALLOW_COMPANY_LOE_WRITE", "0").lower() in {"1", "true", "yes"}
     try:
-        rbac.authorize_create(user, scope_type=payload.scope_type, scope_value=payload.scope_value)
+        if not (role_name == 'COMPANY_CMD' and company_loe_write_enabled):
+            rbac.authorize_create(user, scope_type=payload.scope_type, scope_value=payload.scope_value)
     except HTTPException as e:
         crud.write_audit(db, {'id': f"audit-deny-loe-{payload.id}", 'actor': user.username, 'action': 'denied_create_loe', 'entity_type': 'loe', 'entity_id': None, 'scope_type': payload.scope_type, 'scope_value': payload.scope_value, 'after_json': {'reason': e.detail}})
         raise
@@ -267,13 +287,35 @@ def create_loe(payload: schemas.LoeCreate, db: Session = Depends(auth.get_db), u
     return {"status": "ok", "data": _format_datetimes({"id": loe.id})}
 
 
+@router.get('/loes')
+def list_loes(scope_type: Optional[str] = Query(None), scope_value: Optional[str] = Query(None), db: Session = Depends(auth.get_db), user=Depends(require_user)):
+    ns = rbac.normalize_scope(user.scope)
+    effective_scope_type = (scope_type or ns['type'] or 'USAREC').upper()
+    effective_scope_value = (scope_value or ns.get('value') or '')
+
+    loe_engine.validate_scope(effective_scope_type, effective_scope_value if effective_scope_type != 'USAREC' else 'USAREC')
+
+    if ns['type'] != 'USAREC' and effective_scope_type != 'USAREC':
+        req_val = effective_scope_value or ''
+        if not req_val.startswith(ns.get('value') or ''):
+            raise HTTPException(status_code=403, detail='requested scope outside user permissions')
+
+    items = loe_engine.list_loes_for_scope(db, effective_scope_type, effective_scope_value)
+    return {"status": "ok", "data": _format_datetimes(items)}
+
+
 @router.post('/loes/{id}/metrics')
 def create_loe_metric(id: str, payload: schemas.LoeMetricCreate, db: Session = Depends(auth.get_db), user=Depends(require_user)):
     loe = db.query(domain_models.Loe).filter(domain_models.Loe.id == payload.loe_id).one_or_none()
     if not loe:
         raise HTTPException(status_code=404)
+    loe_engine.validate_scope(loe.scope_type, loe.scope_value)
+    loe_engine.can_user_manage_loe(user, loe.scope_type, loe.scope_value)
+    role_name = getattr(getattr(user, 'role', None), 'name', str(getattr(user, 'role', '')))
+    company_loe_write_enabled = os.getenv("ALLOW_COMPANY_LOE_WRITE", "0").lower() in {"1", "true", "yes"}
     try:
-        rbac.authorize_create(user, scope_type=loe.scope_type, scope_value=loe.scope_value)
+        if not (role_name == 'COMPANY_CMD' and company_loe_write_enabled):
+            rbac.authorize_create(user, scope_type=loe.scope_type, scope_value=loe.scope_value)
     except HTTPException as e:
         crud.write_audit(db, {'id': f"audit-deny-loem-{payload.id}", 'actor': user.username, 'action': 'denied_create_loe_metric', 'entity_type': 'loe_metric', 'entity_id': None, 'scope_type': loe.scope_type, 'scope_value': loe.scope_value, 'after_json': {'reason': e.detail}})
         raise
@@ -286,13 +328,166 @@ def evaluate_loe(id: str, db: Session = Depends(auth.get_db), user=Depends(requi
     loe = db.query(domain_models.Loe).filter(domain_models.Loe.id == id).one_or_none()
     if not loe:
         raise HTTPException(status_code=404)
+    loe_engine.validate_scope(loe.scope_type, loe.scope_value)
+    loe_engine.can_user_manage_loe(user, loe.scope_type, loe.scope_value)
+    role_name = getattr(getattr(user, 'role', None), 'name', str(getattr(user, 'role', '')))
+    company_loe_write_enabled = os.getenv("ALLOW_COMPANY_LOE_WRITE", "0").lower() in {"1", "true", "yes"}
     try:
-        rbac.authorize_create(user, scope_type=loe.scope_type, scope_value=loe.scope_value)
+        if not (role_name == 'COMPANY_CMD' and company_loe_write_enabled):
+            rbac.authorize_create(user, scope_type=loe.scope_type, scope_value=loe.scope_value)
     except HTTPException as e:
         crud.write_audit(db, {'id': f"audit-deny-loee-{id}", 'actor': user.username, 'action': 'denied_evaluate_loe', 'entity_type': 'loe', 'entity_id': id, 'scope_type': loe.scope_type, 'scope_value': loe.scope_value, 'after_json': {'reason': e.detail}})
         raise
-    metrics = crud.evaluate_loe(db, id)
-    return {"status": "ok", "data": _format_datetimes({"evaluated": len(metrics)})}
+    result = loe_engine.evaluate_loe(db, id)
+    return {"status": "ok", "data": _format_datetimes(result)}
+
+
+@router.get('/targeting/recommendations')
+def targeting_recommendations(scope_type: str = Query(...), scope_value: str = Query(...), db: Session = Depends(auth.get_db), user=Depends(require_user)):
+    st = (scope_type or '').upper()
+    sv = (scope_value or '').strip()
+    loe_engine.validate_scope(st, sv)
+
+    ns = rbac.normalize_scope(user.scope)
+    if ns['type'] != 'USAREC' and st != 'USAREC' and not sv.startswith(ns.get('value') or ''):
+        raise HTTPException(status_code=403, detail='requested scope outside user permissions')
+
+    data = targeting_expansion.recommendations_for_scope(db, st, sv)
+    return {"status": "ok", "data": _format_datetimes(data)}
+
+
+@router.get('/accountability/classification')
+def accountability_classification(scope_type: str = Query(...), scope_value: str = Query(...), db: Session = Depends(auth.get_db), user=Depends(require_user)):
+    st = (scope_type or '').upper()
+    sv = (scope_value or '').strip()
+    loe_engine.validate_scope(st, sv)
+
+    ns = rbac.normalize_scope(user.scope)
+    if ns['type'] != 'USAREC' and st != 'USAREC' and not sv.startswith(ns.get('value') or ''):
+        raise HTTPException(status_code=403, detail='requested scope outside user permissions')
+
+    data = accountability_engine.classify_scope(db, st, sv)
+    return {"status": "ok", "data": _format_datetimes(data)}
+
+
+@router.get('/school-access/summary')
+def school_access_summary(scope_type: str = Query(...), scope_value: str = Query(...), db: Session = Depends(auth.get_db), user=Depends(require_user)):
+    st = (scope_type or '').upper()
+    sv = (scope_value or '').strip()
+    loe_engine.validate_scope(st, sv)
+    ns = rbac.normalize_scope(user.scope)
+    if ns['type'] != 'USAREC' and st != 'USAREC' and not sv.startswith(ns.get('value') or ''):
+        raise HTTPException(status_code=403, detail='requested scope outside user permissions')
+    payload = school_access.summarize_school_access(db, st, sv, st, sv, top_n=25)
+    return _format_datetimes(payload)
+
+
+@router.get('/execution-quality/summary')
+def execution_quality_summary(scope_type: str = Query(...), scope_value: str = Query(...), db: Session = Depends(auth.get_db), user=Depends(require_user)):
+    st = (scope_type or '').upper()
+    sv = (scope_value or '').strip()
+    loe_engine.validate_scope(st, sv)
+    ns = rbac.normalize_scope(user.scope)
+    if ns['type'] != 'USAREC' and st != 'USAREC' and not sv.startswith(ns.get('value') or ''):
+        raise HTTPException(status_code=403, detail='requested scope outside user permissions')
+    payload = execution_quality.summarize_execution_quality(db, st, sv, st, sv)
+    return _format_datetimes(payload)
+
+
+@router.post('/forecasting/scenario')
+def forecasting_scenario(payload: dict, db: Session = Depends(auth.get_db), user=Depends(require_user)):
+    st = str(payload.get('scope_type') or '').upper()
+    sv = str(payload.get('scope_value') or '').strip()
+    loe_engine.validate_scope(st, sv)
+    ns = rbac.normalize_scope(user.scope)
+    if ns['type'] != 'USAREC' and st != 'USAREC' and not sv.startswith(ns.get('value') or ''):
+        raise HTTPException(status_code=403, detail='requested scope outside user permissions')
+    out = forecasting.project_scope(db, st, sv, assumptions=payload.get('assumptions') or {})
+    return {"status": "ok", "data": _format_datetimes(out)}
+
+
+@router.post('/what-if/run')
+def run_what_if(payload: dict, db: Session = Depends(auth.get_db), user=Depends(require_user)):
+    st = str(payload.get('scope_type') or '').upper()
+    sv = str(payload.get('scope_value') or '').strip()
+    loe_engine.validate_scope(st, sv)
+    ns = rbac.normalize_scope(user.scope)
+    if ns['type'] != 'USAREC' and st != 'USAREC' and not sv.startswith(ns.get('value') or ''):
+        raise HTTPException(status_code=403, detail='requested scope outside user permissions')
+    out = what_if.run_what_if(db, st, sv, payload.get('scenario') or {})
+    return {"status": "ok", "data": _format_datetimes(out)}
+
+
+@router.post('/writeback/decision')
+def writeback_decision(payload: dict, db: Session = Depends(auth.get_db), user=Depends(require_user)):
+    st = str(payload.get('scope_type') or '').upper()
+    sv = str(payload.get('scope_value') or '').strip()
+    loe_engine.validate_scope(st, sv)
+
+    role_name = getattr(getattr(user, 'role', None), 'name', str(getattr(user, 'role', '')))
+    company_write_enabled = os.getenv("ALLOW_COMPANY_LOE_WRITE", "0").lower() in {"1", "true", "yes"}
+    if role_name == 'STATION_VIEW':
+        raise HTTPException(status_code=403, detail='role not permitted to write decisions')
+    if role_name == 'COMPANY_CMD' and not company_write_enabled:
+        raise HTTPException(status_code=403, detail='company commander writeback disabled by policy')
+    if role_name == 'COMPANY_CMD' and not sv.startswith((user.scope or '')[:3]):
+        raise HTTPException(status_code=403, detail='requested scope outside user permissions')
+
+    rbac.authorize_create(user, scope_type=st, scope_value=sv)
+
+    out = decision_writeback.writeback_change(
+        db,
+        actor=getattr(user, 'username', 'unknown'),
+        scope_type=st,
+        scope_value=sv,
+        decision_type=str(payload.get('decision_type') or 'targeting_shift'),
+        summary=str(payload.get('summary') or 'Operational writeback'),
+        before_json=payload.get('before') or {},
+        after_json=payload.get('after') or {},
+    )
+    return {"status": "ok", "data": _format_datetimes(out)}
+
+
+@router.get('/recommendations/actionable')
+def actionable_recommendations(scope_type: str = Query(...), scope_value: str = Query(...), db: Session = Depends(auth.get_db), user=Depends(require_user)):
+    st = (scope_type or '').upper()
+    sv = (scope_value or '').strip()
+    loe_engine.validate_scope(st, sv)
+    ns = rbac.normalize_scope(user.scope)
+    if ns['type'] != 'USAREC' and st != 'USAREC' and not sv.startswith(ns.get('value') or ''):
+        raise HTTPException(status_code=403, detail='requested scope outside user permissions')
+    out = ai_recommendation_engine.generate_recommendation_bundle(db, st, sv)
+    return {"status": "ok", "data": _format_datetimes(out)}
+
+
+@router.get('/lms/performance-correction')
+def lms_performance_correction(scope_type: str = Query(...), scope_value: str = Query(...), role: str = Query('commander'), db: Session = Depends(auth.get_db), user=Depends(require_user)):
+    st = (scope_type or '').upper()
+    sv = (scope_value or '').strip()
+    loe_engine.validate_scope(st, sv)
+    ns = rbac.normalize_scope(user.scope)
+    if ns['type'] != 'USAREC' and st != 'USAREC' and not sv.startswith(ns.get('value') or ''):
+        raise HTTPException(status_code=403, detail='requested scope outside user permissions')
+
+    accountability = accountability_engine.classify_scope(db, st, sv)
+    modules = lms_performance_bridge.recommendations_for_classification(accountability.get('classification'), role)
+    return {"status": "ok", "data": _format_datetimes({
+        "scope_type": st,
+        "scope_value": sv,
+        "classification": accountability.get('classification'),
+        "recommended_modules": modules,
+    })}
+
+
+@router.post('/ingest/validate-contract')
+def validate_ingest_contract(payload: dict, user=Depends(require_user)):
+    dataset_type = str(payload.get('dataset_type') or '')
+    columns = payload.get('columns') or []
+    ok, data = ingest_contracts.validate_contract(dataset_type, columns)
+    return {
+        "status": "ok" if ok else "invalid_dataset_schema",
+        "data": _format_datetimes(data),
+    }
 
 
 @router.post('/decisions')
@@ -364,6 +559,24 @@ def command_summary(scope_type: Optional[str] = Query(None), scope_value: Option
 
     mp = market_potential(scope_type, scope_value, db, user)
 
+    effective_scope_type = (scope_type or rbac.normalize_scope(user.scope)['type'] or 'USAREC').upper()
+    effective_scope_value = (scope_value or rbac.normalize_scope(user.scope).get('value') or '')
+
+    loe_summary = loe_engine.summarize_loes(db, effective_scope_type, effective_scope_value)
+    targeting_summary = targeting_expansion.recommendations_for_scope(db, effective_scope_type, effective_scope_value, top_n=5)
+    accountability_summary = accountability_engine.classify_scope(db, effective_scope_type, effective_scope_value)
+    school_access_summary = school_access.summarize_school_access(db, effective_scope_type, effective_scope_value, effective_scope_type, effective_scope_value)
+    execution_summary = execution_quality.summarize_execution_quality(db, effective_scope_type, effective_scope_value, effective_scope_type, effective_scope_value)
+    market_summary = market_qma.summarize_market_qma(db, effective_scope_type, effective_scope_value, effective_scope_type, effective_scope_value)
+    loe_blockers = loe_engine.loe_blockers(
+        db,
+        effective_scope_type,
+        effective_scope_value,
+        market_summary.get('market_qma', {}).get('summary', {}),
+        school_access_summary.get('school_access', {}).get('summary', {}),
+        execution_summary.get('execution_quality', {}).get('summary', {}),
+    )
+
     return {"status": "ok", "data": _format_datetimes({
         'leads': leads,
         'conversions': conversions,
@@ -372,5 +585,15 @@ def command_summary(scope_type: Optional[str] = Query(None), scope_value: Option
         'burden_ratio': burden_ratio,
         'loe_status': loe_status,
         'market_coverage': market_counts,
-        'market_potential': mp['data'] if isinstance(mp, dict) and mp.get('status') == 'ok' else None
+        'market_potential': mp['data'] if isinstance(mp, dict) and mp.get('status') == 'ok' else None,
+        'loe_summary': loe_summary,
+        'targeting_recommendations_summary': {
+            'top_recommendations': targeting_summary.get('recommendations', [])[:5],
+            'formula': targeting_summary.get('formula', {}),
+        },
+        'accountability_summary': accountability_summary,
+        'market_qma_summary': market_summary.get('market_qma', {}).get('summary', {}),
+        'school_access_summary': school_access_summary.get('school_access', {}).get('summary', {}),
+        'execution_quality_summary': execution_summary.get('execution_quality', {}).get('summary', {}),
+        'loe_blockers': loe_blockers,
     })}

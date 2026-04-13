@@ -28,22 +28,36 @@ def teardown_module(module):
 
 def create_org_fixture(db):
     # create a simple org: command -> brigade 1 -> battalions 1A,1B -> companies -> stations
-    cmd = models.Command(command='CMD1', display='CMD1')
-    db.add(cmd)
+    cmd = db.query(models.Command).filter(models.Command.command == 'CMD1').first()
+    if not cmd:
+        cmd = models.Command(command='CMD1', display='CMD1')
+        db.add(cmd)
+        db.commit()
+
+    bde = db.query(models.Brigade).filter(models.Brigade.brigade_prefix == '1').first()
+    if not bde:
+        bde = models.Brigade(brigade_prefix='1', display='Br1', command_id=cmd.id)
+        db.add(bde)
+        db.commit()
+
+    bn1 = db.query(models.Battalion).filter(models.Battalion.battalion_prefix == '1A').first()
+    if not bn1:
+        bn1 = models.Battalion(battalion_prefix='1A', display='Bn1A', brigade_id=bde.id)
+        db.add(bn1)
+    bn2 = db.query(models.Battalion).filter(models.Battalion.battalion_prefix == '1B').first()
+    if not bn2:
+        bn2 = models.Battalion(battalion_prefix='1B', display='Bn1B', brigade_id=bde.id)
+        db.add(bn2)
     db.commit()
 
-    bde = models.Brigade(brigade_prefix='1', display='Br1', command_id=cmd.id)
-    db.add(bde)
-    db.commit()
-
-    bn1 = models.Battalion(battalion_prefix='1A', display='Bn1A', brigade_id=bde.id)
-    bn2 = models.Battalion(battalion_prefix='1B', display='Bn1B', brigade_id=bde.id)
-    db.add_all([bn1, bn2])
-    db.commit()
-
-    co1 = models.Company(company_prefix='1A1', display='Co1A1', battalion_id=bn1.id)
-    co2 = models.Company(company_prefix='1B1', display='Co1B1', battalion_id=bn2.id)
-    db.add_all([co1, co2])
+    co1 = db.query(models.Company).filter(models.Company.company_prefix == '1A1').first()
+    if not co1:
+        co1 = models.Company(company_prefix='1A1', display='Co1A1', battalion_id=bn1.id)
+        db.add(co1)
+    co2 = db.query(models.Company).filter(models.Company.company_prefix == '1B1').first()
+    if not co2:
+        co2 = models.Company(company_prefix='1B1', display='Co1B1', battalion_id=bn2.id)
+        db.add(co2)
     db.commit()
 
     st1 = db.query(models.Station).filter(models.Station.rsid == '1A1D').first()
@@ -56,9 +70,20 @@ def create_org_fixture(db):
         db.add(st2); db.commit()
 
     # add coverage
-    c1 = models.StationZipCoverage(station_rsid='1A1D', zip_code='12345', market_category=models.MarketCategory.MK)
-    c2 = models.StationZipCoverage(station_rsid='1B1D', zip_code='23456', market_category=models.MarketCategory.MW)
-    db.add_all([c1, c2])
+    c1 = db.query(models.StationZipCoverage).filter(
+        models.StationZipCoverage.station_rsid == '1A1D',
+        models.StationZipCoverage.zip_code == '12345',
+    ).first()
+    if not c1:
+        c1 = models.StationZipCoverage(station_rsid='1A1D', zip_code='12345', market_category=models.MarketCategory.MK)
+        db.add(c1)
+    c2 = db.query(models.StationZipCoverage).filter(
+        models.StationZipCoverage.station_rsid == '1B1D',
+        models.StationZipCoverage.zip_code == '23456',
+    ).first()
+    if not c2:
+        c2 = models.StationZipCoverage(station_rsid='1B1D', zip_code='23456', market_category=models.MarketCategory.MW)
+        db.add(c2)
     db.commit()
 
 

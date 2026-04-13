@@ -5,6 +5,7 @@ import tempfile
 from fastapi.testclient import TestClient
 from services.api.app.main import app
 from services.api.app import database
+from sqlalchemy.orm import sessionmaker
 
 
 def setup_temp_db(tmp_path):
@@ -17,6 +18,17 @@ def setup_temp_db(tmp_path):
     except Exception:
         pass
     from services.api.app import db as app_db
+    try:
+        # This test intentionally switches DB paths at runtime.
+        # Clear harness raw-connection hooks and rebind SessionLocal so
+        # request handlers use the same temp DB file configured above.
+        app_db.set_test_raw_conn(None)
+        database.set_shared_session(None)
+        database.SessionLocal = database.SessionProxy(
+            sessionmaker(autocommit=False, autoflush=False, bind=database.engine)
+        )
+    except Exception:
+        pass
     app_db.init_schema()
     # create refresh-related tables expected by the new slice
     conn = sqlite3.connect(db_path)

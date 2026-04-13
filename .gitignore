@@ -4,3 +4,17 @@ node_modules
 venv/
 __pycache__/
 *.pyc
+*.pyo
+*.sqlite3
+*.db
+*.db-shm
+*.db-wal
+.env
+.data/
+uploads/
+data/uploads/
+data/refresh_uploads/
+services/api/.data/
+*.log
+tmp/
+tools/e2e_results/

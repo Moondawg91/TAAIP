@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Request, Header, HTTPException, UploadFi
 from services.api.app.db import get_db_conn, init_db, execute_with_retry
 from services.api.app.database import SessionLocal
 from services.api.app import crud_domain as crud_domain
-from services.api.app.routers.rbac import get_current_user, require_not_role, require_roles
+from services.api.app.routers.rbac import get_current_user, require_any_role, require_not_role, require_roles
 from services.api.app import auth
 from datetime import datetime
 import sqlite3
@@ -1726,8 +1726,19 @@ def burden_latest(scope_type: str = None, scope_value: str = None, db: Session =
 
 
 @router.post("/loes")
-def create_loe(payload: dict, user: dict = Depends(require_roles("usarec_admin")), db: Session = Depends(auth.get_db)):
+def create_loe(payload: dict, user: dict = Depends(require_any_role("usarec_admin", "company_cmd")), db: Session = Depends(auth.get_db)):
     try:
+        roles = [r.lower() for r in (user or {}).get("roles", [])] if isinstance(user, dict) else []
+        is_company_cmd = "company_cmd" in roles
+        if is_company_cmd:
+            company_loe_write_enabled = os.getenv("ALLOW_COMPANY_LOE_WRITE", "0").lower() in {"1", "true", "yes"}
+            if not company_loe_write_enabled:
+                raise HTTPException(status_code=403, detail="company commander LOE write disabled by policy")
+            user_scope = (user or {}).get("scopes") if isinstance(user, dict) else None
+            user_scope = user_scope if isinstance(user_scope, str) else ""
+            req_scope_value = (payload or {}).get("scope_value") or ""
+            if user_scope and req_scope_value and not req_scope_value.startswith(user_scope[:3]):
+                raise HTTPException(status_code=403, detail="requested scope outside user permissions")
         from services.api.app import crud_domain as crud
         loe = crud.create_loe(db, payload)
         return {"status": "ok", "id": loe.id}

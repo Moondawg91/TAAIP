@@ -199,6 +199,15 @@ def create_loe(db: Session, payload: dict):
             raise
 
 
+def list_loes(db: Session, scope_type: Optional[str] = None, scope_value: Optional[str] = None):
+    q = db.query(domain.Loe)
+    if scope_type:
+        q = q.filter(domain.Loe.scope_type == scope_type)
+    if scope_value:
+        q = q.filter(domain.Loe.scope_value.like(f"{scope_value}%"))
+    return q.order_by(domain.Loe.created_at.desc())
+
+
 def create_loe_metric(db: Session, payload: dict):
     payload.pop('created_at', None)
     payload.pop('updated_at', None)
