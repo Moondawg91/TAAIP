@@ -95,6 +95,10 @@ Evidence placeholder
 Objective
 - Targeting methodology, targeting data ingestion, mission planning pages, boards.
 
+Feature Status
+- Targeting Execution Tracker (420T core execution): DONE
+- Scope completed: authoritative execution/status engine, mission adjustment integration, command center integration, Power BI operational export, focused tests, API docs
+
 Acceptance Criteria
 - `/api/operations/targeting-data` ingest and query endpoints exist.
 

@@ -186,6 +186,45 @@ Response highlights:
 - `one_slide_payload`: compact briefing payload for command syncs.
 - `evidence`: traceable source snapshots (when `include_evidence=true`).
 
+## Targeting Execution Tracker (420T Core Execution)
+
+Authoritative execution/status engine:
+
+- service: `services/api/app/services/targeting_execution_tracker.py`
+- function: `summarize_targeting_execution_tracker(...)`
+
+Purpose:
+
+- consume board-directed execution items and shifts
+- track execution status (`not_started | in_progress | completed | blocked`)
+- classify off-track work (overdue, blocked, or effect miss)
+- escalate stalled items to `TWG` or `BOARD`
+- publish command-ready execution scorecards
+
+Authoritative inputs only (no recomputation of upstream analytics):
+
+- `targeting_board_engine`: `board_decisions`, `directed_shifts`, `downstream_twg_tasks`
+- `twg_engine`: `prioritized_items`, `due_outs`
+- `asset_engine`: `asset_distribution`, `recommended_shifts`, `execution_constraints`
+- `mission_decrease_justification` (when provided or fetched by tracker)
+- `funnel_engine`, `school_plan_engine`, `roi_engine`
+
+Canonical output block:
+
+- `summary`
+- `execution_items`
+- `blocked_items`
+- `off_track_items`
+- `escalations`
+- `execution_scorecard`
+- `data_sources`
+
+Integration points:
+
+- mission adjustment signal collection (`mission_decrease_justification.py`)
+- command center phase2 (`command_center.py`)
+- Power BI operational dataset export (`powerbi_feed.py`)
+
 ## Market Intelligence Engine (420T)
 
 The Market Intelligence Engine is implemented in:
