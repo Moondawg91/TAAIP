@@ -239,7 +239,7 @@ def _compute_factor_candidates(
             "source": "fact_production",
             "signal_key": "mission",
             "recency_score": 1.0,
-            "agreement_tokens": ["mission_decrease"] if mission_delta_pct < 0 else ["mission_stable"],
+            "agreement_tokens": ["mission_increase"] if mission_delta_pct > 0 else (["mission_decrease"] if mission_delta_pct < 0 else ["mission_stable"]),
             "rationale": "Current mission output compared to baseline window.",
         },
         {
@@ -341,7 +341,7 @@ def derive_confidence_band(score: float) -> str:
     return "low"
 
 
-def _compute_confidence(ranked_factors: List[Dict], signals: Dict, mission_has_data: bool) -> Dict:
+def _compute_confidence(ranked_factors: List[Dict], signals: Dict, mission_has_data: bool) -> Tuple[Dict, float]:
     completeness_checks = [
         bool(signals["market"]["summary"]),
         bool(signals["access"]["summary"]),
@@ -358,24 +358,182 @@ def _compute_confidence(ranked_factors: List[Dict], signals: Dict, mission_has_d
 
     agreement_signal = sum(float(x.get("agreement_score") or 0.0) for x in ranked_factors[:3]) / float(max(1, len(ranked_factors[:3])))
 
-    confidence_score = min(1.0, 0.45 * completeness + 0.35 * impact_signal + 0.20 * agreement_signal)
+    recency_checks = [
+        bool(signals["market"].get("data_as_of")),
+        bool(signals["access"].get("data_as_of")),
+        bool(signals["execution"].get("data_as_of")),
+        bool(signals["accountability"].get("data_as_of")),
+        bool(signals["loe"].get("data_as_of")),
+        bool(signals["targeting"].get("data_as_of")),
+    ]
+    recency_signal = sum(1 for x in recency_checks if x) / float(len(recency_checks))
+
+    confidence_score = min(
+        1.0,
+        0.35 * completeness + 0.25 * impact_signal + 0.20 * agreement_signal + 0.20 * recency_signal,
+    )
     return {
         "score": round(confidence_score, 4),
         "band": derive_confidence_band(confidence_score),
         "completeness": round(completeness, 4),
         "agreement": round(agreement_signal, 4),
+    }, round(recency_signal, 4)
+
+
+def _access_is_strong(access_summary: Dict) -> bool:
+    penetration = float(access_summary.get("penetration_rate") or 0.0)
+    status = str(access_summary.get("overall_access_status") or "").lower()
+    return penetration >= 0.5 or status in {"access_supportive", "supportive", "green"}
+
+
+def _access_is_weak(access_summary: Dict) -> bool:
+    penetration = float(access_summary.get("penetration_rate") or 0.0)
+    status = str(access_summary.get("overall_access_status") or "").lower()
+    return penetration <= 0.35 or status in {"access_constrained", "constrained", "red"}
+
+
+def _count_degraded_causal_factors(ranked_factors: List[Dict]) -> int:
+    return sum(1 for f in ranked_factors[:5] if float(f.get("impact") or 0.0) < 0)
+
+
+def _magnitude_from_delta(delta_pct: float, confidence_score: float, loe_rag: str, degraded_factor_count: int) -> str:
+    abs_delta = abs(float(delta_pct or 0.0))
+
+    level = 0
+    if abs_delta >= 0.15:
+        level = 2
+    elif abs_delta >= 0.06:
+        level = 1
+
+    if (str(loe_rag or "").lower() == "red" and degraded_factor_count >= 2) or degraded_factor_count >= 3:
+        level = min(2, level + 1)
+
+    if float(confidence_score or 0.0) < 0.45:
+        level = max(0, level - 1)
+
+    return ["minor", "moderate", "significant"][level]
+
+
+def _infer_owner_level(scope_type: str) -> str:
+    st = str(scope_type or "").upper()
+    if st in {"USAREC", "BDE", "BN"}:
+        return "BN"
+    if st == "CO":
+        return "CO"
+    return "STN"
+
+
+def _build_confidence_explanation(confidence: Dict, recency_signal: float, degraded_factor_count: int) -> str:
+    band = str(confidence.get("band") or "low").lower()
+    completeness = float(confidence.get("completeness") or 0.0)
+    agreement = float(confidence.get("agreement") or 0.0)
+
+    if band == "high":
+        return (
+            f"Confidence is high because completeness ({completeness:.0%}), cross-signal agreement ({agreement:.0%}), "
+            f"and data recency ({recency_signal:.0%}) are strong."
+        )
+    if band == "medium":
+        return (
+            f"Confidence is medium because coverage is partial (completeness {completeness:.0%}) and agreement is moderate "
+            f"({agreement:.0%}) with {degraded_factor_count} degraded drivers."
+        )
+    return (
+        f"Confidence is low because signal coverage ({completeness:.0%}) and cross-signal agreement ({agreement:.0%}) are limited, "
+        f"with data recency at {recency_signal:.0%}."
+    )
+
+
+def _derive_recommended_action(
+    mission_delta_pct: float,
+    loe_summary: Dict,
+    signals: Dict,
+    confidence: Dict,
+    ranked_factors: List[Dict],
+) -> Dict:
+    """
+    Deterministic mission adjustment rule set.
+
+    Rules:
+    1) Increase: performance above baseline + strong LOE + strong access + confidence floor.
+    2) Decrease: performance below baseline + degraded LOE + weak access + confidence floor.
+    3) Otherwise: hold.
+    """
+    delta = float(mission_delta_pct or 0.0)
+    conf_score = float(confidence.get("score") or 0.0)
+    loe_rag = str(loe_summary.get("rag") or "amber").lower()
+    access_summary = (signals.get("access") or {}).get("summary") or {}
+
+    strong_loe = loe_rag == "green"
+    degraded_loe = loe_rag == "red"
+    strong_access = _access_is_strong(access_summary)
+    weak_access = _access_is_weak(access_summary)
+
+    action_type = "hold"
+    if delta > 0.05 and strong_loe and strong_access and conf_score >= 0.55:
+        action_type = "increase"
+    elif delta < -0.05 and degraded_loe and weak_access and conf_score >= 0.40:
+        action_type = "decrease"
+
+    degraded_factor_count = _count_degraded_causal_factors(ranked_factors)
+    magnitude = _magnitude_from_delta(
+        delta_pct=delta,
+        confidence_score=conf_score,
+        loe_rag=loe_rag,
+        degraded_factor_count=degraded_factor_count,
+    )
+    top_labels = [str(f.get("label") or "") for f in ranked_factors[:3] if str(f.get("label") or "").strip()]
+    driver_text = ", ".join(top_labels[:2]) if top_labels else "cross-signal conditions"
+
+    if action_type == "increase":
+        rationale = (
+            f"Performance is above baseline with supportive LOE and access conditions; {driver_text} support an increase posture."
+        )
+    elif action_type == "decrease":
+        rationale = (
+            f"Performance is below baseline with degraded LOE and constrained access; {driver_text} indicate sustained downside risk."
+        )
+    else:
+        rationale = (
+            f"Signals are mixed or not yet decisive; maintain current mission while stabilizing {driver_text}."
+        )
+
+    return {
+        "type": action_type,
+        "magnitude": magnitude,
+        "confidence": round(conf_score, 4),
+        "rationale": rationale,
     }
 
 
-def _targeting_shift_recommendation(signals: Dict) -> Dict:
+def _decision_summary(recommended_action: Dict, mission_delta_summary: Dict, confidence: Dict, loe_summary: Dict) -> Dict:
+    return {
+        "recommended_action": str(recommended_action.get("type") or "hold"),
+        "mission_delta": float(mission_delta_summary.get("delta") or 0.0),
+        "confidence_score": float(confidence.get("score") or 0.0),
+        "loe_rag": str(loe_summary.get("rag") or "amber").lower(),
+    }
+
+
+def _targeting_shift_recommendation(signals: Dict, owner_level: str) -> Dict:
     recs = list((signals["targeting"]["raw"].get("recommendations") or []))
     if not recs:
         return {
             "type": "targeting_shift",
-            "priority": 3,
-            "title": "No targeting rows available",
-            "rationale": "Targeting recommendation engine returned no eligible rows for this scope.",
-            "actions": ["Validate StationZipCoverage and market weighting data."],
+            "priority": 2,
+            "title": f"{owner_level} establish priority targeting coverage",
+            "owner_level": owner_level,
+            "action": "Establish targeting coverage for the top five priority schools within the area of operations.",
+            "expected_effect": "Improves access depth and enables higher-confidence mission adjustments in the next cycle.",
+            "time_horizon": "next 14 days",
+            "rationale": "Current targeting coverage is insufficient to support a high-confidence mission adjustment.",
+            "linked_factors": ["school_access", "market_capability"],
+            "source": "targeting_expansion",
+            "timestamp": datetime.utcnow().isoformat() + "Z",
+            "actions": [
+                "Assign ownership for school outreach by station and company.",
+                "Publish weekly targeting coverage updates in command sync.",
+            ],
             "evidence_refs": ["ev-targeting-empty"],
         }
 
@@ -391,11 +549,18 @@ def _targeting_shift_recommendation(signals: Dict) -> Dict:
     return {
         "type": "targeting_shift",
         "priority": 1,
-        "title": f"Shift effort to station {top.get('station_rsid', 'unknown')} zip {top.get('zip_code', 'unknown')}",
+        "title": f"{owner_level} shift effort to station {top.get('station_rsid', 'unknown')} ZIP {top.get('zip_code', 'unknown')}",
+        "owner_level": owner_level,
+        "action": f"Reallocate prospecting and school engagement effort to station {top.get('station_rsid', 'unknown')} in ZIP {top.get('zip_code', 'unknown')} for the next 14 days.",
+        "expected_effect": "Increases high-yield targeting coverage and improves conversion opportunity over the next reporting window.",
+        "time_horizon": "next 14 days",
         "rationale": (
             f"Top priority_score={round(float(top.get('priority_score') or 0.0), 2)} with "
             f"warning_severity={round(float(top.get('warning_severity') or 0.0), 3)}"
         ),
+        "linked_factors": ["school_access", "market_capability", "execution_stalls"],
+        "source": "targeting_expansion",
+        "timestamp": datetime.utcnow().isoformat() + "Z",
         "actions": [
             "Re-allocate recruiter effort blocks for next 14 days.",
             "Align outreach cadence with F3A cycle.",
@@ -483,49 +648,74 @@ def _generate_executive_summary(mission_delta_pct: float, factors: List[Dict], l
 def generate_commander_narrative(
     mission_delta_pct: float,
     factors: List[Dict],
-    recommendation: Dict,
+    recommended_action: Dict,
+    loe_summary: Dict,
+    confidence: Dict,
     accountability_brief: Dict,
 ) -> str:
-    if not factors:
-        return (
-            "Signal coverage is limited for this scope and period. Command should verify ingestion freshness, "
-            "then re-run decision output before committing to a mission shift."
-        )
+    top_labels = [str(f.get("label") or "") for f in factors[:3] if str(f.get("label") or "").strip()]
+    while len(top_labels) < 3:
+        top_labels.append("cross-signal conditions")
 
-    direction = "decrease pressure" if mission_delta_pct < 0 else "stable/improving output"
-    top_factor = factors[0]
-    return (
-        f"The period shows {direction}. The strongest contributor is {top_factor.get('label', 'unknown factor')} "
-        f"({top_factor.get('rationale', 'no rationale')}). Recommended action is to {recommendation.get('title', 'hold current posture')}. "
-        f"Accountability classification is {accountability_brief.get('classification', 'unknown')} with "
-        f"{len(accountability_brief.get('overdue_items') or [])} overdue item(s)."
-    )
+    delta = float(mission_delta_pct or 0.0)
+    loe_rag = str(loe_summary.get("rag") or "amber").upper()
+    action_type = str(recommended_action.get("type") or "hold")
+    confidence_band = str(confidence.get("band") or "low").upper()
+    accountability_class = str(accountability_brief.get("classification") or "insufficient_data").replace("_", " ")
+
+    if delta > 0.05:
+        s1 = "Current mission performance is running above baseline in the current operating window."
+    elif delta < -0.05:
+        s1 = "Current mission performance is running below baseline in the current operating window."
+    else:
+        s1 = "Current mission performance is near baseline and operating within a narrow variance band."
+
+    s2 = f"Primary drivers are {top_labels[0]}, {top_labels[1]}, and {top_labels[2]}."
+    s3 = f"Risk remains {loe_rag.lower()} with accountability assessed as {accountability_class}."
+    s4 = f"Recommendation: {action_type} mission output at {recommended_action.get('magnitude', 'minor')} magnitude with {confidence_band.lower()} confidence."
+
+    sentences = [s1, s2, s3, s4]
+    if action_type == "hold":
+        sentences.append("If access and execution indicators improve over the next cycle, reassess for a controlled increase.")
+
+    return " ".join(sentences[:5])
 
 
 def _build_one_slide_payload(
+    decision_summary: Dict,
+    executive_summary: List[str],
+    commander_narrative: str,
+    confidence_explanation: str,
     mission_delta_summary: Dict,
     factors: List[Dict],
-    recommendation: Dict,
+    recommendations: List[Dict],
     accountability_brief: Dict,
     loe_summary: Dict,
     confidence: Dict,
+    assumptions_and_limits: List[str],
 ) -> Dict:
     return {
-        "title": "Mission Decrease Justification",
+        "title": "Mission Adjustment Justification",
+        "decision_summary": decision_summary,
+        "executive_summary": executive_summary,
+        "commander_narrative": commander_narrative,
         "mission_delta": mission_delta_summary,
         "causal_factors": [
             {
                 "label": f.get("label"),
+                "code": f.get("factor_id"),
                 "impact": f.get("impact"),
                 "weighted_score": f.get("weighted_score"),
                 "rationale": f.get("rationale"),
             }
             for f in factors[:5]
         ],
-        "recommended_shift": recommendation,
-        "accountability": accountability_brief,
-        "loe": loe_summary,
+        "recommendations": recommendations,
+        "accountability_brief": accountability_brief,
+        "loe_summary": loe_summary,
         "confidence": confidence,
+        "confidence_explanation": confidence_explanation,
+        "assumptions_and_limits": assumptions_and_limits,
     }
 
 
@@ -577,7 +767,7 @@ def _build_evidence_list(request_id: str, signals: Dict, mission_current: Missio
                 "evidence_id": "ev-targeting-empty",
                 "trace_id": f"{request_id}:targeting:empty",
                 "source": "targeting",
-                "fields": {"message": "No targeting recommendations available"},
+                "fields": {"message": "Targeting coverage dataset is currently sparse"},
                 "timestamp": datetime.utcnow().isoformat() + "Z",
             }
         )
@@ -636,14 +826,17 @@ def generate_mission_decrease_justification(
     candidates = _compute_factor_candidates(mission_delta_pct, signals)
     ranked_factors = rank_causal_factors(candidates)
 
-    targeting_recommendation = _targeting_shift_recommendation(signals)
+    owner_level = _infer_owner_level(scope_type)
+    targeting_recommendation = _targeting_shift_recommendation(signals, owner_level)
     accountability_brief = _build_accountability_brief(scope_type, scope_value, signals)
     loe_summary = _build_loe_summary(signals)
-    confidence = _compute_confidence(
+    confidence, recency_signal = _compute_confidence(
         ranked_factors,
         signals,
         mission_has_data=(mission_current.total is not None and mission_baseline.total is not None),
     )
+    degraded_factor_count = _count_degraded_causal_factors(ranked_factors)
+    confidence_explanation = _build_confidence_explanation(confidence, recency_signal, degraded_factor_count)
 
     mission_delta_summary = {
         "current_period": {
@@ -662,8 +855,27 @@ def generate_mission_decrease_justification(
         "delta_pct": round(mission_delta_pct, 6),
     }
 
+    recommended_action = _derive_recommended_action(
+        mission_delta_pct=mission_delta_pct,
+        loe_summary=loe_summary,
+        signals=signals,
+        confidence=confidence,
+        ranked_factors=ranked_factors,
+    )
+    decision_summary = _decision_summary(recommended_action, mission_delta_summary, confidence, loe_summary)
+
     executive_summary = _generate_executive_summary(mission_delta_pct, ranked_factors, loe_summary, confidence)
-    commander_narrative = generate_commander_narrative(mission_delta_pct, ranked_factors, targeting_recommendation, accountability_brief)
+    executive_summary.append(
+        f"Recommended action: {recommended_action.get('type', 'hold').upper()} ({recommended_action.get('magnitude', 'minor')})."
+    )
+    commander_narrative = generate_commander_narrative(
+        mission_delta_pct=mission_delta_pct,
+        factors=ranked_factors,
+        recommended_action=recommended_action,
+        loe_summary=loe_summary,
+        confidence=confidence,
+        accountability_brief=accountability_brief,
+    )
 
     evidence = _build_evidence_list(request_id, signals, mission_current, mission_baseline, include_evidence)
 
@@ -679,22 +891,40 @@ def generate_mission_decrease_justification(
             "trace_id": f"{request_id}:recommendation:accountability",
             "kind": "accountability_action",
             "priority": 2,
-            "title": "Execute accountability recovery actions",
+            "title": f"{owner_level} execute accountability recovery actions",
+            "owner_level": owner_level,
+            "action": "Assign owners to overdue accountability actions and close execution gaps in the next command cycle.",
+            "expected_effect": "Reduces execution risk and improves accountability signal quality for the next mission adjustment decision.",
+            "time_horizon": "next command cycle",
             "rationale": (
                 f"classification={accountability_brief.get('classification')} "
                 f"overdue={len(accountability_brief.get('overdue_items') or [])}"
             ),
+            "linked_factors": ["accountability_classification", "execution_stalls"],
+            "source": "accountability_engine",
+            "timestamp": datetime.utcnow().isoformat() + "Z",
             "actions": accountability_brief.get("overdue_items") or ["Validate accountability inputs and owners."],
             "evidence_refs": ["ev-accountability"],
         },
+    ]
+
+    assumptions_and_limits = [
+        "Mission delta is derived from fact_production totals for the requested and baseline windows.",
+        "Signals without active datasets are treated as neutral and surfaced in evidence.",
+        "Causal factors are synthesized from existing engines and do not represent a causal proof model.",
+        "Deterministic sorting uses weighted_score desc then factor code asc.",
     ]
 
     output = {
         "request_id": request_id,
         "traceability_id": f"trace-{request_id}",
         "generated_at": datetime.utcnow().isoformat() + "Z",
+        "decision_output_name": "mission_adjustment_justification",
+        "mission_adjustment_type": "mission_adjustment",
         "scope": {"scope_type": scope_type, "scope_value": scope_value},
         "mission_delta_summary": mission_delta_summary,
+        "decision_summary": decision_summary,
+        "recommended_action": recommended_action,
         "causal_factors": [
             {
                 "factor_id": f"cf-{request_id}-{idx + 1}",
@@ -706,6 +936,7 @@ def generate_mission_decrease_justification(
                 "agreement_score": float(f.get("agreement_score") or 0.0),
                 "source": f.get("source"),
                 "rationale": f.get("rationale"),
+                "timestamp": datetime.utcnow().isoformat() + "Z",
             }
             for idx, f in enumerate(ranked_factors)
         ],
@@ -713,25 +944,50 @@ def generate_mission_decrease_justification(
         "accountability_brief": accountability_brief,
         "loe_summary": loe_summary,
         "confidence": confidence,
+        "confidence_explanation": confidence_explanation,
         "executive_summary": executive_summary,
         "commander_narrative": commander_narrative,
         "one_slide_payload": _build_one_slide_payload(
+            decision_summary,
+            executive_summary,
+            commander_narrative,
+            confidence_explanation,
             mission_delta_summary,
             ranked_factors,
-            recommendations[0],
+            recommendations,
             accountability_brief,
             loe_summary,
             confidence,
+            assumptions_and_limits,
         ),
-        "assumptions_and_limits": [
-            "Mission delta is derived from fact_production totals for the requested and baseline windows.",
-            "Signals without active datasets are treated as neutral and surfaced in evidence.",
-            "Causal factors are synthesized from existing engines and do not represent a causal proof model.",
-            "Deterministic sorting uses weighted_score desc then factor code asc.",
-        ],
+        "assumptions_and_limits": assumptions_and_limits,
         "evidence": evidence,
         "force_refresh_used": bool(force_refresh),
     }
 
     _cache_put(request_id, output)
     return output
+
+
+def generate_mission_adjustment_justification(
+    db,
+    org_id: str,
+    period_start: date,
+    period_end: date,
+    baseline_start: Optional[date] = None,
+    baseline_end: Optional[date] = None,
+    include_evidence: bool = True,
+    force_refresh: bool = False,
+) -> Dict:
+    # Compatibility wrapper: route and legacy callers can continue to use the
+    # mission-decrease function while output semantics are generalized.
+    return generate_mission_decrease_justification(
+        db=db,
+        org_id=org_id,
+        period_start=period_start,
+        period_end=period_end,
+        baseline_start=baseline_start,
+        baseline_end=baseline_end,
+        include_evidence=include_evidence,
+        force_refresh=force_refresh,
+    )

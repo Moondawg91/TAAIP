@@ -21,6 +21,20 @@ class ConfidencePayload(BaseModel):
     agreement: float
 
 
+class RecommendedActionPayload(BaseModel):
+    type: str
+    magnitude: str
+    confidence: float
+    rationale: str
+
+
+class DecisionSummaryPayload(BaseModel):
+    recommended_action: str
+    mission_delta: float
+    confidence_score: float
+    loe_rag: str
+
+
 class CausalFactorPayload(BaseModel):
     factor_id: str
     trace_id: str
@@ -31,6 +45,7 @@ class CausalFactorPayload(BaseModel):
     agreement_score: float
     source: str
     rationale: str
+    timestamp: Optional[datetime] = None
 
 
 class RecommendationPayload(BaseModel):
@@ -39,7 +54,14 @@ class RecommendationPayload(BaseModel):
     kind: str
     priority: int
     title: str
+    owner_level: str
+    action: str
+    expected_effect: str
+    time_horizon: Optional[str] = None
     rationale: str
+    linked_factors: List[str]
+    source: str
+    timestamp: Optional[datetime] = None
     actions: List[str]
     evidence_refs: List[str]
 
@@ -48,13 +70,18 @@ class MissionDecreaseJustificationResponse(BaseModel):
     request_id: str
     traceability_id: str
     generated_at: datetime
+    decision_output_name: str = "mission_adjustment_justification"
+    mission_adjustment_type: str = "mission_adjustment"
     scope: Dict[str, str]
     mission_delta_summary: Dict[str, Any]
+    decision_summary: DecisionSummaryPayload
+    recommended_action: RecommendedActionPayload
     causal_factors: List[CausalFactorPayload]
     recommendations: List[RecommendationPayload]
     accountability_brief: Dict[str, Any]
     loe_summary: Dict[str, Any]
     confidence: ConfidencePayload
+    confidence_explanation: str
     executive_summary: List[str]
     commander_narrative: str
     one_slide_payload: Dict[str, Any]
