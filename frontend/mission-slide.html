@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Mission Decrease One-Slide Brief</title>
+  <link rel="stylesheet" href="mission-slide.css" />
+</head>
+<body>
+  <main class="mdj-page">
+    <header class="mdj-page-header">
+      <h1>Mission Decrease Justification Brief</h1>
+      <a class="mdj-link" href="./index.html">Open Lead Scoring Demo</a>
+    </header>
+
+    <section class="mdj-form-panel">
+      <h2>Generate Decision Output</h2>
+      <form id="mdjForm" class="mdj-form">
+        <label>Org ID
+          <input id="org_id" type="text" required placeholder="1A1" />
+        </label>
+        <label>Period Start
+          <input id="period_start" type="date" required />
+        </label>
+        <label>Period End
+          <input id="period_end" type="date" required />
+        </label>
+        <label>Baseline Start
+          <input id="baseline_start" type="date" />
+        </label>
+        <label>Baseline End
+          <input id="baseline_end" type="date" />
+        </label>
+        <label class="mdj-checkbox">
+          <input id="include_evidence" type="checkbox" checked /> Include Evidence
+        </label>
+        <label class="mdj-checkbox">
+          <input id="force_refresh" type="checkbox" /> Force Refresh
+        </label>
+        <div class="mdj-actions">
+          <button type="submit">Generate One-Slide Brief</button>
+          <button id="mdjPrint" type="button">Print / Export</button>
+        </div>
+      </form>
+      <p id="mdjStatus" class="mdj-status"></p>
+    </section>
+
+    <section id="mdjSlideContainer" class="mdj-slide-container"></section>
+  </main>
+
+  <script type="module" src="mission-slide.js"></script>
+</body>
+</html>
