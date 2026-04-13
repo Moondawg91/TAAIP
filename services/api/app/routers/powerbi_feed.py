@@ -6,7 +6,7 @@ from fastapi.responses import StreamingResponse
 import csv
 import io
 from services.api.app import database as _dbmod
-from services.api.app.services import accountability_engine, execution_quality, funnel_engine, market_engine, school_access, school_plan_engine, targeting_engine
+from services.api.app.services import accountability_engine, execution_quality, funnel_engine, market_engine, roi_engine as _roi_engine_mod, school_access, school_plan_engine, targeting_engine
 
 router = APIRouter(prefix="/powerbi", tags=["powerbi"])
 
@@ -549,6 +549,7 @@ def operational_command_dataset(scope_type: str = 'USAREC', scope_value: str = '
         funnel = funnel_engine.summarize_funnel_engine(db, st, sv, st, sv)
         targeting = targeting_engine.summarize_targeting_engine(db, st, sv, st, sv)
         school_plan = school_plan_engine.summarize_school_plan_engine(db, st, sv, st, sv)
+        roi = _roi_engine_mod.summarize_roi_engine(db, st, sv, st, sv)
         accountability = accountability_engine.classify_scope(db, st, sv)
 
         return {
@@ -565,6 +566,10 @@ def operational_command_dataset(scope_type: str = 'USAREC', scope_value: str = '
                 'school_plan_summary': school_plan.get('school_plan_engine', {}).get('summary', {}),
                 'school_plan_prioritized_schools': school_plan.get('school_plan_engine', {}).get('prioritized_schools', []),
                 'school_plan_actions': school_plan.get('school_plan_engine', {}).get('school_recruiting_plan', []),
+                'roi_summary': roi.get('roi_engine', {}).get('summary', {}),
+                'roi_prioritized_events': roi.get('roi_engine', {}).get('prioritized_events', []),
+                'roi_recommendations': roi.get('roi_engine', {}).get('roi_recommendations', []),
+                'roi_event_type_performance': roi.get('roi_engine', {}).get('event_type_performance', []),
                 'accountability': accountability,
             }
         }

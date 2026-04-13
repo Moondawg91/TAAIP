@@ -14,6 +14,7 @@ from services.api.app.services import (
     funnel_engine,
     loe_engine,
     market_engine,
+    roi_engine,
     school_access,
     school_plan_engine,
     targeting_engine,
@@ -182,6 +183,7 @@ def _collect_signal_summaries(db, scope_type: str, scope_value: str) -> Dict:
     loe = loe_engine.summarize_loes(db, scope_type, scope_value)
     targeting = targeting_engine.summarize_targeting_engine(db, scope_type, scope_value, scope_type, scope_value, top_n=15)
     school_plan = school_plan_engine.summarize_school_plan_engine(db, scope_type, scope_value, scope_type, scope_value, top_n=15)
+    roi = roi_engine.summarize_roi_engine(db, scope_type, scope_value, scope_type, scope_value, top_n=15)
 
     return {
         "market": {
@@ -237,6 +239,12 @@ def _collect_signal_summaries(db, scope_type: str, scope_value: str) -> Dict:
             "source_dataset_name": (school_plan.get("school_plan_engine") or {}).get("source_school_dataset"),
             "rows_used": len(((school_plan.get("school_plan_engine") or {}).get("prioritized_schools") or [])),
         },
+        "roi": {
+            "raw": roi,
+            "summary": _safe_summary(roi, "roi_engine", "summary"),
+            "data_as_of": _safe_timestamp(roi, "roi_engine"),
+            "rows_used": len(((roi.get("roi_engine") or {}).get("prioritized_events") or [])),
+        },
     }
 
 
@@ -251,6 +259,7 @@ def _compute_factor_candidates(
     school_plan_summary = signals["school_plan"]["summary"]
     acc_summary = signals["accountability"]["summary"]
     loe_summary = signals["loe"]["summary"]
+    roi_summary = signals.get("roi", {}).get("summary") or {}
 
     loe_counts = loe_summary.get("status_counts") or {}
     loe_total = float(loe_summary.get("total_metrics") or 0.0)
@@ -347,6 +356,23 @@ def _compute_factor_candidates(
             "agreement_tokens": ["accountability_decrease_risk"] if acc_summary.get("classification") != "balanced" else ["accountability_supportive"],
             "rationale": f"classification={acc_summary.get('classification', 'unknown')}",
         },
+        {
+            "factor_id": "roi_effectiveness",
+            "label": "Event ROI effectiveness",
+            "impact": -1.0 * (
+                float(roi_summary.get("low_effectiveness_count") or 0)
+                / float(max(1, roi_summary.get("total_events_scored") or 1))
+            ),
+            "source": "roi_engine",
+            "signal_key": "roi",
+            "recency_score": 1.0 if signals.get("roi", {}).get("data_as_of") else 0.4,
+            "agreement_tokens": ["roi_decrease_risk"] if int(roi_summary.get("low_effectiveness_count") or 0) > 0 else ["roi_supportive"],
+            "rationale": (
+                f"low_effectiveness_count={roi_summary.get('low_effectiveness_count', 0)}, "
+                f"total_events_scored={roi_summary.get('total_events_scored', 0)}, "
+                f"avg_roi_score={roi_summary.get('avg_roi_score')}"
+            ),
+        },
     ]
     return factors
 
@@ -406,6 +432,7 @@ def _compute_confidence(ranked_factors: List[Dict], signals: Dict, mission_has_d
         bool(signals["loe"]["summary"]),
         bool(((signals["targeting"]["raw"].get("targeting_engine") or {}).get("prioritized_targets") or [])),
         bool(signals["school_plan"]["summary"]),
+        bool((signals.get("roi", {}).get("raw", {}).get("roi_engine") or {}).get("prioritized_events")),
         mission_has_data,
     ]
     completeness = sum(1 for x in completeness_checks if x) / float(len(completeness_checks))
@@ -424,6 +451,7 @@ def _compute_confidence(ranked_factors: List[Dict], signals: Dict, mission_has_d
         bool(signals["loe"].get("data_as_of")),
         bool(signals["targeting"].get("data_as_of")),
         bool(signals["school_plan"].get("data_as_of")),
+        bool(signals.get("roi", {}).get("data_as_of")),
     ]
     recency_signal = sum(1 for x in recency_checks if x) / float(len(recency_checks))
 
@@ -805,6 +833,53 @@ def _school_plan_recommendation(signals: Dict, owner_level: str) -> Dict:
     }
 
 
+def _roi_recommendation(signals: Dict, owner_level: str) -> Dict:
+    raw = signals.get("roi", {}).get("raw") or {}
+    roi_recs = ((raw.get("roi_engine") or {}).get("roi_recommendations") or [])
+    roi_sum = (signals.get("roi", {}).get("summary")) or {}
+    low_count = int(roi_sum.get("low_effectiveness_count") or 0)
+    total = int(roi_sum.get("total_events_scored") or 0)
+
+    if not roi_recs or total == 0:
+        return {
+            "type": "roi_action",
+            "priority": 3,
+            "title": f"{owner_level} ensure event cost and lead data linkage",
+            "owner_level": owner_level,
+            "action": "No ROI-scored events available. Ensure spend_fact and lead_journey_fact rows are linked by event_id.",
+            "expected_effect": "Enables ROI effectiveness analysis for all events.",
+            "time_horizon": "next command cycle",
+            "rationale": "roi_engine returned no scored events for this scope.",
+            "linked_factors": ["roi_effectiveness"],
+            "source": "roi_engine",
+            "timestamp": datetime.utcnow().isoformat() + "Z",
+            "actions": [
+                "Link event costs to spend_fact.event_id.",
+                "Link leads and contracts to lead_journey_fact.event_id.",
+            ],
+            "evidence_refs": ["ev-roi"],
+        }
+
+    top = roi_recs[0]
+    return {
+        "type": "roi_action",
+        "priority": 2,
+        "title": f"{owner_level} execute top ROI effectiveness action",
+        "owner_level": owner_level,
+        "action": top.get("action"),
+        "expected_effect": top.get("expected_effect"),
+        "time_horizon": top.get("time_horizon") or "next 30 days",
+        "rationale": top.get("rationale") or (
+            f"{low_count} of {total} events scored low ROI effectiveness."
+        ),
+        "linked_factors": ["roi_effectiveness", "funnel_health"],
+        "source": "roi_engine",
+        "timestamp": datetime.utcnow().isoformat() + "Z",
+        "actions": [top.get("action")],
+        "evidence_refs": ["ev-roi", top.get("trace_id") or "ev-roi-top"],
+    }
+
+
 def _build_accountability_brief(scope_type: str, scope_value: str, signals: Dict) -> Dict:
     acc = signals["accountability"]["summary"] or {}
     cls = str(acc.get("classification") or "insufficient_data")
@@ -985,14 +1060,15 @@ def _build_evidence_list(request_id: str, signals: Dict, mission_current: Missio
         },
     ]
 
-    for key in ("market", "access", "execution", "funnel", "accountability", "loe", "targeting", "school_plan"):
+    for key in ("market", "access", "execution", "funnel", "accountability", "loe", "targeting", "school_plan", "roi"):
+        sig = signals.get(key) or {}
         evidence.append(
             {
                 "evidence_id": f"ev-{key}",
                 "trace_id": f"{request_id}:{key}",
                 "source": key,
-                "fields": signals[key].get("summary") or {},
-                "timestamp": signals[key].get("data_as_of") or datetime.utcnow().isoformat() + "Z",
+                "fields": sig.get("summary") or {},
+                "timestamp": sig.get("data_as_of") or datetime.utcnow().isoformat() + "Z",
             }
         )
 
@@ -1064,6 +1140,7 @@ def generate_mission_decrease_justification(
     owner_level = _infer_owner_level(scope_type)
     targeting_recommendation = _targeting_shift_recommendation(signals, owner_level)
     school_plan_recommendation = _school_plan_recommendation(signals, owner_level)
+    roi_recommendation = _roi_recommendation(signals, owner_level)
     accountability_brief = _build_accountability_brief(scope_type, scope_value, signals)
     loe_summary = _build_loe_summary(signals)
     confidence, recency_signal = _compute_confidence(
@@ -1127,6 +1204,12 @@ def generate_mission_decrease_justification(
             "recommendation_id": f"rec-{request_id}-school-plan",
             "trace_id": f"{request_id}:recommendation:school-plan",
             "kind": "school_plan_action",
+        },
+        {
+            **roi_recommendation,
+            "recommendation_id": f"rec-{request_id}-roi",
+            "trace_id": f"{request_id}:recommendation:roi",
+            "kind": "roi_action",
         },
         {
             "recommendation_id": f"rec-{request_id}-accountability",
@@ -1244,6 +1327,11 @@ def generate_mission_decrease_justification(
                 "source_dataset_name": signals.get("school_plan", {}).get("source_dataset_name"),
                 "rows_used": signals.get("school_plan", {}).get("rows_used"),
                 "summary": signals.get("school_plan", {}).get("summary") or {},
+            },
+            "roi": {
+                "status": signals.get("roi", {}).get("raw", {}).get("status"),
+                "rows_used": signals.get("roi", {}).get("rows_used"),
+                "summary": signals.get("roi", {}).get("summary") or {},
             },
         },
         "evidence": evidence,

@@ -10,6 +10,7 @@ from services.api.app.services import market_engine
 from services.api.app.services import funnel_engine
 from services.api.app.services import targeting_engine
 from services.api.app.services import school_plan_engine
+from services.api.app.services import roi_engine as _roi_engine_mod
 from services.api.app.services import ai_recommendation_engine, execution_quality, school_access
 
 router = APIRouter(prefix="/command-center", tags=["command-center"])
@@ -155,6 +156,14 @@ def overview(fy: Optional[int] = None, qtr: Optional[int] = None, month: Optiona
                         top_n=10,
                     ),
                     'school_plan_engine': school_plan_engine.summarize_school_plan_engine(
+                        db,
+                        scope_type=scope_type_eff,
+                        scope_value=scope_value_eff,
+                        actor_scope_type=scope_type_eff,
+                        actor_scope_value=scope_value_eff,
+                        top_n=10,
+                    ),
+                    'roi_engine': _roi_engine_mod.summarize_roi_engine(
                         db,
                         scope_type=scope_type_eff,
                         scope_value=scope_value_eff,
