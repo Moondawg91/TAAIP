@@ -22,12 +22,15 @@ def _fmt_targeting_summary(recs_payload: dict) -> dict:
     top = [r for r in recs if r.get('entity_type') == 'zip'][:5]
     return {
         'top_focus_count': len(recs),
+        'zip_focus_count': len([r for r in recs if r.get('entity_type') == 'zip']),
+        'source_dataset_name': (recs_payload.get('source_dataset_name') or recs_payload.get('market_source_dataset_name')),
         'top_zips': [
             {
                 'station_rsid': r.get('station_rsid'),
                 'zip_code': r.get('zip_code'),
                 'priority_score': r.get('priority_score'),
                 'reason_codes': r.get('reason_codes', []),
+                'trace_id': r.get('trace_id'),
             }
             for r in top
         ],

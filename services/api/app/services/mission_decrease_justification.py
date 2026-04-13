@@ -184,11 +184,15 @@ def _collect_signal_summaries(db, scope_type: str, scope_value: str) -> Dict:
             "raw": market,
             "summary": _safe_summary(market, "market_engine", "summary"),
             "data_as_of": _safe_timestamp(market, "market_engine"),
+            "source_dataset_name": (market.get("market_engine") or {}).get("source_dataset_name"),
+            "rows_used": len(((market.get("market_engine") or {}).get("prioritized_market_zip") or [])),
         },
         "access": {
             "raw": access,
             "summary": _safe_summary(access, "school_access", "summary"),
             "data_as_of": _safe_timestamp(access, "school_access"),
+            "source_dataset_name": (access.get("school_access") or {}).get("source_dataset_name"),
+            "rows_used": len(((access.get("school_access") or {}).get("top_access_gaps") or [])),
         },
         "execution": {
             "raw": execution,
@@ -211,6 +215,8 @@ def _collect_signal_summaries(db, scope_type: str, scope_value: str) -> Dict:
                 "recommendations_count": len(targeting.get("recommendations") or []),
             },
             "data_as_of": datetime.utcnow().isoformat() + "Z",
+            "source_dataset_name": (market.get("market_engine") or {}).get("source_dataset_name"),
+            "rows_used": len(targeting.get("recommendations") or []),
         },
     }
 
@@ -1096,6 +1102,26 @@ def generate_mission_decrease_justification(
             assumptions_and_limits,
         ),
         "assumptions_and_limits": assumptions_and_limits,
+        "signal_summaries": {
+            "market": {
+                "status": signals.get("market", {}).get("raw", {}).get("status"),
+                "source_dataset_name": signals.get("market", {}).get("source_dataset_name"),
+                "rows_used": signals.get("market", {}).get("rows_used"),
+                "summary": signals.get("market", {}).get("summary") or {},
+            },
+            "school_access": {
+                "status": signals.get("access", {}).get("raw", {}).get("status"),
+                "source_dataset_name": signals.get("access", {}).get("source_dataset_name"),
+                "rows_used": signals.get("access", {}).get("rows_used"),
+                "summary": signals.get("access", {}).get("summary") or {},
+            },
+            "targeting": {
+                "status": "ok",
+                "source_dataset_name": signals.get("targeting", {}).get("source_dataset_name"),
+                "rows_used": signals.get("targeting", {}).get("rows_used"),
+                "summary": signals.get("targeting", {}).get("summary") or {},
+            },
+        },
         "evidence": evidence,
         "force_refresh_used": bool(force_refresh),
     }
