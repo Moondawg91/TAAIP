@@ -392,3 +392,70 @@ Integration points:
 - command center overview block (`phase2.roi_engine`)
 - Power BI operational dataset (`roi_summary`, `roi_prioritized_events`, `roi_recommendations`, `roi_event_type_performance`)
 
+---
+
+## TWG Engine (Operational 420T Workflow)
+
+Authoritative module:
+
+- `services/api/app/services/twg_engine.py`
+
+Authoritative inputs (no synthetic data; no parallel analytics paths):
+
+- `market_engine` output: market posture and top market gaps
+- `funnel_engine` output: prioritized funnel dropoff gaps
+- `targeting_engine` output: prioritized ZIP targeting issues
+- `school_plan_engine` output: underengaged priority schools
+- `roi_engine` output: low-effectiveness event concentration
+- Existing authoritative risk signals: `accountability_engine` and `loe_engine`
+
+TWG purpose:
+
+- Identify operational issues for TWG review
+- Prioritize those issues deterministically
+- Produce command-usable actions and due-outs
+- Identify candidates for future Targeting Board elevation
+
+Deterministic priority formula (0–100):
+
+```
+twg_priority_score =
+  0.25 * market_issue_weight +
+  0.20 * funnel_issue_weight +
+  0.20 * targeting_issue_weight +
+  0.15 * school_issue_weight +
+  0.10 * roi_issue_weight +
+  0.10 * mission_risk_weight
+```
+
+Priority bands:
+
+- `high`: `>= 70`
+- `medium`: `40` to `< 70`
+- `low`: `< 40`
+
+Board elevation rule:
+
+- `board_elevation_recommended = true` when item is high priority and reflects multi-signal concentration requiring resource/tradeoff decisions (for example: reallocation, stopping low-value formats, mission risk posture).
+
+TWG engine output shape:
+
+- `status`: `ok | no_data | invalid`
+- `twg_engine.summary`: total item counts by band, board elevation count, overall TWG status
+- `twg_engine.prioritized_items`: deterministic ranked items with owner, action, due_out, rationale, source, trace_id
+- `twg_engine.twg_agenda`: sequence-ordered agenda rows (`highest priority first`)
+- `twg_engine.due_outs`: command-usable action assignments
+- `twg_engine.board_candidates`: filtered high-priority board-elevation-ready rows
+- `twg_engine.data_sources`: upstream lineage map
+
+Workflow integrations:
+
+- mission adjustment: TWG issue concentration is exposed as `twg_issue_concentration` causal factor and `signal_summaries.twg`
+- command center overview: `phase2.twg_engine`
+- Power BI operational dataset exports:
+  - `twg_summary`
+  - `twg_prioritized_items`
+  - `twg_due_outs`
+  - `twg_board_candidates`
+
+
