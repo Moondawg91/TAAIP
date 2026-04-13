@@ -186,3 +186,49 @@ Response highlights:
 - `one_slide_payload`: compact briefing payload for command syncs.
 - `evidence`: traceable source snapshots (when `include_evidence=true`).
 
+## Market Intelligence Engine (420T)
+
+The Market Intelligence Engine is implemented in:
+
+- `services/api/app/services/market_engine_contract.py`
+- `services/api/app/services/market_engine.py`
+
+Authoritative real source input:
+
+- `uploads/6L MARKET CORE.csv`
+
+Behavior and constraints:
+
+- No demo market rows are generated.
+- If source is unavailable: `status=no_active_dataset`.
+- If required columns are missing: `status=invalid_dataset_schema` with `schema_error`.
+- Scoring is deterministic and stable-sorted.
+
+Key derived metrics per ZIP:
+
+- `recruiting_age_male`
+- `recruiting_age_female`
+- `total_recruiting_age_population`
+- `education_quality_score`
+- `income_access_score`
+- `market_capability_score` (0-100)
+
+Base weighting (centralized constants in code):
+
+- `0.50 * normalized_recruiting_age_population`
+- `0.30 * normalized_education_quality_score`
+- `0.20 * normalized_income_access_score`
+
+Classification:
+
+- strong: `score >= 70`
+- moderate: `40 <= score < 70`
+- weak: `score < 40`
+
+Integration points:
+
+- targeting overlays and recommendations
+- mission adjustment justification signal collection
+- command center overview block (`market_engine`)
+- Power BI operational dataset (`market_engine_summary`)
+
