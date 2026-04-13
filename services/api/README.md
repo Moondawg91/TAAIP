@@ -225,6 +225,44 @@ Integration points:
 - command center phase2 (`command_center.py`)
 - Power BI operational dataset export (`powerbi_feed.py`)
 
+## Flash-to-Bang / Processing Engine (420T Core Execution)
+
+Authoritative execution/status engine:
+
+- service: `services/api/app/services/flash_to_bang_processing_engine.py`
+- function: `summarize_flash_to_bang_processing_engine(...)`
+
+Purpose:
+
+- consume authoritative flash-to-bang and stage-aging outputs already produced by execution and funnel services
+- track stage-aging watch items, stalled processing items, and overdue processing items
+- classify bottleneck categories without recomputing upstream analytics
+- escalate processing risk to `TWG` or `BOARD`
+- publish command-ready processing scorecards
+
+Authoritative inputs only (no recomputation of upstream analytics):
+
+- `execution_quality`: `summary`, `by_scope`, `root_cause_breakdown`
+- `funnel_engine`: `summary`, `prioritized_funnel_gaps`
+- `accountability_engine`: `classification`, `reason_codes`, `recommended_next_action`
+
+Canonical output block:
+
+- `summary`
+- `processing_items`
+- `stalled_items`
+- `overdue_items`
+- `escalations`
+- `processing_scorecard`
+- `data_sources`
+- `processing_constraints`
+
+Integration points:
+
+- mission adjustment signal collection (`mission_decrease_justification.py`)
+- command center phase2 (`command_center.py`)
+- Power BI operational dataset export (`powerbi_feed.py`)
+
 ## Market Intelligence Engine (420T)
 
 The Market Intelligence Engine is implemented in:
