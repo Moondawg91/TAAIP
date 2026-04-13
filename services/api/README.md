@@ -267,3 +267,67 @@ Integration points:
 - Power BI operational dataset (`funnel_engine_summary`)
 - targeting expansion metadata (`funnel_signal` per recommendation)
 
+## Targeting Engine (Operational 420T)
+
+Authoritative module:
+
+- `services/api/app/services/targeting_engine.py`
+
+Authoritative inputs (no synthetic data):
+
+- Market: `market_engine.prioritized_market_zip`, `market_capability_score`, `opportunity_band`
+- Funnel: `funnel_engine` station status and dropoff signals
+- School: `school_access` top gaps; fallback to `fact_school_contacts` when school access rows are absent
+
+Deterministic priority formula:
+
+- `targeting_priority_score = 0.50*market_score + 0.30*(1-funnel_efficiency) + 0.20*school_gap_score`
+
+Targeting output shape:
+
+- `status`: `ok | no_data | invalid`
+- `targeting_engine.summary`: total/high/moderate/low priority ZIP counts
+- `targeting_engine.prioritized_targets`: commander-ready ZIP rows with funnel and school signals, score, band, rationale, and `trace_id`
+- `targeting_engine.top_targeting_shifts`: prioritized shift actions for board use
+- `targeting_engine.data_sources`: source lineage for market/funnel/school
+
+Integration points:
+
+- mission adjustment signal collection (`targeting` block)
+- command center overview block (`phase2.targeting_engine`)
+- Power BI operational dataset (`targeting_engine_summary`)
+- compatibility wrapper retained in `targeting_expansion.recommendations_for_scope`
+
+## School Plan Engine (Operational 420T)
+
+Authoritative module:
+
+- `services/api/app/services/school_plan_engine.py`
+
+Authoritative inputs (no synthetic data):
+
+- School terrain: `schools` canonical rows; fallback to real `fact_school_contacts` when `schools` is absent or empty.
+- Market alignment: `market_engine.prioritized_market_zip` capability/opportunity signals.
+- Funnel intervention: `funnel_engine` station-level health and dropoff priority.
+- Targeting reinforcement: `targeting_engine.prioritized_targets` score reinforcement.
+
+Deterministic priority formula:
+
+- `school_priority_score = 100*(0.40*market_alignment + 0.30*access_gap + 0.20*funnel_intervention + 0.10*targeting_reinforcement)`
+
+School plan output shape:
+
+- `status`: `ok | no_data | invalid_dataset_schema`
+- `school_plan_engine.summary`: total schools, priority schools, engaged/underengaged counts, high-opportunity count, overall status
+- `school_plan_engine.prioritized_schools`: deterministic school-level ranking with market/funnel/access signals, score, band, action, rationale, and trace
+- `school_plan_engine.school_recruiting_plan`: commander-ready actions with owner level, expected effects, time horizon, rationale, and trace
+- `school_plan_engine.top_school_gaps`: top school gaps for board and sync consumption
+- `school_plan_engine.data_sources` and `source_school_dataset`: lineage to operational datasets
+
+Integration points:
+
+- mission adjustment signal collection (`school_plan` block and `school_plan_gap` factor)
+- mission recommendations (`school_plan_action` recommendation derived from top school plan row)
+- command center overview block (`phase2.school_plan_engine`)
+- Power BI operational dataset (`school_plan_summary`, `school_plan_prioritized_schools`, `school_plan_actions`)
+
