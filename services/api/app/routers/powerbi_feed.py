@@ -6,7 +6,7 @@ from fastapi.responses import StreamingResponse
 import csv
 import io
 from services.api.app import database as _dbmod
-from services.api.app.services import accountability_engine, execution_quality, funnel_engine, market_engine, roi_engine as _roi_engine_mod, school_access, school_plan_engine, targeting_engine, twg_engine as _twg_engine_mod
+from services.api.app.services import accountability_engine, execution_quality, funnel_engine, market_engine, roi_engine as _roi_engine_mod, school_access, school_plan_engine, targeting_engine, twg_engine as _twg_engine_mod, targeting_board_engine as _targeting_board_engine_mod
 
 router = APIRouter(prefix="/powerbi", tags=["powerbi"])
 
@@ -551,6 +551,7 @@ def operational_command_dataset(scope_type: str = 'USAREC', scope_value: str = '
         school_plan = school_plan_engine.summarize_school_plan_engine(db, st, sv, st, sv)
         roi = _roi_engine_mod.summarize_roi_engine(db, st, sv, st, sv)
         twg = _twg_engine_mod.summarize_twg_engine(db, st, sv, st, sv)
+        board = _targeting_board_engine_mod.summarize_targeting_board_engine(db, st, sv, st, sv)
         accountability = accountability_engine.classify_scope(db, st, sv)
 
         return {
@@ -575,6 +576,11 @@ def operational_command_dataset(scope_type: str = 'USAREC', scope_value: str = '
                 'twg_prioritized_items': twg.get('twg_engine', {}).get('prioritized_items', []),
                 'twg_due_outs': twg.get('twg_engine', {}).get('due_outs', []),
                 'twg_board_candidates': twg.get('twg_engine', {}).get('board_candidates', []),
+                'board_summary': board.get('targeting_board_engine', {}).get('summary', {}),
+                'board_prioritized_items': board.get('targeting_board_engine', {}).get('prioritized_board_items', []),
+                'board_decisions': board.get('targeting_board_engine', {}).get('board_decisions', []),
+                'board_directed_shifts': board.get('targeting_board_engine', {}).get('directed_shifts', []),
+                'board_downstream_tasks': board.get('targeting_board_engine', {}).get('downstream_twg_tasks', []),
                 'accountability': accountability,
             }
         }

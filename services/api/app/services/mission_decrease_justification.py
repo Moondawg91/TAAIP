@@ -19,6 +19,7 @@ from services.api.app.services import (
     school_plan_engine,
     targeting_engine,
     twg_engine,
+    targeting_board_engine,
 )
 
 WEIGHTS = {
@@ -186,6 +187,7 @@ def _collect_signal_summaries(db, scope_type: str, scope_value: str) -> Dict:
     school_plan = school_plan_engine.summarize_school_plan_engine(db, scope_type, scope_value, scope_type, scope_value, top_n=15)
     roi = roi_engine.summarize_roi_engine(db, scope_type, scope_value, scope_type, scope_value, top_n=15)
     twg = twg_engine.summarize_twg_engine(db, scope_type, scope_value, scope_type, scope_value, top_n=15)
+    board = targeting_board_engine.summarize_targeting_board_engine(db, scope_type, scope_value, scope_type, scope_value, top_n=15)
 
     return {
         "market": {
@@ -252,6 +254,12 @@ def _collect_signal_summaries(db, scope_type: str, scope_value: str) -> Dict:
             "summary": _safe_summary(twg, "twg_engine", "summary"),
             "data_as_of": _safe_timestamp(twg, "twg_engine"),
             "rows_used": len(((twg.get("twg_engine") or {}).get("prioritized_items") or [])),
+        },
+        "board": {
+            "raw": board,
+            "summary": _safe_summary(board, "targeting_board_engine", "summary"),
+            "data_as_of": _safe_timestamp(board, "targeting_board_engine"),
+            "rows_used": len(((board.get("targeting_board_engine") or {}).get("prioritized_board_items") or [])),
         },
     }
 
@@ -397,6 +405,24 @@ def _compute_factor_candidates(
                 f"high_priority_count={twg_summary.get('high_priority_count', 0)}, "
                 f"total_items={twg_summary.get('total_items', 0)}, "
                 f"overall_twg_status={twg_summary.get('overall_twg_status', 'unknown')}"
+            ),
+        },
+        {
+            "factor_id": "board_decision_approval",
+            "label": "Board decision approval rate",
+            "impact": (
+                float(signals.get("board", {}).get("summary", {}).get("approved_count") or 0)
+                / float(max(1, signals.get("board", {}).get("summary", {}).get("total_items") or 1))
+                - 0.5
+            ),
+            "source": "targeting_board_engine",
+            "signal_key": "board",
+            "recency_score": 1.0 if signals.get("board", {}).get("data_as_of") else 0.4,
+            "agreement_tokens": ["board_executed"] if float(signals.get("board", {}).get("summary", {}).get("approved_count") or 0) > 0 else ["board_pending"],
+            "rationale": (
+                f"approved_count={signals.get('board', {}).get('summary', {}).get('approved_count', 0)}, "
+                f"total_items={signals.get('board', {}).get('summary', {}).get('total_items', 0)}, "
+                f"posture={signals.get('board', {}).get('summary', {}).get('overall_board_posture', 'unknown')}"
             ),
         },
     ]
