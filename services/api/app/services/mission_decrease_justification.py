@@ -20,6 +20,7 @@ from services.api.app.services import (
     targeting_engine,
     twg_engine,
     targeting_board_engine,
+    asset_engine,
 )
 
 WEIGHTS = {
@@ -188,6 +189,7 @@ def _collect_signal_summaries(db, scope_type: str, scope_value: str) -> Dict:
     roi = roi_engine.summarize_roi_engine(db, scope_type, scope_value, scope_type, scope_value, top_n=15)
     twg = twg_engine.summarize_twg_engine(db, scope_type, scope_value, scope_type, scope_value, top_n=15)
     board = targeting_board_engine.summarize_targeting_board_engine(db, scope_type, scope_value, scope_type, scope_value, top_n=15)
+    assets = asset_engine.summarize_asset_engine(db, scope_type, scope_value, scope_type, scope_value, top_n=15)
 
     return {
         "market": {
@@ -260,6 +262,12 @@ def _collect_signal_summaries(db, scope_type: str, scope_value: str) -> Dict:
             "summary": _safe_summary(board, "targeting_board_engine", "summary"),
             "data_as_of": _safe_timestamp(board, "targeting_board_engine"),
             "rows_used": len(((board.get("targeting_board_engine") or {}).get("prioritized_board_items") or [])),
+        },
+        "assets": {
+            "raw": assets,
+            "summary": _safe_summary(assets, "asset_engine", "summary"),
+            "data_as_of": _safe_timestamp(assets, "asset_engine"),
+            "rows_used": len(((assets.get("asset_engine") or {}).get("asset_distribution") or [])),
         },
     }
 
