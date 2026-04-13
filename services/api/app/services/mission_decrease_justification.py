@@ -11,6 +11,7 @@ from sqlalchemy import text
 from services.api.app.services import (
     accountability_engine,
     execution_quality,
+    funnel_engine,
     loe_engine,
     market_engine,
     school_access,
@@ -175,6 +176,7 @@ def _collect_signal_summaries(db, scope_type: str, scope_value: str) -> Dict:
     market = market_engine.summarize_market_engine(db, scope_type, scope_value, scope_type, scope_value, top_n=15)
     access = school_access.summarize_school_access(db, scope_type, scope_value, scope_type, scope_value, top_n=15)
     execution = execution_quality.summarize_execution_quality(db, scope_type, scope_value, scope_type, scope_value)
+    funnel = funnel_engine.summarize_funnel_engine(db, scope_type, scope_value, scope_type, scope_value, top_n=15)
     accountability = accountability_engine.classify_scope(db, scope_type, scope_value)
     loe = loe_engine.summarize_loes(db, scope_type, scope_value)
     targeting = targeting_expansion.recommendations_for_scope(db, scope_type, scope_value, top_n=15)
@@ -198,6 +200,13 @@ def _collect_signal_summaries(db, scope_type: str, scope_value: str) -> Dict:
             "raw": execution,
             "summary": _safe_summary(execution, "execution_quality", "summary"),
             "data_as_of": _safe_timestamp(execution, "execution_quality"),
+        },
+        "funnel": {
+            "raw": funnel,
+            "summary": _safe_summary(funnel, "funnel_engine", "summary"),
+            "data_as_of": _safe_timestamp(funnel, "funnel_engine"),
+            "source_dataset_name": (funnel.get("funnel_engine") or {}).get("source_dataset_name"),
+            "rows_used": len(((funnel.get("funnel_engine") or {}).get("prioritized_funnel_gaps") or [])),
         },
         "accountability": {
             "raw": accountability,
@@ -228,6 +237,7 @@ def _compute_factor_candidates(
     market_summary = signals["market"]["summary"]
     access_summary = signals["access"]["summary"]
     exec_summary = signals["execution"]["summary"]
+    funnel_summary = signals["funnel"]["summary"]
     acc_summary = signals["accountability"]["summary"]
     loe_summary = signals["loe"]["summary"]
 
@@ -277,6 +287,19 @@ def _compute_factor_candidates(
             "recency_score": 1.0 if signals["execution"].get("data_as_of") else 0.4,
             "agreement_tokens": ["execution_decrease_risk"] if str(exec_summary.get("overall_execution_status")) == "execution_degraded" else ["execution_supportive"],
             "rationale": f"stall_count={exec_summary.get('stall_count', 0)}",
+        },
+        {
+            "factor_id": "funnel_health",
+            "label": "Funnel conversion health",
+            "impact": float(funnel_summary.get("lead_to_contract_rate") or 0.0) - 0.15,
+            "source": "funnel_engine",
+            "signal_key": "funnel",
+            "recency_score": 1.0 if signals["funnel"].get("data_as_of") else 0.4,
+            "agreement_tokens": ["funnel_decrease_risk"] if str(funnel_summary.get("overall_funnel_status")) in {"critical", "watch"} else ["funnel_supportive"],
+            "rationale": (
+                f"overall_funnel_status={funnel_summary.get('overall_funnel_status', 'unknown')}, "
+                f"lead_to_contract_rate={funnel_summary.get('lead_to_contract_rate', 0.0)}"
+            ),
         },
         {
             "factor_id": "loe_health",
@@ -352,6 +375,7 @@ def _compute_confidence(ranked_factors: List[Dict], signals: Dict, mission_has_d
         bool(signals["market"]["summary"]),
         bool(signals["access"]["summary"]),
         bool(signals["execution"]["summary"]),
+        bool(signals["funnel"]["summary"]),
         bool(signals["accountability"]["summary"]),
         bool(signals["loe"]["summary"]),
         bool(signals["targeting"]["raw"].get("recommendations")),
@@ -368,6 +392,7 @@ def _compute_confidence(ranked_factors: List[Dict], signals: Dict, mission_has_d
         bool(signals["market"].get("data_as_of")),
         bool(signals["access"].get("data_as_of")),
         bool(signals["execution"].get("data_as_of")),
+        bool(signals["funnel"].get("data_as_of")),
         bool(signals["accountability"].get("data_as_of")),
         bool(signals["loe"].get("data_as_of")),
         bool(signals["targeting"].get("data_as_of")),
@@ -880,7 +905,7 @@ def _build_evidence_list(request_id: str, signals: Dict, mission_current: Missio
         },
     ]
 
-    for key in ("market", "access", "execution", "accountability", "loe", "targeting"):
+    for key in ("market", "access", "execution", "funnel", "accountability", "loe", "targeting"):
         evidence.append(
             {
                 "evidence_id": f"ev-{key}",
@@ -1114,6 +1139,12 @@ def generate_mission_decrease_justification(
                 "source_dataset_name": signals.get("access", {}).get("source_dataset_name"),
                 "rows_used": signals.get("access", {}).get("rows_used"),
                 "summary": signals.get("access", {}).get("summary") or {},
+            },
+            "funnel": {
+                "status": signals.get("funnel", {}).get("raw", {}).get("status"),
+                "source_dataset_name": signals.get("funnel", {}).get("source_dataset_name"),
+                "rows_used": signals.get("funnel", {}).get("rows_used"),
+                "summary": signals.get("funnel", {}).get("summary") or {},
             },
             "targeting": {
                 "status": "ok",

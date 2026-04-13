@@ -5,6 +5,7 @@ from sqlalchemy import text
 from services.api.app import models
 from services.api.app import models_domain as domain
 from services.api.app.services import market_engine
+from services.api.app.services import funnel_engine
 from services.api.app.services import school_access
 from services.api.app.services.market_targeting import (
     enrich_reason_codes_with_market,
@@ -338,6 +339,19 @@ def recommendations_for_scope(db, scope_type: str, scope_value: str, top_n: int 
         for r in ((market_payload.get("market_engine") or {}).get("prioritized_market_zip") or [])
     }
     market_source_dataset_name = ((market_payload.get("market_engine") or {}).get("source_dataset_name"))
+    funnel_payload = funnel_engine.summarize_funnel_engine(
+        db,
+        scope_type=scope_type,
+        scope_value=scope_value,
+        actor_scope_type=scope_type,
+        actor_scope_value=scope_value,
+        top_n=max(100, top_n * 5),
+    )
+    funnel_station_map = {
+        str(r.get("station_rsid") or ""): r
+        for r in (((funnel_payload.get("funnel_engine") or {}).get("by_scope") or {}).get("station") or [])
+        if str(r.get("station_rsid") or "")
+    }
     market_overlays = get_market_targeting_overlays(
         db,
         scope_type=scope_type,
@@ -461,6 +475,11 @@ def recommendations_for_scope(db, scope_type: str, scope_value: str, top_n: int 
                     "contacts_count": int(zip_school.get("contacts_count") or station_school.get("contacts_count") or 0),
                     "contracts_count": int(zip_school.get("contracts_count") or 0),
                 },
+                "funnel_signal": {
+                    "overall_funnel_status": str((funnel_station_map.get(station) or {}).get("overall_funnel_status") or "unknown"),
+                    "lead_to_contract_rate": round(float((funnel_station_map.get(station) or {}).get("lead_to_contract_rate") or 0.0), 4),
+                    "largest_dropoff_stage": (funnel_station_map.get(station) or {}).get("largest_dropoff_stage"),
+                },
                 "priority_score": round(priority_score, 2),
                 "rationale": rationale,
                 "trace_id": str(market_row.get("trace_id") or f"targeting:{station}:{zip_code}"),
@@ -502,6 +521,8 @@ def recommendations_for_scope(db, scope_type: str, scope_value: str, top_n: int 
         "scope_value": scope_value,
         "source_dataset_name": market_source_dataset_name,
         "market_source_dataset_name": market_source_dataset_name,
+        "funnel_source_dataset_name": ((funnel_payload.get("funnel_engine") or {}).get("source_dataset_name")),
+        "funnel_summary": ((funnel_payload.get("funnel_engine") or {}).get("summary") or {}),
         "formula": {
             "priority_score": "100*(0.30*market_category_weight + 0.25*market_potential + 0.15*warning_severity + 0.15*production_gap + 0.10*effort_gap + 0.05*burden_pressure)",
             "components": {

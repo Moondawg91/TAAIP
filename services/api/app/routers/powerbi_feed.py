@@ -6,7 +6,7 @@ from fastapi.responses import StreamingResponse
 import csv
 import io
 from services.api.app import database as _dbmod
-from services.api.app.services import accountability_engine, execution_quality, market_engine, school_access
+from services.api.app.services import accountability_engine, execution_quality, funnel_engine, market_engine, school_access
 
 router = APIRouter(prefix="/powerbi", tags=["powerbi"])
 
@@ -546,6 +546,7 @@ def operational_command_dataset(scope_type: str = 'USAREC', scope_value: str = '
         market = market_engine.summarize_market_engine(db, st, sv, st, sv)
         access = school_access.summarize_school_access(db, st, sv, st, sv)
         execq = execution_quality.summarize_execution_quality(db, st, sv, st, sv)
+        funnel = funnel_engine.summarize_funnel_engine(db, st, sv, st, sv)
         accountability = accountability_engine.classify_scope(db, st, sv)
 
         return {
@@ -554,8 +555,10 @@ def operational_command_dataset(scope_type: str = 'USAREC', scope_value: str = '
                 'scope_type': st,
                 'scope_value': sv,
                 'market_engine_summary': market.get('market_engine', {}).get('summary', {}),
+                'market_qma_summary': market.get('market_engine', {}).get('summary', {}),
                 'school_access_summary': access.get('school_access', {}).get('summary', {}),
                 'execution_quality_summary': execq.get('execution_quality', {}).get('summary', {}),
+                'funnel_engine_summary': funnel.get('funnel_engine', {}).get('summary', {}),
                 'accountability': accountability,
             }
         }

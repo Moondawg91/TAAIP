@@ -7,6 +7,7 @@ from services.api.app import database as _dbmod
 from services.api.app.services import lead_line as lead_line_mod
 from services.api.app.services import loe_engine, targeting_expansion, accountability_engine
 from services.api.app.services import market_engine
+from services.api.app.services import funnel_engine
 from services.api.app.services import ai_recommendation_engine, execution_quality, school_access
 
 router = APIRouter(prefix="/command-center", tags=["command-center"])
@@ -149,6 +150,14 @@ def overview(fy: Optional[int] = None, qtr: Optional[int] = None, month: Optiona
                         scope_value=scope_value_eff,
                         actor_scope_type=scope_type_eff,
                         actor_scope_value=scope_value_eff,
+                    ),
+                    'funnel_engine': funnel_engine.summarize_funnel_engine(
+                        db,
+                        scope_type=scope_type_eff,
+                        scope_value=scope_value_eff,
+                        actor_scope_type=scope_type_eff,
+                        actor_scope_value=scope_value_eff,
+                        top_n=10,
                     ),
                     'recommended_actions': ai_recommendation_engine.generate_recommendation_bundle(
                         db,
