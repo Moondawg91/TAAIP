@@ -212,35 +212,38 @@ def test_decision_output_structured_error(monkeypatch):
 def test_recommended_action_deterministic_increase_decrease_hold():
     signals = {
         "access": {"summary": {"penetration_rate": 0.7, "overall_access_status": "access_supportive"}},
+        "market": {"summary": {"overall_market_status": "supportive"}},
+        "targeting": {"raw": {"recommendations": [{"station_rsid": "1A1"}]}} ,
     }
     ranked = [{"label": "LOE health"}, {"label": "School access penetration"}]
 
     inc = mdj._derive_recommended_action(
         mission_delta_pct=0.12,
-        loe_summary={"rag": "green"},
+        loe_summary={"rag": "green", "total_metrics": 5, "status_counts": {"at_risk": 0, "not_met": 0}},
         signals=signals,
         confidence={"score": 0.7},
-        ranked_factors=ranked,
+        ranked_factors=[{"label": "LOE health", "impact": 0.2}, {"label": "School access penetration", "impact": 0.2}],
     )
     assert inc["type"] == "increase"
 
     dec = mdj._derive_recommended_action(
         mission_delta_pct=-0.14,
-        loe_summary={"rag": "red"},
+        loe_summary={"rag": "red", "total_metrics": 5, "status_counts": {"at_risk": 2, "not_met": 1}},
         signals={"access": {"summary": {"penetration_rate": 0.2, "overall_access_status": "access_constrained"}}},
         confidence={"score": 0.6},
-        ranked_factors=ranked,
+        ranked_factors=[{"label": "LOE health", "impact": -0.4}, {"label": "School access penetration", "impact": -0.4}],
     )
     assert dec["type"] == "decrease"
 
     hold = mdj._derive_recommended_action(
         mission_delta_pct=0.01,
-        loe_summary={"rag": "amber"},
+        loe_summary={"rag": "amber", "total_metrics": 0, "status_counts": {}},
         signals={"access": {"summary": {"penetration_rate": 0.45, "overall_access_status": "unknown"}}},
         confidence={"score": 0.5},
-        ranked_factors=ranked,
+        ranked_factors=[{"label": "LOE health", "impact": 0.1}, {"label": "School access penetration", "impact": -0.1}],
     )
     assert hold["type"] == "hold"
+    assert hold["rationale"] == "Conditions do not support adjustment due to insufficient confidence or conflicting signals."
 
 
 def test_confidence_explanation_generation():
@@ -264,13 +267,42 @@ def test_confidence_explanation_generation():
         degraded_factor_count=1,
     )
     assert high.startswith("Confidence is high")
+    assert "completeness" in high.lower() and "agreement" in high.lower() and "recency" in high.lower()
 
 
 def test_magnitude_classification_uses_delta_confidence_loe_and_degraded_factors():
-    assert mdj._magnitude_from_delta(delta_pct=0.20, confidence_score=0.8, loe_rag="red", degraded_factor_count=3) == "significant"
-    assert mdj._magnitude_from_delta(delta_pct=0.08, confidence_score=0.7, loe_rag="amber", degraded_factor_count=1) == "moderate"
-    assert mdj._magnitude_from_delta(delta_pct=0.08, confidence_score=0.3, loe_rag="red", degraded_factor_count=4) == "moderate"
-    assert mdj._magnitude_from_delta(delta_pct=0.02, confidence_score=0.6, loe_rag="green", degraded_factor_count=0) == "minor"
+    assert mdj._magnitude_from_delta(
+        delta_pct=0.20,
+        confidence_score=0.8,
+        loe_summary={"rag": "red"},
+        degraded_factor_count=3,
+        agreement_score=0.7,
+        action_type="decrease",
+    ) == "significant"
+    assert mdj._magnitude_from_delta(
+        delta_pct=0.08,
+        confidence_score=0.7,
+        loe_summary={"rag": "amber"},
+        degraded_factor_count=1,
+        agreement_score=0.5,
+        action_type="decrease",
+    ) == "moderate"
+    assert mdj._magnitude_from_delta(
+        delta_pct=0.16,
+        confidence_score=0.55,
+        loe_summary={"rag": "red"},
+        degraded_factor_count=4,
+        agreement_score=0.8,
+        action_type="decrease",
+    ) != "significant"
+    assert mdj._magnitude_from_delta(
+        delta_pct=0.02,
+        confidence_score=0.6,
+        loe_summary={"rag": "green"},
+        degraded_factor_count=0,
+        agreement_score=0.5,
+        action_type="hold",
+    ) == "minor"
 
 
 def test_recommendation_quality_structure():
@@ -284,7 +316,37 @@ def test_recommendation_quality_structure():
     assert rec["owner_level"] in {"BN", "CO", "STN"}
     assert rec["action"]
     assert rec["expected_effect"]
+    assert rec["time_horizon"]
     assert 1 <= int(rec["priority"]) <= 3
     assert rec["rationale"]
     assert isinstance(rec["linked_factors"], list)
     assert "no targeting rows available" not in rec["title"].lower()
+    assert "validate inputs" not in rec["action"].lower()
+
+
+def test_edge_case_high_delta_low_confidence_prevents_significant_overstatement():
+    magnitude = mdj._magnitude_from_delta(
+        delta_pct=-0.22,
+        confidence_score=0.45,
+        loe_summary={"rag": "red"},
+        degraded_factor_count=4,
+        agreement_score=0.9,
+        action_type="decrease",
+    )
+    assert magnitude != "significant"
+
+
+def test_output_consistency_corrects_mismatch():
+    ra, recs, narrative = mdj._validate_and_correct_output(
+        recommended_action={"type": "increase", "magnitude": "significant", "confidence": 0.3, "rationale": "x"},
+        recommendations=[{"title": "increase recruiting push"}],
+        mission_delta_summary={"delta_pct": -0.10},
+        confidence={"score": 0.3, "band": "high", "agreement": 0.2},
+        commander_narrative="Recommendation: increase mission output at significant magnitude.",
+        loe_summary={"rag": "red"},
+        signals={},
+        ranked_factors=[{"label": "LOE health", "impact": -0.4}],
+    )
+    assert ra["type"] == "hold"
+    assert ra["magnitude"] == "minor"
+    assert "Recommendation: hold mission output" in narrative

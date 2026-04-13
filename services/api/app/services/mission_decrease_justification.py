@@ -396,22 +396,74 @@ def _count_degraded_causal_factors(ranked_factors: List[Dict]) -> int:
     return sum(1 for f in ranked_factors[:5] if float(f.get("impact") or 0.0) < 0)
 
 
-def _magnitude_from_delta(delta_pct: float, confidence_score: float, loe_rag: str, degraded_factor_count: int) -> str:
+def _count_major_degraded_factors(ranked_factors: List[Dict]) -> int:
+    return sum(1 for f in ranked_factors[:5] if float(f.get("impact") or 0.0) <= -0.35)
+
+
+def _is_strong_amber(loe_summary: Dict) -> bool:
+    if str(loe_summary.get("rag") or "").lower() != "amber":
+        return False
+    counts = loe_summary.get("status_counts") or {}
+    total = int(loe_summary.get("total_metrics") or 0)
+    if total <= 0:
+        return False
+    not_met = int(counts.get("not_met") or 0)
+    at_risk = int(counts.get("at_risk") or 0)
+    return not_met == 0 and (at_risk / float(total)) <= 0.2
+
+
+def _loe_supports_increase(loe_summary: Dict) -> bool:
+    rag = str(loe_summary.get("rag") or "amber").lower()
+    return rag == "green" or _is_strong_amber(loe_summary)
+
+
+def _loe_supports_decrease(loe_summary: Dict) -> bool:
+    rag = str(loe_summary.get("rag") or "amber").lower()
+    return rag in {"amber", "red"}
+
+
+def _has_access_market_failure_signals(signals: Dict) -> bool:
+    access_summary = (signals.get("access") or {}).get("summary") or {}
+    market_summary = (signals.get("market") or {}).get("summary") or {}
+    market_status = str(market_summary.get("overall_market_status") or "unknown").lower()
+    return _access_is_weak(access_summary) or market_status in {"market_constrained", "constrained", "failure", "degraded"}
+
+
+def _magnitude_from_delta(
+    delta_pct: float,
+    confidence_score: float,
+    loe_summary: Dict,
+    degraded_factor_count: int,
+    agreement_score: float,
+    action_type: str,
+) -> str:
     abs_delta = abs(float(delta_pct or 0.0))
 
-    level = 0
-    if abs_delta >= 0.15:
-        level = 2
-    elif abs_delta >= 0.06:
-        level = 1
+    # Magnitude hardening rules:
+    # - minor: |delta| <= 5% OR confidence < 0.5
+    # - moderate: |delta| in (5%, 15%] AND LOE aligned with action direction
+    # - significant: |delta| > 15% AND strong agreement AND confidence >= 0.7
+    # - never significant when confidence < 0.6
+    if abs_delta <= 0.05 or float(confidence_score or 0.0) < 0.5:
+        return "minor"
 
-    if (str(loe_rag or "").lower() == "red" and degraded_factor_count >= 2) or degraded_factor_count >= 3:
-        level = min(2, level + 1)
+    loe_aligned = False
+    if action_type == "increase":
+        loe_aligned = _loe_supports_increase(loe_summary)
+    elif action_type == "decrease":
+        loe_aligned = _loe_supports_decrease(loe_summary)
 
-    if float(confidence_score or 0.0) < 0.45:
-        level = max(0, level - 1)
+    if abs_delta > 0.15:
+        if float(confidence_score or 0.0) < 0.6:
+            return "moderate" if loe_aligned else "minor"
+        if float(confidence_score or 0.0) >= 0.7 and float(agreement_score or 0.0) >= 0.67 and degraded_factor_count >= 2:
+            return "significant"
+        return "moderate" if loe_aligned else "minor"
 
-    return ["minor", "moderate", "significant"][level]
+    if 0.05 < abs_delta <= 0.15 and loe_aligned:
+        return "moderate"
+
+    return "minor"
 
 
 def _infer_owner_level(scope_type: str) -> str:
@@ -430,17 +482,14 @@ def _build_confidence_explanation(confidence: Dict, recency_signal: float, degra
 
     if band == "high":
         return (
-            f"Confidence is high because completeness ({completeness:.0%}), cross-signal agreement ({agreement:.0%}), "
-            f"and data recency ({recency_signal:.0%}) are strong."
+            f"Confidence is high because completeness ({completeness:.0%}), agreement ({agreement:.0%}), and recency ({recency_signal:.0%}) are strong across key signals."
         )
     if band == "medium":
         return (
-            f"Confidence is medium because coverage is partial (completeness {completeness:.0%}) and agreement is moderate "
-            f"({agreement:.0%}) with {degraded_factor_count} degraded drivers."
+            f"Confidence is medium because completeness ({completeness:.0%}), agreement ({agreement:.0%}), and recency ({recency_signal:.0%}) are mixed with {degraded_factor_count} degraded drivers."
         )
     return (
-        f"Confidence is low because signal coverage ({completeness:.0%}) and cross-signal agreement ({agreement:.0%}) are limited, "
-        f"with data recency at {recency_signal:.0%}."
+        f"Confidence is low because completeness ({completeness:.0%}), agreement ({agreement:.0%}), and recency ({recency_signal:.0%}) are insufficient for a stronger adjustment decision."
     )
 
 
@@ -464,23 +513,45 @@ def _derive_recommended_action(
     loe_rag = str(loe_summary.get("rag") or "amber").lower()
     access_summary = (signals.get("access") or {}).get("summary") or {}
 
-    strong_loe = loe_rag == "green"
-    degraded_loe = loe_rag == "red"
+    strong_loe = _loe_supports_increase(loe_summary)
+    degraded_loe = _loe_supports_decrease(loe_summary)
     strong_access = _access_is_strong(access_summary)
     weak_access = _access_is_weak(access_summary)
+    degraded_factor_count = _count_degraded_causal_factors(ranked_factors)
+    major_degraded_factor_count = _count_major_degraded_factors(ranked_factors)
+    market_status = str(((signals.get("market") or {}).get("summary") or {}).get("overall_market_status") or "unknown").lower()
+    loe_missing = int(loe_summary.get("total_metrics") or 0) == 0
+    targeting_missing = len(((signals.get("targeting") or {}).get("raw") or {}).get("recommendations") or []) == 0
+    uncertain = loe_missing or market_status == "unknown" or targeting_missing
 
     action_type = "hold"
-    if delta > 0.05 and strong_loe and strong_access and conf_score >= 0.55:
+    if (
+        delta > 0
+        and strong_loe
+        and strong_access
+        and conf_score >= 0.6
+        and major_degraded_factor_count == 0
+        and not uncertain
+    ):
         action_type = "increase"
-    elif delta < -0.05 and degraded_loe and weak_access and conf_score >= 0.40:
+    elif (
+        delta < 0
+        and degraded_loe
+        and (
+            degraded_factor_count >= 2
+            or weak_access
+            or _has_access_market_failure_signals(signals)
+        )
+    ):
         action_type = "decrease"
 
-    degraded_factor_count = _count_degraded_causal_factors(ranked_factors)
     magnitude = _magnitude_from_delta(
         delta_pct=delta,
         confidence_score=conf_score,
-        loe_rag=loe_rag,
+        loe_summary=loe_summary,
         degraded_factor_count=degraded_factor_count,
+        agreement_score=float(confidence.get("agreement") or 0.0),
+        action_type=action_type,
     )
     top_labels = [str(f.get("label") or "") for f in ranked_factors[:3] if str(f.get("label") or "").strip()]
     driver_text = ", ".join(top_labels[:2]) if top_labels else "cross-signal conditions"
@@ -494,9 +565,7 @@ def _derive_recommended_action(
             f"Performance is below baseline with degraded LOE and constrained access; {driver_text} indicate sustained downside risk."
         )
     else:
-        rationale = (
-            f"Signals are mixed or not yet decisive; maintain current mission while stabilizing {driver_text}."
-        )
+        rationale = "Conditions do not support adjustment due to insufficient confidence or conflicting signals."
 
     return {
         "type": action_type,
@@ -513,6 +582,61 @@ def _decision_summary(recommended_action: Dict, mission_delta_summary: Dict, con
         "confidence_score": float(confidence.get("score") or 0.0),
         "loe_rag": str(loe_summary.get("rag") or "amber").lower(),
     }
+
+
+def _validate_and_correct_output(
+    recommended_action: Dict,
+    recommendations: List[Dict],
+    mission_delta_summary: Dict,
+    confidence: Dict,
+    commander_narrative: str,
+    loe_summary: Dict,
+    signals: Dict,
+    ranked_factors: List[Dict],
+) -> Tuple[Dict, List[Dict], str]:
+    corrected = dict(recommended_action)
+    delta_pct = float(mission_delta_summary.get("delta_pct") or 0.0)
+    score = float(confidence.get("score") or 0.0)
+
+    expected_band = derive_confidence_band(score)
+    if str(confidence.get("band") or "") != expected_band:
+        confidence["band"] = expected_band
+
+    expected_magnitude = _magnitude_from_delta(
+        delta_pct=delta_pct,
+        confidence_score=score,
+        loe_summary=loe_summary,
+        degraded_factor_count=_count_degraded_causal_factors(ranked_factors),
+        agreement_score=float(confidence.get("agreement") or 0.0),
+        action_type=str(corrected.get("type") or "hold"),
+    )
+    corrected["magnitude"] = expected_magnitude
+
+    action_type = str(corrected.get("type") or "hold")
+    if action_type == "increase" and delta_pct <= 0:
+        corrected["type"] = "hold"
+    elif action_type == "decrease" and delta_pct >= 0:
+        corrected["type"] = "hold"
+
+    # Ensure recommendation language does not contradict HOLD.
+    corrected_recs: List[Dict] = []
+    for rec in recommendations:
+        n = dict(rec)
+        if str(corrected.get("type") or "hold") == "hold" and "increase" in str(n.get("title") or "").lower():
+            n["title"] = n["title"].replace("increase", "stabilize")
+        corrected_recs.append(n)
+
+    if f"Recommendation: {corrected.get('type', 'hold')}" not in commander_narrative:
+        commander_narrative = generate_commander_narrative(
+            mission_delta_pct=delta_pct,
+            factors=ranked_factors,
+            recommended_action=corrected,
+            loe_summary=loe_summary,
+            confidence=confidence,
+            accountability_brief={"classification": "insufficient_data"},
+        )
+
+    return corrected, corrected_recs, commander_narrative
 
 
 def _targeting_shift_recommendation(signals: Dict, owner_level: str) -> Dict:
@@ -671,7 +795,7 @@ def generate_commander_narrative(
         s1 = "Current mission performance is near baseline and operating within a narrow variance band."
 
     s2 = f"Primary drivers are {top_labels[0]}, {top_labels[1]}, and {top_labels[2]}."
-    s3 = f"Risk remains {loe_rag.lower()} with accountability assessed as {accountability_class}."
+    s3 = f"Current risk to sustained mission and next-cycle production is {loe_rag.lower()} with accountability assessed as {accountability_class}."
     s4 = f"Recommendation: {action_type} mission output at {recommended_action.get('magnitude', 'minor')} magnitude with {confidence_band.lower()} confidence."
 
     sentences = [s1, s2, s3, s4]
@@ -907,6 +1031,17 @@ def generate_mission_decrease_justification(
             "evidence_refs": ["ev-accountability"],
         },
     ]
+
+    recommended_action, recommendations, commander_narrative = _validate_and_correct_output(
+        recommended_action=recommended_action,
+        recommendations=recommendations,
+        mission_delta_summary=mission_delta_summary,
+        confidence=confidence,
+        commander_narrative=commander_narrative,
+        loe_summary=loe_summary,
+        signals=signals,
+        ranked_factors=ranked_factors,
+    )
 
     assumptions_and_limits = [
         "Mission delta is derived from fact_production totals for the requested and baseline windows.",
