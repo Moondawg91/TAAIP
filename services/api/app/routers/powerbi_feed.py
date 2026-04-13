@@ -6,7 +6,7 @@ from fastapi.responses import StreamingResponse
 import csv
 import io
 from services.api.app import database as _dbmod
-from services.api.app.services import accountability_engine, execution_quality, funnel_engine, market_engine, roi_engine as _roi_engine_mod, school_access, school_plan_engine, targeting_engine, twg_engine as _twg_engine_mod, targeting_board_engine as _targeting_board_engine_mod, asset_engine as _asset_engine_mod, targeting_execution_tracker as _targeting_execution_tracker_mod
+from services.api.app.services import accountability_engine, execution_quality, flash_to_bang_processing_engine as _flash_to_bang_processing_engine_mod, funnel_engine, market_engine, roi_engine as _roi_engine_mod, school_access, school_plan_engine, targeting_engine, twg_engine as _twg_engine_mod, targeting_board_engine as _targeting_board_engine_mod, asset_engine as _asset_engine_mod, targeting_execution_tracker as _targeting_execution_tracker_mod
 
 router = APIRouter(prefix="/powerbi", tags=["powerbi"])
 
@@ -553,6 +553,7 @@ def operational_command_dataset(scope_type: str = 'USAREC', scope_value: str = '
         twg = _twg_engine_mod.summarize_twg_engine(db, st, sv, st, sv)
         board = _targeting_board_engine_mod.summarize_targeting_board_engine(db, st, sv, st, sv)
         assets = _asset_engine_mod.summarize_asset_engine(db, st, sv, st, sv)
+        processing = _flash_to_bang_processing_engine_mod.summarize_flash_to_bang_processing_engine(db, st, sv, st, sv)
         execution_tracker = _targeting_execution_tracker_mod.summarize_targeting_execution_tracker(db, st, sv, st, sv)
         accountability = accountability_engine.classify_scope(db, st, sv)
 
@@ -587,6 +588,12 @@ def operational_command_dataset(scope_type: str = 'USAREC', scope_value: str = '
                 'asset_distribution': assets.get('asset_engine', {}).get('asset_distribution', []),
                 'asset_recommended_shifts': assets.get('asset_engine', {}).get('recommended_shifts', []),
                 'asset_execution_constraints': assets.get('asset_engine', {}).get('execution_constraints', []),
+                'processing_summary': processing.get('flash_to_bang_processing_engine', {}).get('summary', {}),
+                'processing_items': processing.get('flash_to_bang_processing_engine', {}).get('processing_items', []),
+                'processing_stalled_items': processing.get('flash_to_bang_processing_engine', {}).get('stalled_items', []),
+                'processing_overdue_items': processing.get('flash_to_bang_processing_engine', {}).get('overdue_items', []),
+                'processing_escalations': processing.get('flash_to_bang_processing_engine', {}).get('escalations', []),
+                'processing_scorecard': processing.get('flash_to_bang_processing_engine', {}).get('processing_scorecard', {}),
                 'execution_summary': execution_tracker.get('targeting_execution_tracker', {}).get('summary', {}),
                 'execution_items': execution_tracker.get('targeting_execution_tracker', {}).get('execution_items', []),
                 'blocked_items': execution_tracker.get('targeting_execution_tracker', {}).get('blocked_items', []),

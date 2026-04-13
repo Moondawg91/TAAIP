@@ -11,6 +11,7 @@ from sqlalchemy import text
 from services.api.app.services import (
     accountability_engine,
     execution_quality,
+    flash_to_bang_processing_engine,
     funnel_engine,
     loe_engine,
     market_engine,
@@ -191,6 +192,14 @@ def _collect_signal_summaries(db, scope_type: str, scope_value: str) -> Dict:
     twg = twg_engine.summarize_twg_engine(db, scope_type, scope_value, scope_type, scope_value, top_n=15)
     board = targeting_board_engine.summarize_targeting_board_engine(db, scope_type, scope_value, scope_type, scope_value, top_n=15)
     assets = asset_engine.summarize_asset_engine(db, scope_type, scope_value, scope_type, scope_value, top_n=15)
+    processing = flash_to_bang_processing_engine.summarize_flash_to_bang_processing_engine(
+        db,
+        scope_type,
+        scope_value,
+        scope_type,
+        scope_value,
+        top_n=15,
+    )
     execution_tracker = targeting_execution_tracker.summarize_targeting_execution_tracker(
         db,
         scope_type,
@@ -279,6 +288,12 @@ def _collect_signal_summaries(db, scope_type: str, scope_value: str) -> Dict:
             "data_as_of": _safe_timestamp(assets, "asset_engine"),
             "rows_used": len(((assets.get("asset_engine") or {}).get("asset_distribution") or [])),
         },
+        "flash_to_bang_processing": {
+            "raw": processing,
+            "summary": _safe_summary(processing, "flash_to_bang_processing_engine", "summary"),
+            "data_as_of": datetime.utcnow().isoformat() + "Z",
+            "rows_used": len(((processing.get("flash_to_bang_processing_engine") or {}).get("processing_items") or [])),
+        },
         "execution_tracker": {
             "raw": execution_tracker,
             "summary": _safe_summary(execution_tracker, "targeting_execution_tracker", "summary"),
@@ -301,6 +316,7 @@ def _compute_factor_candidates(
     loe_summary = signals["loe"]["summary"]
     roi_summary = signals.get("roi", {}).get("summary") or {}
     twg_summary = signals.get("twg", {}).get("summary") or {}
+    processing_summary = signals.get("flash_to_bang_processing", {}).get("summary") or {}
     execution_tracker_summary = signals.get("execution_tracker", {}).get("summary") or {}
 
     loe_counts = loe_summary.get("status_counts") or {}
@@ -451,6 +467,28 @@ def _compute_factor_candidates(
             ),
         },
         {
+            "factor_id": "flash_to_bang_processing_pressure",
+            "label": "Flash-to-bang processing pressure",
+            "impact": -1.0
+            * (
+                float(processing_summary.get("stalled") or 0)
+                + float(processing_summary.get("overdue") or 0)
+            )
+            / float(max(1, processing_summary.get("total_processing_items") or 1)),
+            "source": "flash_to_bang_processing_engine",
+            "signal_key": "flash_to_bang_processing",
+            "recency_score": 1.0 if signals.get("flash_to_bang_processing", {}).get("data_as_of") else 0.4,
+            "agreement_tokens": ["processing_decrease_risk"]
+            if str(processing_summary.get("processing_posture") or "unknown") in {"watch", "failing"}
+            else ["processing_supportive"],
+            "rationale": (
+                f"processing_posture={processing_summary.get('processing_posture', 'unknown')}, "
+                f"stalled={processing_summary.get('stalled', 0)}, "
+                f"overdue={processing_summary.get('overdue', 0)}, "
+                f"authoritative_flash_to_bang_days={processing_summary.get('authoritative_flash_to_bang_days', 0.0)}"
+            ),
+        },
+        {
             "factor_id": "execution_tracker_pressure",
             "label": "Execution tracker stall pressure",
             "impact": -1.0
@@ -533,6 +571,7 @@ def _compute_confidence(ranked_factors: List[Dict], signals: Dict, mission_has_d
         bool(signals["school_plan"]["summary"]),
         bool((signals.get("roi", {}).get("raw", {}).get("roi_engine") or {}).get("prioritized_events")),
         bool((signals.get("twg", {}).get("raw", {}).get("twg_engine") or {}).get("prioritized_items")),
+        bool((signals.get("flash_to_bang_processing", {}).get("raw", {}).get("flash_to_bang_processing_engine") or {}).get("processing_items")),
         bool((signals.get("execution_tracker", {}).get("raw", {}).get("targeting_execution_tracker") or {}).get("execution_items")),
         mission_has_data,
     ]
@@ -554,6 +593,7 @@ def _compute_confidence(ranked_factors: List[Dict], signals: Dict, mission_has_d
         bool(signals["school_plan"].get("data_as_of")),
         bool(signals.get("roi", {}).get("data_as_of")),
         bool(signals.get("twg", {}).get("data_as_of")),
+        bool(signals.get("flash_to_bang_processing", {}).get("data_as_of")),
         bool(signals.get("execution_tracker", {}).get("data_as_of")),
     ]
     recency_signal = sum(1 for x in recency_checks if x) / float(len(recency_checks))
@@ -1163,7 +1203,7 @@ def _build_evidence_list(request_id: str, signals: Dict, mission_current: Missio
         },
     ]
 
-    for key in ("market", "access", "execution", "funnel", "accountability", "loe", "targeting", "school_plan", "roi", "twg", "execution_tracker"):
+    for key in ("market", "access", "execution", "funnel", "accountability", "loe", "targeting", "school_plan", "roi", "twg", "flash_to_bang_processing", "execution_tracker"):
         sig = signals.get(key) or {}
         evidence.append(
             {
