@@ -232,3 +232,38 @@ Integration points:
 - command center overview block (`market_engine`)
 - Power BI operational dataset (`market_engine_summary`)
 
+## Funnel Engine (Operational)
+
+Source dataset:
+
+- `data/dev_datasets/Recruiting Funnel Enriched.csv`
+
+Behavior and constraints:
+
+- Uses only uploaded operational funnel source data (no synthetic fallback).
+- Supports malformed/non-canonical headers via value-pattern inference.
+- If source is unavailable: `status=no_active_dataset`.
+- If required canonical mapping cannot be inferred: `status=invalid_dataset_schema` with `schema_error` and `schema_mapping`.
+- Scope-aware summaries are supported for `USAREC`, `BDE`, `BN`, `CO`, and `STN`.
+- Output ranking is deterministic and stable-sorted.
+
+Canonical operational summary includes:
+
+- `total_leads`
+- `total_appointments`
+- `total_interviews`
+- `total_contracts`
+- `lead_to_appointment_rate`
+- `appointment_to_interview_rate`
+- `interview_to_contract_rate`
+- `lead_to_contract_rate`
+- `largest_dropoff_stage`
+- `overall_funnel_status` (`healthy` | `watch` | `critical` | `unknown`)
+
+Integration points:
+
+- mission adjustment justification signal collection (`funnel_health` factor)
+- command center overview block (`phase2.funnel_engine`)
+- Power BI operational dataset (`funnel_engine_summary`)
+- targeting expansion metadata (`funnel_signal` per recommendation)
+
