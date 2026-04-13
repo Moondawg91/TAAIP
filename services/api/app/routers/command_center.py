@@ -9,6 +9,7 @@ from services.api.app.services import loe_engine, targeting_expansion, accountab
 from services.api.app.services import market_engine
 from services.api.app.services import funnel_engine
 from services.api.app.services import targeting_engine
+from services.api.app.services import school_plan_engine
 from services.api.app.services import ai_recommendation_engine, execution_quality, school_access
 
 router = APIRouter(prefix="/command-center", tags=["command-center"])
@@ -146,6 +147,14 @@ def overview(fy: Optional[int] = None, qtr: Optional[int] = None, month: Optiona
                         top_n=10,
                     ),
                     'school_access': school_access.summarize_school_access(
+                        db,
+                        scope_type=scope_type_eff,
+                        scope_value=scope_value_eff,
+                        actor_scope_type=scope_type_eff,
+                        actor_scope_value=scope_value_eff,
+                        top_n=10,
+                    ),
+                    'school_plan_engine': school_plan_engine.summarize_school_plan_engine(
                         db,
                         scope_type=scope_type_eff,
                         scope_value=scope_value_eff,

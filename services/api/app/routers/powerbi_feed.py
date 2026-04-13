@@ -6,7 +6,7 @@ from fastapi.responses import StreamingResponse
 import csv
 import io
 from services.api.app import database as _dbmod
-from services.api.app.services import accountability_engine, execution_quality, funnel_engine, market_engine, school_access, targeting_engine
+from services.api.app.services import accountability_engine, execution_quality, funnel_engine, market_engine, school_access, school_plan_engine, targeting_engine
 
 router = APIRouter(prefix="/powerbi", tags=["powerbi"])
 
@@ -548,6 +548,7 @@ def operational_command_dataset(scope_type: str = 'USAREC', scope_value: str = '
         execq = execution_quality.summarize_execution_quality(db, st, sv, st, sv)
         funnel = funnel_engine.summarize_funnel_engine(db, st, sv, st, sv)
         targeting = targeting_engine.summarize_targeting_engine(db, st, sv, st, sv)
+        school_plan = school_plan_engine.summarize_school_plan_engine(db, st, sv, st, sv)
         accountability = accountability_engine.classify_scope(db, st, sv)
 
         return {
@@ -561,6 +562,9 @@ def operational_command_dataset(scope_type: str = 'USAREC', scope_value: str = '
                 'execution_quality_summary': execq.get('execution_quality', {}).get('summary', {}),
                 'funnel_engine_summary': funnel.get('funnel_engine', {}).get('summary', {}),
                 'targeting_engine_summary': targeting.get('targeting_engine', {}).get('summary', {}),
+                'school_plan_summary': school_plan.get('school_plan_engine', {}).get('summary', {}),
+                'school_plan_prioritized_schools': school_plan.get('school_plan_engine', {}).get('prioritized_schools', []),
+                'school_plan_actions': school_plan.get('school_plan_engine', {}).get('school_recruiting_plan', []),
                 'accountability': accountability,
             }
         }

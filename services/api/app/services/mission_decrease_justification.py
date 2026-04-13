@@ -15,6 +15,7 @@ from services.api.app.services import (
     loe_engine,
     market_engine,
     school_access,
+    school_plan_engine,
     targeting_engine,
 )
 
@@ -180,6 +181,7 @@ def _collect_signal_summaries(db, scope_type: str, scope_value: str) -> Dict:
     accountability = accountability_engine.classify_scope(db, scope_type, scope_value)
     loe = loe_engine.summarize_loes(db, scope_type, scope_value)
     targeting = targeting_engine.summarize_targeting_engine(db, scope_type, scope_value, scope_type, scope_value, top_n=15)
+    school_plan = school_plan_engine.summarize_school_plan_engine(db, scope_type, scope_value, scope_type, scope_value, top_n=15)
 
     return {
         "market": {
@@ -228,6 +230,13 @@ def _collect_signal_summaries(db, scope_type: str, scope_value: str) -> Dict:
             "source_dataset_name": ((targeting.get("targeting_engine") or {}).get("data_sources") or {}).get("market"),
             "rows_used": len(((targeting.get("targeting_engine") or {}).get("prioritized_targets") or [])),
         },
+        "school_plan": {
+            "raw": school_plan,
+            "summary": _safe_summary(school_plan, "school_plan_engine", "summary"),
+            "data_as_of": _safe_timestamp(school_plan, "school_plan_engine"),
+            "source_dataset_name": (school_plan.get("school_plan_engine") or {}).get("source_school_dataset"),
+            "rows_used": len(((school_plan.get("school_plan_engine") or {}).get("prioritized_schools") or [])),
+        },
     }
 
 
@@ -239,6 +248,7 @@ def _compute_factor_candidates(
     access_summary = signals["access"]["summary"]
     exec_summary = signals["execution"]["summary"]
     funnel_summary = signals["funnel"]["summary"]
+    school_plan_summary = signals["school_plan"]["summary"]
     acc_summary = signals["accountability"]["summary"]
     loe_summary = signals["loe"]["summary"]
 
@@ -300,6 +310,21 @@ def _compute_factor_candidates(
             "rationale": (
                 f"overall_funnel_status={funnel_summary.get('overall_funnel_status', 'unknown')}, "
                 f"lead_to_contract_rate={funnel_summary.get('lead_to_contract_rate', 0.0)}"
+            ),
+        },
+        {
+            "factor_id": "school_plan_gap",
+            "label": "School plan under-engagement pressure",
+            "impact": -1.0 * (
+                (float(school_plan_summary.get("underengaged_school_count") or 0.0) / float(max(1, school_plan_summary.get("total_schools") or 0)))
+            ),
+            "source": "school_plan_engine",
+            "signal_key": "school_plan",
+            "recency_score": 1.0 if signals["school_plan"].get("data_as_of") else 0.4,
+            "agreement_tokens": ["school_plan_decrease_risk"] if int(school_plan_summary.get("priority_school_count") or 0) > 0 else ["school_plan_supportive"],
+            "rationale": (
+                f"underengaged_school_count={school_plan_summary.get('underengaged_school_count', 0)}, "
+                f"priority_school_count={school_plan_summary.get('priority_school_count', 0)}"
             ),
         },
         {
@@ -379,7 +404,8 @@ def _compute_confidence(ranked_factors: List[Dict], signals: Dict, mission_has_d
         bool(signals["funnel"]["summary"]),
         bool(signals["accountability"]["summary"]),
         bool(signals["loe"]["summary"]),
-        bool(signals["targeting"]["raw"].get("recommendations")),
+        bool(((signals["targeting"]["raw"].get("targeting_engine") or {}).get("prioritized_targets") or [])),
+        bool(signals["school_plan"]["summary"]),
         mission_has_data,
     ]
     completeness = sum(1 for x in completeness_checks if x) / float(len(completeness_checks))
@@ -397,6 +423,7 @@ def _compute_confidence(ranked_factors: List[Dict], signals: Dict, mission_has_d
         bool(signals["accountability"].get("data_as_of")),
         bool(signals["loe"].get("data_as_of")),
         bool(signals["targeting"].get("data_as_of")),
+        bool(signals["school_plan"].get("data_as_of")),
     ]
     recency_signal = sum(1 for x in recency_checks if x) / float(len(recency_checks))
 
@@ -553,7 +580,7 @@ def _derive_recommended_action(
     major_degraded_factor_count = _count_major_degraded_factors(ranked_factors)
     market_status = str(((signals.get("market") or {}).get("summary") or {}).get("overall_market_status") or "unknown").lower()
     loe_missing = int(loe_summary.get("total_metrics") or 0) == 0
-    targeting_missing = len(((signals.get("targeting") or {}).get("raw") or {}).get("recommendations") or []) == 0
+    targeting_missing = len(((((signals.get("targeting") or {}).get("raw") or {}).get("targeting_engine") or {}).get("prioritized_targets") or [])) == 0
     uncertain = loe_missing or market_status == "unknown" or targeting_missing
 
     action_type = "hold"
@@ -737,6 +764,47 @@ def _targeting_shift_recommendation(signals: Dict, owner_level: str) -> Dict:
     }
 
 
+def _school_plan_recommendation(signals: Dict, owner_level: str) -> Dict:
+    raw = signals["school_plan"]["raw"] or {}
+    plan = ((raw.get("school_plan_engine") or {}).get("school_recruiting_plan") or [])
+    if not plan:
+        return {
+            "type": "school_plan_action",
+            "priority": 3,
+            "title": f"{owner_level} confirm school recruiting action owners",
+            "owner_level": owner_level,
+            "action": "No school plan actions are currently available. Validate school and contact data for this scope.",
+            "expected_effect": "Restores reliable school planning signals for next mission cycle.",
+            "time_horizon": "next command cycle",
+            "rationale": "school_plan_engine returned no actionable rows for this scope.",
+            "linked_factors": ["school_plan_gap", "school_access"],
+            "source": "school_plan_engine",
+            "timestamp": datetime.utcnow().isoformat() + "Z",
+            "actions": [
+                "Validate schools dataset mapping for the scope.",
+                "Confirm active school contacts ingestion for all stations.",
+            ],
+            "evidence_refs": ["ev-school_plan"],
+        }
+
+    top = plan[0]
+    return {
+        "type": "school_plan_action",
+        "priority": 2,
+        "title": f"{owner_level} execute top school recruiting action",
+        "owner_level": owner_level,
+        "action": top.get("action"),
+        "expected_effect": top.get("expected_effect"),
+        "time_horizon": top.get("time_horizon") or "next 14 days",
+        "rationale": top.get("rationale") or "Top prioritized school action from school_plan_engine.",
+        "linked_factors": ["school_plan_gap", "funnel_health", "school_access"],
+        "source": "school_plan_engine",
+        "timestamp": datetime.utcnow().isoformat() + "Z",
+        "actions": [top.get("action")],
+        "evidence_refs": ["ev-school_plan", top.get("trace_id") or "ev-school_plan-top"],
+    }
+
+
 def _build_accountability_brief(scope_type: str, scope_value: str, signals: Dict) -> Dict:
     acc = signals["accountability"]["summary"] or {}
     cls = str(acc.get("classification") or "insufficient_data")
@@ -917,7 +985,7 @@ def _build_evidence_list(request_id: str, signals: Dict, mission_current: Missio
         },
     ]
 
-    for key in ("market", "access", "execution", "funnel", "accountability", "loe", "targeting"):
+    for key in ("market", "access", "execution", "funnel", "accountability", "loe", "targeting", "school_plan"):
         evidence.append(
             {
                 "evidence_id": f"ev-{key}",
@@ -928,7 +996,7 @@ def _build_evidence_list(request_id: str, signals: Dict, mission_current: Missio
             }
         )
 
-    if not (signals["targeting"]["raw"].get("recommendations") or []):
+    if not ((((signals["targeting"]["raw"] or {}).get("targeting_engine") or {}).get("prioritized_targets") or [])):
         evidence.append(
             {
                 "evidence_id": "ev-targeting-empty",
@@ -995,6 +1063,7 @@ def generate_mission_decrease_justification(
 
     owner_level = _infer_owner_level(scope_type)
     targeting_recommendation = _targeting_shift_recommendation(signals, owner_level)
+    school_plan_recommendation = _school_plan_recommendation(signals, owner_level)
     accountability_brief = _build_accountability_brief(scope_type, scope_value, signals)
     loe_summary = _build_loe_summary(signals)
     confidence, recency_signal = _compute_confidence(
@@ -1052,6 +1121,12 @@ def generate_mission_decrease_justification(
             "recommendation_id": f"rec-{request_id}-targeting",
             "trace_id": f"{request_id}:recommendation:targeting",
             "kind": "targeting_shift",
+        },
+        {
+            **school_plan_recommendation,
+            "recommendation_id": f"rec-{request_id}-school-plan",
+            "trace_id": f"{request_id}:recommendation:school-plan",
+            "kind": "school_plan_action",
         },
         {
             "recommendation_id": f"rec-{request_id}-accountability",
@@ -1163,6 +1238,12 @@ def generate_mission_decrease_justification(
                 "source_dataset_name": signals.get("targeting", {}).get("source_dataset_name"),
                 "rows_used": signals.get("targeting", {}).get("rows_used"),
                 "summary": signals.get("targeting", {}).get("summary") or {},
+            },
+            "school_plan": {
+                "status": signals.get("school_plan", {}).get("raw", {}).get("status"),
+                "source_dataset_name": signals.get("school_plan", {}).get("source_dataset_name"),
+                "rows_used": signals.get("school_plan", {}).get("rows_used"),
+                "summary": signals.get("school_plan", {}).get("summary") or {},
             },
         },
         "evidence": evidence,
