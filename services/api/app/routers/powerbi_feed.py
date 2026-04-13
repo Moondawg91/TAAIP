@@ -6,7 +6,7 @@ from fastapi.responses import StreamingResponse
 import csv
 import io
 from services.api.app import database as _dbmod
-from services.api.app.services import accountability_engine, execution_quality, funnel_engine, market_engine, roi_engine as _roi_engine_mod, school_access, school_plan_engine, targeting_engine
+from services.api.app.services import accountability_engine, execution_quality, funnel_engine, market_engine, roi_engine as _roi_engine_mod, school_access, school_plan_engine, targeting_engine, twg_engine as _twg_engine_mod
 
 router = APIRouter(prefix="/powerbi", tags=["powerbi"])
 
@@ -550,6 +550,7 @@ def operational_command_dataset(scope_type: str = 'USAREC', scope_value: str = '
         targeting = targeting_engine.summarize_targeting_engine(db, st, sv, st, sv)
         school_plan = school_plan_engine.summarize_school_plan_engine(db, st, sv, st, sv)
         roi = _roi_engine_mod.summarize_roi_engine(db, st, sv, st, sv)
+        twg = _twg_engine_mod.summarize_twg_engine(db, st, sv, st, sv)
         accountability = accountability_engine.classify_scope(db, st, sv)
 
         return {
@@ -570,6 +571,10 @@ def operational_command_dataset(scope_type: str = 'USAREC', scope_value: str = '
                 'roi_prioritized_events': roi.get('roi_engine', {}).get('prioritized_events', []),
                 'roi_recommendations': roi.get('roi_engine', {}).get('roi_recommendations', []),
                 'roi_event_type_performance': roi.get('roi_engine', {}).get('event_type_performance', []),
+                'twg_summary': twg.get('twg_engine', {}).get('summary', {}),
+                'twg_prioritized_items': twg.get('twg_engine', {}).get('prioritized_items', []),
+                'twg_due_outs': twg.get('twg_engine', {}).get('due_outs', []),
+                'twg_board_candidates': twg.get('twg_engine', {}).get('board_candidates', []),
                 'accountability': accountability,
             }
         }

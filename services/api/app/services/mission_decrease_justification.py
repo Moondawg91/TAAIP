@@ -18,6 +18,7 @@ from services.api.app.services import (
     school_access,
     school_plan_engine,
     targeting_engine,
+    twg_engine,
 )
 
 WEIGHTS = {
@@ -184,6 +185,7 @@ def _collect_signal_summaries(db, scope_type: str, scope_value: str) -> Dict:
     targeting = targeting_engine.summarize_targeting_engine(db, scope_type, scope_value, scope_type, scope_value, top_n=15)
     school_plan = school_plan_engine.summarize_school_plan_engine(db, scope_type, scope_value, scope_type, scope_value, top_n=15)
     roi = roi_engine.summarize_roi_engine(db, scope_type, scope_value, scope_type, scope_value, top_n=15)
+    twg = twg_engine.summarize_twg_engine(db, scope_type, scope_value, scope_type, scope_value, top_n=15)
 
     return {
         "market": {
@@ -245,6 +247,12 @@ def _collect_signal_summaries(db, scope_type: str, scope_value: str) -> Dict:
             "data_as_of": _safe_timestamp(roi, "roi_engine"),
             "rows_used": len(((roi.get("roi_engine") or {}).get("prioritized_events") or [])),
         },
+        "twg": {
+            "raw": twg,
+            "summary": _safe_summary(twg, "twg_engine", "summary"),
+            "data_as_of": _safe_timestamp(twg, "twg_engine"),
+            "rows_used": len(((twg.get("twg_engine") or {}).get("prioritized_items") or [])),
+        },
     }
 
 
@@ -260,6 +268,7 @@ def _compute_factor_candidates(
     acc_summary = signals["accountability"]["summary"]
     loe_summary = signals["loe"]["summary"]
     roi_summary = signals.get("roi", {}).get("summary") or {}
+    twg_summary = signals.get("twg", {}).get("summary") or {}
 
     loe_counts = loe_summary.get("status_counts") or {}
     loe_total = float(loe_summary.get("total_metrics") or 0.0)
@@ -373,6 +382,23 @@ def _compute_factor_candidates(
                 f"avg_roi_score={roi_summary.get('avg_roi_score')}"
             ),
         },
+        {
+            "factor_id": "twg_issue_concentration",
+            "label": "TWG issue concentration",
+            "impact": -1.0 * (
+                float(twg_summary.get("high_priority_count") or 0)
+                / float(max(1, twg_summary.get("total_items") or 1))
+            ),
+            "source": "twg_engine",
+            "signal_key": "twg",
+            "recency_score": 1.0 if signals.get("twg", {}).get("data_as_of") else 0.4,
+            "agreement_tokens": ["twg_decrease_risk"] if int(twg_summary.get("high_priority_count") or 0) > 0 else ["twg_supportive"],
+            "rationale": (
+                f"high_priority_count={twg_summary.get('high_priority_count', 0)}, "
+                f"total_items={twg_summary.get('total_items', 0)}, "
+                f"overall_twg_status={twg_summary.get('overall_twg_status', 'unknown')}"
+            ),
+        },
     ]
     return factors
 
@@ -433,6 +459,7 @@ def _compute_confidence(ranked_factors: List[Dict], signals: Dict, mission_has_d
         bool(((signals["targeting"]["raw"].get("targeting_engine") or {}).get("prioritized_targets") or [])),
         bool(signals["school_plan"]["summary"]),
         bool((signals.get("roi", {}).get("raw", {}).get("roi_engine") or {}).get("prioritized_events")),
+        bool((signals.get("twg", {}).get("raw", {}).get("twg_engine") or {}).get("prioritized_items")),
         mission_has_data,
     ]
     completeness = sum(1 for x in completeness_checks if x) / float(len(completeness_checks))
@@ -452,6 +479,7 @@ def _compute_confidence(ranked_factors: List[Dict], signals: Dict, mission_has_d
         bool(signals["targeting"].get("data_as_of")),
         bool(signals["school_plan"].get("data_as_of")),
         bool(signals.get("roi", {}).get("data_as_of")),
+        bool(signals.get("twg", {}).get("data_as_of")),
     ]
     recency_signal = sum(1 for x in recency_checks if x) / float(len(recency_checks))
 
@@ -1060,7 +1088,7 @@ def _build_evidence_list(request_id: str, signals: Dict, mission_current: Missio
         },
     ]
 
-    for key in ("market", "access", "execution", "funnel", "accountability", "loe", "targeting", "school_plan", "roi"):
+    for key in ("market", "access", "execution", "funnel", "accountability", "loe", "targeting", "school_plan", "roi", "twg"):
         sig = signals.get(key) or {}
         evidence.append(
             {
@@ -1332,6 +1360,11 @@ def generate_mission_decrease_justification(
                 "status": signals.get("roi", {}).get("raw", {}).get("status"),
                 "rows_used": signals.get("roi", {}).get("rows_used"),
                 "summary": signals.get("roi", {}).get("summary") or {},
+            },
+            "twg": {
+                "status": signals.get("twg", {}).get("raw", {}).get("status"),
+                "rows_used": signals.get("twg", {}).get("rows_used"),
+                "summary": signals.get("twg", {}).get("summary") or {},
             },
         },
         "evidence": evidence,
