@@ -213,7 +213,7 @@ def test_recommended_action_deterministic_increase_decrease_hold():
     signals = {
         "access": {"summary": {"penetration_rate": 0.7, "overall_access_status": "access_supportive"}},
         "market": {"summary": {"overall_market_status": "supportive"}},
-        "targeting": {"raw": {"recommendations": [{"station_rsid": "1A1"}]}} ,
+        "targeting": {"raw": {"targeting_engine": {"prioritized_targets": [{"station_rsid": "1A1", "zip": "11111"}]}}},
     }
     ranked = [{"label": "LOE health"}, {"label": "School access penetration"}]
 
@@ -378,6 +378,19 @@ def test_mission_adjustment_includes_real_signal_summaries_when_data_exists(monk
     monkeypatch.setenv("TAAIP_MARKET_CORE_PATH", str(p))
 
     db = SessionLocal()
+    db.execute(
+        mdj.text(
+            """
+            CREATE TABLE IF NOT EXISTS fact_school_contacts (
+                id TEXT,
+                school_id TEXT,
+                school_name TEXT,
+                unit_rsid TEXT,
+                zip TEXT
+            )
+            """
+        )
+    )
     db.execute(
         mdj.text(
             """
