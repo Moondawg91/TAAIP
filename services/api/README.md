@@ -331,3 +331,64 @@ Integration points:
 - command center overview block (`phase2.school_plan_engine`)
 - Power BI operational dataset (`school_plan_summary`, `school_plan_prioritized_schools`, `school_plan_actions`)
 
+---
+
+## ROI / Event Effectiveness Engine (Operational 420T)
+
+Authoritative module:
+
+- `services/api/app/services/roi_engine.py`
+
+Authoritative inputs (no synthetic data):
+
+- Events: `emm_event` table (primary — has unit_rsid, zip, cost_total); fallback to `event_fact`.
+- Costs: `spend_fact` grouped by `event_id` (overrides `emm_event.cost_total` when present).
+- Leads/contracts: `lead_journey_fact` grouped by `event_id` (contract_flag=1 for contracts).
+- Benchmarks: `roi_thresholds` table (seeded keys: `cpl_target=100`, `cpc_target=2500`).
+- Market alignment: `market_engine.prioritized_market_zip` capability score for event zip.
+- Targeting alignment: `targeting_engine.prioritized_targets` priority score (0–1 → 0–100) for event zip.
+
+Deterministic scoring formula (all sub-scores 0–100):
+
+```
+roi_score = 0.35 * contract_outcome
+          + 0.25 * lead_outcome
+          + 0.20 * cost_efficiency
+          + 0.10 * market_alignment
+          + 0.10 * targeting_alignment
+```
+
+Sub-score definitions:
+
+| Sub-score | Inputs | Logic |
+|-----------|--------|-------|
+| `contract_outcome` | contracts, cost, cpc_target | CPC vs cpc_target bands (100/70/40/10); 0 if no contracts |
+| `lead_outcome` | leads, cost, cpl_target | CPL vs cpl_target bands (100/70/40/10); 0 if no leads |
+| `cost_efficiency` | leads, contracts | lead→contract rate bands (100/80/60/30/10); 50 neutral if no leads |
+| `market_alignment` | event zip → market_engine score | market_capability_score (0–100); 50 neutral if zip absent |
+| `targeting_alignment` | event zip → targeting score | priority_score × 100; 50 neutral if zip absent |
+
+Effectiveness bands: `high` ≥ 70, `moderate` 40–69, `low` < 40.
+
+ROI engine output shape:
+
+- `status`: `ok | no_data`
+- `roi_engine.summary`: total_events_scored, high/moderate/low counts, avg_roi_score, avg_cost_per_lead, avg_cost_per_contract, total_spend, total_leads, total_contracts, scoring_formula
+- `roi_engine.prioritized_events`: deterministic event ranking (roi_score DESC, event_id ASC) with all sub-scores, cost/lead/contract totals, recommendations list, trace_id
+- `roi_engine.event_type_performance`: per-event-type aggregates (avg_roi_score, event_count, effectiveness_band, avg_cost_per_contract)
+- `roi_engine.roi_recommendations`: command-level actions (owner_level, action, expected_effect, time_horizon, rationale, trace_id)
+- `roi_engine.data_as_of`: latest event start_dt across scored events
+- `roi_engine.source_tables`: lineage list
+
+Legacy duplicate paths unified under roi_engine:
+
+- `automation/engine.py:simple_event_recommendation()` — previously used LOE heuristic from `event_cost`. Now delegates to `roi_engine.compute_*` functions using `spend_fact` + `lead_journey_fact` for deterministic scoring.
+- `routers/roi.py` `/financial` and `/score` endpoints accept manual payload inputs (separate API surface for ad-hoc calculation; not replaced).
+
+Integration points:
+
+- mission adjustment signal collection (`roi` block and `roi_effectiveness` causal factor)
+- mission recommendations (`roi_action` recommendation derived from top roi_engine recommendation)
+- command center overview block (`phase2.roi_engine`)
+- Power BI operational dataset (`roi_summary`, `roi_prioritized_events`, `roi_recommendations`, `roi_event_type_performance`)
+
