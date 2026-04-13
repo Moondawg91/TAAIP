@@ -5,6 +5,7 @@ from sqlalchemy import text
 from services.api.app import models
 from services.api.app import models_domain as domain
 from services.api.app.services import market_engine
+from services.api.app.services import school_access
 from services.api.app.services.market_targeting import (
     enrich_reason_codes_with_market,
     get_market_targeting_overlays,
@@ -271,6 +272,57 @@ def _targeting_guidance(market_category: str, opportunity: float, effort_signal:
     }
 
 
+def _school_signal(station_status: str, penetration_rate: float, zip_status: str) -> str:
+    z = (zip_status or "").lower()
+    s = (station_status or "").lower()
+    p = float(penetration_rate or 0.0)
+    if z in {"access_constrained", "underpenetrated"} or s in {"access_constrained", "constrained", "red"} or p < 0.5:
+        return "constrained"
+    if z in {"accessing_market", "supportive"} or s in {"accessing_market", "supportive", "green"} or p >= 0.5:
+        return "supportive"
+    return "unknown"
+
+
+def _load_school_access_maps(db, scope_type: str, scope_value: str) -> Dict[str, Dict]:
+    payload = school_access.summarize_school_access(
+        db,
+        scope_type=scope_type,
+        scope_value=scope_value,
+        actor_scope_type=scope_type,
+        actor_scope_value=scope_value,
+        top_n=500,
+    )
+    if payload.get("status") != "ok":
+        return {"by_station": {}, "by_zip": {}}
+
+    access = payload.get("school_access") or {}
+    by_station_rows = ((access.get("by_scope") or {}).get("station") or [])
+    by_station = {
+        str(r.get("station_rsid") or ""): {
+            "penetration_rate": float(r.get("penetration_rate") or 0.0),
+            "access_status": str(r.get("access_status") or "unknown"),
+            "contacts_count": int(r.get("contacts_count") or 0),
+        }
+        for r in by_station_rows
+        if str(r.get("station_rsid") or "")
+    }
+
+    by_zip = {}
+    for r in (access.get("top_access_gaps") or []):
+        stn = str(r.get("station_rsid") or "")
+        zc = str(r.get("zip_code") or "")
+        if not stn or not zc:
+            continue
+        by_zip[f"{stn}:{zc}"] = {
+            "access_classification": str(r.get("access_classification") or "unknown"),
+            "access_gap_score": float(r.get("access_gap_score") or 0.0),
+            "contacts_count": int(r.get("contacts_count") or 0),
+            "contracts_count": int(r.get("contracts_count") or 0),
+        }
+
+    return {"by_station": by_station, "by_zip": by_zip}
+
+
 def recommendations_for_scope(db, scope_type: str, scope_value: str, top_n: int = 20) -> Dict:
     prefix = _scope_prefix(scope_type, scope_value)
     market_payload = market_engine.summarize_market_engine(
@@ -279,12 +331,13 @@ def recommendations_for_scope(db, scope_type: str, scope_value: str, top_n: int 
         scope_value=scope_value,
         actor_scope_type=scope_type,
         actor_scope_value=scope_value,
-        top_n=500,
+        top_n=max(500, top_n * 10),
     )
     market_priority_rows = {
         f"{str(r.get('station_rsid') or '')}:{str(r.get('zip') or '')}": r
         for r in ((market_payload.get("market_engine") or {}).get("prioritized_market_zip") or [])
     }
+    market_source_dataset_name = ((market_payload.get("market_engine") or {}).get("source_dataset_name"))
     market_overlays = get_market_targeting_overlays(
         db,
         scope_type=scope_type,
@@ -298,10 +351,19 @@ def recommendations_for_scope(db, scope_type: str, scope_value: str, top_n: int 
         q = q.filter(models.StationZipCoverage.station_rsid.like(f"{prefix}%"))
     rows = q.all()
 
-    if not rows:
+    coverage_by_key = {
+        f"{str(r.station_rsid or '')}:{str(r.zip_code or '')}": r
+        for r in rows
+        if str(r.station_rsid or "") and str(r.zip_code or "")
+    }
+    base_keys = sorted(set(coverage_by_key.keys()) | set(market_priority_rows.keys()))
+
+    if not base_keys:
         return {
             "scope_type": scope_type,
             "scope_value": scope_value,
+            "source_dataset_name": market_source_dataset_name,
+            "market_source_dataset_name": market_source_dataset_name,
             "formula": {
                 "priority_score": "100*(0.30*market_category_weight + 0.25*market_potential + 0.15*warning_severity + 0.15*production_gap + 0.10*effort_gap + 0.05*burden_pressure)",
             },
@@ -310,19 +372,22 @@ def recommendations_for_scope(db, scope_type: str, scope_value: str, top_n: int 
 
     weights = _load_weights(db)
     max_weight = max(weights.values()) if weights else 1.0
-    stations = sorted({r.station_rsid for r in rows if r.station_rsid})
+    stations = sorted({k.split(":", 1)[0] for k in base_keys if ":" in k})
     burden_map = _latest_burden_by_scope(db, stations)
     production_map = _load_production_signal(db)
     effort_map = _load_effort_signal(db)
+    school_maps = _load_school_access_maps(db, scope_type, scope_value)
 
     recs = []
-    for row in rows:
-        station = row.station_rsid
-        market_category = row.market_category.name if hasattr(row.market_category, "name") else str(row.market_category)
+    for market_key in base_keys:
+        station, zip_code = market_key.split(":", 1)
+        row = coverage_by_key.get(market_key)
+        market_category = "UNK"
+        if row is not None:
+            market_category = row.market_category.name if hasattr(row.market_category, "name") else str(row.market_category)
         market_weight_raw = float(weights.get(market_category, 1.0))
         market_weight = _clamp01(market_weight_raw / max_weight)
 
-        market_key = f"{station}:{row.zip_code}"
         market_row = market_priority_rows.get(market_key, {})
         if market_row:
             opportunity = _clamp01(float(market_row.get("market_capability_score") or 0.0) / 100.0)
@@ -338,6 +403,15 @@ def recommendations_for_scope(db, scope_type: str, scope_value: str, top_n: int 
         production_gap = _clamp01(1.0 - production_signal)
         effort_gap = _clamp01(1.0 - effort_signal)
 
+        station_school = (school_maps.get("by_station") or {}).get(station, {})
+        zip_school = (school_maps.get("by_zip") or {}).get(market_key, {})
+        school_penetration = float(station_school.get("penetration_rate") or 0.0)
+        school_status = _school_signal(
+            station_status=str(station_school.get("access_status") or ""),
+            penetration_rate=school_penetration,
+            zip_status=str(zip_school.get("access_classification") or ""),
+        )
+
         priority_score = 100.0 * (
             0.30 * market_weight
             + 0.25 * opportunity
@@ -351,21 +425,45 @@ def recommendations_for_scope(db, scope_type: str, scope_value: str, top_n: int 
         merged_reasons = enrich_reason_codes_with_market(base_reasons, market_overlays.get(market_key, {}))
         if market_row and str(market_row.get("opportunity_band") or "") == "weak" and "high_qma_low_output" not in merged_reasons:
             merged_reasons.append("high_qma_low_output")
+        if school_status == "constrained" and "access_constrained" not in merged_reasons:
+            merged_reasons.append("access_constrained")
+
+        opportunity_band = str(market_row.get("opportunity_band") or "unknown")
+        capability_score = round(opportunity * 100.0, 2)
+        rationale_parts = [
+            f"market {opportunity_band} ({capability_score})",
+            f"school_access {school_status}",
+        ]
+        if zip_school:
+            rationale_parts.append(f"school_gap {round(float(zip_school.get('access_gap_score') or 0.0), 2)}")
+        rationale = "; ".join(rationale_parts)
 
         recs.append(
             {
                 "entity_type": "zip",
                 "station_rsid": station,
                 "company_prefix": station[:3],
-                "zip_code": row.zip_code,
+                "zip": zip_code,
+                "zip_code": zip_code,
                 "market_category": market_category,
+                "market_capability_score": capability_score,
                 "market_potential_score": round(opportunity * 100.0, 2),
-                "market_opportunity_band": str(market_row.get("opportunity_band") or "unknown"),
+                "opportunity_band": opportunity_band,
+                "market_opportunity_band": opportunity_band,
                 "burden_ratio": round(burden_ratio, 4),
                 "warning_severity": round(warning_severity, 4),
                 "production_signal": round(production_signal, 4),
                 "effort_signal": round(effort_signal, 4),
+                "school_access_signal": {
+                    "status": school_status,
+                    "penetration_rate": round(school_penetration, 4),
+                    "access_gap_score": round(float(zip_school.get("access_gap_score") or 0.0), 2),
+                    "contacts_count": int(zip_school.get("contacts_count") or station_school.get("contacts_count") or 0),
+                    "contracts_count": int(zip_school.get("contracts_count") or 0),
+                },
                 "priority_score": round(priority_score, 2),
+                "rationale": rationale,
+                "trace_id": str(market_row.get("trace_id") or f"targeting:{station}:{zip_code}"),
                 "reason_codes": merged_reasons,
                 **_targeting_guidance(market_category, opportunity, effort_signal),
             }
@@ -402,6 +500,8 @@ def recommendations_for_scope(db, scope_type: str, scope_value: str, top_n: int 
     return {
         "scope_type": scope_type,
         "scope_value": scope_value,
+        "source_dataset_name": market_source_dataset_name,
+        "market_source_dataset_name": market_source_dataset_name,
         "formula": {
             "priority_score": "100*(0.30*market_category_weight + 0.25*market_potential + 0.15*warning_severity + 0.15*production_gap + 0.10*effort_gap + 0.05*burden_pressure)",
             "components": {
