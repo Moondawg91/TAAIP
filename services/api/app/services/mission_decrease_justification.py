@@ -15,7 +15,7 @@ from services.api.app.services import (
     loe_engine,
     market_engine,
     school_access,
-    targeting_expansion,
+    targeting_engine,
 )
 
 WEIGHTS = {
@@ -179,7 +179,7 @@ def _collect_signal_summaries(db, scope_type: str, scope_value: str) -> Dict:
     funnel = funnel_engine.summarize_funnel_engine(db, scope_type, scope_value, scope_type, scope_value, top_n=15)
     accountability = accountability_engine.classify_scope(db, scope_type, scope_value)
     loe = loe_engine.summarize_loes(db, scope_type, scope_value)
-    targeting = targeting_expansion.recommendations_for_scope(db, scope_type, scope_value, top_n=15)
+    targeting = targeting_engine.summarize_targeting_engine(db, scope_type, scope_value, scope_type, scope_value, top_n=15)
 
     return {
         "market": {
@@ -221,11 +221,12 @@ def _collect_signal_summaries(db, scope_type: str, scope_value: str) -> Dict:
         "targeting": {
             "raw": targeting,
             "summary": {
-                "recommendations_count": len(targeting.get("recommendations") or []),
+                "recommendations_count": len(((targeting.get("targeting_engine") or {}).get("prioritized_targets") or [])),
+                "high_priority_count": int((((targeting.get("targeting_engine") or {}).get("summary") or {}).get("high_priority_count") or 0)),
             },
             "data_as_of": datetime.utcnow().isoformat() + "Z",
-            "source_dataset_name": (market.get("market_engine") or {}).get("source_dataset_name"),
-            "rows_used": len(targeting.get("recommendations") or []),
+            "source_dataset_name": ((targeting.get("targeting_engine") or {}).get("data_sources") or {}).get("market"),
+            "rows_used": len(((targeting.get("targeting_engine") or {}).get("prioritized_targets") or [])),
         },
     }
 
@@ -671,7 +672,18 @@ def _validate_and_correct_output(
 
 
 def _targeting_shift_recommendation(signals: Dict, owner_level: str) -> Dict:
-    recs = list((signals["targeting"]["raw"].get("recommendations") or []))
+    targeting_raw = signals["targeting"]["raw"] or {}
+    recs = list((targeting_raw.get("recommendations") or []))
+    if not recs:
+        recs = [
+            {
+                "station_rsid": x.get("station_rsid"),
+                "zip_code": x.get("zip"),
+                "priority_score": round(float(x.get("priority_score") or 0.0) * 100.0, 2),
+                "warning_severity": 0.0,
+            }
+            for x in ((targeting_raw.get("targeting_engine") or {}).get("prioritized_targets") or [])
+        ]
     if not recs:
         return {
             "type": "targeting_shift",

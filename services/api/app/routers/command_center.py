@@ -8,6 +8,7 @@ from services.api.app.services import lead_line as lead_line_mod
 from services.api.app.services import loe_engine, targeting_expansion, accountability_engine
 from services.api.app.services import market_engine
 from services.api.app.services import funnel_engine
+from services.api.app.services import targeting_engine
 from services.api.app.services import ai_recommendation_engine, execution_quality, school_access
 
 router = APIRouter(prefix="/command-center", tags=["command-center"])
@@ -126,6 +127,14 @@ def overview(fy: Optional[int] = None, qtr: Optional[int] = None, month: Optiona
                     'loe_summary': loe_engine.summarize_loes(db, scope_type_eff, scope_value_eff),
                     'targeting_focus': _fmt_targeting_summary(
                         targeting_expansion.recommendations_for_scope(db, scope_type_eff, scope_value_eff, top_n=5)
+                    ),
+                    'targeting_engine': targeting_engine.summarize_targeting_engine(
+                        db,
+                        scope_type=scope_type_eff,
+                        scope_value=scope_value_eff,
+                        actor_scope_type=scope_type_eff,
+                        actor_scope_value=scope_value_eff,
+                        top_n=10,
                     ),
                     'accountability': accountability_engine.classify_scope(db, scope_type_eff, scope_value_eff),
                     'market_engine': market_engine.summarize_market_engine(

@@ -6,6 +6,7 @@ from services.api.app import models
 from services.api.app import models_domain as domain
 from services.api.app.services import market_engine
 from services.api.app.services import funnel_engine
+from services.api.app.services import targeting_engine
 from services.api.app.services import school_access
 from services.api.app.services.market_targeting import (
     enrich_reason_codes_with_market,
@@ -325,229 +326,99 @@ def _load_school_access_maps(db, scope_type: str, scope_value: str) -> Dict[str,
 
 
 def recommendations_for_scope(db, scope_type: str, scope_value: str, top_n: int = 20) -> Dict:
-    prefix = _scope_prefix(scope_type, scope_value)
-    market_payload = market_engine.summarize_market_engine(
+    payload = targeting_engine.summarize_targeting_engine(
         db,
         scope_type=scope_type,
         scope_value=scope_value,
         actor_scope_type=scope_type,
         actor_scope_value=scope_value,
-        top_n=max(500, top_n * 10),
+        top_n=top_n,
     )
-    market_priority_rows = {
-        f"{str(r.get('station_rsid') or '')}:{str(r.get('zip') or '')}": r
-        for r in ((market_payload.get("market_engine") or {}).get("prioritized_market_zip") or [])
-    }
-    market_source_dataset_name = ((market_payload.get("market_engine") or {}).get("source_dataset_name"))
-    funnel_payload = funnel_engine.summarize_funnel_engine(
-        db,
-        scope_type=scope_type,
-        scope_value=scope_value,
-        actor_scope_type=scope_type,
-        actor_scope_value=scope_value,
-        top_n=max(100, top_n * 5),
-    )
-    funnel_station_map = {
-        str(r.get("station_rsid") or ""): r
-        for r in (((funnel_payload.get("funnel_engine") or {}).get("by_scope") or {}).get("station") or [])
-        if str(r.get("station_rsid") or "")
-    }
-    market_overlays = get_market_targeting_overlays(
-        db,
-        scope_type=scope_type,
-        scope_value=scope_value,
-        actor_scope_type=scope_type,
-        actor_scope_value=scope_value,
-    )
+    engine = payload.get("targeting_engine") or {}
+    prioritized_targets = engine.get("prioritized_targets") or []
 
-    q = db.query(models.StationZipCoverage)
-    if prefix:
-        q = q.filter(models.StationZipCoverage.station_rsid.like(f"{prefix}%"))
-    rows = q.all()
+    recommendations = []
+    for t in prioritized_targets:
+        market_opportunity_band = str(t.get("opportunity_band") or "unknown")
+        school_signal = t.get("school_signal") or {}
+        funnel_signal = t.get("funnel_signal") or {}
 
-    coverage_by_key = {
-        f"{str(r.station_rsid or '')}:{str(r.zip_code or '')}": r
-        for r in rows
-        if str(r.station_rsid or "") and str(r.zip_code or "")
-    }
-    base_keys = sorted(set(coverage_by_key.keys()) | set(market_priority_rows.keys()))
+        reason_codes = []
+        if market_opportunity_band == "strong":
+            reason_codes.append("market_supports_shift")
+        if market_opportunity_band == "weak":
+            reason_codes.append("high_qma_low_output")
+        if bool(school_signal.get("gap")):
+            reason_codes.append("access_constrained")
+        if str(funnel_signal.get("status") or "") in {"critical", "watch"}:
+            reason_codes.append("poor_execution_in_good_market")
 
-    if not base_keys:
-        return {
-            "scope_type": scope_type,
-            "scope_value": scope_value,
-            "source_dataset_name": market_source_dataset_name,
-            "market_source_dataset_name": market_source_dataset_name,
-            "formula": {
-                "priority_score": "100*(0.30*market_category_weight + 0.25*market_potential + 0.15*warning_severity + 0.15*production_gap + 0.10*effort_gap + 0.05*burden_pressure)",
+        rec = {
+            "entity_type": "zip",
+            "station_rsid": str(t.get("station_rsid") or ""),
+            "company_prefix": str(t.get("station_rsid") or "")[:3],
+            "zip": str(t.get("zip") or ""),
+            "zip_code": str(t.get("zip") or ""),
+            "market_capability_score": float(t.get("market_capability_score") or 0.0),
+            "market_potential_score": float(t.get("market_capability_score") or 0.0),
+            "opportunity_band": market_opportunity_band,
+            "market_opportunity_band": market_opportunity_band,
+            "school_access_signal": {
+                "status": str(school_signal.get("access_level") or "unknown"),
+                "contacts_count": int(school_signal.get("contacts_count") or 0),
+                "access_gap_score": 100.0 if bool(school_signal.get("gap")) else 0.0,
             },
-            "recommendations": [],
+            "funnel_signal": {
+                "overall_funnel_status": str(funnel_signal.get("status") or "unknown"),
+                "lead_to_contract_rate": float(funnel_signal.get("conversion_rate") or 0.0),
+                "largest_dropoff_stage": funnel_signal.get("weak_stage"),
+            },
+            "priority_score": round(float(t.get("priority_score") or 0.0) * 100.0, 2),
+            "rationale": str(t.get("rationale") or ""),
+            "trace_id": str(t.get("trace_id") or ""),
+            "reason_codes": reason_codes,
+            "recommended_action": str(t.get("recommended_action") or "maintain_targeting_mix"),
+            **_targeting_guidance("UNK", float(t.get("market_capability_score") or 0.0) / 100.0, 0.5),
         }
+        recommendations.append(rec)
 
-    weights = _load_weights(db)
-    max_weight = max(weights.values()) if weights else 1.0
-    stations = sorted({k.split(":", 1)[0] for k in base_keys if ":" in k})
-    burden_map = _latest_burden_by_scope(db, stations)
-    production_map = _load_production_signal(db)
-    effort_map = _load_effort_signal(db)
-    school_maps = _load_school_access_maps(db, scope_type, scope_value)
-
-    recs = []
-    for market_key in base_keys:
-        station, zip_code = market_key.split(":", 1)
-        row = coverage_by_key.get(market_key)
-        market_category = "UNK"
-        if row is not None:
-            market_category = row.market_category.name if hasattr(row.market_category, "name") else str(row.market_category)
-        market_weight_raw = float(weights.get(market_category, 1.0))
-        market_weight = _clamp01(market_weight_raw / max_weight)
-
-        market_row = market_priority_rows.get(market_key, {})
-        if market_row:
-            opportunity = _clamp01(float(market_row.get("market_capability_score") or 0.0) / 100.0)
-        else:
-            opportunity = market_weight
-        burden_ratio = float(burden_map.get(station, 1.0))
-        burden_pressure = _clamp01((burden_ratio - 1.0) / 1.5)
-
-        production_signal = _clamp01(production_map.get(station, production_map.get(station[:3], 0.0)))
-        effort_signal = _clamp01(effort_map.get(station, effort_map.get(station[:3], 0.0)))
-        warning_severity = _warning_severity(db, station)
-
-        production_gap = _clamp01(1.0 - production_signal)
-        effort_gap = _clamp01(1.0 - effort_signal)
-
-        station_school = (school_maps.get("by_station") or {}).get(station, {})
-        zip_school = (school_maps.get("by_zip") or {}).get(market_key, {})
-        school_penetration = float(station_school.get("penetration_rate") or 0.0)
-        school_status = _school_signal(
-            station_status=str(station_school.get("access_status") or ""),
-            penetration_rate=school_penetration,
-            zip_status=str(zip_school.get("access_classification") or ""),
+    recommendations.sort(
+        key=lambda x: (
+            -float(x.get("priority_score") or 0.0),
+            str(x.get("station_rsid") or ""),
+            str(x.get("zip_code") or ""),
         )
-
-        priority_score = 100.0 * (
-            0.30 * market_weight
-            + 0.25 * opportunity
-            + 0.15 * warning_severity
-            + 0.15 * production_gap
-            + 0.10 * effort_gap
-            + 0.05 * burden_pressure
-        )
-
-        base_reasons = _reason_codes(opportunity, burden_pressure, production_signal, effort_signal)
-        merged_reasons = enrich_reason_codes_with_market(base_reasons, market_overlays.get(market_key, {}))
-        if market_row and str(market_row.get("opportunity_band") or "") == "weak" and "high_qma_low_output" not in merged_reasons:
-            merged_reasons.append("high_qma_low_output")
-        if school_status == "constrained" and "access_constrained" not in merged_reasons:
-            merged_reasons.append("access_constrained")
-
-        opportunity_band = str(market_row.get("opportunity_band") or "unknown")
-        capability_score = round(opportunity * 100.0, 2)
-        rationale_parts = [
-            f"market {opportunity_band} ({capability_score})",
-            f"school_access {school_status}",
-        ]
-        if zip_school:
-            rationale_parts.append(f"school_gap {round(float(zip_school.get('access_gap_score') or 0.0), 2)}")
-        rationale = "; ".join(rationale_parts)
-
-        recs.append(
-            {
-                "entity_type": "zip",
-                "station_rsid": station,
-                "company_prefix": station[:3],
-                "zip": zip_code,
-                "zip_code": zip_code,
-                "market_category": market_category,
-                "market_capability_score": capability_score,
-                "market_potential_score": round(opportunity * 100.0, 2),
-                "opportunity_band": opportunity_band,
-                "market_opportunity_band": opportunity_band,
-                "burden_ratio": round(burden_ratio, 4),
-                "warning_severity": round(warning_severity, 4),
-                "production_signal": round(production_signal, 4),
-                "effort_signal": round(effort_signal, 4),
-                "school_access_signal": {
-                    "status": school_status,
-                    "penetration_rate": round(school_penetration, 4),
-                    "access_gap_score": round(float(zip_school.get("access_gap_score") or 0.0), 2),
-                    "contacts_count": int(zip_school.get("contacts_count") or station_school.get("contacts_count") or 0),
-                    "contracts_count": int(zip_school.get("contracts_count") or 0),
-                },
-                "funnel_signal": {
-                    "overall_funnel_status": str((funnel_station_map.get(station) or {}).get("overall_funnel_status") or "unknown"),
-                    "lead_to_contract_rate": round(float((funnel_station_map.get(station) or {}).get("lead_to_contract_rate") or 0.0), 4),
-                    "largest_dropoff_stage": (funnel_station_map.get(station) or {}).get("largest_dropoff_stage"),
-                },
-                "priority_score": round(priority_score, 2),
-                "rationale": rationale,
-                "trace_id": str(market_row.get("trace_id") or f"targeting:{station}:{zip_code}"),
-                "reason_codes": merged_reasons,
-                **_targeting_guidance(market_category, opportunity, effort_signal),
-            }
-        )
-
-    recs.sort(key=lambda x: x["priority_score"], reverse=True)
-
-    # Promote a scope-appropriate ranked rollup by station/company in addition to ZIP rows.
-    station_rollup = {}
-    company_rollup = {}
-    for r in recs:
-        stn = r["station_rsid"]
-        co = r["company_prefix"]
-        station_rollup.setdefault(stn, []).append(r["priority_score"])
-        company_rollup.setdefault(co, []).append(r["priority_score"])
-
-    ranked_stations = sorted(
-        [{"entity_type": "station", "station_rsid": k, "priority_score": round(sum(v) / len(v), 2)} for k, v in station_rollup.items()],
-        key=lambda x: x["priority_score"],
-        reverse=True,
-    )
-    ranked_companies = sorted(
-        [{"entity_type": "company", "company_prefix": k, "priority_score": round(sum(v) / len(v), 2)} for k, v in company_rollup.items()],
-        key=lambda x: x["priority_score"],
-        reverse=True,
     )
 
-    ranked = recs[:top_n]
-    if (scope_type or "").upper() in {"USAREC", "BDE", "BN"}:
-        ranked = ranked_companies[:top_n] + ranked_stations[:top_n] + recs[:top_n]
-    elif (scope_type or "").upper() == "CO":
-        ranked = ranked_stations[:top_n] + recs[:top_n]
-
+    data_sources = engine.get("data_sources") or {}
     return {
         "scope_type": scope_type,
         "scope_value": scope_value,
-        "source_dataset_name": market_source_dataset_name,
-        "market_source_dataset_name": market_source_dataset_name,
-        "funnel_source_dataset_name": ((funnel_payload.get("funnel_engine") or {}).get("source_dataset_name")),
-        "funnel_summary": ((funnel_payload.get("funnel_engine") or {}).get("summary") or {}),
+        "source_dataset_name": data_sources.get("market"),
+        "market_source_dataset_name": data_sources.get("market"),
+        "funnel_source_dataset_name": data_sources.get("funnel"),
         "formula": {
-            "priority_score": "100*(0.30*market_category_weight + 0.25*market_potential + 0.15*warning_severity + 0.15*production_gap + 0.10*effort_gap + 0.05*burden_pressure)",
+            "priority_score": "100*(0.50*market_score + 0.30*(1-funnel_efficiency) + 0.20*school_gap_score)",
             "components": {
-                "market_category_weight": "normalized category weight from market_category_weights",
-                "market_potential": "normalized opportunity from market category",
-                "warning_severity": "active home alerts normalized to 0-1",
-                "production_gap": "1 - normalized production signal",
-                "effort_gap": "1 - normalized marketing effort signal",
-                "burden_pressure": "normalized burden ratio pressure",
+                "market_score": "normalized market capability from market_engine",
+                "funnel_efficiency": "lead_to_contract_rate adjusted by funnel status/dropoff",
+                "school_gap_score": "school access gap from school_access or contacts fallback",
             },
         },
         "targeting_board_summary": {
-            "recommended_focus_count": len([x for x in recs if x.get("entity_type") == "zip"]),
+            "recommended_focus_count": len(recommendations),
             "top_coas": [
                 {
                     "coa_name": "concentrate_on_high_gap_market_supportive_zip",
                     "expected_effect": "increase_access_and_conversion",
-                    "selection_rationale": "opportunity_gap_and_market_support",
+                    "selection_rationale": "market_opportunity_with_funnel_or_school_gap",
                 },
                 {
-                    "coa_name": "processing_recovery_in_high_stall_stations",
-                    "expected_effect": "reduce_stage_aging_and_stalls",
-                    "selection_rationale": "execution_quality_and_bottleneck_signals",
+                    "coa_name": "school_access_and_funnel_recovery",
+                    "expected_effect": "reduce_targeting_waste_and_improve_conversion",
+                    "selection_rationale": "weak_school_or_funnel_signal",
                 },
             ],
         },
-        "recommendations": ranked,
+        "recommendations": recommendations,
     }
