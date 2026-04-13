@@ -31,6 +31,8 @@ export function buildBriefingModel(payload) {
   const data = payload || {};
   const mission = data.mission_delta_summary || {};
   const confidence = data.confidence || {};
+  const decisionSummary = data.decision_summary || {};
+  const recommendedAction = data.recommended_action || {};
   const causalFactors = asArray(data.causal_factors);
   const recommendations = asArray(data.recommendations);
   const executiveSummary = asArray(data.executive_summary);
@@ -55,6 +57,8 @@ export function buildBriefingModel(payload) {
     generatedAt: data.generated_at || '',
     mission,
     confidence,
+    decisionSummary,
+    recommendedAction,
     executiveSummary,
     commanderNarrative: data.commander_narrative || '',
     topCausalFactors,
@@ -67,6 +71,28 @@ export function buildBriefingModel(payload) {
       Number(confidence.completeness || 0) < 1 ||
       evidence.some((e) => String(e?.fields?.message || '').toLowerCase().includes('no targeting recommendations')),
   };
+}
+
+function actionBadge(actionType) {
+  const t = String(actionType || 'hold').toLowerCase();
+  if (t === 'increase') {
+    return { label: 'INCREASE', className: 'mdj-action-increase', icon: 'UP' };
+  }
+  if (t === 'decrease') {
+    return { label: 'DECREASE', className: 'mdj-action-decrease', icon: 'DOWN' };
+  }
+  return { label: 'HOLD', className: 'mdj-action-hold', icon: 'HOLD' };
+}
+
+function actionTypeFromDelta(deltaPct) {
+  const delta = Number(deltaPct || 0);
+  if (delta > 0.02) {
+    return 'increase';
+  }
+  if (delta < -0.02) {
+    return 'decrease';
+  }
+  return 'hold';
 }
 
 function renderList(items, itemRenderer, emptyMessage = EMPTY_TEXT) {
@@ -89,19 +115,31 @@ export function renderMissionSlide(payload, container) {
 
   const currentPeriod = model.mission.current_period || {};
   const baselinePeriod = model.mission.baseline_period || {};
+  const recommendedActionType =
+    model.recommendedAction.type ||
+    model.decisionSummary.recommended_action ||
+    actionTypeFromDelta(model.mission.delta_pct);
+  const banner = actionBadge(recommendedActionType);
 
   container.innerHTML = `
-    <section class="mdj-slide" aria-label="Mission decrease decision slide">
+    <section class="mdj-slide" aria-label="Mission adjustment decision slide">
       <header class="mdj-header">
-        <h1>Mission Decrease Justification</h1>
+        <h1>Mission Adjustment Justification</h1>
         <div class="mdj-trace">Request: ${escapeHtml(model.requestId || EMPTY_TEXT)} | Trace: ${escapeHtml(model.traceabilityId || EMPTY_TEXT)}</div>
       </header>
+
+      <section class="mdj-decision-banner ${banner.className}">
+        <div><strong>Recommended Action:</strong> ${escapeHtml(banner.label)}</div>
+        <div><strong>Mission Delta:</strong> ${escapeHtml(formatNumber(model.decisionSummary.mission_delta ?? model.mission.delta))}</div>
+        <div><strong>Confidence:</strong> ${escapeHtml(formatPercent(model.decisionSummary.confidence_score ?? model.confidence.score))}</div>
+        <div><strong>LOE RAG:</strong> ${escapeHtml(String(model.decisionSummary.loe_rag || model.loeSummary.rag || EMPTY_TEXT).toUpperCase())}</div>
+      </section>
 
       ${model.isPartialSignals ? '<div class="mdj-warning">Partial signals detected. Review evidence and assumptions before final command decision.</div>' : ''}
 
       <div class="mdj-grid">
         <article class="mdj-panel mdj-top-left">
-          <h2>Mission Delta + Confidence</h2>
+          <h2>Current Mission Feasibility</h2>
           <p><strong>Current Total:</strong> ${escapeHtml(formatNumber(currentPeriod.mission_total))}</p>
           <p><strong>Baseline Total:</strong> ${escapeHtml(formatNumber(baselinePeriod.mission_total))}</p>
           <p><strong>Delta:</strong> ${escapeHtml(formatNumber(model.mission.delta))}</p>
@@ -112,7 +150,11 @@ export function renderMissionSlide(payload, container) {
         </article>
 
         <article class="mdj-panel mdj-top-right">
-          <h2>Executive Summary</h2>
+          <h2>Recommended Mission Adjustment</h2>
+          <p><strong>Recommended Action Type:</strong> ${escapeHtml(String(recommendedActionType).toUpperCase())}</p>
+          <p><strong>Magnitude:</strong> ${escapeHtml(model.recommendedAction.magnitude || EMPTY_TEXT)}</p>
+          <p><strong>Action Rationale:</strong> ${escapeHtml(model.recommendedAction.rationale || EMPTY_TEXT)}</p>
+          <h3>Executive Summary</h3>
           <ul>
             ${renderList(model.executiveSummary, (line) => `<li>${escapeHtml(line)}</li>`, 'No executive summary provided')}
           </ul>
@@ -136,14 +178,14 @@ export function renderMissionSlide(payload, container) {
           <ul>
             ${renderList(
               model.recommendations,
-              (rec) => `<li><strong>${escapeHtml(rec.title || rec.kind || 'recommendation')}</strong><br/>${escapeHtml(rec.rationale || '')}<br/><em>Actions:</em> ${escapeHtml(asArray(rec.actions).join('; ') || EMPTY_TEXT)}</li>`,
+              (rec) => `<li><strong>${escapeHtml(rec.title || rec.kind || 'recommendation')}</strong><br/><strong>Action:</strong> ${escapeHtml(rec.action || EMPTY_TEXT)}<br/>${escapeHtml(rec.rationale || '')}<br/><em>Linked Factors:</em> ${escapeHtml(asArray(rec.linked_factors).join(', ') || EMPTY_TEXT)}<br/><em>Actions:</em> ${escapeHtml(asArray(rec.actions).join('; ') || EMPTY_TEXT)}</li>`,
               'No recommendations provided'
             )}
           </ul>
         </article>
 
         <article class="mdj-panel mdj-bottom-left">
-          <h2>Accountability + LOE</h2>
+          <h2>Accountability Brief + LOE Summary</h2>
           <p><strong>Classification:</strong> ${escapeHtml(model.accountabilityBrief.classification || EMPTY_TEXT)}</p>
           <p><strong>Accountability Confidence:</strong> ${escapeHtml(model.accountabilityBrief.confidence || EMPTY_TEXT)}</p>
           <p><strong>Overdue Items:</strong> ${escapeHtml(asArray(model.accountabilityBrief.overdue_items).join('; ') || EMPTY_TEXT)}</p>
@@ -152,7 +194,7 @@ export function renderMissionSlide(payload, container) {
         </article>
 
         <article class="mdj-panel mdj-bottom-right">
-          <h2>Assumptions, Limits, Traceability</h2>
+          <h2>Assumptions and Limits</h2>
           <ul>
             ${renderList(model.assumptions, (line) => `<li>${escapeHtml(line)}</li>`, 'No assumptions provided')}
           </ul>

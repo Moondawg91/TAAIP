@@ -48,11 +48,20 @@ form.addEventListener('submit', async (event) => {
   };
 
   try {
-    const response = await fetch(`${API_BASE}/api/v2/decision-output/mission-decrease-justification`, {
+    let response = await fetch(`${API_BASE}/api/v2/decision-output/mission-adjustment-justification`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     });
+
+    // Compatibility fallback for environments that only expose the legacy route.
+    if (response.status === 404) {
+      response = await fetch(`${API_BASE}/api/v2/decision-output/mission-decrease-justification`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+    }
 
     const body = await response.json().catch(() => ({}));
 
