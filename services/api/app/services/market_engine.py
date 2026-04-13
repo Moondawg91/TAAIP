@@ -440,6 +440,14 @@ def summarize_market_engine(
                 "total_recruiting_age_population": float(filtered["total_recruiting_age_population"].sum()),
                 "station_count": int(filtered["station_rsid"].nunique()),
                 "confidence_note": confidence_note,
+                "scoring_formula": {
+                    "market_capability_score": "100*(0.50*normalized_recruiting_age_population + 0.30*normalized_education_quality_score + 0.20*normalized_income_access_score)",
+                    "weights": {
+                        "population": WEIGHT_POPULATION,
+                        "education": WEIGHT_EDUCATION,
+                        "income": WEIGHT_INCOME,
+                    },
+                },
             },
             "by_scope": {
                 "bde": _build_by_scope(filtered, "brigade_rsid", "brigade_rsid"),
