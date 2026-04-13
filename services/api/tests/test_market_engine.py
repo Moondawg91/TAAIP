@@ -195,4 +195,81 @@ def test_targeting_uses_market_engine_rows(tmp_path, monkeypatch):
     out = targeting_expansion.recommendations_for_scope(_db(), "STN", "1A1D", top_n=10)
     zips = [r for r in (out.get("recommendations") or []) if r.get("entity_type") == "zip"]
     assert len(zips) > 0
+    assert out.get("source_dataset_name")
     assert any(z.get("market_opportunity_band") in {"strong", "moderate", "weak"} for z in zips)
+
+
+def test_targeting_includes_market_and_school_signals_from_engine_rows(tmp_path, monkeypatch):
+    p = tmp_path / "6L MARKET CORE.csv"
+    _write_csv(
+        p,
+        [
+            {
+                "zip": "37011",
+                "rsid_enlisted_station": "1A1D",
+                "rsid_enlisted_company": "1A1",
+                "rsid_enlisted_battalion": "1A",
+                "rsid_enlisted_brigade": "1",
+                "tot_male_18_19_b01001_007e": 100,
+                "tot_male_20_b01001_008e": 80,
+                "tot_male_21_b01001_009e": 60,
+                "tot_male_22_24_b01001_010e": 40,
+                "tot_female_18_19_b01001_031e": 90,
+                "tot_female_20_b01001_032e": 70,
+                "tot_female_21_b01001_033e": 50,
+                "tot_female_22_24_b01001_034e": 30,
+            },
+            {
+                "zip": "37012",
+                "rsid_enlisted_station": "1A1D",
+                "rsid_enlisted_company": "1A1",
+                "rsid_enlisted_battalion": "1A",
+                "rsid_enlisted_brigade": "1",
+                "tot_male_18_19_b01001_007e": 50,
+                "tot_male_20_b01001_008e": 40,
+                "tot_male_21_b01001_009e": 30,
+                "tot_male_22_24_b01001_010e": 20,
+                "tot_female_18_19_b01001_031e": 45,
+                "tot_female_20_b01001_032e": 35,
+                "tot_female_21_b01001_033e": 25,
+                "tot_female_22_24_b01001_034e": 15,
+            },
+        ],
+    )
+    monkeypatch.setenv("TAAIP_MARKET_CORE_PATH", str(p))
+
+    db = _db()
+    db.execute(
+        text(
+            """
+            INSERT OR REPLACE INTO station_zip_coverage(station_rsid, zip_code, market_category)
+            VALUES(:stn, :zip1, :cat), (:stn, :zip2, :cat)
+            """
+        ),
+        {"stn": "1A1D", "zip1": "37011", "zip2": "37012", "cat": "MK"},
+    )
+    db.execute(
+        text(
+            """
+            INSERT INTO fact_school_contacts(school_name, unit_rsid, zip)
+            VALUES
+            ('High School 1', '1A1D', '37011'),
+            ('High School 2', '1A1D', '37012')
+            """
+        )
+    )
+    db.commit()
+
+    out = targeting_expansion.recommendations_for_scope(_db(), "STN", "1A1D", top_n=10)
+    rows = [r for r in (out.get("recommendations") or []) if r.get("entity_type") == "zip"]
+    assert len(rows) >= 2
+
+    sample = rows[0]
+    assert sample.get("zip")
+    assert sample.get("station_rsid") == "1A1D"
+    assert sample.get("market_capability_score") is not None
+    assert sample.get("opportunity_band") in {"strong", "moderate", "weak", "unknown"}
+    assert isinstance(sample.get("school_access_signal"), dict)
+    assert sample.get("rationale")
+    assert sample.get("priority_score") is not None
+    assert sample.get("trace_id")

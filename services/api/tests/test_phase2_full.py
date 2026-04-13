@@ -625,8 +625,26 @@ class TestCommandCenterPhase2Integration:
         phase2 = summary.get("phase2", {})
         targeting = phase2.get("targeting_focus", {})
         assert "top_focus_count" in targeting
+        assert "zip_focus_count" in targeting
+        assert "source_dataset_name" in targeting
         assert "top_zips" in targeting
         assert "formula" in targeting
+
+    def test_overview_phase2_market_and_targeting_reflect_real_sources(self):
+        db = SessionLocal()
+        _seed(db)
+        headers = _headers(db, "usarec_admin")
+        r = client.get("/api/command-center/overview?scope_type=CO&scope_value=2A1", headers=headers)
+        assert r.status_code == 200, r.text
+        phase2 = (r.json().get("summary") or {}).get("phase2") or {}
+        market = phase2.get("market_engine") or {}
+        market_block = market.get("market_engine") or {}
+        targeting = phase2.get("targeting_focus") or {}
+
+        assert market.get("status") in {"ok", "no_active_dataset", "invalid_dataset_schema"}
+        assert market_block.get("source_dataset_name") is not None
+        assert targeting.get("top_focus_count", 0) >= 0
+        assert targeting.get("source_dataset_name") is not None
 
     def test_overview_phase2_accountability_shape(self):
         r = client.get("/api/command-center/overview")

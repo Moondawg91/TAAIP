@@ -350,3 +350,66 @@ def test_output_consistency_corrects_mismatch():
     assert ra["type"] == "hold"
     assert ra["magnitude"] == "minor"
     assert "Recommendation: hold mission output" in narrative
+
+
+def test_mission_adjustment_includes_real_signal_summaries_when_data_exists(monkeypatch, tmp_path):
+    import pandas as pd
+
+    p = tmp_path / "6L MARKET CORE.csv"
+    pd.DataFrame(
+        [
+            {
+                "zip": "37011",
+                "rsid_enlisted_station": "1A1D",
+                "rsid_enlisted_company": "1A1",
+                "rsid_enlisted_battalion": "1A",
+                "rsid_enlisted_brigade": "1",
+                "tot_male_18_19_b01001_007e": 100,
+                "tot_male_20_b01001_008e": 80,
+                "tot_male_21_b01001_009e": 60,
+                "tot_male_22_24_b01001_010e": 40,
+                "tot_female_18_19_b01001_031e": 90,
+                "tot_female_20_b01001_032e": 70,
+                "tot_female_21_b01001_033e": 50,
+                "tot_female_22_24_b01001_034e": 30,
+            }
+        ]
+    ).to_csv(p, index=False)
+    monkeypatch.setenv("TAAIP_MARKET_CORE_PATH", str(p))
+
+    db = SessionLocal()
+    db.execute(
+        mdj.text(
+            """
+            INSERT INTO fact_school_contacts(school_name, unit_rsid, zip)
+            VALUES('High School 1','1A1D','37011')
+            """
+        )
+    )
+    db.commit()
+
+    out = mdj.generate_mission_adjustment_justification(
+        db=db,
+        org_id="1A1D",
+        period_start=date(2026, 1, 1),
+        period_end=date(2026, 1, 31),
+        include_evidence=True,
+        force_refresh=True,
+    )
+
+    sig = out.get("signal_summaries") or {}
+    market = sig.get("market") or {}
+    school = sig.get("school_access") or {}
+    targeting = sig.get("targeting") or {}
+
+    assert market.get("status") in {"ok", "no_active_dataset", "invalid_dataset_schema"}
+    assert market.get("source_dataset_name")
+    assert isinstance(market.get("rows_used"), int)
+
+    assert school.get("status") == "ok"
+    assert school.get("source_dataset_name") in {"schools", "fact_school_contacts"}
+    assert isinstance(school.get("rows_used"), int)
+
+    assert targeting.get("status") == "ok"
+    assert targeting.get("source_dataset_name")
+    assert isinstance(targeting.get("rows_used"), int)

@@ -1,0 +1,320 @@
+{
+  "USAREC": {
+    "scope": {
+      "scope_type": "USAREC",
+      "scope_value": "USAREC"
+    },
+    "service": {
+      "market_engine": {
+        "status": "ok",
+        "source_dataset_name": "6L MARKET CORE.csv",
+        "rows_used": 10,
+        "sample": [
+          {
+            "zip": "98105",
+            "station_rsid": "6L2C",
+            "company_rsid": "6L2",
+            "battalion_rsid": "6L",
+            "brigade_rsid": "",
+            "total_recruiting_age_population": 22662.0,
+            "market_capability_score": 82.22,
+            "opportunity_band": "strong",
+            "rationale": "High recruiting-age population with strong education support",
+            "trace_id": "market-engine:6L2C:98105"
+          }
+        ]
+      },
+      "market_qma": {
+        "status": "ok",
+        "source_dataset_name": "station_zip_coverage",
+        "rows_used": 2,
+        "sample": [
+          {
+            "zip_code": "37011",
+            "station_rsid": "1A1D",
+            "opportunity_gap": 1.0,
+            "qma_density": 1.0,
+            "output_score": 0.0,
+            "market_classification": "market_capable"
+          }
+        ]
+      },
+      "school_access": {
+        "status": "ok",
+        "source_dataset_name": "fact_school_contacts",
+        "rows_used": 2,
+        "sample": [
+          {
+            "school_id": "High School A",
+            "school_name": "High School A",
+            "station_rsid": "UNKN",
+            "zip_code": "90001",
+            "market_opportunity": 0.0,
+            "contacts_count": 5,
+            "contracts_count": 0,
+            "access_gap_score": 0.0,
+            "school_zone_valid": true,
+            "access_classification": "underpenetrated"
+          }
+        ]
+      },
+      "targeting_expansion": {
+        "status": "ok",
+        "rows_used": 28,
+        "zip_rows_used": 10,
+        "sample": [
+          {
+            "zip": "37011",
+            "station_rsid": "1A1D",
+            "market_capability_score": 100.0,
+            "opportunity_band": "unknown",
+            "school_access_signal": {
+              "status": "constrained",
+              "penetration_rate": 0.0,
+              "access_gap_score": 0.0,
+              "contacts_count": 0,
+              "contracts_count": 0
+            },
+            "rationale": "market unknown (100.0); school_access constrained",
+            "priority_score": 61.33,
+            "trace_id": "targeting:1A1D:37011"
+          }
+        ]
+      }
+    },
+    "endpoint": {
+      "targeting": {
+        "http": 200,
+        "rows_used": 48,
+        "zip_rows_used": 20,
+        "sample": [
+          {
+            "zip": "37011",
+            "station_rsid": "1A1D",
+            "market_capability_score": 100.0,
+            "opportunity_band": "unknown",
+            "school_access_signal": {
+              "status": "constrained",
+              "penetration_rate": 0.0,
+              "access_gap_score": 0.0,
+              "contacts_count": 0,
+              "contracts_count": 0
+            },
+            "rationale": "market unknown (100.0); school_access constrained",
+            "priority_score": 61.33,
+            "trace_id": "targeting:1A1D:37011"
+          }
+        ]
+      },
+      "school_access": {
+        "http": 200,
+        "status": "ok",
+        "source_dataset_name": "fact_school_contacts",
+        "rows_used": 2
+      },
+      "mission_adjustment": {
+        "http": 200,
+        "recommended_action": {
+          "type": "hold",
+          "magnitude": "minor",
+          "confidence": 1.0,
+          "rationale": "Conditions do not support adjustment due to insufficient confidence or conflicting signals."
+        },
+        "signal_summaries": {
+          "market": {
+            "status": "ok",
+            "source_dataset_name": "6L MARKET CORE.csv",
+            "rows_used": 15,
+            "summary": {
+              "overall_market_status": "weak",
+              "market_capability_score": 21.64,
+              "high_opportunity_zip_count": 1,
+              "moderate_opportunity_zip_count": 37,
+              "weak_opportunity_zip_count": 998,
+              "total_recruiting_age_population": 718518.0,
+              "station_count": 36,
+              "confidence_note": "High confidence from complete population, education, and income fields.",
+              "scoring_formula": {
+                "market_capability_score": "100*(0.50*normalized_recruiting_age_population + 0.30*normalized_education_quality_score + 0.20*normalized_income_access_score)",
+                "weights": {
+                  "population": 0.5,
+                  "education": 0.3,
+                  "income": 0.2
+                }
+              }
+            }
+          },
+          "school_access": {
+            "status": "ok",
+            "source_dataset_name": "fact_school_contacts",
+            "rows_used": 2,
+            "summary": {
+              "overall_access_status": "accessing_market",
+              "penetration_rate": 1.0,
+              "access_gap_count": 2,
+              "high_value_uncovered_school_count": 0
+            }
+          },
+          "targeting": {
+            "status": "ok",
+            "source_dataset_name": "6L MARKET CORE.csv",
+            "rows_used": 38,
+            "summary": {
+              "recommendations_count": 38
+            }
+          }
+        }
+      },
+      "command_center": {
+        "http": 200,
+        "phase2_market_status": "weak",
+        "phase2_market_source_dataset_name": "6L MARKET CORE.csv",
+        "phase2_targeting_top_count": 15
+      }
+    }
+  },
+  "STN_1A1D": {
+    "scope": {
+      "scope_type": "STN",
+      "scope_value": "1A1D"
+    },
+    "service": {
+      "market_engine": {
+        "status": "no_active_dataset",
+        "source_dataset_name": "6L MARKET CORE.csv",
+        "rows_used": 0,
+        "sample": []
+      },
+      "market_qma": {
+        "status": "ok",
+        "source_dataset_name": "station_zip_coverage",
+        "rows_used": 2,
+        "sample": [
+          {
+            "zip_code": "37011",
+            "station_rsid": "1A1D",
+            "opportunity_gap": 1.0,
+            "qma_density": 1.0,
+            "output_score": 0.0,
+            "market_classification": "market_capable"
+          }
+        ]
+      },
+      "school_access": {
+        "status": "ok",
+        "source_dataset_name": "fact_school_contacts",
+        "rows_used": 2,
+        "sample": [
+          {
+            "school_id": "High School A",
+            "school_name": "High School A",
+            "station_rsid": "1A1D",
+            "zip_code": "90001",
+            "market_opportunity": 0.0,
+            "contacts_count": 5,
+            "contracts_count": 0,
+            "access_gap_score": 0.0,
+            "school_zone_valid": true,
+            "access_classification": "underpenetrated"
+          }
+        ]
+      },
+      "targeting_expansion": {
+        "status": "ok",
+        "rows_used": 2,
+        "zip_rows_used": 2,
+        "sample": [
+          {
+            "zip": "37011",
+            "station_rsid": "1A1D",
+            "market_capability_score": 100.0,
+            "opportunity_band": "unknown",
+            "school_access_signal": {
+              "status": "supportive",
+              "penetration_rate": 1.0,
+              "access_gap_score": 0.0,
+              "contacts_count": 10,
+              "contracts_count": 0
+            },
+            "rationale": "market unknown (100.0); school_access supportive",
+            "priority_score": 61.33,
+            "trace_id": "targeting:1A1D:37011"
+          }
+        ]
+      }
+    },
+    "endpoint": {
+      "targeting": {
+        "http": 200,
+        "rows_used": 2,
+        "zip_rows_used": 2,
+        "sample": [
+          {
+            "zip": "37011",
+            "station_rsid": "1A1D",
+            "market_capability_score": 100.0,
+            "opportunity_band": "unknown",
+            "school_access_signal": {
+              "status": "supportive",
+              "penetration_rate": 1.0,
+              "access_gap_score": 0.0,
+              "contacts_count": 10,
+              "contracts_count": 0
+            },
+            "rationale": "market unknown (100.0); school_access supportive",
+            "priority_score": 61.33,
+            "trace_id": "targeting:1A1D:37011"
+          }
+        ]
+      },
+      "school_access": {
+        "http": 200,
+        "status": "ok",
+        "source_dataset_name": "fact_school_contacts",
+        "rows_used": 2
+      },
+      "mission_adjustment": {
+        "http": 200,
+        "recommended_action": {
+          "type": "hold",
+          "magnitude": "minor",
+          "confidence": 0.4829,
+          "rationale": "Conditions do not support adjustment due to insufficient confidence or conflicting signals."
+        },
+        "signal_summaries": {
+          "market": {
+            "status": "no_active_dataset",
+            "source_dataset_name": "6L MARKET CORE.csv",
+            "rows_used": 0,
+            "summary": {}
+          },
+          "school_access": {
+            "status": "ok",
+            "source_dataset_name": "fact_school_contacts",
+            "rows_used": 2,
+            "summary": {
+              "overall_access_status": "accessing_market",
+              "penetration_rate": 1.0,
+              "access_gap_count": 2,
+              "high_value_uncovered_school_count": 0
+            }
+          },
+          "targeting": {
+            "status": "ok",
+            "source_dataset_name": "6L MARKET CORE.csv",
+            "rows_used": 2,
+            "summary": {
+              "recommendations_count": 2
+            }
+          }
+        }
+      },
+      "command_center": {
+        "http": 200,
+        "phase2_market_status": "unknown",
+        "phase2_market_source_dataset_name": "6L MARKET CORE.csv",
+        "phase2_targeting_top_count": 2
+      }
+    }
+  }
+}
