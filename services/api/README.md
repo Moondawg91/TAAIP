@@ -459,3 +459,96 @@ Workflow integrations:
   - `twg_board_candidates`
 
 
+## Targeting Board Engine (Command Decision Layer — 420T Workflow)
+
+Authoritative module:
+
+- `services/api/app/services/targeting_board_engine.py`
+
+Authoritative inputs (consume-only; no recomputation):
+
+- `twg_engine` output: board_candidates (high-priority TWG items for board review)
+- `roi_engine` output: ROI effectiveness metrics and guidance
+- `mission_decrease_justification` output: mission feasibility signals and causal factors
+- `targeting_engine` output: ZIP targeting alignment data
+- Supporting engines: `market_engine`, `funnel_engine`, `school_plan_engine`
+
+Targeting Board purpose:
+
+- Consume TWG board_candidates and evaluate multi-engine impact
+- Make board-level binary decisions: approve | modify | reject
+- Direct resource shifts across markets, ZIPs, schools, and events
+- Create executable downstream tasks for TWG to execute
+- Serve as authoritative command decision layer for 420T operations
+
+Decision-making formula (0–100 board priority):
+
+```
+board_priority_score =
+  0.40 * twg_priority_score +
+  0.20 * mission_impact +
+  0.15 * roi_impact +
+  0.15 * targeting_alignment +
+  0.10 * resource_pressure
+```
+
+Decision rules:
+
+- **approve**: board_priority >= 65 (proceed as recommended; generates resource shift if high priority)
+- **modify**: board_priority 35–64 (adjust scope, timeline, or owner; resource-constrained)
+- **reject**: board_priority < 35 (insufficient multi-engine impact justification)
+
+Resource shift generation rules:
+
+- Generate only for approved items with high priority (>= 75)
+- Shift types:
+  - **funnel**: Reallocate recruiter effort from retention optimization to funnel acceleration
+  - **targeting**: Shift effort from low-opportunity ZIPs to high-opportunity ZIPs
+  - **roi**: Redirect event effort from low-ROI events to high-ROI activities
+  - **school**: Intensify effort at high-opportunity schools
+  - **effort**: Concentration moves across competency areas
+
+Downstream task generation:
+
+- **mandatory rule**: Every approve/modify decision generates exactly one executable TWG task with:
+  - `task_id`, `source_board_decision_id`, `owner_level`, `action`, `due_out`, `expected_effect`
+  - Task action is concrete and actionable by TWG
+  - Task ownership remains with TWG (not board)
+  - Closes the loop: Board decision → TWG execution → operational outcome
+
+Targeting Board output shape:
+
+- `status`: `ok | no_data | invalid`
+- `targeting_board_engine.summary`:
+  - `total_items`: Number of board candidates evaluated
+  - `approved_count`: Items approved for execution
+  - `modified_count`: Items approved with scope/timeline modification
+  - `rejected_count`: Items rejected as insufficient justification
+  - `resource_shift_count`: Resource shifts directed
+  - `overall_board_posture`: `aggressive | balanced | constrained | unknown` (based on approval rate)
+- `targeting_board_engine.prioritized_board_items`: Evaluated board items with decision type, rationale, impact level, resource implication
+- `targeting_board_engine.board_decisions`: Binary decisions with owner, time horizon, expected effects
+- `targeting_board_engine.directed_shifts`: Resource reallocation directives with justification
+- `targeting_board_engine.downstream_twg_tasks`: Executable tasks with owner, due-out, expected effect
+- `targeting_board_engine.data_sources`: Upstream lineage (all authoritative sources consumed)
+
+Workflow integrations:
+
+- mission adjustment: Board decision approval rate exposed as `board_decision_approval` causal factor and `signal_summaries.board`
+- command center overview: `phase2.targeting_board_engine` (summary, top decisions, shifts)
+- Power BI operational dataset exports:
+  - `board_summary`
+  - `board_prioritized_items`
+  - `board_decisions`
+  - `board_directed_shifts`
+  - `board_downstream_tasks`
+
+Critical rule (determinism & scope):
+
+- **NO** parallel scoring paths; board evaluates TWG output only
+- **NO** recomputation of analytics; all metrics inherited from upstream engines
+- **DETERMINISTIC**: Same TWG candidates + same upstream signals = same board decisions every time
+- **SCOPED**: Enforce BN/CO/STN-level scope enforcement consistent with TWG engine
+- **EXECUTABLE**: All decisions must be able to be handed to TWG with actionable due-outs
+
+
