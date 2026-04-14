@@ -352,6 +352,40 @@ def test_output_consistency_corrects_mismatch():
     assert "Recommendation: hold mission output" in narrative
 
 
+def test_mission_adjustment_consumes_repaired_funnel_signal(monkeypatch, tmp_path):
+    import csv
+
+    csv_path = tmp_path / "Recruiting Funnel Enriched.csv"
+    rows = [
+        ["1001", "2001", "2000", "hash-a", "M", "2024-01-01", "N", "L", "HS", "", "Y", "AH", "INTERESTED - FOLLOW UP", "A", "ACTIVE", "E", "ENLISTED", "", "", "1A1D", "lead1@example.com", "DOE", "JANE", "", "100 MAIN", "NASHVILLE", "TN", "37011", "37011", "", "2024", "615", "5551111", "6155551111", "B", "PROSPECT", "", "", "", "1704067200000,1704153600000,1704672000000,1705276800000", "B, C, D, Z", "PROSPECT, APPLICANT, DELAYED ENTRY PROGRAM, SHIPPED", "FF, IA, DF, ZB", "FACE TO FACE, APPOINTMENT-INITIAL, FUTURE SOLDIER TRAINING, VALIDATE AFTER SHIP VERIFIED"],
+        ["1002", "2002", "2001", "hash-b", "F", "2024-01-03", "N", "L", "HS", "", "Y", "AH", "INTERESTED - FOLLOW UP", "A", "ACTIVE", "E", "ENLISTED", "", "", "1A1E", "lead2@example.com", "SMITH", "JOHN", "", "101 MAIN", "NASHVILLE", "TN", "37012", "37012", "", "2024", "615", "5552222", "6155552222", "A", "LEAD", "", "", "", "1704240000000,1704326400000", "A, B", "LEAD, PROSPECT", "FF, IA", "FACE TO FACE, APPOINTMENT-INITIAL"],
+    ]
+    with open(csv_path, "w", encoding="utf-8", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerows(rows)
+
+    monkeypatch.setenv("TAAIP_FUNNEL_DATASET_PATH", str(csv_path))
+    monkeypatch.setattr(mdj.market_engine, "summarize_market_engine", lambda *a, **k: {"status": "ok", "market_engine": {"summary": {}, "prioritized_market_zip": [], "source_dataset_name": "market.csv"}})
+    monkeypatch.setattr(mdj.school_access, "summarize_school_access", lambda *a, **k: {"status": "ok", "school_access": {"summary": {}, "top_access_gaps": [], "source_dataset_name": "schools"}})
+    monkeypatch.setattr(mdj.execution_quality, "summarize_execution_quality", lambda *a, **k: {"status": "ok", "execution_quality": {"summary": {"overall_execution_status": "healthy", "stall_count": 0, "processing_bottleneck_count": 0}}})
+    monkeypatch.setattr(mdj.accountability_engine, "classify_scope", lambda *a, **k: {"classification": "balanced"})
+    monkeypatch.setattr(mdj.loe_engine, "summarize_loes", lambda *a, **k: {"total_metrics": 0, "status_counts": {}})
+    monkeypatch.setattr(mdj.targeting_engine, "summarize_targeting_engine", lambda *a, **k: {"status": "ok", "targeting_engine": {"summary": {}, "prioritized_targets": [], "data_sources": {}}})
+    monkeypatch.setattr(mdj.school_plan_engine, "summarize_school_plan_engine", lambda *a, **k: {"status": "ok", "school_plan_engine": {"summary": {}, "prioritized_schools": []}})
+    monkeypatch.setattr(mdj.roi_engine, "summarize_roi_engine", lambda *a, **k: {"status": "no_data", "roi_engine": {"summary": {}, "prioritized_events": []}})
+    monkeypatch.setattr(mdj.twg_engine, "summarize_twg_engine", lambda *a, **k: {"status": "ok", "twg_engine": {"summary": {}, "prioritized_items": []}})
+    monkeypatch.setattr(mdj.targeting_board_engine, "summarize_targeting_board_engine", lambda *a, **k: {"status": "ok", "targeting_board_engine": {"summary": {}, "prioritized_board_items": []}})
+    monkeypatch.setattr(mdj.asset_engine, "summarize_asset_engine", lambda *a, **k: {"status": "ok", "asset_engine": {"summary": {}, "asset_distribution": []}})
+    monkeypatch.setattr(mdj.flash_to_bang_processing_engine, "summarize_flash_to_bang_processing_engine", lambda *a, **k: {"status": "ok", "flash_to_bang_processing_engine": {"summary": {}, "processing_items": []}})
+    monkeypatch.setattr(mdj.targeting_execution_tracker, "summarize_targeting_execution_tracker", lambda *a, **k: {"status": "ok", "targeting_execution_tracker": {"summary": {}, "execution_items": []}})
+
+    signals = mdj._collect_signal_summaries(db=None, scope_type="USAREC", scope_value="USAREC")
+    funnel = signals.get("funnel") or {}
+    assert (funnel.get("raw") or {}).get("status") == "ok"
+    assert (funnel.get("summary") or {}).get("total_leads", 0) >= 2
+    assert isinstance((funnel.get("raw") or {}).get("funnel_engine", {}).get("prioritized_funnel_gaps"), list)
+
+
 def test_mission_adjustment_includes_real_signal_summaries_when_data_exists(monkeypatch, tmp_path):
     import pandas as pd
 

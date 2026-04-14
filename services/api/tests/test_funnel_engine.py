@@ -24,6 +24,46 @@ def _write_funnel_csv(path: str) -> None:
         writer.writerows(rows)
 
 
+def _write_headerless_realish_funnel_csv(path: str) -> None:
+    rows = [
+        [
+            "1001", "2001", "2000", "hash-a", "M", "2024-01-01", "N", "L", "HS", "", "Y", "AH",
+            "INTERESTED - FOLLOW UP", "A", "ACTIVE", "E", "ENLISTED", "", "", "1A1D", "lead1@example.com",
+            "DOE", "JANE", "", "100 MAIN", "NASHVILLE", "TN", "37011", "37011", "", "2024", "615",
+            "5551111", "6155551111", "B", "PROSPECT", "", "", "", "1704067200000,1704153600000,1704672000000,1705276800000",
+            "B, C, D, Z", "PROSPECT, APPLICANT, DELAYED ENTRY PROGRAM, SHIPPED", "FF, IA, DF, ZB",
+            "FACE TO FACE, APPOINTMENT-INITIAL, FUTURE SOLDIER TRAINING, VALIDATE AFTER SHIP VERIFIED"
+        ],
+        [
+            "1002", "2002", "2001", "hash-b", "F", "2024-01-03", "N", "L", "HS", "", "Y", "AH",
+            "INTERESTED - FOLLOW UP", "A", "ACTIVE", "E", "ENLISTED", "", "", "1A1E", "lead2@example.com",
+            "SMITH", "JOHN", "", "101 MAIN", "NASHVILLE", "TN", "37012", "37012", "", "2024", "615",
+            "5552222", "6155552222", "A", "LEAD", "", "", "", "1704240000000,1704326400000",
+            "A, B", "LEAD, PROSPECT", "FF, IA", "FACE TO FACE, APPOINTMENT-INITIAL"
+        ],
+        [
+            "1003", "2003", "2002", "hash-c", "M", "2024-01-05", "N", "L", "HS", "", "Y", "AH",
+            "INTERESTED - FOLLOW UP", "A", "ACTIVE", "E", "ENLISTED", "", "", "1A1D", "lead3@example.com",
+            "BROWN", "ALEX", "", "102 MAIN", "NASHVILLE", "TN", "37013", "37013", "", "2024", "615",
+            "5553333", "6155553333", "C", "APPLICANT", "", "", "", "1704412800000,1704499200000,1704585600000",
+            "B, C, C", "PROSPECT, APPLICANT, APPLICANT", "FF, IA, TP", "FACE TO FACE, APPOINTMENT-INITIAL, TEST/PHYSICAL"
+        ]
+    ]
+    with open(path, "w", encoding="utf-8", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerows(rows)
+
+
+def _write_invalid_funnel_csv(path: str) -> None:
+    rows = [
+        ["bad", "shape", "only"],
+        ["x", "y", "z"],
+    ]
+    with open(path, "w", encoding="utf-8", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerows(rows)
+
+
 def test_funnel_engine_summary_from_uploaded_csv(tmp_path):
     csv_path = str(tmp_path / "Recruiting Funnel Enriched.csv")
     _write_funnel_csv(csv_path)
@@ -50,6 +90,57 @@ def test_funnel_engine_summary_from_uploaded_csv(tmp_path):
     assert "lead_to_contract_rate" in summary
     assert "largest_dropoff_stage" in summary
     assert isinstance((out.get("funnel_engine") or {}).get("prioritized_funnel_gaps"), list)
+
+
+def test_funnel_engine_repairs_headerless_real_mapping_path(tmp_path):
+    csv_path = str(tmp_path / "Recruiting Funnel Enriched.csv")
+    _write_headerless_realish_funnel_csv(csv_path)
+    old = os.environ.get("TAAIP_FUNNEL_DATASET_PATH")
+    os.environ["TAAIP_FUNNEL_DATASET_PATH"] = csv_path
+    try:
+        out = funnel_engine.summarize_funnel_engine(
+            db=None,
+            scope_type="USAREC",
+            scope_value="USAREC",
+            actor_scope_type="USAREC",
+            actor_scope_value="USAREC",
+            top_n=10,
+        )
+    finally:
+        if old is None:
+            os.environ.pop("TAAIP_FUNNEL_DATASET_PATH", None)
+        else:
+            os.environ["TAAIP_FUNNEL_DATASET_PATH"] = old
+
+    assert out.get("status") == "ok"
+    summary = (out.get("funnel_engine") or {}).get("summary") or {}
+    assert summary.get("total_leads") == 3
+    assert summary.get("total_contracts", 0) >= 1
+    assert len((out.get("funnel_engine") or {}).get("prioritized_funnel_gaps") or []) >= 1
+
+
+def test_funnel_engine_invalid_schema_when_required_fields_cannot_be_derived(tmp_path):
+    csv_path = str(tmp_path / "Recruiting Funnel Enriched.csv")
+    _write_invalid_funnel_csv(csv_path)
+    old = os.environ.get("TAAIP_FUNNEL_DATASET_PATH")
+    os.environ["TAAIP_FUNNEL_DATASET_PATH"] = csv_path
+    try:
+        out = funnel_engine.summarize_funnel_engine(
+            db=None,
+            scope_type="USAREC",
+            scope_value="USAREC",
+            actor_scope_type="USAREC",
+            actor_scope_value="USAREC",
+            top_n=10,
+        )
+    finally:
+        if old is None:
+            os.environ.pop("TAAIP_FUNNEL_DATASET_PATH", None)
+        else:
+            os.environ["TAAIP_FUNNEL_DATASET_PATH"] = old
+
+    assert out.get("status") == "invalid_dataset_schema"
+    assert (out.get("funnel_engine") or {}).get("schema_error")
 
 
 def test_powerbi_operational_dataset_includes_funnel_summary(monkeypatch):
