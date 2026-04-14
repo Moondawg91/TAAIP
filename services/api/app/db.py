@@ -7,6 +7,8 @@ from typing import Optional
 import time
 from time import sleep
 
+from services.api.app import migration_policy
+
 # When running under the test harness we may want to force use of a
 # specific DB-API connection so raw sqlite3 callers and SQLAlchemy
 # sessions operate on the same underlying connection/transaction.
@@ -284,25 +286,23 @@ def connect() -> sqlite3.Connection:
         print(f"connect: opened new sqlite3 conn for path={path}")
     except Exception:
         pass
-    # If this DB file appears uninitialized (missing core tables), ensure
-    # the canonical schema is created on this connection before returning.
-    try:
+    if migration_policy.legacy_schema_bootstrap_enabled():
         try:
-            cur.execute("PRAGMA table_info(import_job)")
-            rows = cur.fetchall()
-            if not rows:
+            try:
+                cur.execute("PRAGMA table_info(import_job)")
+                rows = cur.fetchall()
+                if not rows:
+                    try:
+                        init_schema(conn=conn)
+                    except Exception:
+                        pass
+            except Exception:
                 try:
                     init_schema(conn=conn)
                 except Exception:
                     pass
         except Exception:
-            # If pragma fails for any reason, attempt best-effort init
-            try:
-                init_schema(conn=conn)
-            except Exception:
-                pass
-    except Exception:
-        pass
+            pass
     return conn
 
 
@@ -471,17 +471,15 @@ def init_schema(conn: Optional[sqlite3.Connection] = None) -> None:
                 pass
             conn = connect()
         cur = conn.cursor()
-        # Ensure any lightweight runtime migrations are applied for this
-        # DB file so tables expected by runtime services (e.g. mission
-        # allocation) exist even when modules import the DB during tests.
-        try:
-            from services.api.app import migrations as _migrations
+        if migration_policy.legacy_schema_bootstrap_enabled():
             try:
-                _migrations.apply_migrations(conn)
+                from services.api.app import migrations as _migrations
+                try:
+                    _migrations.apply_migrations(conn)
+                except Exception:
+                    pass
             except Exception:
                 pass
-        except Exception:
-            pass
         # Optional demo seed for local test/dev runs. Controlled via
         # TAAIP_AUTO_SEED=1 to avoid seeding in CI/production.
         try:
@@ -4525,6 +4523,8 @@ def init_db() -> str:
 
     Ensures the schema exists and returns the DB path that was initialized.
     """
+    if not migration_policy.legacy_schema_bootstrap_enabled():
+        raise RuntimeError(migration_policy.legacy_bootstrap_message("services.api.app.db.init_db"))
     # Keep init_db minimal and non-destructive for tests and dev helpers.
     init_schema()
     # Ensure SQLAlchemy engine used by the application points at the same DB

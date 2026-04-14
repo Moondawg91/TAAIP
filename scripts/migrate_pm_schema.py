@@ -5,8 +5,15 @@ Migration helper to add missing Project Management schema columns to the SQLite 
 Usage: python3 scripts/migrate_pm_schema.py [--db ./data/recruiting.db]
 """
 import argparse
+import os
 import sqlite3
 from typing import List
+
+if os.getenv("TAAIP_ALLOW_LEGACY_MIGRATIONS", "0") != "1":
+    raise SystemExit(
+        "Deprecated legacy migration script. Use ./.venv/bin/python -m alembic -c services/api/alembic.ini upgrade head. "
+        "Set TAAIP_ALLOW_LEGACY_MIGRATIONS=1 only to replay historical scripts intentionally."
+    )
 
 
 def ensure_columns(conn: sqlite3.Connection, table: str, cols: List[str]):

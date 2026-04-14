@@ -5,6 +5,12 @@ Run this to upgrade your database schema
 import sqlite3
 import os
 
+if os.getenv("TAAIP_ALLOW_LEGACY_MIGRATIONS", "0") != "1":
+    raise SystemExit(
+        "Deprecated legacy migration script. Use ./.venv/bin/python -m alembic -c services/api/alembic.ini upgrade head. "
+        "Set TAAIP_ALLOW_LEGACY_MIGRATIONS=1 only to replay historical scripts intentionally."
+    )
+
 # Use the project-root SQLite database file used in production
 DB_FILE = os.path.join(os.path.dirname(__file__), "recruiting.db")
 

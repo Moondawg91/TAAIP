@@ -80,6 +80,8 @@ def set_shared_session(sess):
 
 
 def reload_engine_if_needed():
+    from services.api.app import migration_policy
+
     """Recreate the SQLAlchemy engine if `DATABASE_URL` env changed since import.
 
     Call this after changing `DATABASE_URL` in tests or fixtures so the module's
@@ -109,16 +111,15 @@ def reload_engine_if_needed():
                 SessionLocal = SessionProxy(sessionmaker(autocommit=False, autoflush=False, bind=engine))
         except Exception:
             SessionLocal = SessionProxy(sessionmaker(autocommit=False, autoflush=False, bind=engine))
-        # Ensure SQLAlchemy model metadata exists on the newly-created engine.
-        try:
-            # Import here to avoid import-time cycles when module is imported elsewhere.
-            from services.api.app import models as _models
+        if migration_policy.legacy_schema_bootstrap_enabled():
             try:
-                _models.Base.metadata.create_all(bind=engine)
+                from services.api.app import models as _models
+                try:
+                    _models.Base.metadata.create_all(bind=engine)
+                except Exception:
+                    pass
             except Exception:
                 pass
-        except Exception:
-            pass
 
 
 def get_db():

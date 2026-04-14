@@ -12,6 +12,13 @@ This migration:
 
 import sqlite3
 from datetime import datetime
+import os
+
+if os.getenv("TAAIP_ALLOW_LEGACY_MIGRATIONS", "0") != "1":
+    raise SystemExit(
+        "Deprecated legacy migration script. Use ./.venv/bin/python -m alembic -c services/api/alembic.ini upgrade head. "
+        "Set TAAIP_ALLOW_LEGACY_MIGRATIONS=1 only to replay historical scripts intentionally."
+    )
 
 DB_FILE = "recruiting.db"
 

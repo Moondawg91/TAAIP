@@ -6,6 +6,13 @@ Run from the repo root. Uses ./data/recruiting.db by default.
 import sqlite3
 from pathlib import Path
 import sys
+import os
+
+if os.getenv("TAAIP_ALLOW_LEGACY_MIGRATIONS", "0") != "1":
+    raise SystemExit(
+        "Deprecated legacy migration script. Use ./.venv/bin/python -m alembic -c services/api/alembic.ini upgrade head. "
+        "Set TAAIP_ALLOW_LEGACY_MIGRATIONS=1 only to replay historical scripts intentionally."
+    )
 
 ROOT = Path(__file__).parent.resolve()
 DB = ROOT / "data" / "recruiting.db"

@@ -3,6 +3,7 @@ This module performs non-destructive schema adjustments on startup.
 """
 from typing import Any
 import json
+import os
 import sqlite3
 import time
 
@@ -22,6 +23,11 @@ def _column_exists(cur: sqlite3.Cursor, table: str, column: str) -> bool:
 
 
 def apply_migrations(conn: sqlite3.Connection):
+    if os.getenv("TAAIP_ALLOW_LEGACY_SCHEMA_BOOTSTRAP", "0") != "1":
+        raise RuntimeError(
+            "services.api.app.migrations.apply_migrations is deprecated for normal schema management. "
+            "Use ./.venv/bin/python -m alembic -c services/api/alembic.ini upgrade head"
+        )
     cur = conn.cursor()
     # Ensure dataset_registry
     if not _table_exists(cur, 'dataset_registry'):

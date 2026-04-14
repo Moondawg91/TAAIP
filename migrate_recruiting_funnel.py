@@ -5,6 +5,13 @@ Replaces simple lead input with PRID-based funnel tracking from EMM/iKrome/Recru
 import sqlite3
 from pathlib import Path
 import sys
+import os
+
+if os.getenv("TAAIP_ALLOW_LEGACY_MIGRATIONS", "0") != "1":
+    raise SystemExit(
+        "Deprecated legacy migration script. Use ./.venv/bin/python -m alembic -c services/api/alembic.ini upgrade head. "
+        "Set TAAIP_ALLOW_LEGACY_MIGRATIONS=1 only to replay historical scripts intentionally."
+    )
 
 SCRIPT_DIR = Path(__file__).parent.resolve()
 DB_PATH = SCRIPT_DIR / "recruiting.db"
