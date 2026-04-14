@@ -332,12 +332,21 @@ Source dataset:
 
 Behavior and constraints:
 
-- Uses only uploaded operational funnel source data (no synthetic fallback).
-- Supports malformed/non-canonical headers via value-pattern inference.
-- If source is unavailable: `status=no_active_dataset`.
-- If required canonical mapping cannot be inferred: `status=invalid_dataset_schema` with `schema_error` and `schema_mapping`.
+- Uses only uploaded operational funnel source data from the currently resolved source at `data/dev_datasets/Recruiting Funnel Enriched.csv` unless an explicit environment override is provided.
+- Supports real headerless or shifted-header operational exports via value-pattern inference and first-row header detection.
+- Preserves strict validation semantics:
+  - `status=no_active_dataset` when the real source is absent
+  - `status=invalid_dataset_schema` when required canonical fields truly cannot be derived
+  - `status=ok` only when the real uploaded funnel fields resolve into the authoritative contract
 - Scope-aware summaries are supported for `USAREC`, `BDE`, `BN`, `CO`, and `STN`.
 - Output ranking is deterministic and stable-sorted.
+
+Current repaired operational state:
+
+- live verification now returns `status=ok`
+- the real dataset yields non-empty `prioritized_funnel_gaps`
+- summary values are stable across repeated runs
+- downstream mission, command center, and Power BI funnel consumers pass focused validation
 
 Canonical operational summary includes:
 

@@ -100,12 +100,17 @@ Feature Status
 - Scope completed: authoritative execution/status engine, mission adjustment integration, command center integration, Power BI operational export, focused tests, API docs
 - Flash-to-Bang / Processing (420T core execution): DONE
 - Scope completed: authoritative processing-status engine, mission adjustment integration, command center integration, Power BI operational export, focused tests, API docs
+- Funnel operationalization repair (real uploaded data): DONE
+  - current resolved source: `data/dev_datasets/Recruiting Funnel Enriched.csv`
+  - repaired headerless and shifted-header normalization path now returns `status=ok`
+  - `prioritized_funnel_gaps` now populate from the real dataset
+  - mission adjustment, command center phase 2, and Power BI funnel consumers validated against the repaired path
 - Validation pass snapshot: PARTIAL
   - `market_engine`: complete on current workspace data
-  - `funnel_engine`: partial; current uploaded funnel source is surfacing `invalid_dataset_schema`
+  - `funnel_engine`: complete on current workspace data after normalization repair
   - `school_plan_engine` and `roi_engine`: no_data, correctly handled
   - LOE-dependent downstream surfaces: crash fixed; now degrade safely when LOE tables are absent
-  - remaining watch item: aggregated command views may still be slow under the current funnel source
+  - remaining watch item: broader aggregated command/export runs can still be slower than the focused validation path
 
 Acceptance Criteria
 - `/api/operations/targeting-data` ingest and query endpoints exist.
