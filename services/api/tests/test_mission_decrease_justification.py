@@ -386,6 +386,68 @@ def test_mission_adjustment_consumes_repaired_funnel_signal(monkeypatch, tmp_pat
     assert isinstance((funnel.get("raw") or {}).get("funnel_engine", {}).get("prioritized_funnel_gaps"), list)
 
 
+def test_collect_signal_summaries_reuses_precomputed_connected_payloads(monkeypatch):
+    fake_market = {"status": "ok", "market_engine": {"summary": {}, "prioritized_market_zip": [{"zip": "11111"}], "source_dataset_name": "market.csv"}}
+    fake_access = {"status": "ok", "school_access": {"summary": {}, "top_access_gaps": [{"school_id": "S1"}], "source_dataset_name": "schools.csv"}}
+    fake_execution = {"status": "ok", "execution_quality": {"summary": {}, "by_scope": {"station": []}, "root_cause_breakdown": []}}
+    fake_funnel = {"status": "ok", "funnel_engine": {"summary": {}, "prioritized_funnel_gaps": [{"station_rsid": "1A1D"}], "source_dataset_name": "funnel.csv"}}
+    fake_accountability = {"classification": "balanced", "confidence": "medium", "recommended_next_action": "hold"}
+    fake_loe = {"total_loes": 0, "total_metrics": 0, "status_counts": {}}
+    fake_targeting = {"status": "ok", "targeting_engine": {"summary": {"high_priority_count": 1}, "prioritized_targets": [{"zip": "11111"}], "data_sources": {"market": "market.csv"}}}
+    fake_school_plan = {"status": "ok", "school_plan_engine": {"summary": {}, "prioritized_schools": [{"school_id": "S1"}], "source_school_dataset": "schools.csv"}}
+    fake_roi = {"status": "ok", "roi_engine": {"summary": {}, "prioritized_events": [{"event_id": "E1"}]}}
+    fake_twg = {"status": "ok", "twg_engine": {"summary": {}, "prioritized_items": [{"item_id": "T1"}], "due_outs": []}}
+    fake_board = {"status": "ok", "targeting_board_engine": {"summary": {}, "prioritized_board_items": [{"board_item_id": "B1"}], "board_decisions": [], "directed_shifts": [], "downstream_twg_tasks": []}}
+    fake_assets = {"status": "ok", "asset_engine": {"summary": {}, "asset_distribution": [{"asset_id": "A1"}], "recommended_shifts": [], "execution_constraints": []}}
+    fake_processing = {"status": "ok", "flash_to_bang_processing_engine": {"summary": {}, "processing_items": [{"processing_item_id": "P1"}]}}
+    fake_tracker = {"status": "ok", "targeting_execution_tracker": {"summary": {}, "execution_items": [{"task_id": "X1"}]}}
+
+    monkeypatch.setattr(mdj.market_engine, "summarize_market_engine", lambda *a, **k: fake_market)
+    monkeypatch.setattr(mdj.school_access, "summarize_school_access", lambda *a, **k: fake_access)
+    monkeypatch.setattr(mdj.execution_quality, "summarize_execution_quality", lambda *a, **k: fake_execution)
+    monkeypatch.setattr(mdj.funnel_engine, "summarize_funnel_engine", lambda *a, **k: fake_funnel)
+    monkeypatch.setattr(mdj.accountability_engine, "classify_scope", lambda *a, **k: fake_accountability)
+    monkeypatch.setattr(mdj.loe_engine, "summarize_loes", lambda *a, **k: fake_loe)
+    monkeypatch.setattr(mdj.targeting_engine, "summarize_targeting_engine", lambda *a, **k: fake_targeting)
+    monkeypatch.setattr(mdj.school_plan_engine, "summarize_school_plan_engine", lambda *a, **k: fake_school_plan)
+    monkeypatch.setattr(mdj.roi_engine, "summarize_roi_engine", lambda *a, **k: fake_roi)
+    monkeypatch.setattr(mdj.twg_engine, "summarize_twg_engine", lambda *a, **k: fake_twg)
+    monkeypatch.setattr(mdj.targeting_board_engine, "summarize_targeting_board_engine", lambda *a, **k: fake_board)
+
+    def _asset(*_a, **kwargs):
+        assert kwargs.get("board_signal") is fake_board
+        assert kwargs.get("twg_signal") is fake_twg
+        assert kwargs.get("funnel_signal") is fake_funnel
+        assert kwargs.get("school_signal") is fake_school_plan
+        assert kwargs.get("roi_signal") is fake_roi
+        return fake_assets
+
+    def _processing(*_a, **kwargs):
+        assert kwargs.get("execution_signal") is fake_execution
+        assert kwargs.get("funnel_signal") is fake_funnel
+        assert kwargs.get("accountability_signal") is fake_accountability
+        return fake_processing
+
+    def _tracker(*_a, **kwargs):
+        assert kwargs.get("board_signal") is fake_board
+        assert kwargs.get("twg_signal") is fake_twg
+        assert kwargs.get("asset_signal") is fake_assets
+        assert kwargs.get("funnel_signal") is fake_funnel
+        assert kwargs.get("school_signal") is fake_school_plan
+        assert kwargs.get("roi_signal") is fake_roi
+        return fake_tracker
+
+    monkeypatch.setattr(mdj.asset_engine, "summarize_asset_engine", _asset)
+    monkeypatch.setattr(mdj.flash_to_bang_processing_engine, "summarize_flash_to_bang_processing_engine", _processing)
+    monkeypatch.setattr(mdj.targeting_execution_tracker, "summarize_targeting_execution_tracker", _tracker)
+
+    signals = mdj._collect_signal_summaries(db=None, scope_type="USAREC", scope_value="USAREC")
+
+    assert signals.get("assets", {}).get("rows_used") == 1
+    assert signals.get("flash_to_bang_processing", {}).get("rows_used") == 1
+    assert signals.get("execution_tracker", {}).get("rows_used") == 1
+
+
 def test_mission_adjustment_includes_real_signal_summaries_when_data_exists(monkeypatch, tmp_path):
     import pandas as pd
 

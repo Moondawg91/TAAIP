@@ -600,6 +600,88 @@ class TestAccountabilityClassification:
 
 class TestCommandCenterPhase2Integration:
 
+    def test_overview_reuses_precomputed_phase2_payloads(self, monkeypatch):
+        from services.api.app.routers import command_center, powerbi_feed
+
+        fake_loe = {"total_loes": 0, "total_metrics": 0, "status_counts": {}}
+        fake_market = {"status": "ok", "market_engine": {"summary": {}, "prioritized_market_zip": [{"zip": "11111"}], "source_dataset_name": "market.csv"}}
+        fake_access = {"status": "ok", "school_access": {"summary": {}, "top_access_gaps": [{"school_id": "S1"}], "source_dataset_name": "schools.csv"}}
+        fake_execution = {"status": "ok", "execution_quality": {"summary": {}, "by_scope": {"station": []}, "root_cause_breakdown": []}}
+        fake_funnel = {"status": "ok", "funnel_engine": {"summary": {}, "prioritized_funnel_gaps": [{"station_rsid": "1A1D"}], "source_dataset_name": "funnel.csv"}}
+        fake_targeting = {"status": "ok", "targeting_engine": {"summary": {"high_priority_count": 1}, "prioritized_targets": [{"zip": "11111"}], "data_sources": {"market": "market.csv"}}}
+        fake_school_plan = {"status": "ok", "school_plan_engine": {"summary": {}, "prioritized_schools": [{"school_id": "S1"}], "school_recruiting_plan": []}}
+        fake_roi = {"status": "ok", "roi_engine": {"summary": {}, "prioritized_events": [{"event_id": "E1"}], "roi_recommendations": [], "event_type_performance": []}}
+        fake_twg = {"status": "ok", "twg_engine": {"summary": {}, "prioritized_items": [{"item_id": "T1"}], "due_outs": []}}
+        fake_board = {"status": "ok", "targeting_board_engine": {"summary": {}, "prioritized_board_items": [{"board_item_id": "B1"}], "board_decisions": [], "directed_shifts": [], "downstream_twg_tasks": []}}
+        fake_assets = {"status": "ok", "asset_engine": {"summary": {}, "asset_distribution": [{"asset_id": "A1"}], "recommended_shifts": [], "execution_constraints": []}}
+        fake_processing = {"status": "ok", "flash_to_bang_processing_engine": {"summary": {}, "processing_items": [{"processing_item_id": "P1"}], "stalled_items": [], "overdue_items": [], "escalations": [], "processing_scorecard": {}}}
+        fake_tracker = {"status": "ok", "targeting_execution_tracker": {"summary": {}, "execution_items": [{"task_id": "X1"}], "blocked_items": [], "off_track_items": [], "escalations": [], "execution_scorecard": {}}}
+
+        monkeypatch.setattr(command_center.loe_engine, "summarize_loes", lambda *a, **k: fake_loe)
+        monkeypatch.setattr(command_center.targeting_expansion, "recommendations_for_scope", lambda *a, **k: {"recommendations": [], "source_dataset_name": "market.csv", "formula": {}})
+        monkeypatch.setattr(command_center.targeting_engine, "summarize_targeting_engine", lambda *a, **k: fake_targeting)
+        monkeypatch.setattr(command_center.accountability_engine, "classify_scope", lambda *a, **k: {"classification": "balanced", "confidence": "medium", "recommended_next_action": "hold"})
+        monkeypatch.setattr(command_center.market_engine, "summarize_market_engine", lambda *a, **k: fake_market)
+        monkeypatch.setattr(command_center.school_access, "summarize_school_access", lambda *a, **k: fake_access)
+        monkeypatch.setattr(command_center.execution_quality, "summarize_execution_quality", lambda *a, **k: fake_execution)
+        monkeypatch.setattr(command_center.funnel_engine, "summarize_funnel_engine", lambda *a, **k: fake_funnel)
+        monkeypatch.setattr(command_center.school_plan_engine, "summarize_school_plan_engine", lambda *a, **k: fake_school_plan)
+        monkeypatch.setattr(command_center._roi_engine_mod, "summarize_roi_engine", lambda *a, **k: fake_roi)
+        monkeypatch.setattr(command_center._twg_engine_mod, "summarize_twg_engine", lambda *a, **k: fake_twg)
+        monkeypatch.setattr(command_center._targeting_board_engine_mod, "summarize_targeting_board_engine", lambda *a, **k: fake_board)
+        monkeypatch.setattr(command_center.ai_recommendation_engine, "generate_recommendation_bundle", lambda *a, **k: {"status": "ok", "recommendations": []})
+
+        def _asset(*_a, **kwargs):
+            assert kwargs.get("board_signal") is fake_board
+            assert kwargs.get("twg_signal") is fake_twg
+            assert kwargs.get("funnel_signal") is fake_funnel
+            assert kwargs.get("school_signal") is fake_school_plan
+            assert kwargs.get("roi_signal") is fake_roi
+            return fake_assets
+
+        def _processing(*_a, **kwargs):
+            assert kwargs.get("execution_signal") is fake_execution
+            assert kwargs.get("funnel_signal") is fake_funnel
+            assert kwargs.get("accountability_signal", {}).get("classification") == "balanced"
+            return fake_processing
+
+        def _tracker(*_a, **kwargs):
+            assert kwargs.get("board_signal") is fake_board
+            assert kwargs.get("twg_signal") is fake_twg
+            assert kwargs.get("asset_signal") is fake_assets
+            assert kwargs.get("funnel_signal") is fake_funnel
+            assert kwargs.get("school_signal") is fake_school_plan
+            assert kwargs.get("roi_signal") is fake_roi
+            return fake_tracker
+
+        monkeypatch.setattr(command_center._asset_engine_mod if hasattr(command_center, '_asset_engine_mod') else command_center._asset_engine_mod, "summarize_asset_engine", _asset)
+        monkeypatch.setattr(command_center._flash_to_bang_processing_engine_mod, "summarize_flash_to_bang_processing_engine", _processing)
+        monkeypatch.setattr(command_center._targeting_execution_tracker_mod, "summarize_targeting_execution_tracker", _tracker)
+
+        payload = command_center.overview(scope_type="USAREC", scope_value="USAREC")
+        phase2 = (payload.get("summary") or {}).get("phase2") or {}
+        assert (phase2.get("asset_engine") or {}).get("status") == "ok"
+        assert (phase2.get("targeting_execution_tracker") or {}).get("status") == "ok"
+        assert (phase2.get("flash_to_bang_processing") or {}).get("status") == "ok"
+
+        monkeypatch.setattr(powerbi_feed.market_engine, "summarize_market_engine", lambda *a, **k: fake_market)
+        monkeypatch.setattr(powerbi_feed.school_access, "summarize_school_access", lambda *a, **k: fake_access)
+        monkeypatch.setattr(powerbi_feed.execution_quality, "summarize_execution_quality", lambda *a, **k: fake_execution)
+        monkeypatch.setattr(powerbi_feed.funnel_engine, "summarize_funnel_engine", lambda *a, **k: fake_funnel)
+        monkeypatch.setattr(powerbi_feed.targeting_engine, "summarize_targeting_engine", lambda *a, **k: fake_targeting)
+        monkeypatch.setattr(powerbi_feed.school_plan_engine, "summarize_school_plan_engine", lambda *a, **k: fake_school_plan)
+        monkeypatch.setattr(powerbi_feed._roi_engine_mod, "summarize_roi_engine", lambda *a, **k: fake_roi)
+        monkeypatch.setattr(powerbi_feed._twg_engine_mod, "summarize_twg_engine", lambda *a, **k: fake_twg)
+        monkeypatch.setattr(powerbi_feed._targeting_board_engine_mod, "summarize_targeting_board_engine", lambda *a, **k: fake_board)
+        monkeypatch.setattr(powerbi_feed._asset_engine_mod, "summarize_asset_engine", _asset)
+        monkeypatch.setattr(powerbi_feed._flash_to_bang_processing_engine_mod, "summarize_flash_to_bang_processing_engine", _processing)
+        monkeypatch.setattr(powerbi_feed._targeting_execution_tracker_mod, "summarize_targeting_execution_tracker", _tracker)
+        monkeypatch.setattr(powerbi_feed.accountability_engine, "classify_scope", lambda *a, **k: {"classification": "balanced", "confidence": "medium", "recommended_next_action": "hold"})
+
+        pb = powerbi_feed.operational_command_dataset(scope_type="USAREC", scope_value="USAREC")
+        assert pb.get("status") == "ok"
+        assert isinstance((pb.get("data") or {}).get("execution_items"), list)
+
     def test_overview_contains_phase2_block(self):
         r = client.get("/api/command-center/overview")
         assert r.status_code == 200, r.text

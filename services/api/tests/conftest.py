@@ -5,6 +5,9 @@ import time
 import pytest
 
 
+os.environ.setdefault('TAAIP_ALLOW_LEGACY_SCHEMA_BOOTSTRAP', '1')
+
+
 def _test_db_path():
     # ensure tests use a disposable DB in the repo root
     return os.environ.get('TAAIP_DB_PATH', './taaip_test.db')
