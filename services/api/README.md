@@ -265,18 +265,30 @@ Integration points:
 
 ## Current Operational Validation Snapshot
 
-Latest full-system validation against the current workspace data showed:
+Latest connected-system validation against the current workspace data showed:
 
-- `market_engine`: `ok` on real uploaded market data (`6L MARKET CORE.csv`)
-- `funnel_engine`: `ok` on the repaired real funnel source (`data/dev_datasets/Recruiting Funnel Enriched.csv`)
+- `market_engine`: `ok` at `USAREC` scope on the real uploaded market source (`6L MARKET CORE.csv`)
+- `funnel_engine`: `ok` at `USAREC` scope on the repaired real funnel source (`data/dev_datasets/Recruiting Funnel Enriched.csv`)
 - `school_plan_engine`: `ok` on the uploaded school terrain workbook (`data/dev_datasets/school contacts.xlsx`)
-- `roi_engine`: `ok` on the uploaded EMM operational workbook (`data/dev_datasets/EMM PORTAL.xlsx`)
-- LOE-dependent downstream engines now degrade safely when LOE tables are absent instead of crashing (`twg_engine`, targeting board, asset, execution tracker, and flash-to-bang processing flows)
-- focused regression evidence for tracker, processing, funnel, school plan, and ROI integrations remains green
+- `roi_engine`: `ok` at `USAREC` scope on the uploaded EMM operational workbook (`data/dev_datasets/EMM PORTAL.xlsx`)
+- `twg_engine`: `ok` and producing prioritized items from the authoritative workflow chain
+- `targeting_board_engine`: `ok` with non-empty board items at the validated aggregate scope
+- `asset_engine`: `ok` and connected to board / TWG / funnel / school / ROI without recomputing those signals internally
+- `mission_decrease_justification`: emits connected `signal_summaries` blocks for funnel, market, ROI, school access, school plan, targeting, and TWG
+- `command_center.overview`: `status=ok` and now exposes the expected `phase2` block with the connected upstream engines attached
+- `powerbi_feed.operational_command_dataset`: `status=ok` and includes the required market, funnel, school, ROI, TWG, board, asset, processing, execution, and accountability blocks
+- broad connected regression evidence is now clean: `133 passed` on the operational engine and downstream integration suite
+
+Real integration defects fixed during this pass:
+
+- precomputed upstream signals are now reused through mission, command center, and Power BI consumers instead of being redundantly recomputed
+- school access now prefers normalized authoritative school-contact tables before falling back to the uploaded workbook
+- scoped targeting recommendations now retain authoritative market fallback coverage when a real CSV scope slice is empty
+- downstream recommendation and accountability payloads now preserve stable field names and metric shapes for consumers
 
 Known limitation during this validation pass:
 
-- command-wide aggregated views can still respond slowly when the current funnel source requires expensive date parsing or schema fallback handling
+- some unit-level scopes can honestly return `no_data` / `no_active_dataset` for market, funnel, ROI, board, processing, or execution tracking when that specific scope has no active authoritative rows, even though the aggregate `USAREC` validation path is complete
 
 ## Market Intelligence Engine (420T)
 

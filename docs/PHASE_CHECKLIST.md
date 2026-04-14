@@ -113,13 +113,15 @@ Feature Status
   - current resolved source: `data/dev_datasets/EMM PORTAL.xlsx`
   - `roi_engine` now returns `status=ok` with non-empty prioritized event rows using the uploaded EMM workbook fallback
   - focused school/ROI regression evidence: `26 passed`
-- Validation pass snapshot: PARTIAL
-  - `market_engine`: complete on current workspace data
-  - `funnel_engine`: complete on current workspace data after normalization repair
-  - `school_plan_engine`: complete on current workspace data after uploaded-school fallback repair
-  - `roi_engine`: complete on current workspace data after uploaded-EMM fallback repair
-  - LOE-dependent downstream surfaces: crash fixed; now degrade safely when LOE tables are absent
-  - remaining watch item: broader aggregated command/export runs can still be slower than the focused validation path
+- Connected-system operational validation pass: DONE
+  - broad regression evidence: `133 passed` across funnel, school plan, ROI, TWG, targeting board, asset, execution tracker, flash-to-bang, mission adjustment, and phase2 command tests
+  - `market_engine`: complete on current workspace data at aggregate scope using `6L MARKET CORE.csv`
+  - `funnel_engine`: complete on current workspace data after normalization repair using `Recruiting Funnel Enriched.csv`
+  - `school_plan_engine`: complete on current workspace data after uploaded-school fallback repair using `school contacts.xlsx`
+  - `roi_engine`: complete on current workspace data after uploaded-EMM fallback repair using `EMM PORTAL.xlsx`
+  - downstream mission / command center / Power BI surfaces now consume the upstream engines correctly and expose the expected connected blocks
+  - real integration defects fixed in this pass: signal propagation reuse, school authoritative-source precedence, scoped market fallback, and stable downstream field/metric shapes
+  - honest partial behavior remains by design for unit scopes with no active authoritative rows; those surfaces return `no_data` / `no_active_dataset` instead of inventing defaults
 
 Acceptance Criteria
 - `/api/operations/targeting-data` ingest and query endpoints exist.
