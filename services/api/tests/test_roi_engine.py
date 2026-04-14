@@ -14,6 +14,7 @@ Coverage:
 
 from datetime import date
 
+import pandas as pd
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import text
@@ -171,7 +172,9 @@ def test_effectiveness_band():
 # 2. Engine: no_data when tables are empty
 # ---------------------------------------------------------------------------
 
-def test_roi_engine_no_data():
+def test_roi_engine_no_data(monkeypatch):
+    monkeypatch.setattr(roi_engine, "_resolve_emm_dataset_path", lambda: None)
+
     db = _db()
     db.execute(text("DELETE FROM emm_event"))
     db.execute(text("DELETE FROM event_fact"))
@@ -183,6 +186,71 @@ def test_roi_engine_no_data():
     assert eng.get("prioritized_events") == []
     assert eng.get("roi_recommendations") == []
     assert (eng.get("summary") or {}).get("total_events_scored") == 0
+
+
+def test_roi_engine_real_workbook_fallback(monkeypatch, tmp_path):
+    db = _db()
+    db.execute(text("DELETE FROM emm_event"))
+    db.execute(text("DELETE FROM event_fact"))
+    db.execute(text("DELETE FROM spend_fact"))
+    db.execute(text("DELETE FROM lead_journey_fact"))
+    db.commit()
+
+    workbook = tmp_path / "EMM PORTAL.xlsx"
+    pd.DataFrame(
+        [
+            {
+                "RSID": "6L",
+                "P. RSID": "6L2",
+                "Activity ID": "EVT-REAL-1",
+                "TITLE": "Seattle School Blitz",
+                "EVENT_TYPE": "Prospecting Event/Table Setup/School Blitz",
+                "Begin Date": "2025-01-15",
+                "End Date": "2025-01-15",
+                "ZIP_CODE": 98109,
+                "ESTIMATE_COST": 1200,
+                "COMMIT_FUND": 1500,
+                "Leads": 18,
+                "Est Leads": 25,
+                "Contracts": 2,
+                "Est Contracts": 3,
+            },
+            {
+                "RSID": "6L",
+                "P. RSID": "6L4",
+                "Activity ID": "EVT-REAL-2",
+                "TITLE": "UW Career Fair",
+                "EVENT_TYPE": "Educational Institute",
+                "Begin Date": "2025-02-10",
+                "End Date": "2025-02-10",
+                "ZIP_CODE": 98195,
+                "ESTIMATE_COST": 380,
+                "COMMIT_FUND": 380,
+                "Leads": 15,
+                "Est Leads": 22,
+                "Contracts": 1,
+                "Est Contracts": 1,
+            },
+        ]
+    ).to_excel(workbook, index=False)
+
+    monkeypatch.setattr(roi_engine, "_resolve_emm_dataset_path", lambda: str(workbook))
+    monkeypatch.setattr(
+        roi_engine.market_engine, "summarize_market_engine",
+        lambda *a, **k: {"status": "ok", "market_engine": {"prioritized_market_zip": []}},
+    )
+    monkeypatch.setattr(
+        roi_engine.targeting_engine, "summarize_targeting_engine",
+        lambda *a, **k: {"status": "ok", "targeting_engine": {"prioritized_targets": []}},
+    )
+
+    out = roi_engine.summarize_roi_engine(db, "USAREC", "USAREC", "USAREC", "USAREC")
+    eng = out.get("roi_engine") or {}
+
+    assert out.get("status") == "ok"
+    assert (eng.get("summary") or {}).get("total_events_scored") == 2
+    assert len(eng.get("prioritized_events") or []) == 2
+    assert eng.get("source_dataset_name") == "EMM PORTAL.xlsx"
 
 
 # ---------------------------------------------------------------------------

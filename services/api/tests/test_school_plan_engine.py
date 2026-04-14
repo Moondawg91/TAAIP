@@ -1,5 +1,6 @@
 from datetime import date
 
+import pandas as pd
 from fastapi.testclient import TestClient
 from sqlalchemy import text
 
@@ -135,7 +136,9 @@ def test_school_plan_engine_priority_scoring_deterministic(monkeypatch):
     assert out1.get("school_plan_engine", {}).get("school_recruiting_plan", [])
 
 
-def test_school_plan_engine_no_data():
+def test_school_plan_engine_no_data(monkeypatch):
+    monkeypatch.setattr(school_plan_engine.school_access, "_resolve_school_contacts_dataset_path", lambda: None)
+
     db = _db()
     db.execute(text("DROP TABLE IF EXISTS schools"))
     db.execute(text("DROP TABLE IF EXISTS fact_school_contacts"))
@@ -146,7 +149,9 @@ def test_school_plan_engine_no_data():
     assert out.get("school_plan_engine", {}).get("prioritized_schools") == []
 
 
-def test_school_plan_engine_invalid_dataset_schema_without_fallback():
+def test_school_plan_engine_invalid_dataset_schema_without_fallback(monkeypatch):
+    monkeypatch.setattr(school_plan_engine.school_access, "_resolve_school_contacts_dataset_path", lambda: None)
+
     db = _db()
     db.execute(text("DROP TABLE IF EXISTS schools"))
     db.execute(text("DROP TABLE IF EXISTS fact_school_contacts"))
@@ -157,6 +162,49 @@ def test_school_plan_engine_invalid_dataset_schema_without_fallback():
     out = school_plan_engine.summarize_school_plan_engine(db, "USAREC", "USAREC", "USAREC", "USAREC")
     assert out.get("status") == "invalid_dataset_schema"
     assert "schema_error" in (out.get("school_plan_engine") or {})
+
+
+def test_school_plan_engine_real_workbook_fallback(monkeypatch, tmp_path):
+    db = _db()
+    db.execute(text("DROP TABLE IF EXISTS schools"))
+    db.execute(text("DROP TABLE IF EXISTS fact_school_contacts"))
+    db.commit()
+
+    workbook = tmp_path / "school contacts.xlsx"
+    pd.DataFrame(
+        [
+            ["Applied filters", "", "", "", "", "", "", "", "", "", "", ""],
+            ["", "", "", "", "", "", "", "", "", "", "", ""],
+            ["RSID", "School Name (School RSID)", "Population", "Available Students", "Attempted Students", "Attempted   Students %", "Contacted Students", "Contacted Students %", "Attempt365", "Attempted Students w/ in 365 %", "Contacted Students w/ in 365", "Contacted Students w/ in 365 %"],
+            ["1A1D", "ALPHA HIGH SCHOOL (1A1D)", 500, 120, 30, 0.25, 14, 0.12, 30, 0.25, 14, 0.12],
+            ["1A1G", "BRAVO HIGH SCHOOL (1A1G)", 300, 80, 10, 0.12, 5, 0.06, 10, 0.12, 5, 0.06],
+        ]
+    ).to_excel(workbook, index=False, header=False)
+
+    monkeypatch.setattr(school_plan_engine.school_access, "_resolve_school_contacts_dataset_path", lambda: str(workbook))
+    monkeypatch.setattr(
+        school_plan_engine.market_engine,
+        "summarize_market_engine",
+        lambda *a, **k: {"status": "ok", "market_engine": {"source_dataset_name": "market.csv", "data_as_of": "2026-01-01T00:00:00Z", "prioritized_market_zip": []}},
+    )
+    monkeypatch.setattr(
+        school_plan_engine.funnel_engine,
+        "summarize_funnel_engine",
+        lambda *a, **k: {"status": "ok", "funnel_engine": {"source_dataset_name": "funnel.csv", "data_as_of": "2026-01-01T00:00:00Z", "by_scope": {"station": []}, "prioritized_funnel_gaps": []}},
+    )
+    monkeypatch.setattr(
+        school_plan_engine.targeting_engine,
+        "summarize_targeting_engine",
+        lambda *a, **k: {"status": "ok", "targeting_engine": {"data_as_of": "2026-01-01T00:00:00Z", "data_sources": {}, "prioritized_targets": []}},
+    )
+
+    out = school_plan_engine.summarize_school_plan_engine(db, "USAREC", "USAREC", "USAREC", "USAREC")
+    rows = (out.get("school_plan_engine") or {}).get("prioritized_schools") or []
+
+    assert out.get("status") == "ok"
+    assert len(rows) == 2
+    assert {r.get("station_rsid") for r in rows} == {"1A1D", "1A1G"}
+    assert (out.get("school_plan_engine") or {}).get("source_school_dataset") == "school contacts.xlsx"
 
 
 def test_mission_includes_school_plan_signal_and_recommendation(monkeypatch):
