@@ -752,6 +752,23 @@ class TestLoeEngineUnit:
         assert result["total_loes"] == 0
         db.close()
 
+    def test_summarize_loes_missing_table_returns_empty(self):
+        from services.api.app.services.loe_engine import summarize_loes
+        from sqlalchemy.exc import OperationalError
+
+        class _BrokenQuery:
+            def all(self):
+                raise OperationalError("SELECT * FROM loes", {}, Exception("no such table: loes"))
+
+        class _BrokenDb:
+            def query(self, *args, **kwargs):
+                return _BrokenQuery()
+
+        result = summarize_loes(_BrokenDb(), "USAREC", "USAREC")
+        assert result["total_loes"] == 0
+        assert result["total_metrics"] == 0
+        assert result["status_counts"] == {"met": 0, "at_risk": 0, "not_met": 0, "unknown": 0}
+
 
 # ---------------------------------------------------------------------------
 # Unit tests: targeting_expansion module
