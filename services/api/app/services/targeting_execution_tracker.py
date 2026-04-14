@@ -203,6 +203,12 @@ def summarize_targeting_execution_tracker(
     top_n: int = 30,
     mission_signal: Optional[Dict] = None,
     include_mission_signal: bool = True,
+    board_signal: Optional[Dict] = None,
+    twg_signal: Optional[Dict] = None,
+    asset_signal: Optional[Dict] = None,
+    funnel_signal: Optional[Dict] = None,
+    school_signal: Optional[Dict] = None,
+    roi_signal: Optional[Dict] = None,
 ) -> Dict:
     """
     Execution and status layer for board-directed actions.
@@ -266,12 +272,21 @@ def summarize_targeting_execution_tracker(
     ast = actor_scope_type or st
     asv = actor_scope_value or sv
 
-    board_signal = targeting_board_engine.summarize_targeting_board_engine(db, st, sv, ast, asv, top_n=top_n)
-    twg_signal = twg_engine.summarize_twg_engine(db, st, sv, ast, asv, top_n=top_n)
-    asset_signal = asset_engine.summarize_asset_engine(db, st, sv, ast, asv, top_n=top_n)
-    funnel_signal = funnel_engine.summarize_funnel_engine(db, st, sv, ast, asv, top_n=top_n)
-    school_signal = school_plan_engine.summarize_school_plan_engine(db, st, sv, ast, asv, top_n=top_n)
-    roi_signal = roi_engine.summarize_roi_engine(db, st, sv, ast, asv, top_n=top_n)
+    board_signal = board_signal or targeting_board_engine.summarize_targeting_board_engine(db, st, sv, ast, asv, top_n=top_n)
+    twg_signal = twg_signal or twg_engine.summarize_twg_engine(db, st, sv, ast, asv, top_n=top_n)
+    asset_signal = asset_signal or asset_engine.summarize_asset_engine(
+        db,
+        st,
+        sv,
+        ast,
+        asv,
+        top_n=top_n,
+        board_signal=board_signal,
+        twg_signal=twg_signal,
+    )
+    funnel_signal = funnel_signal or funnel_engine.summarize_funnel_engine(db, st, sv, ast, asv, top_n=top_n)
+    school_signal = school_signal or school_plan_engine.summarize_school_plan_engine(db, st, sv, ast, asv, top_n=top_n)
+    roi_signal = roi_signal or roi_engine.summarize_roi_engine(db, st, sv, ast, asv, top_n=top_n)
 
     mission_source = "provided"
     if mission_signal is None and include_mission_signal:

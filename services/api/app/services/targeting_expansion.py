@@ -361,6 +361,7 @@ def recommendations_for_scope(db, scope_type: str, scope_value: str, top_n: int 
             "zip_code": str(t.get("zip") or ""),
             "market_capability_score": float(t.get("market_capability_score") or 0.0),
             "market_potential_score": float(t.get("market_capability_score") or 0.0),
+            "market_category": str(t.get("market_category") or "UNK"),
             "opportunity_band": market_opportunity_band,
             "market_opportunity_band": market_opportunity_band,
             "school_access_signal": {

@@ -359,6 +359,7 @@ def summarize_targeting_engine(
             {
                 "zip": zip_code,
                 "station_rsid": station,
+                "market_category": str(row.get("market_category") or "UNK"),
                 "market_capability_score": round(float(row.get("market_capability_score") or 0.0), 2),
                 "opportunity_band": str(row.get("opportunity_band") or "weak"),
                 "funnel_signal": {

@@ -130,107 +130,135 @@ def overview(fy: Optional[int] = None, qtr: Optional[int] = None, month: Optiona
             scope_value_eff = (scope_value or '') if scope_type_eff != 'USAREC' else 'USAREC'
             db = next(_dbmod.get_db())
             try:
+                loe_summary = loe_engine.summarize_loes(db, scope_type_eff, scope_value_eff)
+                targeting_focus_payload = targeting_expansion.recommendations_for_scope(db, scope_type_eff, scope_value_eff, top_n=5)
+                targeting_signal = targeting_engine.summarize_targeting_engine(
+                    db,
+                    scope_type=scope_type_eff,
+                    scope_value=scope_value_eff,
+                    actor_scope_type=scope_type_eff,
+                    actor_scope_value=scope_value_eff,
+                    top_n=10,
+                )
+                accountability_signal = accountability_engine.classify_scope(db, scope_type_eff, scope_value_eff)
+                market_signal = market_engine.summarize_market_engine(
+                    db,
+                    scope_type=scope_type_eff,
+                    scope_value=scope_value_eff,
+                    actor_scope_type=scope_type_eff,
+                    actor_scope_value=scope_value_eff,
+                    top_n=10,
+                )
+                school_access_signal = school_access.summarize_school_access(
+                    db,
+                    scope_type=scope_type_eff,
+                    scope_value=scope_value_eff,
+                    actor_scope_type=scope_type_eff,
+                    actor_scope_value=scope_value_eff,
+                    top_n=10,
+                )
+                execution_signal = execution_quality.summarize_execution_quality(
+                    db,
+                    scope_type=scope_type_eff,
+                    scope_value=scope_value_eff,
+                    actor_scope_type=scope_type_eff,
+                    actor_scope_value=scope_value_eff,
+                )
+                funnel_signal = funnel_engine.summarize_funnel_engine(
+                    db,
+                    scope_type=scope_type_eff,
+                    scope_value=scope_value_eff,
+                    actor_scope_type=scope_type_eff,
+                    actor_scope_value=scope_value_eff,
+                    top_n=10,
+                )
+                school_plan_signal = school_plan_engine.summarize_school_plan_engine(
+                    db,
+                    scope_type=scope_type_eff,
+                    scope_value=scope_value_eff,
+                    actor_scope_type=scope_type_eff,
+                    actor_scope_value=scope_value_eff,
+                    top_n=10,
+                )
+                roi_signal = _roi_engine_mod.summarize_roi_engine(
+                    db,
+                    scope_type=scope_type_eff,
+                    scope_value=scope_value_eff,
+                    actor_scope_type=scope_type_eff,
+                    actor_scope_value=scope_value_eff,
+                    top_n=10,
+                )
+                twg_signal = _twg_engine_mod.summarize_twg_engine(
+                    db,
+                    scope_type=scope_type_eff,
+                    scope_value=scope_value_eff,
+                    actor_scope_type=scope_type_eff,
+                    actor_scope_value=scope_value_eff,
+                    top_n=10,
+                )
+                board_signal = _targeting_board_engine_mod.summarize_targeting_board_engine(
+                    db,
+                    scope_type=scope_type_eff,
+                    scope_value=scope_value_eff,
+                    actor_scope_type=scope_type_eff,
+                    actor_scope_value=scope_value_eff,
+                    top_n=10,
+                )
+                asset_signal = _asset_engine_mod.summarize_asset_engine(
+                    db,
+                    scope_type=scope_type_eff,
+                    scope_value=scope_value_eff,
+                    actor_scope_type=scope_type_eff,
+                    actor_scope_value=scope_value_eff,
+                    top_n=10,
+                    board_signal=board_signal,
+                    twg_signal=twg_signal,
+                    funnel_signal=funnel_signal,
+                    school_signal=school_plan_signal,
+                    roi_signal=roi_signal,
+                )
+                processing_signal = _flash_to_bang_processing_engine_mod.summarize_flash_to_bang_processing_engine(
+                    db,
+                    scope_type=scope_type_eff,
+                    scope_value=scope_value_eff,
+                    actor_scope_type=scope_type_eff,
+                    actor_scope_value=scope_value_eff,
+                    top_n=10,
+                    execution_signal=execution_signal,
+                    funnel_signal=funnel_signal,
+                    accountability_signal=accountability_signal,
+                )
+                execution_tracker_signal = _targeting_execution_tracker_mod.summarize_targeting_execution_tracker(
+                    db,
+                    scope_type=scope_type_eff,
+                    scope_value=scope_value_eff,
+                    actor_scope_type=scope_type_eff,
+                    actor_scope_value=scope_value_eff,
+                    top_n=10,
+                    board_signal=board_signal,
+                    twg_signal=twg_signal,
+                    asset_signal=asset_signal,
+                    funnel_signal=funnel_signal,
+                    school_signal=school_plan_signal,
+                    roi_signal=roi_signal,
+                )
+
                 summary['phase2'] = {
-                    'loe_summary': loe_engine.summarize_loes(db, scope_type_eff, scope_value_eff),
-                    'targeting_focus': _fmt_targeting_summary(
-                        targeting_expansion.recommendations_for_scope(db, scope_type_eff, scope_value_eff, top_n=5)
-                    ),
-                    'targeting_engine': targeting_engine.summarize_targeting_engine(
-                        db,
-                        scope_type=scope_type_eff,
-                        scope_value=scope_value_eff,
-                        actor_scope_type=scope_type_eff,
-                        actor_scope_value=scope_value_eff,
-                        top_n=10,
-                    ),
-                    'accountability': accountability_engine.classify_scope(db, scope_type_eff, scope_value_eff),
-                    'market_engine': market_engine.summarize_market_engine(
-                        db,
-                        scope_type=scope_type_eff,
-                        scope_value=scope_value_eff,
-                        actor_scope_type=scope_type_eff,
-                        actor_scope_value=scope_value_eff,
-                        top_n=10,
-                    ),
-                    'school_access': school_access.summarize_school_access(
-                        db,
-                        scope_type=scope_type_eff,
-                        scope_value=scope_value_eff,
-                        actor_scope_type=scope_type_eff,
-                        actor_scope_value=scope_value_eff,
-                        top_n=10,
-                    ),
-                    'school_plan_engine': school_plan_engine.summarize_school_plan_engine(
-                        db,
-                        scope_type=scope_type_eff,
-                        scope_value=scope_value_eff,
-                        actor_scope_type=scope_type_eff,
-                        actor_scope_value=scope_value_eff,
-                        top_n=10,
-                    ),
-                    'roi_engine': _roi_engine_mod.summarize_roi_engine(
-                        db,
-                        scope_type=scope_type_eff,
-                        scope_value=scope_value_eff,
-                        actor_scope_type=scope_type_eff,
-                        actor_scope_value=scope_value_eff,
-                        top_n=10,
-                    ),
-                    'twg_engine': _twg_engine_mod.summarize_twg_engine(
-                        db,
-                        scope_type=scope_type_eff,
-                        scope_value=scope_value_eff,
-                        actor_scope_type=scope_type_eff,
-                        actor_scope_value=scope_value_eff,
-                        top_n=10,
-                    ),
-                    'targeting_board_engine': _targeting_board_engine_mod.summarize_targeting_board_engine(
-                        db,
-                        scope_type=scope_type_eff,
-                        scope_value=scope_value_eff,
-                        actor_scope_type=scope_type_eff,
-                        actor_scope_value=scope_value_eff,
-                        top_n=10,
-                    ),
-                    'asset_engine': _asset_engine_mod.summarize_asset_engine(
-                        db,
-                        scope_type=scope_type_eff,
-                        scope_value=scope_value_eff,
-                        actor_scope_type=scope_type_eff,
-                        actor_scope_value=scope_value_eff,
-                        top_n=10,
-                    ),
-                    'flash_to_bang_processing': _flash_to_bang_processing_engine_mod.summarize_flash_to_bang_processing_engine(
-                        db,
-                        scope_type=scope_type_eff,
-                        scope_value=scope_value_eff,
-                        actor_scope_type=scope_type_eff,
-                        actor_scope_value=scope_value_eff,
-                        top_n=10,
-                    ),
-                    'targeting_execution_tracker': _targeting_execution_tracker_mod.summarize_targeting_execution_tracker(
-                        db,
-                        scope_type=scope_type_eff,
-                        scope_value=scope_value_eff,
-                        actor_scope_type=scope_type_eff,
-                        actor_scope_value=scope_value_eff,
-                        top_n=10,
-                    ),
-                    'execution_quality': execution_quality.summarize_execution_quality(
-                        db,
-                        scope_type=scope_type_eff,
-                        scope_value=scope_value_eff,
-                        actor_scope_type=scope_type_eff,
-                        actor_scope_value=scope_value_eff,
-                    ),
-                    'funnel_engine': funnel_engine.summarize_funnel_engine(
-                        db,
-                        scope_type=scope_type_eff,
-                        scope_value=scope_value_eff,
-                        actor_scope_type=scope_type_eff,
-                        actor_scope_value=scope_value_eff,
-                        top_n=10,
-                    ),
+                    'loe_summary': loe_summary,
+                    'targeting_focus': _fmt_targeting_summary(targeting_focus_payload),
+                    'targeting_engine': targeting_signal,
+                    'accountability': accountability_signal,
+                    'market_engine': market_signal,
+                    'school_access': school_access_signal,
+                    'school_plan_engine': school_plan_signal,
+                    'roi_engine': roi_signal,
+                    'twg_engine': twg_signal,
+                    'targeting_board_engine': board_signal,
+                    'asset_engine': asset_signal,
+                    'flash_to_bang_processing': processing_signal,
+                    'targeting_execution_tracker': execution_tracker_signal,
+                    'execution_quality': execution_signal,
+                    'funnel_engine': funnel_signal,
                     'recommended_actions': ai_recommendation_engine.generate_recommendation_bundle(
                         db,
                         scope_type_eff,

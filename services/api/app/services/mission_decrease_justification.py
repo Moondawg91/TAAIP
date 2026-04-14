@@ -191,7 +191,19 @@ def _collect_signal_summaries(db, scope_type: str, scope_value: str) -> Dict:
     roi = roi_engine.summarize_roi_engine(db, scope_type, scope_value, scope_type, scope_value, top_n=15)
     twg = twg_engine.summarize_twg_engine(db, scope_type, scope_value, scope_type, scope_value, top_n=15)
     board = targeting_board_engine.summarize_targeting_board_engine(db, scope_type, scope_value, scope_type, scope_value, top_n=15)
-    assets = asset_engine.summarize_asset_engine(db, scope_type, scope_value, scope_type, scope_value, top_n=15)
+    assets = asset_engine.summarize_asset_engine(
+        db,
+        scope_type,
+        scope_value,
+        scope_type,
+        scope_value,
+        top_n=15,
+        board_signal=board,
+        twg_signal=twg,
+        funnel_signal=funnel,
+        school_signal=school_plan,
+        roi_signal=roi,
+    )
     processing = flash_to_bang_processing_engine.summarize_flash_to_bang_processing_engine(
         db,
         scope_type,
@@ -199,6 +211,9 @@ def _collect_signal_summaries(db, scope_type: str, scope_value: str) -> Dict:
         scope_type,
         scope_value,
         top_n=15,
+        execution_signal=execution,
+        funnel_signal=funnel,
+        accountability_signal=accountability,
     )
     execution_tracker = targeting_execution_tracker.summarize_targeting_execution_tracker(
         db,
@@ -208,6 +223,12 @@ def _collect_signal_summaries(db, scope_type: str, scope_value: str) -> Dict:
         scope_value,
         top_n=15,
         include_mission_signal=False,
+        board_signal=board,
+        twg_signal=twg,
+        asset_signal=assets,
+        funnel_signal=funnel,
+        school_signal=school_plan,
+        roi_signal=roi,
     )
 
     return {

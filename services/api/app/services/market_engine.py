@@ -112,6 +112,100 @@ def _overall_status(weighted_score: float) -> str:
     return "weak"
 
 
+def _fallback_market_engine_from_qma(
+    db,
+    scope_type: str,
+    scope_value: str,
+    actor_scope_type: str,
+    actor_scope_value: str,
+    top_n: int,
+) -> Optional[Dict]:
+    try:
+        from services.api.app.services import market_qma
+
+        fallback_payload = market_qma.summarize_market_qma(
+            db,
+            scope_type=scope_type,
+            scope_value=scope_value,
+            actor_scope_type=actor_scope_type,
+            actor_scope_value=actor_scope_value,
+            top_n=top_n,
+        )
+    except Exception:
+        return None
+
+    if fallback_payload.get("status") != "ok":
+        return None
+
+    qma = fallback_payload.get("market_qma") or {}
+    summary = qma.get("summary") or {}
+    prioritized_qips = qma.get("prioritized_market_zip") or []
+    if not prioritized_qips:
+        return None
+
+    prioritized_market_zip = []
+    for row in prioritized_qips:
+        score = float(row.get("priority_rank_score") or 0.0)
+        prioritized_market_zip.append(
+            {
+                "zip": str(row.get("zip_code") or ""),
+                "station_rsid": str(row.get("station_rsid") or ""),
+                "company_rsid": str(row.get("station_rsid") or "")[:3],
+                "battalion_rsid": str(row.get("station_rsid") or "")[:2],
+                "brigade_rsid": str(row.get("station_rsid") or "")[:1],
+                "market_category": str(row.get("market_category") or "UNK"),
+                "total_recruiting_age_population": 0.0,
+                "market_capability_score": round(score, 2),
+                "opportunity_band": _opportunity_band(score),
+                "rationale": str(row.get("market_classification") or "market_supports_shift"),
+                "trace_id": f"market-engine:fallback:{row.get('station_rsid') or ''}:{row.get('zip_code') or ''}",
+            }
+        )
+
+    capability_score = float(summary.get("market_capability_score") or 0.0)
+    return {
+        "status": "ok",
+        "market_engine": {
+            "summary": {
+                "overall_market_status": _overall_status(capability_score),
+                "market_capability_score": round(capability_score, 2),
+                "high_opportunity_zip_count": sum(1 for row in prioritized_market_zip if row.get("opportunity_band") == "strong"),
+                "moderate_opportunity_zip_count": sum(1 for row in prioritized_market_zip if row.get("opportunity_band") == "moderate"),
+                "weak_opportunity_zip_count": sum(1 for row in prioritized_market_zip if row.get("opportunity_band") == "weak"),
+                "total_recruiting_age_population": 0.0,
+                "station_count": len({str(row.get("station_rsid") or "") for row in prioritized_market_zip if str(row.get("station_rsid") or "")}),
+                "confidence_note": "Derived from authoritative station ZIP coverage fallback.",
+                "scoring_formula": {
+                    "market_capability_score": "QMA fallback from station coverage, market category, and production signals",
+                    "weights": {
+                        "population": WEIGHT_POPULATION,
+                        "education": WEIGHT_EDUCATION,
+                        "income": WEIGHT_INCOME,
+                    },
+                },
+            },
+            "by_scope": qma.get("by_scope") or {"bde": [], "bn": [], "company": [], "station": []},
+            "prioritized_market_zip": prioritized_market_zip,
+            "top_market_gaps": [
+                {
+                    "zip": str(row.get("zip_code") or ""),
+                    "station_rsid": str(row.get("station_rsid") or ""),
+                    "total_recruiting_age_population": 0.0,
+                    "market_capability_score": round(float(row.get("priority_rank_score") or 0.0), 2),
+                    "opportunity_band": _opportunity_band(float(row.get("priority_rank_score") or 0.0)),
+                    "supporting_completeness": 1.0,
+                    "rationale": str(row.get("market_classification") or "market_supports_shift"),
+                    "trace_id": f"market-engine:fallback-gap:{row.get('station_rsid') or ''}:{row.get('zip_code') or ''}",
+                }
+                for row in (qma.get("top_market_gaps") or [])
+            ],
+            "data_as_of": qma.get("data_as_of"),
+            "last_refresh": qma.get("last_refresh"),
+            "source_dataset_name": qma.get("source_dataset_name"),
+        },
+    }
+
+
 def _extract_rsid_code(v, default: str = "") -> str:
     s = "" if v is None else str(v).strip().upper()
     if not s:
@@ -185,6 +279,16 @@ def summarize_market_engine(
 
     dataset_path = _resolve_market_core_path()
     if not dataset_path:
+        fallback_payload = _fallback_market_engine_from_qma(
+            db,
+            scope_type,
+            scope_value,
+            actor_scope_type,
+            actor_scope_value,
+            top_n,
+        )
+        if fallback_payload is not None:
+            return fallback_payload
         return {
             "status": "no_active_dataset",
             "market_engine": {
@@ -300,6 +404,16 @@ def summarize_market_engine(
         filtered = work
 
     if filtered.empty:
+        fallback_payload = _fallback_market_engine_from_qma(
+            db,
+            scope_type,
+            scope_value,
+            actor_scope_type,
+            actor_scope_value,
+            top_n,
+        )
+        if fallback_payload is not None:
+            return fallback_payload
         return {
             "status": "no_active_dataset",
             "market_engine": {
@@ -462,6 +576,7 @@ def summarize_market_engine(
                     "company_rsid": str(r.get("company_rsid") or ""),
                     "battalion_rsid": str(r.get("battalion_rsid") or ""),
                     "brigade_rsid": str(r.get("brigade_rsid") or ""),
+                    "market_category": str(r.get("market_category") or "UNK"),
                     "total_recruiting_age_population": round(float(r.get("total_recruiting_age_population") or 0.0), 2),
                     "market_capability_score": round(float(r.get("market_capability_score") or 0.0), 2),
                     "opportunity_band": str(r.get("opportunity_band") or "weak"),

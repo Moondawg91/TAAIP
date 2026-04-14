@@ -203,26 +203,25 @@ def _load_from_contacts_workbook(scope_type: str, scope_value: str) -> Tuple[str
 
 def _load_school_rows(db, scope_type: str, scope_value: str) -> Tuple[str, List[Dict], str, str]:
     if not _safe_table_exists(db, "schools"):
-        workbook_status, workbook_rows, workbook_as_of, workbook_error = _load_from_contacts_workbook(scope_type, scope_value)
-        if workbook_status == "ok" and workbook_rows:
-            return workbook_status, workbook_rows, workbook_as_of, workbook_error
-        if not _safe_table_exists(db, "fact_school_contacts"):
-            return workbook_status, workbook_rows, workbook_as_of, workbook_error
-        contact_count = db.execute(text("SELECT COUNT(1) AS c FROM fact_school_contacts")).mappings().first()
-        if int((contact_count or {}).get("c") or 0) <= 0:
-            return workbook_status, workbook_rows, workbook_as_of, workbook_error
-        return _load_from_contacts_fallback(db, scope_type, scope_value)
-
-    cols = _table_columns(db, "schools")
-    valid, schema_errors = school_access_contract.validate_schema_columns(cols)
-    if not valid:
-        workbook_status, workbook_rows, workbook_as_of, workbook_error = _load_from_contacts_workbook(scope_type, scope_value)
-        if workbook_status == "ok" and workbook_rows:
-            return workbook_status, workbook_rows, workbook_as_of, workbook_error
         if _safe_table_exists(db, "fact_school_contacts"):
             contact_count = db.execute(text("SELECT COUNT(1) AS c FROM fact_school_contacts")).mappings().first()
             if int((contact_count or {}).get("c") or 0) > 0:
                 return _load_from_contacts_fallback(db, scope_type, scope_value)
+
+        workbook_status, workbook_rows, workbook_as_of, workbook_error = _load_from_contacts_workbook(scope_type, scope_value)
+        return workbook_status, workbook_rows, workbook_as_of, workbook_error
+
+    cols = _table_columns(db, "schools")
+    valid, schema_errors = school_access_contract.validate_schema_columns(cols)
+    if not valid:
+        if _safe_table_exists(db, "fact_school_contacts"):
+            contact_count = db.execute(text("SELECT COUNT(1) AS c FROM fact_school_contacts")).mappings().first()
+            if int((contact_count or {}).get("c") or 0) > 0:
+                return _load_from_contacts_fallback(db, scope_type, scope_value)
+
+        workbook_status, workbook_rows, workbook_as_of, workbook_error = _load_from_contacts_workbook(scope_type, scope_value)
+        if workbook_status == "ok" and workbook_rows:
+            return workbook_status, workbook_rows, workbook_as_of, workbook_error
         return "invalid_dataset_schema", [], "", "; ".join(schema_errors)
 
     prefix = _scope_prefix(scope_type, scope_value)
@@ -236,13 +235,12 @@ def _load_school_rows(db, scope_type: str, scope_value: str) -> Tuple[str, List[
         src_rows = db.execute(sql).mappings().all()
 
     if not src_rows:
-        workbook_status, workbook_rows, workbook_as_of, workbook_error = _load_from_contacts_workbook(scope_type, scope_value)
-        if workbook_status == "ok" and workbook_rows:
-            return workbook_status, workbook_rows, workbook_as_of, workbook_error
         if _safe_table_exists(db, "fact_school_contacts"):
             contact_count = db.execute(text("SELECT COUNT(1) AS c FROM fact_school_contacts")).mappings().first()
             if int((contact_count or {}).get("c") or 0) > 0:
                 return _load_from_contacts_fallback(db, scope_type, scope_value)
+
+        workbook_status, workbook_rows, workbook_as_of, workbook_error = _load_from_contacts_workbook(scope_type, scope_value)
         return workbook_status, workbook_rows, workbook_as_of, workbook_error
 
     out: List[Dict] = []

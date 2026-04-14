@@ -65,6 +65,9 @@ def summarize_flash_to_bang_processing_engine(
     actor_scope_type: Optional[str] = None,
     actor_scope_value: Optional[str] = None,
     top_n: int = 25,
+    execution_signal: Optional[Dict] = None,
+    funnel_signal: Optional[Dict] = None,
+    accountability_signal: Optional[Dict] = None,
 ) -> Dict:
     st = scope_type or "USAREC"
     sv = scope_value or "USAREC"
@@ -112,9 +115,9 @@ def summarize_flash_to_bang_processing_engine(
             },
         }
 
-    execution_signal = execution_quality.summarize_execution_quality(db, st, sv, ast, asv)
-    funnel_signal = funnel_engine.summarize_funnel_engine(db, st, sv, ast, asv, top_n=top_n)
-    accountability_signal = accountability_engine.classify_scope(db, st, sv)
+    execution_signal = execution_signal or execution_quality.summarize_execution_quality(db, st, sv, ast, asv)
+    funnel_signal = funnel_signal or funnel_engine.summarize_funnel_engine(db, st, sv, ast, asv, top_n=top_n)
+    accountability_signal = accountability_signal or accountability_engine.classify_scope(db, st, sv)
 
     execution_payload = execution_signal.get("execution_quality") or {}
     execution_summary = execution_payload.get("summary") or {}

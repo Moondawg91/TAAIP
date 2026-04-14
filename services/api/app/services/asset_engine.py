@@ -439,6 +439,11 @@ def summarize_asset_engine(
     actor_scope_type: Optional[str] = None,
     actor_scope_value: Optional[str] = None,
     top_n: int = 20,
+    board_signal: Optional[Dict] = None,
+    twg_signal: Optional[Dict] = None,
+    funnel_signal: Optional[Dict] = None,
+    school_signal: Optional[Dict] = None,
+    roi_signal: Optional[Dict] = None,
 ) -> Dict:
     """
     Authoritative Asset Recommendations and Availability engine.
@@ -475,24 +480,24 @@ def summarize_asset_engine(
         scope_value,
     )
     
-    # Collect upstream signals
-    board_signal = targeting_board_engine.summarize_targeting_board_engine(
+    # Collect upstream signals, reusing precomputed payloads when provided.
+    board_signal = board_signal or targeting_board_engine.summarize_targeting_board_engine(
         db, scope_type, scope_value, actor_scope_type, actor_scope_value, top_n=top_n
     )
-    
-    twg_signal = twg_engine.summarize_twg_engine(
+
+    twg_signal = twg_signal or twg_engine.summarize_twg_engine(
         db, scope_type, scope_value, actor_scope_type, actor_scope_value, top_n=top_n
     )
-    
-    funnel_signal = funnel_engine.summarize_funnel_engine(
+
+    funnel_signal = funnel_signal or funnel_engine.summarize_funnel_engine(
         db, scope_type, scope_value, actor_scope_type, actor_scope_value, top_n=15
     )
-    
-    school_signal = school_plan_engine.summarize_school_plan_engine(
+
+    school_signal = school_signal or school_plan_engine.summarize_school_plan_engine(
         db, scope_type, scope_value, actor_scope_type, actor_scope_value, top_n=15
     )
-    
-    roi_signal = roi_engine.summarize_roi_engine(
+
+    roi_signal = roi_signal or roi_engine.summarize_roi_engine(
         db, scope_type, scope_value, actor_scope_type, actor_scope_value, top_n=15
     )
     

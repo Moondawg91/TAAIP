@@ -12,6 +12,20 @@ def classify_scope(db, scope_type: str, scope_value: str) -> Dict:
 
     rec = targeting_expansion.recommendations_for_scope(db, scope_type, scope_value, top_n=20)
     items = rec.get("recommendations") or []
+    default_supporting_metrics = {
+        "avg_burden_pressure": 0.0,
+        "avg_effort_signal": 0.0,
+        "avg_warning_severity": 0.0,
+        "avg_opportunity": 0.0,
+        "avg_production_signal": 0.0,
+        "market_supports_mission": False,
+        "school_penetration_rate": 0.0,
+        "execution_stall_count": 0,
+        "processing_bottleneck_count": 0,
+        "loe_at_risk": 0,
+        "loe_not_met": 0,
+        "sample_size": 0,
+    }
 
     if not items:
         return {
@@ -20,7 +34,7 @@ def classify_scope(db, scope_type: str, scope_value: str) -> Dict:
             "classification": "insufficient_data",
             "confidence": "low",
             "reason_codes": ["no_targeting_rows_available"],
-            "supporting_metrics": {},
+            "supporting_metrics": default_supporting_metrics,
         }
 
     burden_vals: List[float] = []
@@ -41,13 +55,14 @@ def classify_scope(db, scope_type: str, scope_value: str) -> Dict:
         opportunity_vals.append(float(i.get("market_potential_score") or 0.0) / 100.0)
 
     if not opportunity_vals:
+        default_supporting_metrics["sample_size"] = len(items)
         return {
             "scope_type": scope_type,
             "scope_value": scope_value,
             "classification": "insufficient_data",
             "confidence": "low",
             "reason_codes": ["insufficient_supporting_fields"],
-            "supporting_metrics": {},
+            "supporting_metrics": default_supporting_metrics,
         }
 
     avg_burden = sum(burden_vals) / len(burden_vals) if burden_vals else 0.0

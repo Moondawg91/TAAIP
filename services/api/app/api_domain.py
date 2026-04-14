@@ -403,6 +403,37 @@ def generate_mission_decrease_justification(
         raise HTTPException(status_code=400, detail=e.to_payload().get('error'))
 
 
+@router.post('/decision-output/mission-adjustment-justification')
+def generate_mission_adjustment_justification(
+    payload: decision_schemas.MissionDecreaseJustificationRequest,
+    db: Session = Depends(auth.get_db),
+    user=Depends(require_user),
+):
+    try:
+        req_scope_type, req_scope_value = mission_decrease_justification._infer_scope(payload.org_id)
+        actor_scope = rbac.normalize_scope(getattr(user, 'scope', 'USAREC'))
+        execution_quality.enforce_scope(
+            actor_scope_type=actor_scope.get('type') or 'USAREC',
+            actor_scope_value=actor_scope.get('value') or 'USAREC',
+            request_scope_type=req_scope_type,
+            request_scope_value=req_scope_value,
+        )
+
+        data = mission_decrease_justification.generate_mission_adjustment_justification(
+            db=db,
+            org_id=payload.org_id,
+            period_start=payload.period_start,
+            period_end=payload.period_end,
+            baseline_start=payload.baseline_start,
+            baseline_end=payload.baseline_end,
+            include_evidence=payload.include_evidence,
+            force_refresh=payload.force_refresh,
+        )
+        return {"status": "ok", "data": _format_datetimes(data)}
+    except mission_decrease_justification.DecisionOutputError as e:
+        raise HTTPException(status_code=400, detail=e.to_payload().get('error'))
+
+
 @router.get('/decision-output/mission-decrease-justification/{request_id}')
 def get_mission_decrease_justification(
     request_id: str,
@@ -432,6 +463,15 @@ def get_mission_decrease_justification(
     )
 
     return {"status": "ok", "data": _format_datetimes(data)}
+
+
+@router.get('/decision-output/mission-adjustment-justification/{request_id}')
+def get_mission_adjustment_justification(
+    request_id: str,
+    db: Session = Depends(auth.get_db),
+    user=Depends(require_user),
+):
+    return get_mission_decrease_justification(request_id=request_id, db=db, user=user)
 
 
 @router.get('/school-access/summary')

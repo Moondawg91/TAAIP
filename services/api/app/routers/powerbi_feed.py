@@ -552,10 +552,42 @@ def operational_command_dataset(scope_type: str = 'USAREC', scope_value: str = '
         roi = _roi_engine_mod.summarize_roi_engine(db, st, sv, st, sv)
         twg = _twg_engine_mod.summarize_twg_engine(db, st, sv, st, sv)
         board = _targeting_board_engine_mod.summarize_targeting_board_engine(db, st, sv, st, sv)
-        assets = _asset_engine_mod.summarize_asset_engine(db, st, sv, st, sv)
-        processing = _flash_to_bang_processing_engine_mod.summarize_flash_to_bang_processing_engine(db, st, sv, st, sv)
-        execution_tracker = _targeting_execution_tracker_mod.summarize_targeting_execution_tracker(db, st, sv, st, sv)
         accountability = accountability_engine.classify_scope(db, st, sv)
+        assets = _asset_engine_mod.summarize_asset_engine(
+            db,
+            st,
+            sv,
+            st,
+            sv,
+            board_signal=board,
+            twg_signal=twg,
+            funnel_signal=funnel,
+            school_signal=school_plan,
+            roi_signal=roi,
+        )
+        processing = _flash_to_bang_processing_engine_mod.summarize_flash_to_bang_processing_engine(
+            db,
+            st,
+            sv,
+            st,
+            sv,
+            execution_signal=execq,
+            funnel_signal=funnel,
+            accountability_signal=accountability,
+        )
+        execution_tracker = _targeting_execution_tracker_mod.summarize_targeting_execution_tracker(
+            db,
+            st,
+            sv,
+            st,
+            sv,
+            board_signal=board,
+            twg_signal=twg,
+            asset_signal=assets,
+            funnel_signal=funnel,
+            school_signal=school_plan,
+            roi_signal=roi,
+        )
 
         return {
             'status': 'ok',
