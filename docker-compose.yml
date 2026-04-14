@@ -1,101 +1,55 @@
-version: '3.8'
-services:
-  db:
-    image: postgres:15
-    environment:
-      POSTGRES_DB: taaip
-      POSTGRES_USER: taaip
-      POSTGRES_PASSWORD: taaip
-    ports:
-      - '5432:5432'
-    volumes:
-      - pgdata:/var/lib/postgresql/data
+version: '3.9'
 
-  api:
-    build: ./services/api
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
-    volumes:
-      - ./services/api:/app
-    ports:
-      - '8000:8000'
-    environment:
-      DATABASE_URL: postgresql+psycopg2://taaip:taaip@db:5432/taaip
-      JWT_SECRET: devsecret
-    depends_on:
-      - db
-
-  web:
-    build: ./apps/web
-    command: sh -c "npm install && npm start"
-    volumes:
-      - ./apps/web:/app
-    ports:
-      - '3000:3000'
-    depends_on:
-      - api
-
-volumes:
-  pgdata:
 services:
   backend:
     build:
-      context: .
-      dockerfile: Dockerfile.backend
-    ports:
-      - "8000:8000"
+      context: ./services/api
+    working_dir: /app
+    command: sh -c "python scripts/runtime_preflight.py --ensure-schema && uvicorn app.main:app --host 0.0.0.0 --port 8000"
     environment:
-      - DB_PATH=/app/recruiting.db
-      - DISABLE_THIRD_PARTY_LLM=1
+      TAAIP_DB_PATH: /app/data/taaip.sqlite3
+      DATABASE_URL: sqlite:////app/data/taaip.sqlite3
+      TAAIP_UPLOAD_DIR: /app/.data/imports
+      TAAIP_REFRESH_UPLOAD_DIR: /app/data/refresh_uploads
+      EXPORT_STORAGE_DIR: /app/data/exports
+      LOCAL_DEV_AUTH_BYPASS: ${LOCAL_DEV_AUTH_BYPASS:-1}
+      TAAIP_MASTER_MODE: ${TAAIP_MASTER_MODE:-1}
     volumes:
+      - ./services/api:/app
       - ./data:/app/data
-      - ./data/recruiting.db:/app/recruiting.db
-
-  gateway:
-    build:
-      context: .
-      dockerfile: Dockerfile.gateway
     ports:
-      - "80:80"
-      - "443:443"
-    environment:
-      - FASTAPI_URL=http://backend:8000
-      - DISABLE_THIRD_PARTY_LLM=1
-    volumes:
-      - /etc/letsencrypt:/etc/letsencrypt:ro
-    depends_on:
-      - backend
-    restart: unless-stopped
+      - '8000:8000'
 
   frontend:
     build:
       context: ./taaip-dashboard
-      dockerfile: Dockerfile
-    expose:
-      - "80"
-    depends_on:
-      - gateway
+    working_dir: /app
+    command: sh -c "npm ci && npm run dev -- --host 0.0.0.0 --port 5173"
     volumes:
-      - ./dashboard:/usr/share/nginx/html/dashboard:ro
-    environment:
-      - DISABLE_THIRD_PARTY_LLM=1
+      - ./taaip-dashboard:/app
+    ports:
+      - '5173:5173'
+    depends_on:
+      - backend
 
   redis:
     image: redis:7-alpine
     ports:
-      - "6379:6379"
+      - '6379:6379'
 
   worker:
     build:
-      context: .
-      dockerfile: Dockerfile.backend
-    # Run rq as a long-lived worker process (do not use module form that exits).
+      context: ./services/api
+    working_dir: /app
     command: ["python", "-m", "rq", "worker", "default", "--url", "redis://redis:6379/0"]
-    depends_on:
-      - redis
-      - backend
     environment:
-      - REDIS_URL=redis://redis:6379
-      - DISABLE_THIRD_PARTY_LLM=1
+      REDIS_URL: redis://redis:6379/0
+      TAAIP_DB_PATH: /app/data/taaip.sqlite3
+      DATABASE_URL: sqlite:////app/data/taaip.sqlite3
     volumes:
-      - ./:/app
+      - ./services/api:/app
+      - ./data:/app/data
+    depends_on:
+      - backend
+      - redis
     restart: unless-stopped

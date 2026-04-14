@@ -1,63 +1,31 @@
-#!/bin/bash
+#!/bin/zsh
+set -euo pipefail
 
-# TAAIP Local Auto-Start Script
-# This script starts both backend and frontend servers automatically
-
-TAAIP_DIR="/Users/ambermooney/Desktop/TAAIP"
-LOG_DIR="$TAAIP_DIR/logs"
-
-# Create logs directory if it doesn't exist
+PROJECT_ROOT="$(cd "$(dirname "$0")" && pwd)"
+LOG_DIR="$PROJECT_ROOT/logs"
 mkdir -p "$LOG_DIR"
 
-echo "🚀 Starting TAAIP Local Services..."
+cd "$PROJECT_ROOT"
+zsh "$PROJECT_ROOT/scripts/taaip_preflight.sh"
 
-# Kill any existing processes
-echo "Stopping existing services..."
-pkill -f "taaip_service.py" 2>/dev/null
-pkill -f "vite.*taaip-dashboard" 2>/dev/null
-sleep 2
+echo "🚀 Starting TAAIP local services..."
+lsof -ti:8000 | xargs kill -9 2>/dev/null || true
+lsof -ti:5173 | xargs kill -9 2>/dev/null || true
 
-# Start Backend (Python FastAPI)
-echo "Starting Backend on port 8000..."
-cd "$TAAIP_DIR"
-nohup python3 taaip_service.py > "$LOG_DIR/backend.log" 2>&1 &
+PYTHON_BIN="$PROJECT_ROOT/.venv/bin/python"
+nohup "$PYTHON_BIN" -m uvicorn services.api.app.main:app --host 127.0.0.1 --port 8000 > "$LOG_DIR/backend.log" 2>&1 &
 BACKEND_PID=$!
-echo "Backend started with PID: $BACKEND_PID"
 
-# Wait for backend to initialize
-sleep 3
-
-# Check backend health
-if curl -s http://localhost:8000/health > /dev/null 2>&1; then
-    echo "✅ Backend is healthy"
-else
-    echo "⚠️ Backend may still be starting..."
-fi
-
-# Start Frontend (React + Vite)
-echo "Starting Frontend on port 5174..."
-cd "$TAAIP_DIR/taaip-dashboard"
-nohup npm run dev > "$LOG_DIR/frontend.log" 2>&1 &
+cd "$PROJECT_ROOT/taaip-dashboard"
+nohup npm run dev -- --host 127.0.0.1 --port 5173 > "$LOG_DIR/frontend.log" 2>&1 &
 FRONTEND_PID=$!
-echo "Frontend started with PID: $FRONTEND_PID"
 
-# Wait for frontend to initialize
-sleep 5
-
-# Save PIDs for easy management
+cd "$PROJECT_ROOT"
 echo $BACKEND_PID > "$LOG_DIR/backend.pid"
 echo $FRONTEND_PID > "$LOG_DIR/frontend.pid"
 
-echo ""
-echo "✅ TAAIP Services Started Successfully!"
-echo ""
-echo "📊 Access your application:"
-echo "   Frontend: http://localhost:5174"
-echo "   Backend:  http://localhost:8000"
-echo ""
-echo "📝 Logs located at:"
-echo "   Backend:  $LOG_DIR/backend.log"
-echo "   Frontend: $LOG_DIR/frontend.log"
-echo ""
-echo "🛑 To stop services, run: ./stop-taaip-local.sh"
-echo ""
+echo "✅ TAAIP local stack started"
+echo "   Backend:  http://127.0.0.1:8000/docs"
+echo "   Frontend: http://127.0.0.1:5173"
+echo "   Logs:     $LOG_DIR"
+

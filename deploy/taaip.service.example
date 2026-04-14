@@ -7,9 +7,9 @@ Type=simple
 User=taaip
 Group=www-data
 WorkingDirectory=/opt/TAAIP
-# Load environment file
 EnvironmentFile=/opt/TAAIP/.env
-ExecStart=/usr/bin/env uvicorn services.api.app.main:app --host 127.0.0.1 --port ${PORT:-8001} --workers ${WORKERS:-2}
+ExecStartPre=/usr/bin/env zsh /opt/TAAIP/scripts/taaip_preflight.sh
+ExecStart=/opt/TAAIP/.venv/bin/python -m uvicorn services.api.app.main:app --host ${HOST:-127.0.0.1} --port ${PORT:-8001}
 Restart=on-failure
 RestartSec=5s
 

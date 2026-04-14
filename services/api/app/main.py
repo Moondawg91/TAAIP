@@ -7,8 +7,11 @@ import os
 import logging
 import json
 
-# Load environment variables from services/api/.env (local dev)
-load_dotenv("services/api/.env")
+from .runtime_env import apply_runtime_environment, resolve_repo_path, runtime_preflight
+
+# Load environment variables from the local API env file and then the repo root env file.
+load_dotenv(resolve_repo_path('services', 'api', '.env'))
+load_dotenv(resolve_repo_path('.env'))
 load_dotenv()
 
 # Log LOCAL_DEV_AUTH_BYPASS at startup for visibility
@@ -44,14 +47,15 @@ app = FastAPI(title="TAAIP API", description="TAAIP API service. © 2026 TAAIP. 
 # If a production/dev frontend build exists inside the workspace, mount it
 # at root so the API and static frontend are served from the same origin.
 # This simplifies local E2E (Playwright) by avoiding CORS and proxying.
-ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
-FRONTEND_BUILD = os.path.join(ROOT_DIR, "apps", "web", "build")
-# Ensure a stable default DB path (absolute) so relative cwd doesn't create
-# different DB files when the server is started from another working dir
-if not os.getenv('TAAIP_DB_PATH'):
-    default_db = os.path.join(ROOT_DIR, 'data', 'taaip.sqlite3')
-    os.environ['TAAIP_DB_PATH'] = default_db
-    _log.info(f"TAAIP_DB_PATH not set; defaulting to {default_db}")
+runtime_settings = apply_runtime_environment()
+ROOT_DIR = runtime_settings['repo_root']
+FRONTEND_BUILD = resolve_repo_path('taaip-dashboard', 'dist')
+if not os.path.isdir(FRONTEND_BUILD):
+    FRONTEND_BUILD = os.path.join(ROOT_DIR, 'apps', 'web', 'build')
+
+_log.info(f"TAAIP runtime DB path: {runtime_settings['db_path']}")
+_log.info(f"TAAIP upload directory: {runtime_settings['upload_dir']}")
+
 if os.path.isdir(FRONTEND_BUILD):
     try:
         # Mount static asset directory at /static — index.html will be served
@@ -185,8 +189,6 @@ from .routers import mission_assessments as mission_assessments_router
 api_router.include_router(mission_assessments_router.router)
 from .routers import budgets as budgets_router
 api_router.include_router(budgets_router.router)
-from .routers import projects as projects_router
-api_router.include_router(projects_router.router)
 from .routers import working_groups as wg_router
 api_router.include_router(wg_router.router)
 from .routers import fusion_workspace as fusion_workspace_router
@@ -274,8 +276,6 @@ from .routers import market_core as market_core_router
 api_router.include_router(market_core_router.router)
 from .routers import asset_recommendations as asset_recommendations_router
 api_router.include_router(asset_recommendations_router.router)
-from services.api.app.routers import asset_recommendations
-app.include_router(asset_recommendations.router, prefix="/api")
 from services.api.app.routers import mission_alignment
 app.include_router(mission_alignment.router, prefix="/api")
 from services.api.app.routers import mission_alignment_scoring
@@ -439,7 +439,8 @@ def _custom_openapi():
 app.openapi = _custom_openapi
 
 # NOTE: Database schema must be managed with Alembic migrations.
-# Run `alembic upgrade head` after configuring DATABASE_URL for your environment.
+# Run `./.venv/bin/python -m alembic -c services/api/alembic.ini upgrade head`
+# from the repository root after configuring DATABASE_URL for your environment.
 
 
 @app.get("/health")
@@ -449,38 +450,44 @@ def health():
 
 @app.on_event("startup")
 def _on_startup():
-    # initialize DB schema and optionally seed deterministic dev data
-    try:
-        init_db()
-        _log.info(f"DB path: {get_db_path()}")
-    except Exception as e:
-        _log.error(f"DB init/seed failed: {e}")
-    # apply lightweight runtime migrations (idempotent)
-    try:
-        from .db import connect as _connect
-        conn = _connect()
-        migrations.apply_migrations(conn)
-        # apply runtime fy/backfill migrations (idempotent)
+    from . import migration_policy
+
+    preflight = runtime_preflight()
+    _log.info(f"Runtime preflight status={preflight.get('status')} db={runtime_settings['db_path']}")
+
+    if migration_policy.legacy_schema_bootstrap_enabled():
         try:
-            # Runtime backfills can be expensive; only run when explicitly enabled.
-            if os.getenv('TAAIP_BACKFILL_ON_STARTUP', '0') == '1':
-                try:
-                    if hasattr(migrations, 'apply_runtime_migrations'):
-                        migrations.apply_runtime_migrations(conn)
-                except Exception:
-                    _log.exception('apply_runtime_migrations failed')
-            else:
-                _log.info('TAAIP_BACKFILL_ON_STARTUP not enabled; skipping runtime backfills')
-        except Exception:
-            _log.exception('apply_runtime_migrations control failed')
-        # seed a few default registry records for local dev
+            init_db()
+            _log.warning("Legacy schema bootstrap enabled; Alembic remains the supported migration path")
+            _log.info(f"DB path: {get_db_path()}")
+        except Exception as e:
+            _log.error(f"DB init/seed failed: {e}")
         try:
-            migrations.seed_default_registry(conn)
+            from .db import connect as _connect
+            conn = _connect()
+            migrations.apply_migrations(conn)
+            try:
+                if os.getenv('TAAIP_BACKFILL_ON_STARTUP', '0') == '1':
+                    try:
+                        if hasattr(migrations, 'apply_runtime_migrations'):
+                            migrations.apply_runtime_migrations(conn)
+                    except Exception:
+                        _log.exception('apply_runtime_migrations failed')
+                else:
+                    _log.info('TAAIP_BACKFILL_ON_STARTUP not enabled; skipping runtime backfills')
+            except Exception:
+                _log.exception('apply_runtime_migrations control failed')
+            try:
+                migrations.seed_default_registry(conn)
+            except Exception:
+                pass
+            _log.info('Legacy runtime migrations applied')
         except Exception:
-            pass
-        _log.info('Runtime migrations applied')
-    except Exception:
-        _log.exception('Failed to apply runtime migrations')
+            _log.exception('Failed to apply runtime migrations')
+    else:
+        _log.info(
+            'Skipping legacy startup schema bootstrap; run ./.venv/bin/python -m alembic -c services/api/alembic.ini upgrade head'
+        )
     # Seed RBAC after migrations so tables/columns exist
     try:
         from . import seed_rbac
