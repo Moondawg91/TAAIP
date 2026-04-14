@@ -105,10 +105,19 @@ Feature Status
   - repaired headerless and shifted-header normalization path now returns `status=ok`
   - `prioritized_funnel_gaps` now populate from the real dataset
   - mission adjustment, command center phase 2, and Power BI funnel consumers validated against the repaired path
+- School Plan operationalization repair (real uploaded data): DONE
+  - current resolved source: `data/dev_datasets/school contacts.xlsx`
+  - `school_plan_engine` now returns `status=ok` with non-empty prioritized school rows using the uploaded workbook fallback
+  - school ZIP reinforcement remains neutral when the uploaded workbook does not carry ZIP-level school fields
+- ROI operationalization repair (real uploaded data): DONE
+  - current resolved source: `data/dev_datasets/EMM PORTAL.xlsx`
+  - `roi_engine` now returns `status=ok` with non-empty prioritized event rows using the uploaded EMM workbook fallback
+  - focused school/ROI regression evidence: `26 passed`
 - Validation pass snapshot: PARTIAL
   - `market_engine`: complete on current workspace data
   - `funnel_engine`: complete on current workspace data after normalization repair
-  - `school_plan_engine` and `roi_engine`: no_data, correctly handled
+  - `school_plan_engine`: complete on current workspace data after uploaded-school fallback repair
+  - `roi_engine`: complete on current workspace data after uploaded-EMM fallback repair
   - LOE-dependent downstream surfaces: crash fixed; now degrade safely when LOE tables are absent
   - remaining watch item: broader aggregated command/export runs can still be slower than the focused validation path
 

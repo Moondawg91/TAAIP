@@ -268,11 +268,11 @@ Integration points:
 Latest full-system validation against the current workspace data showed:
 
 - `market_engine`: `ok` on real uploaded market data (`6L MARKET CORE.csv`)
-- `funnel_engine`: `invalid_dataset_schema` on the current funnel source; this is surfaced honestly as a schema/data issue rather than hidden fallback math
-- `school_plan_engine`: `no_data` correctly handled
-- `roi_engine`: `no_data` correctly handled
+- `funnel_engine`: `ok` on the repaired real funnel source (`data/dev_datasets/Recruiting Funnel Enriched.csv`)
+- `school_plan_engine`: `ok` on the uploaded school terrain workbook (`data/dev_datasets/school contacts.xlsx`)
+- `roi_engine`: `ok` on the uploaded EMM operational workbook (`data/dev_datasets/EMM PORTAL.xlsx`)
 - LOE-dependent downstream engines now degrade safely when LOE tables are absent instead of crashing (`twg_engine`, targeting board, asset, execution tracker, and flash-to-bang processing flows)
-- focused regression evidence for the execution tracker and flash-to-bang integrations remains green
+- focused regression evidence for tracker, processing, funnel, school plan, and ROI integrations remains green
 
 Known limitation during this validation pass:
 
@@ -407,7 +407,7 @@ Authoritative module:
 
 Authoritative inputs (no synthetic data):
 
-- School terrain: `schools` canonical rows; fallback to real `fact_school_contacts` when `schools` is absent or empty.
+- School terrain: `schools` canonical rows; fallback to the uploaded school contacts workbook at `data/dev_datasets/school contacts.xlsx` when normalized school tables are absent or unusable.
 - Market alignment: `market_engine.prioritized_market_zip` capability/opportunity signals.
 - Funnel intervention: `funnel_engine` station-level health and dropoff priority.
 - Targeting reinforcement: `targeting_engine.prioritized_targets` score reinforcement.
@@ -415,6 +415,13 @@ Authoritative inputs (no synthetic data):
 Deterministic priority formula:
 
 - `school_priority_score = 100*(0.40*market_alignment + 0.30*access_gap + 0.20*funnel_intervention + 0.10*targeting_reinforcement)`
+
+Current repaired operational state:
+
+- live verification now returns `status=ok` using the uploaded school workbook at `data/dev_datasets/school contacts.xlsx`
+- `prioritized_schools` and `school_recruiting_plan` now populate from real school-contact terrain when normalized school tables are empty
+- when ZIP-level school fields are absent from the uploaded workbook, market and targeting reinforcement remain neutral rather than invented
+- focused mission, command center, and Power BI school-plan integration tests pass
 
 School plan output shape:
 
@@ -442,9 +449,9 @@ Authoritative module:
 
 Authoritative inputs (no synthetic data):
 
-- Events: `emm_event` table (primary — has unit_rsid, zip, cost_total); fallback to `event_fact`.
-- Costs: `spend_fact` grouped by `event_id` (overrides `emm_event.cost_total` when present).
-- Leads/contracts: `lead_journey_fact` grouped by `event_id` (contract_flag=1 for contracts).
+- Events: `emm_event` table (primary — has unit_rsid, zip, cost_total); fallback to `event_fact`; when those normalized tables are empty the engine consumes the uploaded real workbook at `data/dev_datasets/EMM PORTAL.xlsx`.
+- Costs: `spend_fact` grouped by `event_id` (overrides table/workbook event cost when present).
+- Leads/contracts: `lead_journey_fact` grouped by `event_id` (contract_flag=1 for contracts); otherwise the engine uses the uploaded workbook's real actual/estimated event outcomes.
 - Benchmarks: `roi_thresholds` table (seeded keys: `cpl_target=100`, `cpc_target=2500`).
 - Market alignment: `market_engine.prioritized_market_zip` capability score for event zip.
 - Targeting alignment: `targeting_engine.prioritized_targets` priority score (0–1 → 0–100) for event zip.
@@ -471,9 +478,16 @@ Sub-score definitions:
 
 Effectiveness bands: `high` ≥ 70, `moderate` 40–69, `low` < 40.
 
+Current repaired operational state:
+
+- live verification now returns `status=ok` from the uploaded EMM workbook at `data/dev_datasets/EMM PORTAL.xlsx`
+- the current workspace data yields non-empty `prioritized_events` and `roi_recommendations`
+- workbook fallback consumes real cost, lead, and contract fields when normalized event tables are empty; no demo event rows are generated
+- focused mission, command center, and Power BI ROI integration tests pass
+
 ROI engine output shape:
 
-- `status`: `ok | no_data`
+- `status`: `ok | no_data | invalid_dataset_schema`
 - `roi_engine.summary`: total_events_scored, high/moderate/low counts, avg_roi_score, avg_cost_per_lead, avg_cost_per_contract, total_spend, total_leads, total_contracts, scoring_formula
 - `roi_engine.prioritized_events`: deterministic event ranking (roi_score DESC, event_id ASC) with all sub-scores, cost/lead/contract totals, recommendations list, trace_id
 - `roi_engine.event_type_performance`: per-event-type aggregates (avg_roi_score, event_count, effectiveness_band, avg_cost_per_contract)
