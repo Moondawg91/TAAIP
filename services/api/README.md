@@ -263,6 +263,21 @@ Integration points:
 - command center phase2 (`command_center.py`)
 - Power BI operational dataset export (`powerbi_feed.py`)
 
+## Current Operational Validation Snapshot
+
+Latest full-system validation against the current workspace data showed:
+
+- `market_engine`: `ok` on real uploaded market data (`6L MARKET CORE.csv`)
+- `funnel_engine`: `invalid_dataset_schema` on the current funnel source; this is surfaced honestly as a schema/data issue rather than hidden fallback math
+- `school_plan_engine`: `no_data` correctly handled
+- `roi_engine`: `no_data` correctly handled
+- LOE-dependent downstream engines now degrade safely when LOE tables are absent instead of crashing (`twg_engine`, targeting board, asset, execution tracker, and flash-to-bang processing flows)
+- focused regression evidence for the execution tracker and flash-to-bang integrations remains green
+
+Known limitation during this validation pass:
+
+- command-wide aggregated views can still respond slowly when the current funnel source requires expensive date parsing or schema fallback handling
+
 ## Market Intelligence Engine (420T)
 
 The Market Intelligence Engine is implemented in:
