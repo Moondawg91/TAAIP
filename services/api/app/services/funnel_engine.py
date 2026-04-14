@@ -1,6 +1,7 @@
 import glob
 import os
 import re
+import warnings
 from datetime import datetime, timezone
 from typing import Dict, List, Optional, Tuple
 
@@ -125,17 +126,56 @@ def _score_date_column(s: pd.Series) -> float:
     )
     if not bool(candidate.any()):
         return 0.0
-    dt = pd.to_datetime(v.where(candidate), errors="coerce", utc=True)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", UserWarning)
+        dt = pd.to_datetime(v.where(candidate), errors="coerce", utc=True)
     return float(dt.notna().mean())
 
 
 def _score_stage_column(s: pd.Series) -> float:
     tokens = s.astype(str).str.upper().str.strip()
-    stage_words = ["LEAD", "PROSPECT", "APPLICANT", "INTERVIEW", "PROCESS", "CONTRACT", "ENLIST", "SHIPPED", "DEP"]
-    score = 0.0
-    for w in stage_words:
-        score += float(tokens.str.contains(w, na=False).mean())
-    return score / float(len(stage_words))
+    if tokens.empty:
+        return 0.0
+
+    any_stage = tokens.str.contains(
+        r"LEAD|PROSPECT|APPLICANT|INTERVIEW|PROCESS|CONTRACT|ENLIST|SHIPPED|DEP",
+        regex=True,
+        na=False,
+    ).mean()
+    has_sequence = tokens.str.contains(r",", regex=True, na=False).mean()
+    begins_with_stage = tokens.str.match(
+        r"^(LEAD|PROSPECT|APPLICANT|INTERVIEW|PROCESS|CONTRACT|SHIPPED|DELAYED ENTRY PROGRAM)",
+        na=False,
+    ).mean()
+    return float(0.55 * any_stage + 0.25 * has_sequence + 0.20 * begins_with_stage)
+
+
+def _looks_like_header_row(row: pd.Series) -> bool:
+    vals = [str(v).strip() for v in row.tolist()]
+    vals = [v for v in vals if v]
+    if not vals:
+        return False
+
+    lowered = [v.lower() for v in vals]
+    generic_headers = sum(bool(re.fullmatch(r"c\d+|column[_ ]?\d+|unnamed:?\s*\d*", v)) for v in lowered)
+    keyword_hits = sum(
+        any(k in v for k in [
+            "lead",
+            "station",
+            "zip",
+            "created",
+            "stage",
+            "history",
+            "timestamp",
+            "contract",
+            "appointment",
+            "interview",
+        ])
+        for v in lowered
+    )
+    numeric_like = sum(bool(re.fullmatch(r"[-+]?\d+(\.\d+)?([eE][-+]?\d+)?", v)) for v in vals)
+
+    return generic_headers >= max(3, len(vals) // 4) or (keyword_hits >= 3 and numeric_like <= max(1, len(vals) // 3))
 
 
 def _score_history_column(s: pd.Series) -> float:
@@ -172,11 +212,12 @@ def _pick_best_column(rows: pd.DataFrame, scorer, min_score: float) -> Tuple[Opt
 
 def infer_funnel_mapping(rows: pd.DataFrame) -> Dict[str, Dict]:
     mapping: Dict[str, Dict] = {}
+    sample = rows.head(min(len(rows), 1000)).copy()
 
     # Lead ID: high uniqueness, mostly non-null.
     best_lead = (None, 0.0, 0.0)
-    for idx in range(rows.shape[1]):
-        col = rows.iloc[:, idx].astype(str).str.strip()
+    for idx in range(sample.shape[1]):
+        col = sample.iloc[:, idx].astype(str).str.strip()
         nn_ratio = float((~col.isin(["", "nan", "null", "None"])) .mean())
         if nn_ratio < 0.7:
             continue
@@ -187,27 +228,27 @@ def infer_funnel_mapping(rows: pd.DataFrame) -> Dict[str, Dict]:
     if best_lead[0] is not None:
         mapping["lead_id"] = {"index": int(best_lead[0]), "confidence": round(best_lead[1], 4)}
 
-    station_idx, station_score = _pick_best_column(rows, _score_station_column, 0.35)
+    station_idx, station_score = _pick_best_column(sample, _score_station_column, 0.35)
     if station_idx is not None:
         mapping["station_rsid"] = {"index": station_idx, "confidence": round(station_score, 4)}
 
-    zip_idx, zip_score = _pick_best_column(rows, _score_zip_column, 0.30)
+    zip_idx, zip_score = _pick_best_column(sample, _score_zip_column, 0.30)
     if zip_idx is not None:
         mapping["zip"] = {"index": zip_idx, "confidence": round(zip_score, 4)}
 
-    created_idx, created_score = _pick_best_column(rows, _score_date_column, 0.35)
+    created_idx, created_score = _pick_best_column(sample, _score_date_column, 0.35)
     if created_idx is not None:
         mapping["lead_created_at"] = {"index": created_idx, "confidence": round(created_score, 4)}
 
-    stage_idx, stage_score = _pick_best_column(rows, _score_stage_column, 0.08)
+    stage_idx, stage_score = _pick_best_column(sample, _score_stage_column, 0.08)
     if stage_idx is not None:
         mapping["current_stage"] = {"index": stage_idx, "confidence": round(stage_score, 4)}
 
-    hist_idx, hist_score = _pick_best_column(rows, _score_history_column, 0.18)
+    hist_idx, hist_score = _pick_best_column(sample, _score_history_column, 0.18)
     if hist_idx is not None:
         mapping["action_history"] = {"index": hist_idx, "confidence": round(hist_score, 4)}
 
-    ts_hist_idx, ts_hist_score = _pick_best_column(rows, _score_timestamp_history_column, 0.18)
+    ts_hist_idx, ts_hist_score = _pick_best_column(sample, _score_timestamp_history_column, 0.18)
     if ts_hist_idx is not None:
         mapping["timestamp_history"] = {"index": ts_hist_idx, "confidence": round(ts_hist_score, 4)}
 
@@ -230,17 +271,27 @@ def _norm_stage(s: str) -> str:
     t = (s or "").strip().upper()
     if not t:
         return "unknown"
-    if "LEAD" in t or "PROSPECT" in t:
-        return "lead"
-    if "APPOINT" in t:
-        return "appointment"
-    if "INTERVIEW" in t or "APPLICANT" in t or "TEST" in t:
-        return "interview"
-    if "PROCESS" in t or "DEP" in t:
-        return "processing"
-    if "CONTRACT" in t or "ENLIST" in t or "SHIP" in t:
-        return "contract"
-    return "unknown"
+
+    def classify(token: str) -> str:
+        if "CONTRACT" in token or "ENLIST" in token or "SHIP" in token:
+            return "contract"
+        if "PROCESS" in token or "DEP" in token:
+            return "processing"
+        if "INTERVIEW" in token or "APPLICANT" in token or "TEST" in token:
+            return "interview"
+        if "APPOINT" in token:
+            return "appointment"
+        if "LEAD" in token or "PROSPECT" in token:
+            return "lead"
+        return "unknown"
+
+    parts = [p.strip() for p in re.split(r"[,;|]+", t) if p.strip()]
+    if parts:
+        for part in reversed(parts):
+            stage = classify(part)
+            if stage != "unknown":
+                return stage
+    return classify(t)
 
 
 def _is_nonempty(v) -> bool:
@@ -279,10 +330,18 @@ def _infer_stage_dates(row: Dict) -> Dict[str, Optional[datetime]]:
             appointment_date = dt
         if interview_date is None and ("INTERVIEW" in token or "APPLICANT" in token or "TEST" in token):
             interview_date = dt
-        if processing_date is None and ("PROCESS" in token or "DEP" in token):
+        if processing_date is None and ("PROCESS" in token or "DEP" in token or "DELAYED ENTRY" in token):
             processing_date = dt
         if contract_date is None and ("CONTRACT" in token or "ENLIST" in token or "SHIP" in token):
             contract_date = dt
+
+    # Safe monotonic fallbacks for partial histories.
+    if contract_date is not None and processing_date is None:
+        processing_date = contract_date
+    if processing_date is not None and interview_date is None:
+        interview_date = processing_date
+    if interview_date is not None and appointment_date is None:
+        appointment_date = interview_date
 
     # Safe stage-based fallbacks for partial histories.
     if current_stage in {"appointment", "interview", "processing", "contract"} and appointment_date is None:
@@ -536,7 +595,12 @@ def summarize_funnel_engine(
             },
         }
 
-    rows = raw.iloc[1:].reset_index(drop=True)
+    first_row = raw.iloc[0] if len(raw.index) else None
+    if first_row is not None and _looks_like_header_row(first_row):
+        rows = raw.iloc[1:].reset_index(drop=True)
+    else:
+        rows = raw.reset_index(drop=True)
+
     mapping = infer_funnel_mapping(rows)
     valid, mapping_check = funnel_engine_contract.validate_inferred_mapping(mapping)
     if not valid:
@@ -588,9 +652,11 @@ def summarize_funnel_engine(
             continue
 
         lead_created_at = _to_datetime(get_value(created_idx, i))
-        current_stage_raw = str(get_value(stage_idx, i) or "")
         action_history = str(get_value(action_hist_idx, i) or "") if action_hist_idx is not None else ""
         timestamp_history = str(get_value(ts_hist_idx, i) or "") if ts_hist_idx is not None else ""
+        current_stage_raw = str(get_value(stage_idx, i) or "") if stage_idx is not None else ""
+        if not _is_nonempty(current_stage_raw):
+            current_stage_raw = action_history
 
         rec = {
             "lead_id": lead_id,
