@@ -171,6 +171,42 @@ Latest verified evidence:
 - workflow regression coverage: `3` tests passed
 - commander workflow steps locked in the shell: Command Center, Mission Adjustment, Diagnostics, TWG and Board, Execution and Processing, Power BI
 
+## Deployment and Admin Refresh Hardening
+
+Canonical operational startup path:
+
+```bash
+zsh scripts/taaip_preflight.sh
+./start-taaip-local.sh
+```
+
+PM2-backed startup path:
+
+```bash
+./start-taaip.sh
+```
+
+What the hardening pass now guarantees:
+- runtime paths resolve from the repository root instead of user-specific desktop paths
+- the preflight bootstrap creates and verifies the configured DB, upload, refresh, export, and document directories before launch
+- `docker-compose.yml`, `ecosystem.config.cjs`, and the systemd example use the same backend entrypoint and environment variables
+- admin refresh endpoints under `/api/refresh/*` require admin-manage access and are isolated from the commander workflow
+- authoritative uploads are validated for source type, schema, and row availability before activation
+- invalid schema and no-data uploads fail with structured errors and do not rebind the active dataset version
+
+Verified local checks:
+
+```bash
+./.venv/bin/python -m pytest -q services/api/tests/test_refresh_slice.py services/api/tests/test_refresh_admin_workflow.py
+./.venv/bin/python services/api/scripts/runtime_preflight.py --ensure-schema
+zsh -n start-taaip.sh start-taaip-local.sh run-dev.sh scripts/taaip_preflight.sh
+```
+
+Latest verified evidence:
+- deployment/admin regression coverage: `5 passed`
+- runtime preflight returned `status: ok`
+- shell launchers passed syntax validation
+
 ## Decision Output - Mission Decrease Justification
 
 The domain v2 router includes a decision-output endpoint for commander-ready mission decrease analysis.

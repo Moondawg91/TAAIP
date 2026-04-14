@@ -177,6 +177,15 @@ Evidence placeholder
 Objective
 - CI jobs, verify script, route crawl, and deterministic builds. No white UI surfaces.
 
+Feature Status
+- Deployment hardening and operational admin workflow: DONE
+  - canonical startup now runs through `scripts/taaip_preflight.sh` and the repo-root launchers instead of user-specific absolute desktop paths
+  - backend DB, upload, refresh, export, and documents paths are normalized and validated before startup
+  - `docker-compose.yml`, `ecosystem.config.cjs`, and the systemd service example now use the same backend entrypoint and environment contract
+  - admin refresh endpoints require admin-manage access and keep source replacement out of the commander-facing workflow
+  - invalid-schema and no-data uploads fail honestly with structured errors and do not replace the active authoritative dataset version
+  - verified evidence: `5 passed` in focused deployment/admin regressions, runtime preflight `status: ok`, commander workflow frontend `3 passed`, frontend production build succeeded
+
 Acceptance Criteria
 - `scripts/verify_app.sh` runs without error and reports PASS for required checks.
 
