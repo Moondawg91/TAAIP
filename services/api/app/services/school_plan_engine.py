@@ -93,6 +93,26 @@ def _owner_level(scope_type: str) -> str:
     return "STN"
 
 
+def _map_school_access_rows_to_plan_rows(rows: List[Dict]) -> List[Dict]:
+    out = []
+    for r in rows:
+        school_id = str(r.get("school_id") or "").strip()
+        station = str(r.get("station_rsid") or "").strip().upper()
+        if not school_id or not station:
+            continue
+        out.append(
+            {
+                "school_id": school_id,
+                "school_name": str(r.get("school_name") or school_id),
+                "station_rsid": station,
+                "zip": str(r.get("zip_code") or "").strip(),
+                "source": str(r.get("source_dataset_name") or "school_access"),
+            }
+        )
+    out.sort(key=lambda x: (x["station_rsid"], x["zip"], x["school_name"], x["school_id"]))
+    return out
+
+
 def _load_school_rows(db, scope_type: str, scope_value: str) -> Tuple[str, str, List[Dict]]:
     prefix = _scope_prefix(scope_type, scope_value)
 
@@ -104,8 +124,12 @@ def _load_school_rows(db, scope_type: str, scope_value: str) -> Tuple[str, str, 
         zip_col = "zip_code" if "zip_code" in cols else ("zip" if "zip" in cols else ("postal_code" if "postal_code" in cols else None))
 
         if station_col is None or id_col is None or name_col is None or zip_col is None:
+            access_status, access_rows, _data_as_of, access_error = school_access._load_school_rows(db, scope_type, scope_value)
+            if access_status == "ok" and access_rows:
+                source_name = str(access_rows[0].get("source_dataset_name") or "school_access")
+                return "ok", source_name, _map_school_access_rows_to_plan_rows(access_rows)
             if not _safe_table_exists(db, "fact_school_contacts"):
-                return "invalid_dataset_schema", "schools schema not mappable to required school plan fields", []
+                return "invalid_dataset_schema", access_error or "schools schema not mappable to required school plan fields", []
         else:
             if prefix:
                 rows = db.execute(
@@ -204,6 +228,13 @@ def _load_school_rows(db, scope_type: str, scope_value: str) -> Tuple[str, str, 
         if out:
             out.sort(key=lambda x: (x["station_rsid"], x["zip"], x["school_name"], x["school_id"]))
             return "ok", "fact_school_contacts", out
+
+    access_status, access_rows, _data_as_of, access_error = school_access._load_school_rows(db, scope_type, scope_value)
+    if access_status == "ok" and access_rows:
+        source_name = str(access_rows[0].get("source_dataset_name") or "school_access")
+        return "ok", source_name, _map_school_access_rows_to_plan_rows(access_rows)
+    if access_status == "invalid_dataset_schema":
+        return "invalid_dataset_schema", access_error or "school access fallback schema not mappable", []
 
     return "no_data", "none", []
 

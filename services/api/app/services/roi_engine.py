@@ -18,9 +18,12 @@
 #
 # Each sub-score is 0–100.  Overall bands: high ≥ 70, moderate 40–69, low < 40.
 
+import glob
+import os
 from datetime import datetime
 from typing import Dict, List, Optional, Tuple
 
+import pandas as pd
 from sqlalchemy import text
 from starlette.exceptions import HTTPException
 
@@ -178,6 +181,140 @@ def _load_thresholds(db) -> Tuple[float, float]:
         )
     except Exception:
         return _CPL_TARGET_DEFAULT, _CPC_TARGET_DEFAULT
+
+
+def _resolve_emm_dataset_path() -> Optional[str]:
+    env_path = os.getenv("TAAIP_EMM_DATASET_PATH")
+    if env_path is not None:
+        return env_path if os.path.exists(env_path) else None
+
+    candidates = [
+        "./data/dev_datasets/EMM PORTAL.xlsx",
+        "./uploads/EMM PORTAL.xlsx",
+        "./data/uploads/EMM PORTAL.xlsx",
+    ]
+    for p in candidates:
+        if os.path.exists(p):
+            return p
+
+    matches: List[str] = []
+    for pattern in ["./**/*EMM*PORTAL*.xlsx", "./**/*EMM*PORTAL*.xls"]:
+        matches.extend(glob.glob(pattern, recursive=True))
+    matches = sorted({m for m in matches if os.path.isfile(m)})
+    return matches[-1] if matches else None
+
+
+def _to_int(value) -> int:
+    try:
+        if value is None or pd.isna(value):
+            return 0
+        return int(float(value))
+    except Exception:
+        return 0
+
+
+def _to_float(value) -> float:
+    try:
+        if value is None or pd.isna(value):
+            return 0.0
+        return float(value)
+    except Exception:
+        return 0.0
+
+
+def _to_iso(value) -> str:
+    try:
+        if value is None or pd.isna(value):
+            return ""
+        ts = pd.to_datetime(value, errors="coerce")
+        if pd.isna(ts):
+            return str(value or "")
+        return ts.to_pydatetime().isoformat()
+    except Exception:
+        return str(value or "")
+
+
+def _to_zip(value) -> str:
+    try:
+        if value is None or pd.isna(value):
+            return ""
+        as_int = int(float(value))
+        if as_int <= 0:
+            return ""
+        return f"{as_int:05d}"
+    except Exception:
+        s = str(value or "").strip()
+        return s[:5] if s.isdigit() else ""
+
+
+def _load_events_workbook(prefix: str) -> Tuple[str, str, List[Dict], str]:
+    dataset_path = _resolve_emm_dataset_path()
+    if not dataset_path:
+        return "no_data", "", [], ""
+
+    try:
+        df = pd.read_excel(dataset_path)
+    except Exception as exc:
+        return "invalid_dataset_schema", os.path.basename(dataset_path), [], f"unable to read EMM workbook: {exc}"
+
+    if df.empty:
+        return "no_data", os.path.basename(dataset_path), [], ""
+
+    if "Activity ID" not in df.columns or not any(col in df.columns for col in ["P. RSID", "RSID"]):
+        return "invalid_dataset_schema", os.path.basename(dataset_path), [], "EMM workbook missing required activity or RSID columns"
+
+    out: List[Dict] = []
+    for _, row in df.iterrows():
+        unit_rsid = str(row.get("P. RSID") or row.get("RSID") or "").strip().upper()
+        if not unit_rsid or unit_rsid.lower() in {"nan", "none"}:
+            continue
+        if prefix and not unit_rsid.startswith(prefix):
+            continue
+
+        event_id = str(row.get("Activity ID") or "").strip()
+        if not event_id or event_id.lower() in {"nan", "none"}:
+            continue
+
+        event_name = str(row.get("TITLE") or event_id).strip()
+        event_type = str(row.get("EVENT_TYPE") or row.get("EVENT_CATEGORY") or row.get("Activity Type") or "unknown").strip()
+        cost_total = _to_float(row.get("COMMIT_FUND"))
+        if cost_total <= 0.0:
+            cost_total = _to_float(row.get("ESTIMATE_COST"))
+        if cost_total <= 0.0:
+            cost_total = _to_float(row.get("Estimated Amount"))
+
+        leads = _to_int(row.get("Leads"))
+        if leads <= 0:
+            leads = _to_int(row.get("Est Leads"))
+
+        contracts = _to_int(row.get("Contracts"))
+        if contracts <= 0:
+            contracts = _to_int(row.get("Est Contracts"))
+
+        if leads <= 0 and contracts <= 0 and cost_total <= 0.0:
+            continue
+
+        out.append(
+            {
+                "event_id": event_id,
+                "unit_rsid": unit_rsid,
+                "event_name": event_name,
+                "event_type": event_type or "unknown",
+                "start_dt": _to_iso(row.get("Begin Date") or row.get("Activity Req date")),
+                "end_dt": _to_iso(row.get("End Date")),
+                "zip": _to_zip(row.get("ZIP_CODE")),
+                "cbsa_code": str(row.get("CBSA_Cd") or "").strip(),
+                "cost_total_emm": cost_total,
+                "leads_count": leads,
+                "contracts_count": contracts,
+                "_source": os.path.basename(dataset_path),
+            }
+        )
+
+    if not out:
+        return "no_data", os.path.basename(dataset_path), [], ""
+
+    return "ok", os.path.basename(dataset_path), out, ""
 
 
 def _load_events_emm(db, prefix: str) -> List[Dict]:
@@ -442,7 +579,7 @@ def summarize_roi_engine(
     """Return ROI / event effectiveness summary for the given scope.
 
     Returns a dict with keys:
-      status: "ok" | "no_data"
+      status: "ok" | "no_data" | "invalid_dataset_schema"
       roi_engine: { summary, prioritized_events, event_type_performance,
                     roi_recommendations, data_as_of, source_tables }
     """
@@ -450,10 +587,48 @@ def summarize_roi_engine(
 
     prefix = _scope_prefix(scope_type, scope_value)
 
-    # --- Load events (primary: emm_event, secondary: event_fact) ---
+    source_tables = ["emm_event", "event_fact", "spend_fact", "lead_journey_fact"]
+    source_dataset_name = None
+
+    # --- Load events (primary: emm_event, secondary: event_fact, fallback: workbook) ---
     events = _load_events_emm(db, prefix)
+    if events:
+        source_dataset_name = "emm_event"
     if not events:
         events = _load_events_fact(db, prefix)
+        if events:
+            source_dataset_name = "event_fact"
+
+    if not events:
+        workbook_status, workbook_source, workbook_events, schema_error = _load_events_workbook(prefix)
+        if workbook_status == "invalid_dataset_schema":
+            return {
+                "status": "invalid_dataset_schema",
+                "roi_engine": {
+                    "summary": {
+                        "total_events_scored": 0,
+                        "high_effectiveness_count": 0,
+                        "moderate_effectiveness_count": 0,
+                        "low_effectiveness_count": 0,
+                        "avg_roi_score": None,
+                        "avg_cost_per_lead": None,
+                        "avg_cost_per_contract": None,
+                        "total_spend": 0.0,
+                        "total_leads": 0,
+                        "total_contracts": 0,
+                        "scoring_formula": _scoring_formula_doc(),
+                    },
+                    "prioritized_events": [],
+                    "event_type_performance": [],
+                    "roi_recommendations": [],
+                    "data_as_of": None,
+                    "source_dataset_name": workbook_source or None,
+                    "source_tables": source_tables,
+                    "schema_error": schema_error or None,
+                },
+            }
+        events = workbook_events
+        source_dataset_name = workbook_source or source_dataset_name
 
     if not events:
         return {
@@ -476,7 +651,8 @@ def summarize_roi_engine(
                 "event_type_performance": [],
                 "roi_recommendations": [],
                 "data_as_of": None,
-                "source_tables": ["emm_event", "event_fact", "spend_fact", "lead_journey_fact"],
+                "source_dataset_name": source_dataset_name,
+                "source_tables": source_tables,
             },
         }
 
@@ -521,7 +697,13 @@ def summarize_roi_engine(
         # spend_fact is authoritative; fall back to emm_event.cost_total
         total_cost = cost_from_spend if cost_from_spend > 0.0 else cost_emm
 
-        lead_data = leads_map.get(eid, {"leads_count": 0, "contracts_count": 0})
+        lead_data = leads_map.get(
+            eid,
+            {
+                "leads_count": int(ev.get("leads_count") or 0),
+                "contracts_count": int(ev.get("contracts_count") or 0),
+            },
+        )
         leads = lead_data["leads_count"]
         contracts = lead_data["contracts_count"]
 
@@ -617,7 +799,8 @@ def summarize_roi_engine(
             "event_type_performance": _event_type_performance(scored),
             "roi_recommendations": _command_recommendations(scored, scope_type, scope_value),
             "data_as_of": data_as_of,
-            "source_tables": ["emm_event", "event_fact", "spend_fact", "lead_journey_fact"],
+            "source_dataset_name": source_dataset_name,
+            "source_tables": source_tables,
         },
     }
 
