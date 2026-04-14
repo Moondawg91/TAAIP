@@ -122,6 +122,12 @@ Feature Status
   - downstream mission / command center / Power BI surfaces now consume the upstream engines correctly and expose the expected connected blocks
   - real integration defects fixed in this pass: signal propagation reuse, school authoritative-source precedence, scoped market fallback, and stable downstream field/metric shapes
   - honest partial behavior remains by design for unit scopes with no active authoritative rows; those surfaces return `no_data` / `no_active_dataset` instead of inventing defaults
+- Commander-ready workflow and frontend consolidation pass: DONE
+  - active commander shell in `taaip-dashboard` has been consolidated into one workflow sequence: Command Center → Mission Adjustment → Diagnostics → TWG and Board → Asset/Execution/Processing → Power BI
+  - Mission Adjustment is now embedded in the main workflow instead of remaining an isolated legacy surface
+  - workflow pages consume authoritative backend outputs only and surface honest loading, error, and empty states
+  - frontend build verification evidence: `npm run build` completed successfully
+  - workflow regression evidence: `npm test` returned `3 passed, 0 failed`
 
 Acceptance Criteria
 - `/api/operations/targeting-data` ingest and query endpoints exist.

@@ -149,6 +149,28 @@ CI should run:
 pytest -q services/api/tests
 ```
 
+## Commander Workflow Frontend
+
+The active commander-facing UI is the Vite React app in `taaip-dashboard`.
+
+Purpose:
+- present one commander-ready workflow instead of fragmented standalone pages
+- consume authoritative backend outputs from command center, mission adjustment, Power BI operational export, TWG, execution tracker, and processing surfaces
+- keep Mission Adjustment embedded in the same sequence as diagnostics, board sync, and execution review
+
+Verified local checks:
+
+```bash
+cd taaip-dashboard
+npm run build
+npm test
+```
+
+Latest verified evidence:
+- production build completed successfully with Vite
+- workflow regression coverage: `3` tests passed
+- commander workflow steps locked in the shell: Command Center, Mission Adjustment, Diagnostics, TWG and Board, Execution and Processing, Power BI
+
 ## Decision Output - Mission Decrease Justification
 
 The domain v2 router includes a decision-output endpoint for commander-ready mission decrease analysis.
