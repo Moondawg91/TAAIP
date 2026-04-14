@@ -7,6 +7,14 @@ from sqlalchemy import text
 VALID_SCOPE_TYPES = {"USAREC", "BDE", "BN", "CO", "STN"}
 
 
+def _empty_loe_summary(total_loes: int = 0) -> Dict:
+    return {
+        "total_loes": int(total_loes or 0),
+        "total_metrics": 0,
+        "status_counts": {"met": 0, "at_risk": 0, "not_met": 0, "unknown": 0},
+    }
+
+
 def validate_scope(scope_type: str, scope_value: str) -> None:
     st = (scope_type or "").upper().strip()
     sv = (scope_value or "").strip()
@@ -155,16 +163,23 @@ def loe_blockers(db, scope_type: str, scope_value: str, market_summary: Dict, sc
 def list_loes_for_scope(db, scope_type: str, scope_value: str) -> List[Dict]:
     from services.api.app import models_domain as domain
 
-    loes = db.query(domain.Loe).all()
+    try:
+        loes = db.query(domain.Loe).all()
+    except Exception:
+        return []
+
     out = []
     for loe in loes:
         if not scope_match(scope_type, scope_value, loe.scope_value):
             continue
-        metric_count = (
-            db.query(domain.LoeMetric)
-            .filter(domain.LoeMetric.loe_id == loe.id)
-            .count()
-        )
+        try:
+            metric_count = (
+                db.query(domain.LoeMetric)
+                .filter(domain.LoeMetric.loe_id == loe.id)
+                .count()
+            )
+        except Exception:
+            metric_count = 0
         out.append(
             {
                 "id": loe.id,
@@ -186,13 +201,13 @@ def summarize_loes(db, scope_type: str, scope_value: str) -> Dict:
     loes = list_loes_for_scope(db, scope_type, scope_value)
     loe_ids = [x["id"] for x in loes]
     if not loe_ids:
-        return {
-            "total_loes": 0,
-            "total_metrics": 0,
-            "status_counts": {"met": 0, "at_risk": 0, "not_met": 0, "unknown": 0},
-        }
+        return _empty_loe_summary()
 
-    metrics = db.query(domain.LoeMetric).filter(domain.LoeMetric.loe_id.in_(loe_ids)).all()
+    try:
+        metrics = db.query(domain.LoeMetric).filter(domain.LoeMetric.loe_id.in_(loe_ids)).all()
+    except Exception:
+        return _empty_loe_summary(total_loes=len(loes))
+
     status_counts = {"met": 0, "at_risk": 0, "not_met": 0, "unknown": 0}
     for m in metrics:
         status = m.status or "unknown"
