@@ -306,6 +306,51 @@ Response highlights:
 - `one_slide_payload`: compact briefing payload for command syncs.
 - `evidence`: traceable source snapshots (when `include_evidence=true`).
 
+## Controlled Learning Layer (Outcome + Context + Adaptive)
+
+The Controlled Learning Layer is implemented as an additive post-decision feedback system with explicit approval controls and no silent production logic mutation.
+
+Core services:
+
+- `services/api/app/services/outcome_learning_engine.py`
+  - evaluates outcomes using expected vs actual KPI evidence
+  - classifies outcomes (`exceeded`, `met`, `underperformed`, `failed`, `insufficient_data`)
+  - emits bounded confidence-adjustment suggestions
+- `services/api/app/services/live_context_engine.py`
+  - ingests live context signals with trust/confidence labels and stale handling
+  - emits normalized context modifiers flagged for approval
+- `services/api/app/services/adaptive_update_engine.py`
+  - converts outcome/context evidence into adaptive update proposals
+  - proposal lifecycle: `draft`, `pending_review`, `approved`, `rejected`, `superseded`
+  - includes rollback/version metadata; `auto_applicable` is always `0`
+
+Integrated surfaces:
+
+- mission decision output includes `controlled_learning_layer`
+- command center phase2 summary includes:
+  - `outcome_learning_summary`
+  - `live_context_summary`
+  - `adaptive_update_summary`
+- Power BI operational command dataset includes:
+  - `outcome_evaluations`
+  - `outcome_pattern_performance`
+  - `context_signals`
+  - `adaptive_update_proposals`
+  - `adaptive_update_versioning`
+- admin-managed proposal controls:
+  - `GET /api/v2/admin/controlled-learning/proposals`
+  - `PUT /api/v2/admin/controlled-learning/proposals/{proposal_id}/state`
+
+Validation command:
+
+```bash
+./.venv/bin/python -m pytest -q \
+  services/api/tests/test_outcome_learning_engine.py \
+  services/api/tests/test_live_context_engine.py \
+  services/api/tests/test_adaptive_update_engine.py \
+  services/api/tests/test_controlled_learning_integrations.py
+```
+
 ## Targeting Execution Tracker (420T Core Execution)
 
 Authoritative execution/status engine:

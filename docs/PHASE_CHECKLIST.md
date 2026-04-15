@@ -144,6 +144,18 @@ Evidence placeholder
 Objective
 - Mission Assessment snapshots, Command Priorities and LOEs, and mission assessment comparisons.
 
+Feature Status
+- Controlled Learning Layer (Outcome Learning + Live Context + Adaptive Update): DONE
+  - completed services:
+    - `services/api/app/services/outcome_learning_engine.py`
+    - `services/api/app/services/live_context_engine.py`
+    - `services/api/app/services/adaptive_update_engine.py`
+  - mission, command center, and Power BI operational surfaces now expose additive controlled-learning blocks
+  - adaptive updates are proposal-based only with explicit approval states and rollback/version metadata
+  - admin-only proposal visibility and state transitions exposed under `/api/v2/admin/controlled-learning/*`
+  - production scoring logic remains unchanged unless an approved proposal is explicitly applied
+  - verification evidence: `7 passed` in focused controlled-learning tests
+
 Acceptance Criteria
 - Command Priorities CRUD exists; LOEs editable and stored.
 - `/api/performance/mission-assessment` computes baseline vs actual metrics.
