@@ -171,6 +171,38 @@ Latest verified evidence:
 - workflow regression coverage: `3` tests passed
 - commander workflow steps locked in the shell: Command Center, Mission Adjustment, Diagnostics, TWG and Board, Execution and Processing, Power BI
 
+## Role-Based Workflow Validation and Demo Readiness
+
+The commander shell now enforces role-safe workflow visibility for the active perspective:
+
+- `commander`: full decision sequence (Command Center -> Mission Adjustment -> Diagnostics -> TWG/Board -> Execution/Processing -> Power BI)
+- `operator420t`: operational drill-down sequence without admin controls
+- `admin`: maintenance perspective with admin console and refresh controls
+
+Operational guarantees:
+
+- command and operator perspectives do not expose admin console controls
+- admin refresh routes remain admin-manage only (`/api/refresh/*`)
+- non-admin users receive `403` on refresh source endpoints
+- walkthrough sequence is captured in `docs/COMMAND_DEMO_SEQUENCE.md`
+
+Verified local checks:
+
+```bash
+cd taaip-dashboard
+npm test
+npm run build
+
+cd ..
+./.venv/bin/python -m pytest -q services/api/tests/test_refresh_admin_workflow.py
+```
+
+Latest verified evidence:
+
+- role workflow shell regressions and commander workflow regressions: `6` tests passed
+- admin refresh role-safety regression coverage: `5` tests passed
+- frontend production build completed successfully
+
 ## Deployment and Admin Refresh Hardening
 
 Canonical operational startup path:

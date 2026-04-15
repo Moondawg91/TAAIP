@@ -185,6 +185,12 @@ Feature Status
   - admin refresh endpoints require admin-manage access and keep source replacement out of the commander-facing workflow
   - invalid-schema and no-data uploads fail honestly with structured errors and do not replace the active authoritative dataset version
   - verified evidence: `5 passed` in focused deployment/admin regressions, runtime preflight `status: ok`, commander workflow frontend `3 passed`, frontend production build succeeded
+- Role-based operational walkthrough and command demo readiness: DONE
+  - commander, 420T operator, and admin perspectives are mapped to role-safe workflow visibility in the active commander shell
+  - commander and 420T perspectives do not expose admin console controls
+  - admin refresh controls remain isolated to admin workflows and non-admin refresh source access returns `403`
+  - operational command demo sequence is documented in `docs/COMMAND_DEMO_SEQUENCE.md`
+  - verified evidence: commander + role visibility frontend regressions `6 passed`, refresh admin role-safety regressions `5 passed`, frontend production build succeeded
 
 Acceptance Criteria
 - `scripts/verify_app.sh` runs without error and reports PASS for required checks.
