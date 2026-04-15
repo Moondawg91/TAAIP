@@ -203,6 +203,36 @@ Latest verified evidence:
 - admin refresh role-safety regression coverage: `5` tests passed
 - frontend production build completed successfully
 
+## Production Release and Sustainment Documentation
+
+The final handoff documentation set is now captured in:
+
+- `docs/PRODUCTION_RELEASE_PREP.md`
+- `docs/COMMANDER_QUICK_USE_GUIDE.md`
+- `docs/OPERATOR_420T_WORKFLOW_GUIDE.md`
+- `docs/ADMIN_REFRESH_TROUBLESHOOTING_GUIDE.md`
+- `docs/COMMAND_DEMO_RUNBOOK.md`
+
+Coverage includes:
+
+- repeatable backend/frontend startup and preflight
+- production environment variable and DB/migration expectations
+- admin refresh operational safeguards and troubleshooting
+- commander, 420T operator, and admin sustainment workflows
+- concise command-demo run sequence and no-data talking points
+
+Release safety validation checks:
+
+```bash
+./.venv/bin/python -m pytest -q services/api/tests/test_refresh_admin_workflow.py services/api/tests/test_runtime_preflight_contract.py
+./.venv/bin/python services/api/scripts/runtime_preflight.py --ensure-schema
+zsh -n start-taaip.sh start-taaip-local.sh run-dev.sh scripts/taaip_preflight.sh
+
+cd taaip-dashboard
+npm test
+npm run build
+```
+
 ## Deployment and Admin Refresh Hardening
 
 Canonical operational startup path:

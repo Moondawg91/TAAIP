@@ -191,6 +191,12 @@ Feature Status
   - admin refresh controls remain isolated to admin workflows and non-admin refresh source access returns `403`
   - operational command demo sequence is documented in `docs/COMMAND_DEMO_SEQUENCE.md`
   - verified evidence: commander + role visibility frontend regressions `6 passed`, refresh admin role-safety regressions `5 passed`, frontend production build succeeded
+- Final production release preparation and sustainment documentation: DONE
+  - release packaging instructions are finalized for backend/frontend startup, preflight, env variables, DB path, and Alembic migration expectations
+  - sustainment guides are published for commander quick use, 420T operator workflow, and admin refresh troubleshooting
+  - concise command-demo runbook is published with pre-demo checks, startup sequence, fallback paths, and no-data explanation points
+  - documentation maps to current runtime scripts and admin-safe refresh behavior without introducing demo data or placeholder outputs
+  - verification evidence: release safety startup checks and focused regressions passing (`test_refresh_admin_workflow`, `test_runtime_preflight_contract`, frontend tests/build)
 
 Acceptance Criteria
 - `scripts/verify_app.sh` runs without error and reports PASS for required checks.
