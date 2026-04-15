@@ -130,6 +130,28 @@ def test_refresh_requires_admin_role(tmp_path):
     assert response.status_code == 403
 
 
+def test_refresh_sources_visibility_is_admin_only(tmp_path):
+    _setup_db(tmp_path)
+    client = TestClient(app)
+
+    admin_token = _jwt_like({
+        "sub": "admin",
+        "roles": ["system_admin"],
+        "permissions": ["admin.permissions.manage"],
+        "scopes": [],
+    })
+    commander_token = _jwt_like({"sub": "commander", "roles": ["co_cmd"], "permissions": [], "scopes": []})
+    operator_token = _jwt_like({"sub": "operator420t", "roles": ["420t_admin"], "permissions": [], "scopes": []})
+
+    admin_response = client.get("/api/refresh/sources", headers={"Authorization": f"Bearer {admin_token}"})
+    commander_response = client.get("/api/refresh/sources", headers={"Authorization": f"Bearer {commander_token}"})
+    operator_response = client.get("/api/refresh/sources", headers={"Authorization": f"Bearer {operator_token}"})
+
+    assert admin_response.status_code == 200
+    assert commander_response.status_code == 403
+    assert operator_response.status_code == 403
+
+
 def test_refresh_upload_rejects_invalid_schema_with_structured_error(tmp_path):
     _setup_db(tmp_path)
     client = TestClient(app)
