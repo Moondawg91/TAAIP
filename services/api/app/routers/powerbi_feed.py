@@ -7,6 +7,7 @@ import csv
 import io
 from services.api.app import database as _dbmod
 from services.api.app.services import accountability_engine, execution_quality, flash_to_bang_processing_engine as _flash_to_bang_processing_engine_mod, funnel_engine, market_engine, roi_engine as _roi_engine_mod, school_access, school_plan_engine, targeting_engine, twg_engine as _twg_engine_mod, targeting_board_engine as _targeting_board_engine_mod, asset_engine as _asset_engine_mod, targeting_execution_tracker as _targeting_execution_tracker_mod
+from services.api.app.services import outcome_learning_engine, live_context_engine, adaptive_update_engine
 
 router = APIRouter(prefix="/powerbi", tags=["powerbi"])
 
@@ -588,6 +589,9 @@ def operational_command_dataset(scope_type: str = 'USAREC', scope_value: str = '
             school_signal=school_plan,
             roi_signal=roi,
         )
+        outcome_learning = outcome_learning_engine.evaluate_outcomes(db, st, sv, limit=200)
+        live_context = live_context_engine.summarize_context_signals(db, st, sv, limit=200)
+        adaptive_update = adaptive_update_engine.generate_update_proposals(db, st, sv, persist=False, limit=200)
 
         return {
             'status': 'ok',
@@ -633,6 +637,14 @@ def operational_command_dataset(scope_type: str = 'USAREC', scope_value: str = '
                 'escalations': execution_tracker.get('targeting_execution_tracker', {}).get('escalations', []),
                 'execution_scorecard': execution_tracker.get('targeting_execution_tracker', {}).get('execution_scorecard', {}),
                 'accountability': accountability,
+                'outcome_learning_summary': outcome_learning.get('outcome_learning_engine', {}).get('summary', {}),
+                'outcome_evaluations': outcome_learning.get('outcome_learning_engine', {}).get('outcome_evaluations', []),
+                'outcome_pattern_performance': outcome_learning.get('outcome_learning_engine', {}).get('pattern_performance', []),
+                'live_context_summary': live_context.get('live_context_engine', {}).get('summary', {}),
+                'context_signals': live_context.get('live_context_engine', {}).get('context_signals', []),
+                'adaptive_update_summary': adaptive_update.get('adaptive_update_engine', {}).get('summary', {}),
+                'adaptive_update_proposals': adaptive_update.get('adaptive_update_engine', {}).get('update_proposals', []),
+                'adaptive_update_versioning': adaptive_update.get('adaptive_update_engine', {}).get('versioning', {}),
             }
         }
     finally:

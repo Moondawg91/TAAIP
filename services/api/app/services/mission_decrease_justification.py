@@ -10,11 +10,14 @@ from sqlalchemy import text
 
 from services.api.app.services import (
     accountability_engine,
+    adaptive_update_engine,
     execution_quality,
     flash_to_bang_processing_engine,
     funnel_engine,
+    live_context_engine,
     loe_engine,
     market_engine,
+    outcome_learning_engine,
     roi_engine,
     school_access,
     school_plan_engine,
@@ -1193,6 +1196,49 @@ def _build_one_slide_payload(
     }
 
 
+def _build_controlled_learning_layer(db, scope_type: str, scope_value: str) -> Dict:
+    try:
+        outcome_payload = outcome_learning_engine.evaluate_outcomes(db, scope_type, scope_value, limit=100)
+    except Exception:
+        outcome_payload = {"status": "no_data", "outcome_learning_engine": {"summary": {}, "outcome_evaluations": [], "pattern_performance": []}}
+
+    try:
+        context_payload = live_context_engine.summarize_context_signals(db, scope_type, scope_value, limit=100)
+    except Exception:
+        context_payload = {"status": "no_data", "live_context_engine": {"summary": {}, "context_signals": []}}
+
+    try:
+        adaptive_payload = adaptive_update_engine.generate_update_proposals(db, scope_type, scope_value, persist=False, limit=100)
+    except Exception:
+        adaptive_payload = {"status": "no_data", "adaptive_update_engine": {"summary": {}, "update_proposals": []}}
+
+    outcome_engine = outcome_payload.get("outcome_learning_engine") or {}
+    context_engine = context_payload.get("live_context_engine") or {}
+    adaptive_engine = adaptive_payload.get("adaptive_update_engine") or {}
+
+    risk_items = [
+        p for p in (adaptive_engine.get("update_proposals") or [])
+        if str((p or {}).get("risk_level") or "").lower() in {"high", "medium"}
+    ]
+    opportunity_items = [
+        s for s in (context_engine.get("context_signals") or [])
+        if str(((s or {}).get("recommended_modifier") or {}).get("direction") or "").lower() == "increase"
+    ]
+
+    return {
+        "outcome_learning_summary": outcome_engine.get("summary") or {},
+        "live_context_summary": context_engine.get("summary") or {},
+        "adaptive_update_summary": adaptive_engine.get("summary") or {},
+        "adaptive_awareness": {
+            "top_proposals": (adaptive_engine.get("update_proposals") or [])[:5],
+            "approval_required": True,
+            "auto_apply_enabled": False,
+        },
+        "caution_flags": risk_items[:5],
+        "opportunity_flags": opportunity_items[:5],
+    }
+
+
 def _build_evidence_list(request_id: str, signals: Dict, mission_current: MissionPeriodTotals, mission_baseline: MissionPeriodTotals, include_evidence: bool) -> List[Dict]:
     if not include_evidence:
         return []
@@ -1503,6 +1549,7 @@ def generate_mission_decrease_justification(
                 "summary": signals.get("twg", {}).get("summary") or {},
             },
         },
+        "controlled_learning_layer": _build_controlled_learning_layer(db, scope_type, scope_value),
         "evidence": evidence,
         "force_refresh_used": bool(force_refresh),
     }

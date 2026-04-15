@@ -10,6 +10,9 @@ from services.api.app.services import market_engine
 from services.api.app.services import funnel_engine
 from services.api.app.services import targeting_engine
 from services.api.app.services import school_plan_engine
+from services.api.app.services import outcome_learning_engine
+from services.api.app.services import live_context_engine
+from services.api.app.services import adaptive_update_engine
 from services.api.app.services import roi_engine as _roi_engine_mod
 from services.api.app.services import twg_engine as _twg_engine_mod
 from services.api.app.services import targeting_board_engine as _targeting_board_engine_mod
@@ -242,6 +245,25 @@ def overview(fy: Optional[int] = None, qtr: Optional[int] = None, month: Optiona
                     school_signal=school_plan_signal,
                     roi_signal=roi_signal,
                 )
+                outcome_learning_signal = outcome_learning_engine.evaluate_outcomes(
+                    db,
+                    scope_type=scope_type_eff,
+                    scope_value=scope_value_eff,
+                    limit=100,
+                )
+                live_context_signal = live_context_engine.summarize_context_signals(
+                    db,
+                    scope_type=scope_type_eff,
+                    scope_value=scope_value_eff,
+                    limit=100,
+                )
+                adaptive_update_signal = adaptive_update_engine.generate_update_proposals(
+                    db,
+                    scope_type=scope_type_eff,
+                    scope_value=scope_value_eff,
+                    persist=False,
+                    limit=100,
+                )
 
                 summary['phase2'] = {
                     'loe_summary': loe_summary,
@@ -259,6 +281,9 @@ def overview(fy: Optional[int] = None, qtr: Optional[int] = None, month: Optiona
                     'targeting_execution_tracker': execution_tracker_signal,
                     'execution_quality': execution_signal,
                     'funnel_engine': funnel_signal,
+                    'outcome_learning_summary': (outcome_learning_signal.get('outcome_learning_engine', {}) or {}).get('summary', {}),
+                    'live_context_summary': (live_context_signal.get('live_context_engine', {}) or {}).get('summary', {}),
+                    'adaptive_update_summary': (adaptive_update_signal.get('adaptive_update_engine', {}) or {}).get('summary', {}),
                     'recommended_actions': ai_recommendation_engine.generate_recommendation_bundle(
                         db,
                         scope_type_eff,

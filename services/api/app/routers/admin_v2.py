@@ -1,9 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException
 from typing import Dict, Any
 import json
+import os
 from ..routers import rbac
 from ..db import connect
 import sqlite3
+from .. import database as _dbmod
+from ..services import adaptive_update_engine
 
 router = APIRouter(prefix="/v2/admin", tags=["admin"])
 
@@ -47,6 +50,57 @@ def require_admin_manage(user: Dict = Depends(rbac.get_current_user)):
     if not _is_admin_user(user):
         raise HTTPException(status_code=403, detail='admin.permissions.manage required')
     return user
+
+
+@router.get('/controlled-learning/proposals')
+def list_controlled_learning_proposals(
+    scope_type: str = 'USAREC',
+    scope_value: str = 'USAREC',
+    approval_state: str = '',
+    limit: int = 200,
+    current_user: Dict = Depends(require_admin_manage),
+):
+    db = next(_dbmod.get_db())
+    try:
+        return adaptive_update_engine.list_proposals(
+            db,
+            scope_type=scope_type,
+            scope_value=scope_value,
+            approval_state=(approval_state or None),
+            limit=limit,
+        )
+    finally:
+        try:
+            if _dbmod._shared_session is None:
+                db.close()
+        except Exception:
+            pass
+
+
+@router.put('/controlled-learning/proposals/{proposal_id}/state')
+def update_controlled_learning_proposal_state(
+    proposal_id: str,
+    payload: Dict[str, Any],
+    current_user: Dict = Depends(require_admin_manage),
+):
+    new_state = str(payload.get('approval_state') or '').strip().lower()
+    if not new_state:
+        raise HTTPException(status_code=400, detail='approval_state required')
+
+    db = next(_dbmod.get_db())
+    try:
+        result = adaptive_update_engine.update_proposal_state(db, proposal_id, new_state)
+        if result.get('status') == 'invalid':
+            raise HTTPException(status_code=400, detail=result.get('message') or 'invalid state')
+        if result.get('status') == 'no_data':
+            raise HTTPException(status_code=404, detail=result.get('message') or 'proposal not found')
+        return result
+    finally:
+        try:
+            if _dbmod._shared_session is None:
+                db.close()
+        except Exception:
+            pass
 
 
 @router.get('/users')
