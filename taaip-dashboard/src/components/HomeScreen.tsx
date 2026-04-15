@@ -11,6 +11,8 @@ import {
 } from 'lucide-react';
 
 interface HomeScreenProps {
+  perspective: 'commander' | 'operator420t' | 'admin';
+  allowedTabs: string[];
   onNavigate: (tab: string) => void;
 }
 
@@ -65,7 +67,17 @@ const workflowSteps = [
   },
 ] as const;
 
-export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate }) => {
+export const HomeScreen: React.FC<HomeScreenProps> = ({ perspective, allowedTabs, onNavigate }) => {
+  const allowed = new Set(allowedTabs);
+  const visibleSteps = workflowSteps.filter((step) => allowed.has(step.id));
+
+  const perspectiveMessage =
+    perspective === 'admin'
+      ? 'Admin/maintainer view keeps refresh and maintenance controls separate from commander decision flow.'
+      : perspective === 'operator420t'
+        ? '420T operator view focuses on drill-down evidence and execution surfaces without admin controls.'
+        : 'Commander view keeps the full decision sequence from command picture through export surfaces.';
+
   return (
     <div className="space-y-6">
       <div className="rounded-2xl bg-gradient-to-r from-black via-slate-900 to-black p-8 text-white shadow-xl">
@@ -77,12 +89,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate }) => {
             <p className="mt-3 max-w-4xl text-sm text-slate-200">
               Duplicate standalone workflow views have been consolidated into a single commander-ready path that consumes the completed backend system without recreating its logic in the frontend.
             </p>
+            <p className="mt-2 max-w-4xl text-sm text-amber-200">{perspectiveMessage}</p>
           </div>
         </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {workflowSteps.map((step) => {
+        {visibleSteps.map((step) => {
           const Icon = step.icon;
           return (
             <button
@@ -116,6 +129,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate }) => {
           <li>Market, funnel, school, and ROI diagnostics are grouped into one operational decision layer.</li>
           <li>TWG and Targeting Board now sit together as the next commander action step.</li>
           <li>Asset, execution, and processing are presented as one downstream execution surface.</li>
+          <li>Admin-only maintenance controls stay isolated from commander and 420T workflow views.</li>
         </ul>
       </div>
     </div>

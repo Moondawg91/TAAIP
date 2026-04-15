@@ -32,12 +32,80 @@ type TabId =
   | 'powerbi'
   | 'admin-console';
 
+type UserPerspective = 'commander' | 'operator420t' | 'admin';
+
+const PERSPECTIVE_STORAGE_KEY = 'taaip_perspective';
+
+export const PERSPECTIVE_TAB_ACCESS: Record<UserPerspective, TabId[]> = {
+  commander: [
+    'home',
+    'command-center',
+    'mission-adjustment',
+    'diagnostics',
+    'decision-sync',
+    'execution',
+    'powerbi',
+  ],
+  operator420t: ['home', 'command-center', 'diagnostics', 'decision-sync', 'execution', 'powerbi'],
+  admin: [
+    'home',
+    'command-center',
+    'mission-adjustment',
+    'diagnostics',
+    'decision-sync',
+    'execution',
+    'powerbi',
+    'admin-console',
+  ],
+};
+
+function normalizePerspective(value: string | null | undefined): UserPerspective {
+  const raw = (value || '').trim().toLowerCase();
+  if (raw === 'admin' || raw === 'maintainer' || raw === 'system_admin') {
+    return 'admin';
+  }
+  if (raw === '420t' || raw === 'operator' || raw === 'operator420t' || raw === '420t_admin') {
+    return 'operator420t';
+  }
+  return 'commander';
+}
+
+function resolvePerspective(): UserPerspective {
+  if (typeof window === 'undefined') {
+    return 'commander';
+  }
+  const queryPerspective = normalizePerspective(new URLSearchParams(window.location.search).get('role'));
+  const storedPerspective = normalizePerspective(window.localStorage.getItem(PERSPECTIVE_STORAGE_KEY));
+
+  const perspective = queryPerspective !== 'commander' || window.location.search.includes('role=')
+    ? queryPerspective
+    : storedPerspective;
+
+  window.localStorage.setItem(PERSPECTIVE_STORAGE_KEY, perspective);
+  return perspective;
+}
+
+function perspectiveLabel(perspective: UserPerspective): string {
+  switch (perspective) {
+    case 'admin':
+      return 'Admin / Maintainer';
+    case 'operator420t':
+      return '420T Operator';
+    case 'commander':
+    default:
+      return 'Commander / Command Team';
+  }
+}
+
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabId>('home');
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [perspective] = useState<UserPerspective>(() => resolvePerspective());
 
   const menuCategories = useMemo(
-    () => [
+    () => {
+      const allowedTabs = new Set(PERSPECTIVE_TAB_ACCESS[perspective]);
+      const categories = [
       {
         name: 'Commander Workflow',
         items: [
@@ -56,12 +124,26 @@ const App: React.FC = () => {
           { id: 'admin-console' as TabId, label: 'Admin Console', icon: <Shield className="h-5 w-5" /> },
         ],
       },
-    ],
-    [],
+      ];
+
+      return categories
+        .map((category) => ({
+          ...category,
+          items: category.items.filter((item) => allowedTabs.has(item.id)),
+        }))
+        .filter((category) => category.items.length > 0);
+    },
+    [perspective],
   );
 
   const menuItems = menuCategories.flatMap((category) => category.items);
   const currentMenuItem = menuItems.find((item) => item.id === activeTab) || menuItems[0];
+
+  useEffect(() => {
+    if (!menuItems.some((item) => item.id === activeTab) && menuItems.length > 0) {
+      setActiveTab(menuItems[0].id);
+    }
+  }, [activeTab, menuItems]);
 
   useEffect(() => {
     if (!dropdownOpen) {
@@ -104,7 +186,13 @@ const App: React.FC = () => {
         return <AdminConsole />;
       case 'home':
       default:
-        return <HomeScreen onNavigate={(tab) => setActiveTab(tab as TabId)} />;
+        return (
+          <HomeScreen
+            perspective={perspective}
+            allowedTabs={PERSPECTIVE_TAB_ACCESS[perspective]}
+            onNavigate={(tab) => setActiveTab(tab as TabId)}
+          />
+        );
     }
   };
 
@@ -118,6 +206,9 @@ const App: React.FC = () => {
               <h1 className="text-3xl font-bold uppercase tracking-wider text-amber-400">TAAIP</h1>
               <p className="text-sm uppercase tracking-wide text-slate-300">
                 Commander Decision Support Workflow
+              </p>
+              <p className="text-xs uppercase tracking-wide text-amber-300">
+                Perspective: {perspectiveLabel(perspective)}
               </p>
             </div>
           </div>
