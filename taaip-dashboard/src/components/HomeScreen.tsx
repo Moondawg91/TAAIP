@@ -1,136 +1,305 @@
 import React from 'react';
-import {
-  ArrowRight,
-  BarChart3,
-  ClipboardList,
-  LineChart,
-  PanelLeft,
-  Shield,
-  Users,
-  Workflow,
+import { 
+  BarChart3, TrendingUp, Target, Briefcase, Activity, 
+  Globe, Award, FileCheck, Clipboard, Calendar, Map, Users,
+  Database, ChevronRight, Shield, BookOpen, AlertCircle, HelpCircle
 } from 'lucide-react';
+import { CompanyStandingsLeaderboard } from './CompanyStandingsLeaderboard';
+// QuickReference removed per request; single link added in Resources
+import { LiveUpdatesBanner } from './LiveUpdatesBanner';
 
 interface HomeScreenProps {
-  perspective: 'commander' | 'operator420t' | 'admin';
-  allowedTabs: string[];
   onNavigate: (tab: string) => void;
 }
 
-const workflowSteps = [
-  {
-    id: 'command-center',
-    step: '01',
-    title: 'Command Center',
-    description: 'Start with the live command picture, alerts, LOEs, and connected operational blocks.',
-    icon: PanelLeft,
-    tone: 'from-slate-900 to-slate-700',
-  },
-  {
-    id: 'mission-adjustment',
-    step: '02',
-    title: 'Mission Adjustment',
-    description: 'Move directly from command picture to feasibility and adjustment justification.',
-    icon: ClipboardList,
-    tone: 'from-emerald-800 to-emerald-600',
-  },
-  {
-    id: 'diagnostics',
-    step: '03',
-    title: 'Market to ROI Diagnostics',
-    description: 'Review market, funnel, school, and ROI drivers using the connected backend outputs.',
-    icon: BarChart3,
-    tone: 'from-blue-800 to-blue-600',
-  },
-  {
-    id: 'decision-sync',
-    step: '04',
-    title: 'TWG and Targeting Board',
-    description: 'Carry the diagnostic picture into decision sync, board posture, and downstream tasking.',
-    icon: Users,
-    tone: 'from-violet-800 to-violet-600',
-  },
-  {
-    id: 'execution',
-    step: '05',
-    title: 'Asset, Execution, and Processing',
-    description: 'Validate feasibility, task execution, and flash-to-bang health in one view.',
-    icon: Workflow,
-    tone: 'from-amber-700 to-amber-500',
-  },
-  {
-    id: 'powerbi',
-    step: '06',
-    title: 'Power BI Export Surface',
-    description: 'Finish on the export-facing operational surface for reporting and briefing.',
-    icon: LineChart,
-    tone: 'from-slate-700 to-slate-500',
-  },
-] as const;
+export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate }) => {
+  const [showMissionMenu, setShowMissionMenu] = React.useState(false);
+  const [showResources, setShowResources] = React.useState(false);
+  const [showHelpDesk, setShowHelpDesk] = React.useState(false);
+  const [showExpanded, setShowExpanded] = React.useState(false);
 
-export const HomeScreen: React.FC<HomeScreenProps> = ({ perspective, allowedTabs, onNavigate }) => {
-  const allowed = new Set(allowedTabs);
-  const visibleSteps = workflowSteps.filter((step) => allowed.has(step.id));
+  // Close all dropdowns when switching between them
+  const handleToggleDropdown = (dropdown: 'mission' | 'resources' | 'helpdesk') => {
+    if (dropdown === 'mission') {
+      setShowMissionMenu(!showMissionMenu);
+      setShowResources(false);
+      setShowHelpDesk(false);
+    } else if (dropdown === 'resources') {
+      setShowResources(!showResources);
+      setShowMissionMenu(false);
+      setShowHelpDesk(false);
+    } else if (dropdown === 'helpdesk') {
+      setShowHelpDesk(!showHelpDesk);
+      setShowMissionMenu(false);
+      setShowResources(false);
+    }
+  };
 
-  const perspectiveMessage =
-    perspective === 'admin'
-      ? 'Admin/maintainer view keeps refresh and maintenance controls separate from commander decision flow.'
-      : perspective === 'operator420t'
-        ? '420T operator view focuses on drill-down evidence and execution surfaces without admin controls.'
-        : 'Commander view keeps the full decision sequence from command picture through export surfaces.';
+  const menuItems = [
+    {
+      category: 'Core Analytics',
+      items: [
+        { 
+          id: 'funnel', 
+          icon: <TrendingUp className="w-8 h-8" />, 
+          title: 'Recruiting Funnel', 
+          description: 'Track lead progression and conversion rates',
+          color: 'from-yellow-600 to-yellow-700'
+        },
+        { 
+          id: 'analytics', 
+          icon: <BarChart3 className="w-8 h-8" />, 
+          title: 'Analytics Dashboard', 
+          description: 'CBSA, schools, segments, and contracts analysis',
+          color: 'from-gray-700 to-gray-800'
+        },
+        { 
+          id: 'market', 
+          icon: <Map className="w-8 h-8" />, 
+          title: 'Market Potential', 
+          description: 'Geographic market analysis and prioritization',
+          color: 'from-yellow-600 to-yellow-700'
+        },
+      ]
+    },
+    {
+      category: 'Mission Planning',
+      items: [
+        { 
+          id: 'mission', 
+          icon: <Target className="w-8 h-8" />, 
+          title: 'Mission Analysis', 
+          description: 'Strategic mission planning and M-IPOE framework',
+          color: 'from-gray-700 to-gray-800'
+        },
+        { 
+          id: 'twg', 
+          icon: <Users className="w-8 h-8" />, 
+          title: 'Targeting Decision Board', 
+          description: 'TWG decisions and strategic targeting',
+          color: 'from-yellow-600 to-yellow-700'
+        },
+        { 
+          id: 'projects', 
+          icon: <Briefcase className="w-8 h-8" />, 
+          title: 'Project Management', 
+          description: 'Event planning, tasks, and milestones',
+          color: 'from-gray-700 to-gray-800'
+        },
+      ]
+    },
+    {
+      category: 'Performance Tracking',
+      items: [
+        { 
+          id: 'leads', 
+          icon: <Activity className="w-8 h-8" />, 
+          title: 'Lead Status Report', 
+          description: 'Real-time lead tracking and status updates',
+          color: 'from-yellow-600 to-yellow-700'
+        },
+        { 
+          id: 'events', 
+          icon: <Award className="w-8 h-8" />, 
+          title: 'Event Performance', 
+          description: 'Event metrics, ROI, and effectiveness',
+          color: 'from-gray-700 to-gray-800'
+        },
+        { 
+          id: 'g2zones', 
+          icon: <Globe className="w-8 h-8" />, 
+          title: 'G2 Zone Performance', 
+          description: 'Zone-level recruiting performance analysis',
+          color: 'from-yellow-600 to-yellow-700'
+        },
+      ]
+    },
+    {
+      category: 'Operations',
+      items: [
+        { 
+          id: 'calendar', 
+          icon: <Calendar className="w-8 h-8" />, 
+          title: 'Calendar & Scheduler', 
+          description: 'Event scheduling and status reports (EMM)',
+          color: 'from-gray-700 to-gray-800'
+        },
+        { 
+          id: 'dod', 
+          icon: <FileCheck className="w-8 h-8" />, 
+          title: 'DOD Branch Comparison', 
+          description: 'Cross-service recruiting comparison',
+          color: 'from-yellow-600 to-yellow-700'
+        },
+        { 
+          id: 'dashboard', 
+          icon: <Clipboard className="w-8 h-8" />, 
+          title: 'Market Segments', 
+          description: 'Demographic and psychographic segmentation',
+          color: 'from-gray-700 to-gray-800'
+        },
+        { 
+          id: 'input', 
+          icon: <Database className="w-8 h-8" />, 
+          title: 'Data Input Forms', 
+          description: 'Manual data entry and survey collection',
+          color: 'from-yellow-600 to-yellow-700'
+        },
+      ]
+    }
+  ];
 
   return (
-    <div className="space-y-6">
-      <div className="rounded-2xl bg-gradient-to-r from-black via-slate-900 to-black p-8 text-white shadow-xl">
-        <div className="flex items-center gap-4">
-          <Shield className="h-12 w-12 text-amber-400" />
-          <div>
-            <p className="text-xs uppercase tracking-[0.25em] text-amber-300">Commander workflow</p>
-            <h1 className="mt-2 text-3xl font-bold">One connected operational sequence</h1>
-            <p className="mt-3 max-w-4xl text-sm text-slate-200">
-              Duplicate standalone workflow views have been consolidated into a single commander-ready path that consumes the completed backend system without recreating its logic in the frontend.
-            </p>
-            <p className="mt-2 max-w-4xl text-sm text-amber-200">{perspectiveMessage}</p>
+    <div className="min-h-screen bg-gray-100">
+      {/* Main Content Area */}
+      <div className="max-w-[1600px] mx-auto py-8 px-8">
+        {/* Main Grid - Sidebar + Leaderboard */}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
+          {/* Left Sidebar - Quick Access Panels */}
+          <div className="lg:col-span-1 space-y-4">
+            
+            {/* Resources Panel */}
+            <div className="bg-white rounded-lg shadow-md border-2 border-gray-200">
+              <button
+                onClick={() => handleToggleDropdown('resources')}
+                className="w-full px-4 py-3 bg-gray-800 text-yellow-500 rounded-t-lg font-bold text-sm uppercase tracking-wider hover:bg-gray-700 transition-colors flex items-center justify-between"
+              >
+                <div className="flex items-center gap-2">
+                  <BookOpen className="w-5 h-5" />
+                  Resources
+                </div>
+                <ChevronRight className={`w-4 h-4 transition-transform ${showResources ? 'rotate-90' : ''}`} />
+              </button>
+              {showResources && (
+                <div className="p-3 space-y-2 max-h-96 overflow-y-auto">
+                  <a href="/docs/420t-quick-start.pdf" className="flex items-center gap-2 p-2 bg-gray-50 rounded hover:bg-yellow-50 hover:border-yellow-500 border border-gray-200 transition-colors text-sm">
+                    <FileCheck className="w-4 h-4 text-gray-700 flex-shrink-0" />
+                    <span className="font-medium text-gray-800">420T Quick Start</span>
+                  </a>
+                  <a href="/docs/recruiting-ops-manual.pdf" className="flex items-center gap-2 p-2 bg-gray-50 rounded hover:bg-yellow-50 hover:border-yellow-500 border border-gray-200 transition-colors text-sm">
+                    <FileCheck className="w-4 h-4 text-gray-700 flex-shrink-0" />
+                    <span className="font-medium text-gray-800">Ops Manual</span>
+                  </a>
+                  <a href="https://training.taaip.army.mil/videos" className="flex items-center gap-2 p-2 bg-gray-50 rounded hover:bg-yellow-50 hover:border-yellow-500 border border-gray-200 transition-colors text-sm">
+                    <Activity className="w-4 h-4 text-gray-700 flex-shrink-0" />
+                    <span className="font-medium text-gray-800">Training Videos</span>
+                  </a>
+                  <a href="/docs/mission-analysis-guide.pdf" className="flex items-center gap-2 p-2 bg-gray-50 rounded hover:bg-yellow-50 hover:border-yellow-500 border border-gray-200 transition-colors text-sm">
+                    <Target className="w-4 h-4 text-gray-700 flex-shrink-0" />
+                    <span className="font-medium text-gray-800">Mission Analysis</span>
+                  </a>
+                  <a href="/templates/data-entry-templates.zip" className="flex items-center gap-2 p-2 bg-gray-50 rounded hover:bg-yellow-50 hover:border-yellow-500 border border-gray-200 transition-colors text-sm">
+                    <Database className="w-4 h-4 text-gray-700 flex-shrink-0" />
+                    <span className="font-medium text-gray-800">Data Templates</span>
+                  </a>
+                </div>
+              )}
+            </div>
+
+            {/* Mission Dashboards Panel */}
+            <div className="bg-white rounded-lg shadow-md border-2 border-gray-200">
+              <button
+                onClick={() => handleToggleDropdown('mission')}
+                className="w-full px-4 py-3 bg-gray-800 text-yellow-500 rounded-t-lg font-bold text-sm uppercase tracking-wider hover:bg-gray-700 transition-colors flex items-center justify-between"
+              >
+                <div className="flex items-center gap-2">
+                  <Target className="w-5 h-5" />
+                  Dashboards
+                </div>
+                <ChevronRight className={`w-4 h-4 transition-transform ${showMissionMenu ? 'rotate-90' : ''}`} />
+              </button>
+              {showMissionMenu && (
+                <div className="p-3 space-y-2 max-h-96 overflow-y-auto">
+                  {[
+                    { id: 'funnel', icon: <TrendingUp className="w-4 h-4" />, title: 'Funnel' },
+                    { id: 'analytics', icon: <BarChart3 className="w-4 h-4" />, title: 'Analytics' },
+                    { id: 'market', icon: <Map className="w-4 h-4" />, title: 'Market' },
+                    { id: 'mission', icon: <Target className="w-4 h-4" />, title: 'Mission' },
+                    { id: 'twg', icon: <Users className="w-4 h-4" />, title: 'TWG' },
+                    { id: 'projects', icon: <Briefcase className="w-4 h-4" />, title: 'Projects' },
+                    { id: 'leads', icon: <Activity className="w-4 h-4" />, title: 'Leads' },
+                    { id: 'events', icon: <Award className="w-4 h-4" />, title: 'Events' },
+                  ].map((item) => (
+                    <button
+                      key={item.id}
+                      onClick={() => { onNavigate(item.id); handleToggleDropdown('mission'); }}
+                      className="w-full flex items-center gap-2 p-2 bg-gray-50 rounded hover:bg-yellow-50 hover:border-yellow-500 border border-gray-200 transition-colors text-left text-sm"
+                    >
+                      <div className="text-gray-700">{item.icon}</div>
+                      <span className="font-medium text-gray-800">{item.title}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Help Desk Panel */}
+            <div className="bg-white rounded-lg shadow-md border-2 border-gray-200">
+              <button
+                onClick={() => handleToggleDropdown('helpdesk')}
+                className="w-full px-4 py-3 bg-gray-800 text-yellow-500 rounded-t-lg font-bold text-sm uppercase tracking-wider hover:bg-gray-700 transition-colors flex items-center justify-between"
+              >
+                <div className="flex items-center gap-2">
+                  <HelpCircle className="w-5 h-5" />
+                  Help Desk
+                </div>
+                <ChevronRight className={`w-4 h-4 transition-transform ${showHelpDesk ? 'rotate-90' : ''}`} />
+              </button>
+              {showHelpDesk && (
+                <div className="p-3 space-y-2 max-h-96 overflow-y-auto">
+                  {[
+                    { icon: <Shield className="w-4 h-4" />, title: 'Access Request' },
+                    { icon: <TrendingUp className="w-4 h-4" />, title: 'Feature Request' },
+                    { icon: <AlertCircle className="w-4 h-4" />, title: 'Bug Report' },
+                    { icon: <Users className="w-4 h-4" />, title: 'Training' },
+                    { icon: <HelpCircle className="w-4 h-4" />, title: 'Support' },
+                  ].map((item) => (
+                    <button
+                      key={item.title}
+                      onClick={() => { onNavigate('helpdesk'); handleToggleDropdown('helpdesk'); }}
+                      className="w-full flex items-center gap-2 p-2 bg-gray-50 rounded hover:bg-yellow-50 hover:border-yellow-500 border border-gray-200 transition-colors text-left text-sm"
+                    >
+                      <div className="text-gray-700">{item.icon}</div>
+                      <span className="font-medium text-gray-800">{item.title}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Right Side - Leaderboard */}
+          <div className="lg:col-span-3">
+            <CompanyStandingsLeaderboard showExpanded={showExpanded} setShowExpanded={setShowExpanded} />
           </div>
         </div>
+
+        {/* Live Updates Banner */}
+        <LiveUpdatesBanner />
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {visibleSteps.map((step) => {
-          const Icon = step.icon;
-          return (
-            <button
-              key={step.id}
-              onClick={() => onNavigate(step.id)}
-              className="group overflow-hidden rounded-2xl border border-slate-200 bg-white text-left shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-lg"
-            >
-              <div className={`bg-gradient-to-r ${step.tone} p-4 text-white`}>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold tracking-[0.25em] text-slate-100">STEP {step.step}</span>
-                  <Icon className="h-6 w-6" />
-                </div>
-                <h2 className="mt-3 text-xl font-bold">{step.title}</h2>
-              </div>
-              <div className="p-4">
-                <p className="text-sm text-slate-600">{step.description}</p>
-                <div className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-slate-900">
-                  Open step
-                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                </div>
-              </div>
-            </button>
-          );
-        })}
-      </div>
-
-      <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-        <h2 className="text-lg font-semibold text-slate-900">What changed in this pass</h2>
-        <ul className="mt-3 list-disc space-y-2 pl-5 text-sm text-slate-700">
-          <li>Command Center now leads the workflow instead of leaving Mission Adjustment isolated.</li>
-          <li>Market, funnel, school, and ROI diagnostics are grouped into one operational decision layer.</li>
-          <li>TWG and Targeting Board now sit together as the next commander action step.</li>
-          <li>Asset, execution, and processing are presented as one downstream execution surface.</li>
-          <li>Admin-only maintenance controls stay isolated from commander and 420T workflow views.</li>
-        </ul>
+      {/* Footer */}
+      <div className="bg-black text-white py-4 px-8 border-t-2 border-yellow-500">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex justify-between items-center text-xs">
+            <div>
+              <p className="text-gray-400">
+                TAAIP v2.0 | Talent Acquisition Analytics and Intelligence Platform
+              </p>
+              <p className="text-gray-500 mt-1">
+                Proprietary System • Strategic Decision Support
+              </p>
+            </div>
+            <div className="text-right">
+              <p className="text-yellow-500 font-bold uppercase tracking-wider">
+                UNCLASSIFIED
+              </p>
+              <p className="text-gray-500 mt-1">
+                FOR OFFICIAL USE ONLY
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
