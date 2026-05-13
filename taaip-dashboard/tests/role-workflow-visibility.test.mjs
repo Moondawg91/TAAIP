@@ -7,25 +7,27 @@ const srcRoot = path.resolve(process.cwd(), 'src');
 const appSource = fs.readFileSync(path.join(srcRoot, 'App.tsx'), 'utf8');
 const homeSource = fs.readFileSync(path.join(srcRoot, 'components', 'HomeScreen.tsx'), 'utf8');
 
-test('role perspective access map is present in app shell', () => {
-  assert.ok(appSource.includes('PERSPECTIVE_TAB_ACCESS'));
-  assert.ok(appSource.includes("commander: ["));
-  assert.ok(appSource.includes("operator420t: ['home', 'command-center', 'diagnostics', 'decision-sync', 'execution', 'powerbi']"));
-  assert.ok(appSource.includes("'admin-console'"));
+// Restored HomeScreen has no role-based access — all nav open to all users via onNavigate
+test('home screen accepts onNavigate prop without role or perspective filtering', () => {
+  assert.ok(homeSource.includes('onNavigate'));
+  assert.ok(!homeSource.includes('ROLE_TAB_ACCESS'));
+  assert.ok(!homeSource.includes('userRole'));
+  assert.ok(!homeSource.includes('perspective'));
+  assert.ok(!homeSource.includes('allowedTabs'));
+  assert.ok(!homeSource.includes('visibleSections'));
 });
 
-test('operator perspective excludes admin console from workflow tabs', () => {
-  const operatorSegment = appSource.slice(
-    appSource.indexOf('operator420t:'),
-    appSource.indexOf('admin:', appSource.indexOf('operator420t:')),
-  );
-
-  assert.ok(operatorSegment.includes("'execution'"));
-  assert.ok(!operatorSegment.includes("'admin-console'"));
+test('app shell has no role-based tab filter map', () => {
+  assert.ok(!appSource.includes('ROLE_TAB_ACCESS'));
+  assert.ok(!appSource.includes("operator420t: ["));
+  assert.ok(!appSource.includes('PERSPECTIVE_TAB_ACCESS'));
 });
 
-test('home screen filters workflow steps by allowed role tabs', () => {
-  assert.ok(homeSource.includes('const visibleSteps = workflowSteps.filter((step) => allowed.has(step.id));'));
-  assert.ok(homeSource.includes('Admin/maintainer view keeps refresh and maintenance controls separate'));
-  assert.ok(homeSource.includes('420T operator view focuses on drill-down evidence'));
+test('home screen shows CompanyStandingsLeaderboard for all users', () => {
+  assert.ok(homeSource.includes('CompanyStandingsLeaderboard'));
+  assert.ok(homeSource.includes('showExpanded'));
+});
+
+test('home screen footer shows TAAIP classification banner', () => {
+  assert.ok(homeSource.includes('UNCLASSIFIED') || homeSource.includes('FOR OFFICIAL USE ONLY'));
 });

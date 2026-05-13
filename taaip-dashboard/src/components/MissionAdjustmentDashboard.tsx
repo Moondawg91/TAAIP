@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { AlertCircle, ArrowLeft, ArrowRight, RefreshCw } from 'lucide-react';
+import { AlertCircle, RefreshCw } from 'lucide-react';
 
 import { API_BASE } from '../config/api';
+import { authFetch } from '../lib/authSession';
 import { asArray, asNumber, asText, toPercent } from './operationalData';
 
 interface MissionAdjustmentDashboardProps {
@@ -28,26 +29,50 @@ export const MissionAdjustmentDashboard: React.FC<MissionAdjustmentDashboardProp
     try {
       const payload = {
         ...formState,
-        include_evidence: true,
-        force_refresh: true,
+        include_evidence: false,
+        force_refresh: false,
       };
 
-      let response = await fetch(`${API_BASE}/api/v2/decision-output/mission-adjustment-justification`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-
-      if (response.status === 404) {
-        response = await fetch(`${API_BASE}/api/v2/decision-output/mission-decrease-justification`, {
+      const postMissionAdjustment = (path: string, useAuthFetch: boolean) => {
+        const requestInit: RequestInit = {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
-        });
+          credentials: 'include',
+        };
+        return useAuthFetch
+          ? authFetch(`${API_BASE}${path}`, requestInit)
+          : fetch(`${API_BASE}${path}`, requestInit);
+      };
+
+      let response = await postMissionAdjustment('/api/v2/decision-output/mission-decrease-justification', false);
+
+      if (response.status === 401 || response.status === 403) {
+        response = await postMissionAdjustment('/api/v2/decision-output/mission-decrease-justification', true);
+      }
+
+      if (response.status === 404) {
+        response = await postMissionAdjustment('/api/v2/decision-output/mission-adjustment-justification', false);
+      }
+
+      if ((response.status === 401 || response.status === 403) && !response.ok) {
+        response = await postMissionAdjustment('/api/v2/decision-output/mission-adjustment-justification', true);
       }
 
       if (!response.ok) {
-        throw new Error(`Mission adjustment returned ${response.status}`);
+        let detail = '';
+        try {
+          const errBody = await response.json();
+          detail = errBody?.detail || errBody?.message || '';
+        } catch {
+          detail = '';
+        }
+
+        if (response.status === 401 || response.status === 403) {
+          throw new Error(detail || 'Mission analysis requires an authenticated session.');
+        }
+
+        throw new Error(detail || `Mission adjustment returned ${response.status}`);
       }
 
       const body = await response.json();
@@ -77,10 +102,10 @@ export const MissionAdjustmentDashboard: React.FC<MissionAdjustmentDashboardProp
   return (
     <div className="space-y-6">
       <div className="rounded-2xl bg-gradient-to-r from-emerald-900 via-emerald-800 to-emerald-900 p-6 text-white shadow-xl">
-        <p className="text-xs uppercase tracking-[0.25em] text-emerald-200">Step 2 of 6</p>
-        <h1 className="mt-2 text-3xl font-bold">Mission Feasibility and Adjustment</h1>
+        <p className="text-xs uppercase tracking-[0.25em] text-emerald-200">Mission Analysis</p>
+        <h1 className="mt-2 text-3xl font-bold">Mission Feasibility and Analysis</h1>
         <p className="mt-2 max-w-3xl text-sm text-emerald-100">
-          This workflow step stays inside the commander sequence and uses the live mission-adjustment endpoint rather than a standalone mock view.
+          Mission delta analysis, confidence scoring, and adjustment justification signals from the live backend.
         </p>
       </div>
 
@@ -135,7 +160,7 @@ export const MissionAdjustmentDashboard: React.FC<MissionAdjustmentDashboardProp
           <div className="flex items-start gap-3">
             <AlertCircle className="mt-0.5 h-5 w-5" />
             <div>
-              <h2 className="font-semibold">Mission adjustment unavailable</h2>
+              <h2 className="font-semibold">Mission analysis unavailable</h2>
               <p className="mt-1 text-sm text-red-700">{error}</p>
             </div>
           </div>
@@ -201,22 +226,6 @@ export const MissionAdjustmentDashboard: React.FC<MissionAdjustmentDashboardProp
         </>
       )}
 
-      <div className="flex items-center justify-between">
-        <button
-          onClick={() => onNavigate('command-center')}
-          className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back to Command Center
-        </button>
-        <button
-          onClick={() => onNavigate('diagnostics')}
-          className="inline-flex items-center gap-2 rounded-lg bg-emerald-700 px-5 py-3 text-sm font-semibold text-white hover:bg-emerald-600"
-        >
-          Continue to Diagnostics
-          <ArrowRight className="h-4 w-4" />
-        </button>
-      </div>
     </div>
   );
 };

@@ -2,9 +2,80 @@ from fastapi import APIRouter, UploadFile, File, Form, Depends, HTTPException
 from typing import Optional
 from .. import db
 from services.api import importers
-import os, hashlib, uuid, datetime
+import os, hashlib, uuid, datetime, shutil, time, threading
 
 router = APIRouter()
+
+
+def _ensure_staging_uploads_table(cur):
+    cur.execute(
+        '''
+        CREATE TABLE IF NOT EXISTS staging_uploads (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            dataset_key TEXT,
+            source_name TEXT,
+            uploaded_at TEXT,
+            raw_json TEXT,
+            validated INTEGER DEFAULT 0
+        )
+        '''
+    )
+
+
+def _update_ingest_status(
+    ingest_id: int,
+    new_status: str,
+    *,
+    set_started: bool = False,
+    set_completed: bool = False,
+    error_message: Optional[str] = None,
+):
+    conn = connect()
+    cur = conn.cursor()
+    try:
+        _ensure_staging_uploads_table(cur)
+        cur.execute("SELECT raw_json FROM staging_uploads WHERE id = ?", (int(ingest_id),))
+        row = cur.fetchone()
+        if not row:
+            return
+
+        try:
+            payload = json.loads(row[0]) if row[0] else {}
+        except Exception:
+            payload = {}
+        if not isinstance(payload, dict):
+            payload = {}
+
+        now = datetime.datetime.utcnow().isoformat()
+        payload['status'] = new_status
+        if set_started and not payload.get('started_at'):
+            payload['started_at'] = now
+        if set_completed:
+            payload['completed_at'] = now
+        if error_message:
+            payload['error_message'] = str(error_message)
+
+        cur.execute(
+            "UPDATE staging_uploads SET raw_json = ? WHERE id = ?",
+            (json.dumps(payload), int(ingest_id)),
+        )
+        conn.commit()
+    except Exception:
+        conn.rollback()
+    finally:
+        conn.close()
+
+
+def _run_ingest_progression(ingest_id: int, force_fail: bool = False):
+    """Advance ingest state from queued -> processing -> completed/failed."""
+    try:
+        _update_ingest_status(int(ingest_id), 'processing', set_started=True)
+        time.sleep(float(os.getenv('UPLOAD_INGEST_SIM_SECONDS', '2.0')))
+        if force_fail or os.getenv('UPLOAD_INGEST_FORCE_FAIL', '0') == '1':
+            raise RuntimeError('Forced ingest failure (UPLOAD_INGEST_FORCE_FAIL=1)')
+        _update_ingest_status(int(ingest_id), 'completed', set_completed=True)
+    except Exception as e:
+        _update_ingest_status(int(ingest_id), 'failed', set_started=True, set_completed=True, error_message=str(e))
 
 def now_iso():
     return datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
@@ -61,12 +132,134 @@ def create_upload(dataset_key: str = Body(...), source_name: str = Body(...), ra
     conn = connect()
     cur = conn.cursor()
     try:
+        _ensure_staging_uploads_table(cur)
         cur.execute("INSERT INTO staging_uploads(dataset_key, source_name, uploaded_at, raw_json, validated) VALUES (?,?,datetime('now'),?,0)", (dataset_key, source_name, json.dumps(raw_json)))
         conn.commit()
         return {"status": "ok", "staging_id": cur.lastrowid}
     except Exception as e:
         conn.rollback()
         return {"status": "error", "message": str(e)}
+
+
+@router.post('/v2/upload/ingest')
+@router.post('/api/v2/upload/ingest')
+def ingest_uploaded_document(payload: dict = Body(...)):
+    """Ingest trigger for Document Center uploads.
+
+    Records an ingest job row in staging_uploads so upload history surfaces can show activity.
+    """
+    document_id = str(payload.get('document_id') or '').strip()
+    category = str(payload.get('category') or 'general').strip() or 'general'
+    source = str(payload.get('source') or 'document_center').strip() or 'document_center'
+    filename = str(payload.get('filename') or '').strip()
+    force_fail = str(payload.get('force_fail') or '').strip().lower() in {'1', 'true', 'yes'}
+
+    if not document_id:
+        return {"status": "error", "message": "document_id is required"}
+
+    conn = connect()
+    cur = conn.cursor()
+    try:
+        _ensure_staging_uploads_table(cur)
+        ingest_payload = {
+            "document_id": document_id,
+            "filename": filename,
+            "category": category,
+            "source": source,
+            "status": "queued",
+            "created_at": datetime.datetime.utcnow().isoformat(),
+            "force_fail": force_fail,
+        }
+        cur.execute(
+            "INSERT INTO staging_uploads(dataset_key, source_name, uploaded_at, raw_json, validated) VALUES (?,?,datetime('now'),?,0)",
+            (category, source, json.dumps(ingest_payload)),
+        )
+        conn.commit()
+        ingest_id = int(cur.lastrowid)
+        threading.Thread(target=_run_ingest_progression, args=(ingest_id, force_fail), daemon=True).start()
+        return {
+            "status": "ok",
+            "ingest_id": ingest_id,
+            "state": "queued",
+        }
+    except Exception as e:
+        conn.rollback()
+        return {"status": "error", "message": str(e)}
+    finally:
+        conn.close()
+
+
+@router.get('/v2/upload/history')
+@router.get('/api/v2/upload/history')
+def upload_history(limit: int = 100):
+    """Upload history with ingest lifecycle fields for Processing and Mapping Status."""
+    conn = connect()
+    cur = conn.cursor()
+    try:
+        _ensure_staging_uploads_table(cur)
+        cur.execute(
+            """
+            SELECT id, dataset_key, source_name, uploaded_at, raw_json
+            FROM staging_uploads
+            ORDER BY id DESC
+            LIMIT ?
+            """,
+            (max(1, min(int(limit), 500)),),
+        )
+        rows = cur.fetchall()
+
+        history = []
+        for row in rows:
+            ingest_id = int(row[0])
+            category = str(row[1] or 'general')
+            uploaded_at = str(row[3] or '')
+            raw = row[4]
+
+            details = {}
+            rows_count = 0
+            data_preview = []
+            try:
+                parsed = json.loads(raw) if raw else {}
+                if isinstance(parsed, dict):
+                    details = parsed
+                    rows_count = 1
+                    data_preview = [parsed]
+                elif isinstance(parsed, list):
+                    rows_count = len(parsed)
+                    data_preview = parsed[:3]
+                    if parsed and isinstance(parsed[0], dict):
+                        details = parsed[0]
+            except Exception:
+                details = {}
+
+            current_status = str(details.get('status') or 'completed')
+            created_at = str(details.get('created_at') or uploaded_at)
+            started_at = details.get('started_at')
+            completed_at = details.get('completed_at')
+            error_message = details.get('error_message')
+            document_id = details.get('document_id')
+            filename = details.get('filename')
+
+            history.append({
+                'id': ingest_id,
+                'ingest_id': ingest_id,
+                'document_id': document_id,
+                'filename': filename,
+                'category': str(details.get('category') or category),
+                'current_status': current_status,
+                'created_at': created_at,
+                'started_at': started_at,
+                'completed_at': completed_at,
+                'error_message': error_message,
+                # Compatibility fields consumed by existing UI
+                'rows_count': rows_count,
+                'imported_at': uploaded_at,
+                'data': data_preview,
+            })
+
+        return {'status': 'ok', 'history': history}
+    finally:
+        conn.close()
 
 
 @router.post('/uploads/validate')
@@ -295,5 +488,96 @@ def list_uploads(limit: int = 20, offset: int = 0, dataset_key: str = None, sour
                 'uploaded_at': uploaded_at, 'validated': bool(validated_flag), 'row_count': row_count, 'preview': preview
             })
         return {'status': 'ok', 'uploads': out, 'total': total}
+    except Exception as e:
+        return {'status': 'error', 'message': str(e)}
+
+
+@router.get('/v2/upload/backups')
+@router.get('/api/v2/upload/backups')
+def list_backups(limit: int = 50):
+    """List available database backups."""
+    try:
+        backup_dir = os.getenv('TAAIP_BACKUP_DIR', './data/backups')
+        if not os.path.exists(backup_dir):
+            return {'status': 'ok', 'backups': []}
+        
+        backups = []
+        for filename in sorted(os.listdir(backup_dir), reverse=True)[:limit]:
+            filepath = os.path.join(backup_dir, filename)
+            if os.path.isfile(filepath) and filename.endswith('.sqlite3'):
+                stat = os.stat(filepath)
+                backups.append({
+                    'name': filename,
+                    'path': filepath,
+                    'created_at': datetime.datetime.fromtimestamp(stat.st_mtime).isoformat(),
+                    'size_bytes': stat.st_size
+                })
+        
+        return {'status': 'ok', 'backups': backups}
+    except Exception as e:
+        return {'status': 'error', 'message': str(e)}
+
+
+@router.post('/v2/upload/backup')
+@router.post('/api/v2/upload/backup')
+def create_backup():
+    """Create a backup of the database."""
+    try:
+        db_path = db.get_db_path()
+        backup_dir = os.getenv('TAAIP_BACKUP_DIR', './data/backups')
+        os.makedirs(backup_dir, exist_ok=True)
+        
+        # Generate backup filename with timestamp
+        timestamp = datetime.datetime.utcnow().strftime('%Y%m%d_%H%M%S')
+        backup_filename = f'taaip_backup_{timestamp}.sqlite3'
+        backup_path = os.path.join(backup_dir, backup_filename)
+        
+        # Create backup by copying the database file
+        conn = db.connect()
+        try:
+            # Close connection before copying to ensure file is not locked
+            conn.close()
+            time.sleep(0.1)
+            shutil.copy2(db_path, backup_path)
+            return {'status': 'ok', 'backup_path': backup_path, 'filename': backup_filename}
+        except Exception as e:
+            raise e
+    except Exception as e:
+        return {'status': 'error', 'message': str(e)}
+
+
+@router.post('/v2/upload/restore')
+@router.post('/api/v2/upload/restore')
+async def restore_backup(backup_path: str = Form(...)):
+    """Restore a database from backup."""
+    try:
+        current_db_path = db.get_db_path()
+        backup_dir = os.getenv('TAAIP_BACKUP_DIR', './data/backups')
+        
+        # Validate backup path is within backup directory
+        backup_realpath = os.path.realpath(backup_path)
+        backup_dir_realpath = os.path.realpath(backup_dir)
+        
+        if not backup_realpath.startswith(backup_dir_realpath):
+            return {'status': 'error', 'message': 'Invalid backup path'}
+        
+        if not os.path.exists(backup_path):
+            return {'status': 'error', 'message': 'Backup file not found'}
+        
+        # Create a safety backup of current DB before restoring
+        timestamp = datetime.datetime.utcnow().strftime('%Y%m%d_%H%M%S')
+        safety_backup = os.path.join(backup_dir, f'taaip_pre_restore_{timestamp}.sqlite3')
+        
+        # Close any existing connections
+        time.sleep(0.2)
+        
+        try:
+            # Backup current database
+            shutil.copy2(current_db_path, safety_backup)
+            # Restore from backup
+            shutil.copy2(backup_path, current_db_path)
+            return {'status': 'ok', 'message': 'Restore completed successfully', 'safety_backup': safety_backup}
+        except Exception as e:
+            return {'status': 'error', 'message': f'Restore failed: {str(e)}'}
     except Exception as e:
         return {'status': 'error', 'message': str(e)}

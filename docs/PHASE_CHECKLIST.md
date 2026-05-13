@@ -4,6 +4,25 @@ This document lists Phase 1 through Phase 9 objectives, acceptance criteria, ver
 
 > Note: No phase may be marked DONE until its verification commands and UI checks succeed when executed against a running local instance.
 
+## Frontend Identity
+
+The active frontend (`taaip-dashboard`) is a 420T analytics and operational planning platform.
+
+Navigation structure (as of April 2026):
+- **Data Hub** — live operational summary and backend health
+- **Market Intelligence** — market potential and zone-level drivers
+- **Funnel Analytics** — funnel stage breakdown and conversion rates
+- **ROI & Events** — event performance and school access effectiveness
+- **Targeting** — prioritized targeting inputs and diagnostic signals
+- **TWG** — Targeting Working Group proposals and evidence packages
+- **Targeting Board** — board directives and downstream tasking
+- **Execution & Processing** — asset deployment, flash-to-bang processing
+- **Mission Analysis** — mission delta analysis and adjustment justification
+- **Power BI / Exports** — embedded Power BI and export surfaces
+- **Admin** — user access and system maintenance (admin role only)
+
+Role model: `operator420t` (default), `admin`, `readonly`. The `commander` perspective and all commander-centered framing have been removed.
+
 ## Phase 1 — Core Platform
 
 Objective
@@ -209,6 +228,22 @@ Feature Status
   - concise command-demo runbook is published with pre-demo checks, startup sequence, fallback paths, and no-data explanation points
   - documentation maps to current runtime scripts and admin-safe refresh behavior without introducing demo data or placeholder outputs
   - verification evidence: release safety startup checks and focused regressions passing (`test_refresh_admin_workflow`, `test_runtime_preflight_contract`, frontend tests/build)
+- Demo readiness stabilization pass (timeouts, auth posture, coverage safety): DONE
+  - demo/operational mode now hard-disables local auth bypass and master override on protected endpoints
+  - `/api/command-center/overview` now serves a snapshot/cache-first phase2 payload with non-blocking refresh
+  - mission decrease justification now reuses request/signals snapshots and avoids blocking recomputation in demo flow
+  - `/api/powerbi/coverage/summary` handles missing `coverage_summary` table without returning `500`
+  - runtime preflight adds `--demo-readiness` checks for auth posture, role gates, latency, and Power BI safety
+  - focused verification evidence: `8 passed` in demo-readiness regressions (`test_demo_security_posture`, `test_demo_runtime_stabilization`, `test_powerbi_coverage_safety`, `test_demo_readiness_preflight`)
+  - live acceptance evidence (secure demo posture):
+    - no-token `/api/me`: `401`
+    - no-token `/api/refresh/sources`: `401`
+    - admin `/api/refresh/sources`: `200`
+    - commander/operator `/api/refresh/sources`: `403`
+    - command center overview: `200` in `0.348s`
+    - mission adjustment: `200` in `0.224s`
+    - Power BI coverage summary: `200` (empty list, no 500)
+    - runtime preflight demo readiness: `status=ready`
 
 Acceptance Criteria
 - `scripts/verify_app.sh` runs without error and reports PASS for required checks.

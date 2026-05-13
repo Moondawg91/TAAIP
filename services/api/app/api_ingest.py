@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, UploadFile, File, HTTPException
 from sqlalchemy.orm import Session
 from .database import get_db
-from . import auth, models_ingest, ingest, models
+from . import auth, models_ingest, models
 import os
 import json
 
@@ -46,7 +46,8 @@ def upload_file(file: UploadFile = File(...), recipe_id: int = None, user: model
         if not recipe:
             raise HTTPException(status_code=404, detail='recipe not found')
         recipe = {'id': recipe.id, 'steps': recipe.steps}
-    result = ingest.run_ingest(path, recipe=recipe, uploaded_by=user.username)
+    from . import ingest as ingest_module
+    result = ingest_module.run_ingest(path, recipe=recipe, uploaded_by=user.username)
     return result
 
 

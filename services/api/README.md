@@ -1,5 +1,7 @@
 Services API - local run
 
+The TAAIP backend API supports a 420T analytics and operational planning frontend (`taaip-dashboard`). The frontend connects to this API at `http://127.0.0.1:8000` during local development.
+
 From the repository root you can run the API using the package layout in this folder.
 
 Recommended (from repo root):
@@ -202,6 +204,42 @@ Latest verified evidence:
 - role workflow shell regressions and commander workflow regressions: `6` tests passed
 - admin refresh role-safety regression coverage: `5` tests passed
 - frontend production build completed successfully
+
+## Demo Readiness Stabilization Verification
+
+Use this focused pass before command demos to verify security posture and runtime stability without adding demo data.
+
+Secure posture:
+
+```bash
+export TAAIP_DEMO_MODE=1
+export LOCAL_DEV_AUTH_BYPASS=0
+export TAAIP_MASTER_MODE=0
+```
+
+Focused regressions:
+
+```bash
+./.venv/bin/python -m pytest -q \
+  services/api/tests/test_demo_security_posture.py \
+  services/api/tests/test_demo_runtime_stabilization.py \
+  services/api/tests/test_powerbi_coverage_safety.py \
+  services/api/tests/test_demo_readiness_preflight.py
+```
+
+Live readiness probe:
+
+```bash
+HOST=127.0.0.1 PORT=8000 LOCAL_DEV_AUTH_BYPASS=0 TAAIP_MASTER_MODE=0 \
+  ./.venv/bin/python services/api/scripts/runtime_preflight.py --demo-readiness
+```
+
+Pass criteria:
+- no-token protected endpoint access is rejected (`/api/me`, `/api/refresh/sources`)
+- admin refresh access succeeds while commander/operator are denied
+- command center and mission adjustment requests complete in under five seconds
+- Power BI coverage endpoint does not return `500` when `coverage_summary` is absent
+- readiness probe returns `status: ready`
 
 ## Production Release and Sustainment Documentation
 

@@ -39,6 +39,19 @@ PERM_ALIASES = {
     'ADMIN_AUDIT_READ': 'admin.audit.view'
 }
 
+
+def _is_demo_enforced_mode() -> bool:
+    return (
+        os.getenv("TAAIP_DEMO_MODE", "0").lower() in ("1", "true")
+        or os.getenv("TAAIP_OPERATIONAL_MODE", "0").lower() in ("1", "true")
+    )
+
+
+def _local_bypass_enabled() -> bool:
+    if _is_demo_enforced_mode():
+        return False
+    return os.environ.get("LOCAL_DEV_AUTH_BYPASS", "0").lower() in ("1", "true")
+
 def _b64url_decode(inp: str) -> bytes:
     s = inp.replace("-", "+").replace("_", "/")
     s += "=" * ((4 - len(s) % 4) % 4)
@@ -64,7 +77,7 @@ def get_current_user(request: Request) -> Dict[str, Any]:
     - Otherwise raise 401.
     """
     auth = request.headers.get("authorization") or request.headers.get("Authorization")
-    local_bypass = os.environ.get("LOCAL_DEV_AUTH_BYPASS", "0").lower() in ("1", "true")
+    local_bypass = _local_bypass_enabled()
     if auth and auth.lower().startswith("bearer "):
         token = auth.split(None, 1)[1]
         claims = _decode_jwt_payload(token)
@@ -89,7 +102,7 @@ def get_current_user(request: Request) -> Dict[str, Any]:
     if local_bypass:
         return {"username": os.getenv("DEV_USER", "dev.user"), "roles": ["usarec_admin", "system_admin"], "scopes": [{"scope_type": "USAREC", "scope_value": "USAREC"}], "permissions": ["*"]}
     # Master mode override
-    if os.environ.get('TAAIP_MASTER_MODE','0').lower() in ('1','true','True','true'):
+    if os.environ.get('TAAIP_MASTER_MODE','0').lower() in ('1','true','True','true') and not _is_demo_enforced_mode():
         return {"username": os.getenv("DEV_USER", "dev.user"), "roles": ["system_admin","usarec_admin","420t_admin"], "scopes": [{"scope_type": "USAREC", "scope_value": "USAREC"}], "permissions": ["*"]}
     raise HTTPException(status_code=401, detail="Unauthorized")
 
@@ -98,7 +111,7 @@ def require_roles(*roles: str):
     def _dep(user: Dict = Depends(get_current_user)):
         # defensive: if called outside FastAPI (user not a dict), allow local dev bypass or fail cleanly
         if not isinstance(user, dict):
-            if os.getenv('LOCAL_DEV_AUTH_BYPASS', '0').lower() in ('1', 'true'):
+            if _local_bypass_enabled():
                 return {"username": os.getenv('DEV_USER', 'dev.user'), "roles": [r.lower() for r in roles], "scopes": []}
             raise HTTPException(status_code=401, detail="Unauthorized")
         # wildcard permissions bypass
@@ -121,7 +134,7 @@ def require_any_role(*roles: str):
     def _dep(user: Dict = Depends(get_current_user)):
         # defensive: handle import-time or non-FastAPI calls gracefully when dev bypass enabled
         if not isinstance(user, dict):
-            if os.getenv('LOCAL_DEV_AUTH_BYPASS', '0').lower() in ('1', 'true'):
+            if _local_bypass_enabled():
                 return {"username": os.getenv('DEV_USER', 'dev.user'), "roles": [r.lower() for r in roles], "scopes": []}
             raise HTTPException(status_code=401, detail="Unauthorized")
         # wildcard permissions bypass
@@ -140,7 +153,7 @@ def require_any_role(*roles: str):
 def get_allowed_org_units(username: Dict = Depends(get_current_user)) -> Optional[list]:
     """Return list of allowed org_unit ids for the current user; None means unrestricted."""
     # dev bypass => allow all
-    if os.getenv('LOCAL_DEV_AUTH_BYPASS', '0').lower() in ('1', 'true'):
+    if _local_bypass_enabled():
         return None
     uname = username.get('username') if isinstance(username, dict) else username
     conn = connect()
@@ -225,7 +238,7 @@ def _log_audit(username: str, action: str, resource: str, detail: str, outcome: 
 def require_not_role(role_name: str):
     def _dep(user: Dict = Depends(get_current_user)):
         if not isinstance(user, dict):
-            if os.getenv('LOCAL_DEV_AUTH_BYPASS', '0').lower() in ('1', 'true'):
+            if _local_bypass_enabled():
                 return {"username": os.getenv('DEV_USER', 'dev.user'), "roles": [], "scopes": []}
             raise HTTPException(status_code=401, detail="Unauthorized")
         user_roles = [u.lower() for u in (user.get("roles") or [])]
@@ -239,7 +252,7 @@ def require_not_role(role_name: str):
 def require_station_scope(rsid: str):
     def _dep(user: Dict = Depends(get_current_user)):
         if not isinstance(user, dict):
-            if os.getenv('LOCAL_DEV_AUTH_BYPASS', '0').lower() in ('1', 'true'):
+            if _local_bypass_enabled():
                 return {"username": os.getenv('DEV_USER', 'dev.user'), "roles": ['usarec_admin'], "scopes": [{"scope_type": "USAREC", "scope_value": "USAREC"}]}
             raise HTTPException(status_code=401, detail="Unauthorized")
         if any((r.lower() == 'usarec_admin') for r in (user.get("roles") or [])):
@@ -276,7 +289,7 @@ SCOPE_ORDER = {
 def require_scope(min_level: str = 'STATION'):
     def _dep(username: Dict = Depends(get_current_user)) -> Optional[list]:
         # dev bypass => unrestricted
-        if os.getenv('LOCAL_DEV_AUTH_BYPASS', '0').lower() in ('1', 'true'):
+        if _local_bypass_enabled():
             return None
         uname = username.get('username') if isinstance(username, dict) else username
         conn = connect()
@@ -330,7 +343,7 @@ def require_perm(permission_key: str):
     """Dependency factory: require that the effective user has a specific permission."""
     def _dep(user: Dict = Depends(get_current_user)):
         # dev bypass
-        if os.getenv('LOCAL_DEV_AUTH_BYPASS', '0').lower() in ('1', 'true'):
+        if _local_bypass_enabled():
             return user
 
         def _perm_truthy(v):

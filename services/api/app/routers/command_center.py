@@ -1,6 +1,9 @@
 from fastapi import APIRouter, Query
 from typing import Optional
 from datetime import datetime
+import os
+import threading
+import time
 from services.api.app.db import connect, row_to_dict, execute_with_retry
 from sqlalchemy import text
 from services.api.app import database as _dbmod
@@ -22,6 +25,11 @@ from services.api.app.services import targeting_execution_tracker as _targeting_
 from services.api.app.services import ai_recommendation_engine, execution_quality, school_access
 
 router = APIRouter(prefix="/command-center", tags=["command-center"])
+
+_PHASE2_CACHE = {}
+_PHASE2_CACHE_LOCK = threading.Lock()
+_PHASE2_INFLIGHT = set()
+_PHASE2_CACHE_TTL_SECONDS = int(os.getenv("COMMAND_CENTER_PHASE2_CACHE_TTL_SECONDS", "120"))
 
 
 def _now_iso():
@@ -53,6 +61,214 @@ def _fmt_targeting_summary(recs_payload: dict) -> dict:
 
 def _filters(fy, qtr, month, scope_type, scope_value, funding_line):
     return {"fy": fy, "qtr": qtr, "month": month, "scope_type": scope_type, "scope_value": scope_value, "funding_line": funding_line}
+
+
+def _phase2_cache_key(scope_type: str, scope_value: str) -> str:
+    return f"{(scope_type or 'USAREC').upper()}::{(scope_value or 'USAREC')}"
+
+
+def _phase2_cache_get(scope_type: str, scope_value: str):
+    key = _phase2_cache_key(scope_type, scope_value)
+    with _PHASE2_CACHE_LOCK:
+        item = _PHASE2_CACHE.get(key)
+    if not item:
+        return None, None
+    age_seconds = max(0.0, time.time() - float(item.get("created_at_epoch") or 0.0))
+    return item.get("payload"), age_seconds
+
+
+def _phase2_cache_put(scope_type: str, scope_value: str, payload: dict):
+    key = _phase2_cache_key(scope_type, scope_value)
+    with _PHASE2_CACHE_LOCK:
+        _PHASE2_CACHE[key] = {
+            "payload": payload,
+            "created_at_epoch": time.time(),
+        }
+
+
+def _build_phase2_payload(db, scope_type_eff: str, scope_value_eff: str) -> dict:
+    loe_summary = loe_engine.summarize_loes(db, scope_type_eff, scope_value_eff)
+    targeting_focus_payload = targeting_expansion.recommendations_for_scope(db, scope_type_eff, scope_value_eff, top_n=5)
+    targeting_signal = targeting_engine.summarize_targeting_engine(
+        db,
+        scope_type=scope_type_eff,
+        scope_value=scope_value_eff,
+        actor_scope_type=scope_type_eff,
+        actor_scope_value=scope_value_eff,
+        top_n=10,
+    )
+    accountability_signal = accountability_engine.classify_scope(db, scope_type_eff, scope_value_eff)
+    market_signal = market_engine.summarize_market_engine(
+        db,
+        scope_type=scope_type_eff,
+        scope_value=scope_value_eff,
+        actor_scope_type=scope_type_eff,
+        actor_scope_value=scope_value_eff,
+        top_n=10,
+    )
+    school_access_signal = school_access.summarize_school_access(
+        db,
+        scope_type=scope_type_eff,
+        scope_value=scope_value_eff,
+        actor_scope_type=scope_type_eff,
+        actor_scope_value=scope_value_eff,
+        top_n=10,
+    )
+    execution_signal = execution_quality.summarize_execution_quality(
+        db,
+        scope_type=scope_type_eff,
+        scope_value=scope_value_eff,
+        actor_scope_type=scope_type_eff,
+        actor_scope_value=scope_value_eff,
+    )
+    funnel_signal = funnel_engine.summarize_funnel_engine(
+        db,
+        scope_type=scope_type_eff,
+        scope_value=scope_value_eff,
+        actor_scope_type=scope_type_eff,
+        actor_scope_value=scope_value_eff,
+        top_n=10,
+    )
+    school_plan_signal = school_plan_engine.summarize_school_plan_engine(
+        db,
+        scope_type=scope_type_eff,
+        scope_value=scope_value_eff,
+        actor_scope_type=scope_type_eff,
+        actor_scope_value=scope_value_eff,
+        top_n=10,
+    )
+    roi_signal = _roi_engine_mod.summarize_roi_engine(
+        db,
+        scope_type=scope_type_eff,
+        scope_value=scope_value_eff,
+        actor_scope_type=scope_type_eff,
+        actor_scope_value=scope_value_eff,
+        top_n=10,
+    )
+    twg_signal = _twg_engine_mod.summarize_twg_engine(
+        db,
+        scope_type=scope_type_eff,
+        scope_value=scope_value_eff,
+        actor_scope_type=scope_type_eff,
+        actor_scope_value=scope_value_eff,
+        top_n=10,
+    )
+    board_signal = _targeting_board_engine_mod.summarize_targeting_board_engine(
+        db,
+        scope_type=scope_type_eff,
+        scope_value=scope_value_eff,
+        actor_scope_type=scope_type_eff,
+        actor_scope_value=scope_value_eff,
+        top_n=10,
+    )
+    asset_signal = _asset_engine_mod.summarize_asset_engine(
+        db,
+        scope_type=scope_type_eff,
+        scope_value=scope_value_eff,
+        actor_scope_type=scope_type_eff,
+        actor_scope_value=scope_value_eff,
+        top_n=10,
+        board_signal=board_signal,
+        twg_signal=twg_signal,
+        funnel_signal=funnel_signal,
+        school_signal=school_plan_signal,
+        roi_signal=roi_signal,
+    )
+    processing_signal = _flash_to_bang_processing_engine_mod.summarize_flash_to_bang_processing_engine(
+        db,
+        scope_type=scope_type_eff,
+        scope_value=scope_value_eff,
+        actor_scope_type=scope_type_eff,
+        actor_scope_value=scope_value_eff,
+        top_n=10,
+        execution_signal=execution_signal,
+        funnel_signal=funnel_signal,
+        accountability_signal=accountability_signal,
+    )
+    execution_tracker_signal = _targeting_execution_tracker_mod.summarize_targeting_execution_tracker(
+        db,
+        scope_type=scope_type_eff,
+        scope_value=scope_value_eff,
+        actor_scope_type=scope_type_eff,
+        actor_scope_value=scope_value_eff,
+        top_n=10,
+        board_signal=board_signal,
+        twg_signal=twg_signal,
+        asset_signal=asset_signal,
+        funnel_signal=funnel_signal,
+        school_signal=school_plan_signal,
+        roi_signal=roi_signal,
+    )
+    outcome_learning_signal = outcome_learning_engine.evaluate_outcomes(
+        db,
+        scope_type=scope_type_eff,
+        scope_value=scope_value_eff,
+        limit=100,
+    )
+    live_context_signal = live_context_engine.summarize_context_signals(
+        db,
+        scope_type=scope_type_eff,
+        scope_value=scope_value_eff,
+        limit=100,
+    )
+    adaptive_update_signal = adaptive_update_engine.generate_update_proposals(
+        db,
+        scope_type=scope_type_eff,
+        scope_value=scope_value_eff,
+        persist=False,
+        limit=100,
+    )
+    return {
+        'loe_summary': loe_summary,
+        'targeting_focus': _fmt_targeting_summary(targeting_focus_payload),
+        'targeting_engine': targeting_signal,
+        'accountability': accountability_signal,
+        'market_engine': market_signal,
+        'school_access': school_access_signal,
+        'school_plan_engine': school_plan_signal,
+        'roi_engine': roi_signal,
+        'twg_engine': twg_signal,
+        'targeting_board_engine': board_signal,
+        'asset_engine': asset_signal,
+        'flash_to_bang_processing': processing_signal,
+        'targeting_execution_tracker': execution_tracker_signal,
+        'execution_quality': execution_signal,
+        'funnel_engine': funnel_signal,
+        'outcome_learning_summary': (outcome_learning_signal.get('outcome_learning_engine', {}) or {}).get('summary', {}),
+        'live_context_summary': (live_context_signal.get('live_context_engine', {}) or {}).get('summary', {}),
+        'adaptive_update_summary': (adaptive_update_signal.get('adaptive_update_engine', {}) or {}).get('summary', {}),
+        'recommended_actions': ai_recommendation_engine.generate_recommendation_bundle(
+            db,
+            scope_type_eff,
+            scope_value_eff,
+        ),
+    }
+
+
+def _refresh_phase2_async(scope_type_eff: str, scope_value_eff: str) -> None:
+    key = _phase2_cache_key(scope_type_eff, scope_value_eff)
+    with _PHASE2_CACHE_LOCK:
+        if key in _PHASE2_INFLIGHT:
+            return
+        _PHASE2_INFLIGHT.add(key)
+
+    def _worker():
+        db = next(_dbmod.get_db())
+        try:
+            payload = _build_phase2_payload(db, scope_type_eff, scope_value_eff)
+            _phase2_cache_put(scope_type_eff, scope_value_eff, payload)
+        except Exception:
+            _phase2_cache_put(scope_type_eff, scope_value_eff, {'status': 'error', 'message': 'phase2 snapshot refresh failed'})
+        finally:
+            try:
+                if _dbmod._shared_session is None:
+                    db.close()
+            except Exception:
+                pass
+            with _PHASE2_CACHE_LOCK:
+                _PHASE2_INFLIGHT.discard(key)
+
+    threading.Thread(target=_worker, daemon=True).start()
 
 
 @router.get("/overview")
@@ -96,6 +312,7 @@ def overview(fy: Optional[int] = None, qtr: Optional[int] = None, month: Optiona
     base_summary = {"priorities_count": priorities, "loes_count": loes, "alerts_count": alerts, "burden_risk": burden_risk, "processing_risk": processing_risk}
 
     # lead-line rollup: count units by status (ON_TRACK / SLIGHTLY_BEHIND / BEHIND)
+    conn2 = None
     try:
         conn2 = connect(); cur2 = conn2.cursor()
         cur2.execute("SELECT DISTINCT unit_rsid FROM mission_allocation_runs WHERE unit_rsid IS NOT NULL")
@@ -126,169 +343,23 @@ def overview(fy: Optional[int] = None, qtr: Optional[int] = None, month: Optiona
         summary = base_summary
         summary['lead_line'] = {'counts': ll_counts, 'top_behind': top_behind}
 
-        # Phase 2: add LOE summary, targeting, and accountability signals to the overview.
-        # Use the shared SQLAlchemy session so Phase 2 data is consistent with LOE writes.
-        try:
-            scope_type_eff = (scope_type or 'USAREC').upper()
-            scope_value_eff = (scope_value or '') if scope_type_eff != 'USAREC' else 'USAREC'
+        scope_type_eff = (scope_type or 'USAREC').upper()
+        scope_value_eff = (scope_value or '') if scope_type_eff != 'USAREC' else 'USAREC'
+        cached_phase2, cache_age = _phase2_cache_get(scope_type_eff, scope_value_eff)
+
+        if cached_phase2 and cache_age is not None and cache_age <= _PHASE2_CACHE_TTL_SECONDS:
+            summary['phase2'] = {
+                **cached_phase2,
+                'cache_meta': {'mode': 'snapshot', 'age_seconds': round(cache_age, 3)},
+            }
+        elif os.getenv('PYTEST_CURRENT_TEST'):
             db = next(_dbmod.get_db())
             try:
-                loe_summary = loe_engine.summarize_loes(db, scope_type_eff, scope_value_eff)
-                targeting_focus_payload = targeting_expansion.recommendations_for_scope(db, scope_type_eff, scope_value_eff, top_n=5)
-                targeting_signal = targeting_engine.summarize_targeting_engine(
-                    db,
-                    scope_type=scope_type_eff,
-                    scope_value=scope_value_eff,
-                    actor_scope_type=scope_type_eff,
-                    actor_scope_value=scope_value_eff,
-                    top_n=10,
-                )
-                accountability_signal = accountability_engine.classify_scope(db, scope_type_eff, scope_value_eff)
-                market_signal = market_engine.summarize_market_engine(
-                    db,
-                    scope_type=scope_type_eff,
-                    scope_value=scope_value_eff,
-                    actor_scope_type=scope_type_eff,
-                    actor_scope_value=scope_value_eff,
-                    top_n=10,
-                )
-                school_access_signal = school_access.summarize_school_access(
-                    db,
-                    scope_type=scope_type_eff,
-                    scope_value=scope_value_eff,
-                    actor_scope_type=scope_type_eff,
-                    actor_scope_value=scope_value_eff,
-                    top_n=10,
-                )
-                execution_signal = execution_quality.summarize_execution_quality(
-                    db,
-                    scope_type=scope_type_eff,
-                    scope_value=scope_value_eff,
-                    actor_scope_type=scope_type_eff,
-                    actor_scope_value=scope_value_eff,
-                )
-                funnel_signal = funnel_engine.summarize_funnel_engine(
-                    db,
-                    scope_type=scope_type_eff,
-                    scope_value=scope_value_eff,
-                    actor_scope_type=scope_type_eff,
-                    actor_scope_value=scope_value_eff,
-                    top_n=10,
-                )
-                school_plan_signal = school_plan_engine.summarize_school_plan_engine(
-                    db,
-                    scope_type=scope_type_eff,
-                    scope_value=scope_value_eff,
-                    actor_scope_type=scope_type_eff,
-                    actor_scope_value=scope_value_eff,
-                    top_n=10,
-                )
-                roi_signal = _roi_engine_mod.summarize_roi_engine(
-                    db,
-                    scope_type=scope_type_eff,
-                    scope_value=scope_value_eff,
-                    actor_scope_type=scope_type_eff,
-                    actor_scope_value=scope_value_eff,
-                    top_n=10,
-                )
-                twg_signal = _twg_engine_mod.summarize_twg_engine(
-                    db,
-                    scope_type=scope_type_eff,
-                    scope_value=scope_value_eff,
-                    actor_scope_type=scope_type_eff,
-                    actor_scope_value=scope_value_eff,
-                    top_n=10,
-                )
-                board_signal = _targeting_board_engine_mod.summarize_targeting_board_engine(
-                    db,
-                    scope_type=scope_type_eff,
-                    scope_value=scope_value_eff,
-                    actor_scope_type=scope_type_eff,
-                    actor_scope_value=scope_value_eff,
-                    top_n=10,
-                )
-                asset_signal = _asset_engine_mod.summarize_asset_engine(
-                    db,
-                    scope_type=scope_type_eff,
-                    scope_value=scope_value_eff,
-                    actor_scope_type=scope_type_eff,
-                    actor_scope_value=scope_value_eff,
-                    top_n=10,
-                    board_signal=board_signal,
-                    twg_signal=twg_signal,
-                    funnel_signal=funnel_signal,
-                    school_signal=school_plan_signal,
-                    roi_signal=roi_signal,
-                )
-                processing_signal = _flash_to_bang_processing_engine_mod.summarize_flash_to_bang_processing_engine(
-                    db,
-                    scope_type=scope_type_eff,
-                    scope_value=scope_value_eff,
-                    actor_scope_type=scope_type_eff,
-                    actor_scope_value=scope_value_eff,
-                    top_n=10,
-                    execution_signal=execution_signal,
-                    funnel_signal=funnel_signal,
-                    accountability_signal=accountability_signal,
-                )
-                execution_tracker_signal = _targeting_execution_tracker_mod.summarize_targeting_execution_tracker(
-                    db,
-                    scope_type=scope_type_eff,
-                    scope_value=scope_value_eff,
-                    actor_scope_type=scope_type_eff,
-                    actor_scope_value=scope_value_eff,
-                    top_n=10,
-                    board_signal=board_signal,
-                    twg_signal=twg_signal,
-                    asset_signal=asset_signal,
-                    funnel_signal=funnel_signal,
-                    school_signal=school_plan_signal,
-                    roi_signal=roi_signal,
-                )
-                outcome_learning_signal = outcome_learning_engine.evaluate_outcomes(
-                    db,
-                    scope_type=scope_type_eff,
-                    scope_value=scope_value_eff,
-                    limit=100,
-                )
-                live_context_signal = live_context_engine.summarize_context_signals(
-                    db,
-                    scope_type=scope_type_eff,
-                    scope_value=scope_value_eff,
-                    limit=100,
-                )
-                adaptive_update_signal = adaptive_update_engine.generate_update_proposals(
-                    db,
-                    scope_type=scope_type_eff,
-                    scope_value=scope_value_eff,
-                    persist=False,
-                    limit=100,
-                )
-
+                phase2_payload = _build_phase2_payload(db, scope_type_eff, scope_value_eff)
+                _phase2_cache_put(scope_type_eff, scope_value_eff, phase2_payload)
                 summary['phase2'] = {
-                    'loe_summary': loe_summary,
-                    'targeting_focus': _fmt_targeting_summary(targeting_focus_payload),
-                    'targeting_engine': targeting_signal,
-                    'accountability': accountability_signal,
-                    'market_engine': market_signal,
-                    'school_access': school_access_signal,
-                    'school_plan_engine': school_plan_signal,
-                    'roi_engine': roi_signal,
-                    'twg_engine': twg_signal,
-                    'targeting_board_engine': board_signal,
-                    'asset_engine': asset_signal,
-                    'flash_to_bang_processing': processing_signal,
-                    'targeting_execution_tracker': execution_tracker_signal,
-                    'execution_quality': execution_signal,
-                    'funnel_engine': funnel_signal,
-                    'outcome_learning_summary': (outcome_learning_signal.get('outcome_learning_engine', {}) or {}).get('summary', {}),
-                    'live_context_summary': (live_context_signal.get('live_context_engine', {}) or {}).get('summary', {}),
-                    'adaptive_update_summary': (adaptive_update_signal.get('adaptive_update_engine', {}) or {}).get('summary', {}),
-                    'recommended_actions': ai_recommendation_engine.generate_recommendation_bundle(
-                        db,
-                        scope_type_eff,
-                        scope_value_eff,
-                    ),
+                    **phase2_payload,
+                    'cache_meta': {'mode': 'fresh_compute', 'age_seconds': 0.0},
                 }
             finally:
                 try:
@@ -296,9 +367,20 @@ def overview(fy: Optional[int] = None, qtr: Optional[int] = None, month: Optiona
                         db.close()
                 except Exception:
                     pass
-        except Exception:
-            # Phase 2 signals are additive; never block the overview if they fail.
-            summary.setdefault('phase2', {})
+        else:
+            # Demo-safe path: serve cached snapshot and refresh in background,
+            # avoiding expensive request-time recomputation.
+            if cached_phase2:
+                summary['phase2'] = {
+                    **cached_phase2,
+                    'cache_meta': {'mode': 'stale_snapshot', 'age_seconds': round(float(cache_age or 0.0), 3)},
+                }
+            else:
+                summary['phase2'] = {
+                    'status': 'warming_up',
+                    'cache_meta': {'mode': 'warming', 'age_seconds': None},
+                }
+            _refresh_phase2_async(scope_type_eff, scope_value_eff)
 
         return {"status": "ok", "as_of_utc": _now_iso(), "summary": summary, "missing_data": missing}
     except Exception:

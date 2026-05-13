@@ -3,6 +3,7 @@ from typing import Optional
 from fastapi import APIRouter, HTTPException, Depends
 from ..db import connect
 from .. import org_utils
+from ..services.org_unit_resolver import resolve_subordinate_units
 # fallback static hierarchy when DB lacks full USAREC entries
 from database import rsid_hierarchy
 from .rbac import require_perm
@@ -135,12 +136,9 @@ def children(unit_rsid: str = 'USAREC', parent_rsid: Optional[str] = None, echel
 
 @router.get('/descendants')
 def descendants(unit_rsid: str = 'USAREC', depth: int = 50, user: dict = Depends(require_perm('dashboards.view'))):
-    conn = connect()
-    try:
-        rs = org_utils.get_descendant_units(conn, unit_rsid, max_depth=depth)
-        return {'unit_rsid': unit_rsid, 'descendants': rs}
-    finally:
-        conn.close()
+    rs = resolve_subordinate_units(unit_rsid)
+    return {'unit_rsid': unit_rsid, 'descendants': rs}
+
 
 
 @router.get('/tree')

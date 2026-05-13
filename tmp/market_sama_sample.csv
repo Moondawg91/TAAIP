@@ -1,3 +1,0 @@
-id,as_of_date,fy,qtr,month,component,echelon_type,unit_value,rsid_prefix,station_rsid,zip_code,zip_category,targeted,army_potential,dod_potential,potential_remaining,p2p
-sample1,2026-02-20,2026,Q1,2,army,BN,BN-1,1,ST001,12345,MK,1,150,200,150,0.75
-sample2,2026-02-20,2026,Q1,2,army,BN,BN-1,1,ST002,23456,MW,0,80,120,80,0.67

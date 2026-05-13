@@ -1,84 +1,154 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
+import { SystemControlPage, SystemControlTab } from './SystemControlPage';
 
 export const AdminConsole: React.FC = () => {
-  const [backups, setBackups] = useState<Array<{name: string; path: string; created_at?: string}>>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  type AdminView =
+    | 'dashboard'
+    | 'system-control'
+    | 'user-role-management'
+    | 'helpdesk'
+    | 'database-management'
+    | 'system-backup'
+    | 'database-sync'
+    | 'audit-reports';
 
-  const fetchBackups = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch('/api/v2/upload/backups');
-      const data = await res.json();
-      if (data.status === 'ok' && Array.isArray(data.backups)) setBackups(data.backups);
-      else setError('Failed to load backups');
-    } catch (e: any) {
-      setError(e?.message || String(e));
-    } finally { setLoading(false); }
+  const [activeView, setActiveView] = useState<AdminView>('dashboard');
+  const [systemControlInitialTab, setSystemControlInitialTab] = useState<SystemControlTab>('activity_logs');
+
+  const isAdmin = true;
+
+  const cards: Array<{ id: string; title: string; subtitle: string; action: () => void }> = [
+    {
+      id: 'user-role-management',
+      title: 'User & Role Management',
+      subtitle: 'Manage user accounts and permission roles',
+      action: () => setActiveView('user-role-management'),
+    },
+    {
+      id: 'helpdesk',
+      title: 'Helpdesk',
+      subtitle: 'Review support tickets and request workflows',
+      action: () => setActiveView('helpdesk'),
+    },
+    {
+      id: 'system-control',
+      title: 'System Control',
+      subtitle: 'Access logs, maintenance windows, and platform health',
+      action: () => {
+        setSystemControlInitialTab('activity_logs');
+        setActiveView('system-control');
+      },
+    },
+    {
+      id: 'database-management',
+      title: 'Database Management (McLeod)',
+      subtitle: 'Manage McLeod data lifecycle and maintenance actions',
+      action: () => setActiveView('database-management'),
+    },
+    {
+      id: 'system-update-logs',
+      title: 'System Update Logs',
+      subtitle: 'Open update release history and approval status',
+      action: () => {
+        setSystemControlInitialTab('update_logs');
+        setActiveView('system-control');
+      },
+    },
+    {
+      id: 'system-backup',
+      title: 'System Backup',
+      subtitle: 'View backup coverage and backup operations',
+      action: () => setActiveView('system-backup'),
+    },
+    {
+      id: 'database-sync',
+      title: 'Database Sync',
+      subtitle: 'Monitor synchronization jobs and health status',
+      action: () => setActiveView('database-sync'),
+    },
+    {
+      id: 'audit-reports',
+      title: 'Audit Reports',
+      subtitle: 'Inspect compliance and operational audit reporting',
+      action: () => setActiveView('audit-reports'),
+    },
+  ];
+
+  const visibleCards = isAdmin ? cards : cards.filter((card) => card.id !== 'database-management');
+
+  if (activeView === 'system-control') {
+    return (
+      <SystemControlPage
+        initialTab={systemControlInitialTab}
+        onBack={() => setActiveView('dashboard')}
+      />
+    );
+  }
+
+  const placeholderTitle: Record<Exclude<AdminView, 'dashboard' | 'system-control'>, string> = {
+    'user-role-management': 'User & Role Management',
+    helpdesk: 'Helpdesk',
+    'database-management': 'Database Management (McLeod)',
+    'system-backup': 'System Backup',
+    'database-sync': 'Database Sync',
+    'audit-reports': 'Audit Reports',
   };
 
-  useEffect(() => { fetchBackups(); }, []);
+  if (activeView !== 'dashboard') {
+    return (
+      <div className="min-h-screen p-6" style={{ background: '#081B33' }}>
+        <div className="mb-5">
+          <h1 className="text-[18px] font-bold tracking-[0.04em] uppercase text-[#F3F5F7]">{placeholderTitle[activeView]}</h1>
+          <p className="mt-1 text-[12px] text-[#64748B]">Admin function view</p>
+        </div>
 
-  const createBackup = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch('/api/v2/upload/backup', { method: 'POST' });
-      const data = await res.json();
-      if (data.status === 'ok') await fetchBackups();
-      else setError('Failed to create backup');
-    } catch (e: any) { setError(e?.message || String(e)); }
-    finally { setLoading(false); }
-  };
-
-  const restore = async (backupPath: string) => {
-    if (!window.confirm('Restore backup? This will overwrite current DB.')) return;
-    setLoading(true);
-    try {
-      const form = new FormData();
-      form.append('backup', backupPath);
-      const res = await fetch('/api/v2/upload/restore', { method: 'POST', body: form });
-      const data = await res.json();
-      if (data.status === 'ok') {
-        alert('Restore triggered successfully');
-      } else {
-        setError('Restore failed');
-      }
-    } catch (e: any) { setError(e?.message || String(e)); }
-    finally { setLoading(false); }
-  };
+        <div className="rounded-md border border-[#1D3A5C] bg-[#0E2847] p-6">
+          <p className="text-[13px] text-[#94A3B8]">
+            This section is prepared as a placeholder for the selected admin function.
+          </p>
+          <button
+            onClick={() => setActiveView('dashboard')}
+            className="mt-4 rounded-md border border-[#1D3A5C] bg-transparent px-3 py-1.5 text-[12px] font-semibold text-[#60A5FA] hover:text-[#F3F5F7]"
+          >
+            Back to Dashboard
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="p-4">
-      <h2 className="text-2xl font-bold mb-4">Admin Console</h2>
-      <div className="mb-4">
-        <button onClick={createBackup} className="px-3 py-2 bg-yellow-500 text-black rounded font-semibold">Create Backup</button>
-        <button onClick={fetchBackups} className="ml-3 px-3 py-2 bg-gray-800 text-yellow-500 rounded">Refresh</button>
+    <div className="min-h-screen p-6" style={{ background: '#081B33' }}>
+      <div className="mb-5">
+        <h1 className="text-[18px] font-bold tracking-[0.04em] uppercase text-[#F3F5F7]">Admin Console</h1>
+        <p className="text-[12px] text-[#64748B]">System administration and operational controls</p>
       </div>
 
-      {loading && <div>Loading...</div>}
-      {error && <div className="text-red-500">{error}</div>}
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+        {visibleCards.slice(0, 5).map((card) => (
+          <button
+            key={card.id}
+            onClick={card.action}
+            className="rounded-md border border-[#1D3A5C] bg-[#0E2847] p-4 text-left transition hover:bg-[#142F52]"
+          >
+            <h3 className="text-[13px] font-semibold text-[#F3F5F7]">{card.title}</h3>
+            <p className="mt-2 text-[12px] text-[#94A3B8]">{card.subtitle}</p>
+          </button>
+        ))}
+      </div>
 
-      <table className="w-full table-auto border-collapse">
-        <thead>
-          <tr className="text-left">
-            <th className="px-2 py-1">Name</th>
-            <th className="px-2 py-1">Created</th>
-            <th className="px-2 py-1">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {backups.map((b) => (
-            <tr key={b.path} className="border-t">
-              <td className="px-2 py-2">{b.name}</td>
-              <td className="px-2 py-2">{b.created_at || '—'}</td>
-              <td className="px-2 py-2">
-                <button onClick={() => restore(b.path)} className="px-2 py-1 bg-red-600 text-white rounded">Restore</button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3 mt-6">
+        {visibleCards.slice(5, 8).map((card) => (
+          <button
+            key={card.id}
+            onClick={card.action}
+            className="rounded-md border border-[#1D3A5C] bg-[#0E2847] p-4 text-left transition hover:bg-[#142F52]"
+          >
+            <h3 className="text-[13px] font-semibold text-[#F3F5F7]">{card.title}</h3>
+            <p className="mt-2 text-[12px] text-[#94A3B8]">{card.subtitle}</p>
+          </button>
+        ))}
+      </div>
     </div>
   );
 };

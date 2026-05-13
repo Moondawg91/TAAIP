@@ -190,6 +190,58 @@ def _normalize_value(val, dtype):
 def run_import(path: str, ingest_run_id: int = None, importer_id: str = None, db: Session = None, uploaded_by: str = None) -> dict:
     """Run import for a given file path and importer spec. Returns summary dict."""
     result = {"status": "completed", "row_count_in": 0, "row_count_loaded": 0, "errors": []}
+    conn = None
+    cur = None
+
+    def _fetchone(sql: str, params: dict = None):
+        if db is not None:
+            rr = db.execute(text(sql), params or {}).fetchone()
+            try:
+                return dict(rr) if rr is not None else None
+            except Exception:
+                return rr
+        c = cur.execute(sql, params or {})
+        rr = c.fetchone()
+        if rr is None:
+            return None
+        try:
+            return dict(rr)
+        except Exception:
+            return rr
+
+    def _execute(sql: str, params: dict = None):
+        if db is not None:
+            return db.execute(text(sql), params or {})
+        return cur.execute(sql, params or {})
+
+    def _commit():
+        if db is not None:
+            db.commit()
+        else:
+            conn.commit()
+
+    if db is None:
+        conn = get_db_conn()
+        cur = conn.cursor()
+
+    def _table_columns(table_name: str):
+        try:
+            if db is not None:
+                rows = db.execute(text(f"PRAGMA table_info('{table_name}')")).fetchall()
+            else:
+                rows = cur.execute(f"PRAGMA table_info('{table_name}')").fetchall()
+            out = []
+            for rr in rows:
+                try:
+                    out.append(rr[1])
+                except Exception:
+                    try:
+                        out.append(rr.get('name'))
+                    except Exception:
+                        pass
+            return [c for c in out if c]
+        except Exception:
+            return []
     try:
         df = read_file_to_df(path)
     except Exception as e:
@@ -216,8 +268,6 @@ def run_import(path: str, ingest_run_id: int = None, importer_id: str = None, db
             except Exception:
                 pass
         else:
-            conn = get_db_conn()
-            cur = conn.cursor()
             for i, r in enumerate(rows, start=1):
                 cur.execute("INSERT INTO stg_raw_dataset (ingest_run_id, row_number, row_json) VALUES (?, ?, ?)", (ingest_run_id, i, json.dumps(r)))
             conn.commit()
@@ -266,15 +316,22 @@ def run_import(path: str, ingest_run_id: int = None, importer_id: str = None, db
                         if not v:
                             continue
                         # exact rsid
-                        row = db.execute("SELECT rsid FROM org_unit WHERE upper(rsid)=:v LIMIT 1", {"v": str(v).upper()}).fetchone()
+                        row = _fetchone("SELECT rsid FROM org_unit WHERE upper(rsid)=:v LIMIT 1", {"v": str(v).upper()})
                         if row:
-                            found = row['rsid']
+                            found = row['rsid'] if isinstance(row, dict) else row[0]
                             break
-                        # display_name contains
-                        row = db.execute("SELECT rsid FROM org_unit WHERE upper(display_name) LIKE :v LIMIT 1", {"v": f"%{str(v).upper()}%"}).fetchone()
-                        if row:
-                            found = row['rsid']
-                            break
+                        # name/display_name contains (schema-compatible)
+                        org_cols = set(_table_columns('org_unit'))
+                        if 'display_name' in org_cols:
+                            row = _fetchone("SELECT rsid FROM org_unit WHERE upper(display_name) LIKE :v LIMIT 1", {"v": f"%{str(v).upper()}%"})
+                            if row:
+                                found = row['rsid'] if isinstance(row, dict) else row[0]
+                                break
+                        if 'name' in org_cols:
+                            row = _fetchone("SELECT rsid FROM org_unit WHERE upper(name) LIKE :v LIMIT 1", {"v": f"%{str(v).upper()}%"})
+                            if row:
+                                found = row['rsid'] if isinstance(row, dict) else row[0]
+                                break
                     ctx[to_field] = found
                 elif fn == 'normalize_dates':
                     from_field = args.get('from')
@@ -315,22 +372,26 @@ def run_import(path: str, ingest_run_id: int = None, importer_id: str = None, db
                     rs = ctx.get(rsid_field)
                     found = None
                     if rs:
-                        row = db.execute("SELECT rsid FROM org_unit WHERE upper(rsid)=:v LIMIT 1", {"v": str(rs).upper()}).fetchone()
+                        row = _fetchone("SELECT rsid FROM org_unit WHERE upper(rsid)=:v LIMIT 1", {"v": str(rs).upper()})
                         if row:
-                            found = row['rsid']
+                            found = row['rsid'] if isinstance(row, dict) else row[0]
                     if not found and z:
                         # placeholder lookup by zip -> org_unit (best-effort)
-                        row = db.execute("SELECT rsid FROM org_unit WHERE location_zip = :z LIMIT 1", {"z": str(z)}).fetchone()
+                        row = _fetchone("SELECT rsid FROM org_unit WHERE location_zip = :z LIMIT 1", {"z": str(z)})
                         if row:
-                            found = row['rsid']
+                            found = row['rsid'] if isinstance(row, dict) else row[0]
                     ctx[to] = found
                 elif fn == 'cbsa_lookup':
                     # upsert cbsa dim
                     code = ctx.get(args.get('codeField'))
                     name = ctx.get(args.get('nameField'))
                     if code:
-                        db.execute("INSERT OR REPLACE INTO dim_market_cbsa (cbsa_code, cbsa_name, state, urbanicity_pct, updated_at) VALUES (:code, :name, :st, :u, datetime('now'))", {"code": code, "name": name, "st": None, "u": None})
-                        db.commit()
+                        if _table_columns('dim_market_cbsa'):
+                            _execute(
+                                "INSERT OR REPLACE INTO dim_market_cbsa (cbsa_code, cbsa_name, state, urbanicity_pct, updated_at) VALUES (:code, :name, :st, :u, datetime('now'))",
+                                {"code": code, "name": name, "st": None, "u": None},
+                            )
+                            _commit()
             if ctx is not None:
                 out_rows.append(ctx)
         except Exception as e:
@@ -338,26 +399,79 @@ def run_import(path: str, ingest_run_id: int = None, importer_id: str = None, db
 
     # load out_rows into target table(s)
     loaded = 0
-    conn = get_db_conn()
-    cur = conn.cursor()
     target = spec.get('target', {})
     ttable = target.get('table')
     mode = target.get('mode')
     pkeys = target.get('primaryKey', [])
+    table_cols = set(_table_columns(ttable))
+
+    def _shape_row_for_table(row: dict) -> dict:
+        shaped = {k: v for k, v in row.items() if k in table_cols}
+
+        # Compatibility mappings for legacy canonical schemas.
+        if ttable == 'fact_enlistments':
+            if 'unit_rsid' in table_cols and not shaped.get('unit_rsid'):
+                shaped['unit_rsid'] = row.get('unit_rsid') or row.get('rsid')
+            if 'echelon' in table_cols and not shaped.get('echelon'):
+                shaped['echelon'] = row.get('grain') or row.get('echelon')
+            if 'period_date' in table_cols and not shaped.get('period_date'):
+                shaped['period_date'] = row.get('period_start') or row.get('period') or row.get('period_end')
+            if 'contracts' in table_cols and shaped.get('contracts') is None:
+                if str(row.get('metric_name') or '').lower() in {'enlistments', 'contracts'}:
+                    shaped['contracts'] = row.get('metric_value')
+                elif row.get('enlistments') is not None:
+                    shaped['contracts'] = row.get('enlistments')
+                elif row.get('value') is not None:
+                    shaped['contracts'] = row.get('value')
+
+        if ttable == 'fact_zip_potential':
+            if 'zip' in table_cols and not shaped.get('zip'):
+                shaped['zip'] = row.get('zip') or row.get('zip5')
+            if 'category' in table_cols and not shaped.get('category'):
+                shaped['category'] = row.get('category') or row.get('market_category')
+            if 'metric_name' in table_cols and not shaped.get('metric_name'):
+                shaped['metric_name'] = row.get('metric_name') or 'value'
+            if 'metric_value' in table_cols and shaped.get('metric_value') is None:
+                shaped['metric_value'] = row.get('metric_value') if row.get('metric_value') is not None else row.get('value')
+
+        if 'source_system' in table_cols and not shaped.get('source_system'):
+            shaped['source_system'] = spec.get('sourceSystem') or spec.get('dataset_key') or importer_id
+        if 'dataset_key' in table_cols and not shaped.get('dataset_key'):
+            shaped['dataset_key'] = spec.get('dataset_key') or importer_id
+        if 'ingest_run_id' in table_cols and not shaped.get('ingest_run_id'):
+            shaped['ingest_run_id'] = ingest_run_id
+
+        # remove explicit id to avoid accidental PK collisions on AUTOINCREMENT tables
+        shaped.pop('id', None)
+        return shaped
+
     for r in out_rows:
         try:
+            insert_row = _shape_row_for_table(r)
+            if not insert_row:
+                continue
+
             # if upsert mode and primary keys provided, delete existing
             if mode == 'upsert' and pkeys:
-                where = ' AND '.join([f"{k} = :{k}" for k in pkeys])
-                params = {k: r.get(k) for k in pkeys}
-                cur.execute(f"DELETE FROM {ttable} WHERE {where}", params)
+                usable_keys = [k for k in pkeys if k in table_cols and insert_row.get(k) is not None]
+                if usable_keys:
+                    where = ' AND '.join([f"{k} = :k_{k}" for k in usable_keys])
+                    params = {f"k_{k}": insert_row.get(k) for k in usable_keys}
+                    _execute(f"DELETE FROM {ttable} WHERE {where}", params)
             # build insert columns from r keys
-            cols = ','.join(r.keys())
-            vals = ','.join(['?'] * len(r))
-            cur.execute(f"INSERT INTO {ttable} ({cols}) VALUES ({vals})", tuple(r.values()))
+            cols = ','.join(insert_row.keys())
+            val_names = [f"v_{i}" for i, _ in enumerate(insert_row.keys())]
+            vals = ','.join([f":{vn}" for vn in val_names])
+            params = {vn: list(insert_row.values())[i] for i, vn in enumerate(val_names)}
+            _execute(f"INSERT INTO {ttable} ({cols}) VALUES ({vals})", params)
             loaded += 1
         except Exception as e:
             result['errors'].append({"row": r, "error": str(e)})
-    conn.commit()
+    _commit()
     result['row_count_loaded'] = loaded
+    if db is None and conn is not None:
+        try:
+            conn.close()
+        except Exception:
+            pass
     return result

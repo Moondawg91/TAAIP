@@ -4,6 +4,7 @@ and to persist/get annotations, decisions, and outcomes.
 """
 from typing import Optional, List, Dict, Any
 import json
+import sqlite3
 from datetime import datetime
 from .doctrine import ENGINE as DOCTRINE_ENGINE
 from .confidence import score_confidence
@@ -175,7 +176,11 @@ def fetch_recommendations_with_annotations(conn, recommendation_table: str = 'fu
     cur = conn.cursor()
     # Fetch latest recommendations with optional annotations (left join)
     q = f"SELECT r.*, e.explanation, e.doctrine_summary, e.doctrine_refs_json FROM {recommendation_table} r LEFT JOIN recommendation_explanations e ON e.recommendation_table=? AND e.recommendation_id=r.id ORDER BY r.created_at DESC LIMIT ?"
-    cur.execute(q, (recommendation_table, limit))
+    try:
+        cur.execute(q, (recommendation_table, limit))
+    except sqlite3.OperationalError:
+        # Missing recommendation tables should degrade gracefully to an empty list.
+        return []
     rows = [dict(zip([c[0] for c in cur.description], row)) for row in cur.fetchall()]
     # normalize doctrine_refs_json into dict
     for r in rows:

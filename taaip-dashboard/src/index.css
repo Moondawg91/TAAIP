@@ -1,10 +1,73 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 body {
   @apply antialiased;
+  font-family: 'Inter', sans-serif;
+  background-color: #081B33;
+  color: #F3F5F7;
 }
+
+/* ── Dark-theme cascade for legacy light components ─────────────────────────── */
+/* Override common Tailwind light classes within the app to match dark theme.   */
+
+/* White/light backgrounds → dark navy */
+.bg-white { background-color: #0E2847 !important; }
+.bg-gray-50 { background-color: #0A1E35 !important; }
+.bg-gray-100 { background-color: #0A1E35 !important; }
+.bg-slate-50 { background-color: #0A1E35 !important; }
+.bg-slate-100 { background-color: #081B33 !important; }
+
+/* Light borders → dark borders */
+.border-gray-100,
+.border-gray-200 { border-color: #1D3A5C !important; }
+.border-slate-100,
+.border-slate-200 { border-color: #1D3A5C !important; }
+
+/* Dark text on light backgrounds → light text */
+.text-gray-900,
+.text-gray-800 { color: #F3F5F7 !important; }
+.text-gray-700,
+.text-gray-600 { color: #94A3B8 !important; }
+.text-gray-500,
+.text-gray-400 { color: #64748B !important; }
+.text-slate-800,
+.text-slate-900 { color: #F3F5F7 !important; }
+.text-slate-600,
+.text-slate-700 { color: #94A3B8 !important; }
+.text-slate-500 { color: #64748B !important; }
+
+/* Shadows → none in dark theme */
+.shadow,
+.shadow-sm,
+.shadow-xl { box-shadow: none !important; }
+
+/* rounded-xl/2xl → match our smaller radius  */
+.rounded-2xl,
+.rounded-xl { border-radius: 6px !important; }
+
+/* Legacy input/select elements → dark */
+select, input, textarea {
+  background-color: #0E2847;
+  border-color: #1D3A5C;
+  color: #F3F5F7;
+}
+select option {
+  background-color: #0E2847;
+  color: #F3F5F7;
+}
+
+/* Form inputs using Tailwind classes */
+.border-gray-300 { border-color: #1D3A5C !important; }
+.border-slate-300 { border-color: #1D3A5C !important; }
+
+/* Gradient hero banners → plain dark header */
+.bg-gradient-to-r { background: #060F1E !important; }
+
+/* ── END dark override ───────────────────────────────────────────────────────── */
 
 @keyframes fade-in {
   from {
@@ -19,4 +82,24 @@ body {
 
 .animate-fade-in {
   animation: fade-in 0.5s ease-in-out;
+}
+
+.taaip-theme {
+  font-family: var(--taaip-font-family);
+}
+
+.taaip-surface {
+  background-color: var(--taaip-color-primaryNavy);
+}
+
+.taaip-border-subtle {
+  border: 1px solid #64748b59;
+}
+
+.taaip-text-primary {
+  color: var(--taaip-color-white);
+}
+
+.taaip-text-secondary {
+  color: var(--taaip-color-slateGray);
 }

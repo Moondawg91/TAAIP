@@ -4,7 +4,9 @@ set -euo pipefail
 PROJECT_ROOT="$(cd "$(dirname "$0")" && pwd)"
 cd "$PROJECT_ROOT"
 
-zsh "$PROJECT_ROOT/scripts/taaip_preflight.sh"
+# Source preflight so exported env vars (e.g., DATABASE_URL) persist
+# for the backend/frontend processes launched below.
+source "$PROJECT_ROOT/scripts/taaip_preflight.sh"
 
 cleanup() {
   kill $(lsof -t -i:8000) 2>/dev/null || true

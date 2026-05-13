@@ -1,5 +1,11 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Body, Depends
 from typing import Optional, List, Any
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError
+from datetime import datetime
+import sqlite3
+import threading
+import time
+import os
 from ..db import connect
 from .rbac import get_allowed_org_units
 from fastapi.responses import StreamingResponse
@@ -10,6 +16,404 @@ from services.api.app.services import accountability_engine, execution_quality, 
 from services.api.app.services import outcome_learning_engine, live_context_engine, adaptive_update_engine
 
 router = APIRouter(prefix="/powerbi", tags=["powerbi"])
+
+_OP_DATASET_CACHE = {}
+_OP_DATASET_LOCK = threading.Lock()
+_OP_DATASET_INFLIGHT = set()
+_OP_DATASET_CACHE_TTL_SECONDS = int(os.getenv("OP_COMMAND_DATASET_CACHE_TTL_SECONDS", "120"))
+_OP_DATASET_COMPONENT_TIMEOUT_SECONDS = float(os.getenv("OP_COMMAND_DATASET_COMPONENT_TIMEOUT_SECONDS", "1.5"))
+
+
+def _op_dataset_key(scope_type: str, scope_value: str) -> str:
+    return f"{(scope_type or 'USAREC').upper()}::{scope_value or 'USAREC'}"
+
+
+def _op_cache_get(scope_type: str, scope_value: str):
+    key = _op_dataset_key(scope_type, scope_value)
+    with _OP_DATASET_LOCK:
+        item = _OP_DATASET_CACHE.get(key)
+    if not item:
+        return None, None
+    age = max(0.0, time.time() - float(item.get("created_at_epoch") or 0.0))
+    return item, age
+
+
+def _op_cache_put(scope_type: str, scope_value: str, block_data: dict, component_status: dict, partial_blocks: list):
+    key = _op_dataset_key(scope_type, scope_value)
+    with _OP_DATASET_LOCK:
+        _OP_DATASET_CACHE[key] = {
+            "created_at_epoch": time.time(),
+            "block_data": block_data,
+            "component_status": component_status,
+            "partial_blocks": partial_blocks,
+        }
+
+
+def _empty_block_data(scope_type: str, scope_value: str) -> dict:
+    """Return the canonical empty per-block dataset used for warming/stale states."""
+    diagnostics_data = {
+        'scope_type': scope_type,
+        'scope_value': scope_value,
+        'market_engine_summary': {},
+        'market_qma_summary': {},
+        'school_access_summary': {},
+        'execution_quality_summary': {},
+        'funnel_engine_summary': {},
+        'targeting_engine_summary': {},
+        'school_plan_summary': {},
+        'school_plan_prioritized_schools': [],
+        'school_plan_actions': [],
+        'roi_summary': {},
+        'roi_prioritized_events': [],
+        'roi_recommendations': [],
+        'roi_event_type_performance': [],
+        'accountability': {},
+        'outcome_learning_summary': {},
+        'outcome_evaluations': [],
+        'outcome_pattern_performance': [],
+        'live_context_summary': {},
+        'context_signals': [],
+        'adaptive_update_summary': {},
+        'adaptive_update_proposals': [],
+        'adaptive_update_versioning': {},
+    }
+    twg_data = {
+        'twg_summary': {},
+        'twg_prioritized_items': [],
+        'twg_due_outs': [],
+        'twg_board_candidates': [],
+        'board_summary': {},
+        'board_prioritized_items': [],
+        'board_decisions': [],
+        'board_directed_shifts': [],
+        'board_downstream_tasks': [],
+    }
+    execution_data = {
+        'asset_summary': {},
+        'asset_distribution': [],
+        'asset_recommended_shifts': [],
+        'asset_execution_constraints': [],
+        'processing_summary': {},
+        'processing_items': [],
+        'processing_stalled_items': [],
+        'processing_overdue_items': [],
+        'processing_escalations': [],
+        'processing_scorecard': {},
+        'execution_summary': {},
+        'execution_items': [],
+        'blocked_items': [],
+        'off_track_items': [],
+        'escalations': [],
+        'execution_scorecard': {},
+    }
+    return {
+        'diagnostics': {'status': 'ok', 'data': diagnostics_data},
+        'twg': {'status': 'ok', 'data': twg_data},
+        'execution': {'status': 'ok', 'data': execution_data},
+    }
+
+
+def _run_component_with_timeout(name: str, producer, default_value, component_status: dict, partial_blocks: list):
+    start = time.perf_counter()
+    executor = ThreadPoolExecutor(max_workers=1)
+    future = executor.submit(producer)
+    try:
+        value = future.result(timeout=_OP_DATASET_COMPONENT_TIMEOUT_SECONDS)
+        component_status[name] = {
+            "status": "ok",
+            "elapsed_ms": round((time.perf_counter() - start) * 1000.0, 2),
+        }
+        return value
+    except FuturesTimeoutError:
+        future.cancel()
+        component_status[name] = {
+            "status": "timeout",
+            "elapsed_ms": round((time.perf_counter() - start) * 1000.0, 2),
+        }
+        partial_blocks.append(name)
+        return default_value
+    except Exception as exc:
+        component_status[name] = {
+            "status": "error",
+            "elapsed_ms": round((time.perf_counter() - start) * 1000.0, 2),
+            "detail": str(exc)[:180],
+        }
+        partial_blocks.append(name)
+        return default_value
+    finally:
+        executor.shutdown(wait=False, cancel_futures=True)
+
+
+def _compute_operational_dataset(db, scope_type: str, scope_value: str):
+    component_status = {}
+    partial_blocks = []
+
+    market = _run_component_with_timeout(
+        "market",
+        lambda: market_engine.summarize_market_engine(db, scope_type, scope_value, scope_type, scope_value),
+        {"market_engine": {"summary": {}}},
+        component_status,
+        partial_blocks,
+    )
+    access = _run_component_with_timeout(
+        "school_access",
+        lambda: school_access.summarize_school_access(db, scope_type, scope_value, scope_type, scope_value),
+        {"school_access": {"summary": {}}},
+        component_status,
+        partial_blocks,
+    )
+    execq = _run_component_with_timeout(
+        "execution_quality",
+        lambda: execution_quality.summarize_execution_quality(db, scope_type, scope_value, scope_type, scope_value),
+        {"execution_quality": {"summary": {}}},
+        component_status,
+        partial_blocks,
+    )
+    funnel = _run_component_with_timeout(
+        "funnel",
+        lambda: funnel_engine.summarize_funnel_engine(db, scope_type, scope_value, scope_type, scope_value),
+        {"funnel_engine": {"summary": {}}},
+        component_status,
+        partial_blocks,
+    )
+    targeting = _run_component_with_timeout(
+        "targeting",
+        lambda: targeting_engine.summarize_targeting_engine(db, scope_type, scope_value, scope_type, scope_value),
+        {"targeting_engine": {"summary": {}}},
+        component_status,
+        partial_blocks,
+    )
+    school_plan = _run_component_with_timeout(
+        "school_plan",
+        lambda: school_plan_engine.summarize_school_plan_engine(db, scope_type, scope_value, scope_type, scope_value),
+        {"school_plan_engine": {"summary": {}, "prioritized_schools": [], "school_recruiting_plan": []}},
+        component_status,
+        partial_blocks,
+    )
+    roi = _run_component_with_timeout(
+        "roi",
+        lambda: _roi_engine_mod.summarize_roi_engine(db, scope_type, scope_value, scope_type, scope_value),
+        {"roi_engine": {"summary": {}, "prioritized_events": [], "roi_recommendations": [], "event_type_performance": []}},
+        component_status,
+        partial_blocks,
+    )
+    twg = _run_component_with_timeout(
+        "twg",
+        lambda: _twg_engine_mod.summarize_twg_engine(db, scope_type, scope_value, scope_type, scope_value),
+        {"twg_engine": {"summary": {}, "prioritized_items": [], "due_outs": [], "board_candidates": []}},
+        component_status,
+        partial_blocks,
+    )
+    board = _run_component_with_timeout(
+        "targeting_board",
+        lambda: _targeting_board_engine_mod.summarize_targeting_board_engine(db, scope_type, scope_value, scope_type, scope_value),
+        {"targeting_board_engine": {"summary": {}, "prioritized_board_items": [], "board_decisions": [], "directed_shifts": [], "downstream_twg_tasks": []}},
+        component_status,
+        partial_blocks,
+    )
+    accountability = _run_component_with_timeout(
+        "accountability",
+        lambda: accountability_engine.classify_scope(db, scope_type, scope_value),
+        {},
+        component_status,
+        partial_blocks,
+    )
+    assets = _run_component_with_timeout(
+        "assets",
+        lambda: _asset_engine_mod.summarize_asset_engine(
+            db, scope_type, scope_value, scope_type, scope_value,
+            board_signal=board, twg_signal=twg, funnel_signal=funnel,
+            school_signal=school_plan, roi_signal=roi,
+        ),
+        {"asset_engine": {"summary": {}, "asset_distribution": [], "recommended_shifts": [], "execution_constraints": []}},
+        component_status,
+        partial_blocks,
+    )
+    processing = _run_component_with_timeout(
+        "flash_to_bang_processing",
+        lambda: _flash_to_bang_processing_engine_mod.summarize_flash_to_bang_processing_engine(
+            db, scope_type, scope_value, scope_type, scope_value,
+            execution_signal=execq, funnel_signal=funnel, accountability_signal=accountability,
+        ),
+        {"flash_to_bang_processing_engine": {"summary": {}, "processing_items": [], "stalled_items": [], "overdue_items": [], "escalations": [], "processing_scorecard": {}}},
+        component_status,
+        partial_blocks,
+    )
+    execution_tracker = _run_component_with_timeout(
+        "targeting_execution_tracker",
+        lambda: _targeting_execution_tracker_mod.summarize_targeting_execution_tracker(
+            db, scope_type, scope_value, scope_type, scope_value,
+            board_signal=board, twg_signal=twg, asset_signal=assets,
+            funnel_signal=funnel, school_signal=school_plan, roi_signal=roi,
+        ),
+        {"targeting_execution_tracker": {"summary": {}, "execution_items": [], "blocked_items": [], "off_track_items": [], "escalations": [], "execution_scorecard": {}}},
+        component_status,
+        partial_blocks,
+    )
+    outcome_learning = _run_component_with_timeout(
+        "outcome_learning",
+        lambda: outcome_learning_engine.evaluate_outcomes(db, scope_type, scope_value, limit=200),
+        {"outcome_learning_engine": {"summary": {}, "outcome_evaluations": [], "pattern_performance": []}},
+        component_status,
+        partial_blocks,
+    )
+    live_context = _run_component_with_timeout(
+        "live_context",
+        lambda: live_context_engine.summarize_context_signals(db, scope_type, scope_value, limit=200),
+        {"live_context_engine": {"summary": {}, "context_signals": []}},
+        component_status,
+        partial_blocks,
+    )
+    adaptive_update = _run_component_with_timeout(
+        "adaptive_update",
+        lambda: adaptive_update_engine.generate_update_proposals(db, scope_type, scope_value, persist=False, limit=200),
+        {"adaptive_update_engine": {"summary": {}, "update_proposals": [], "versioning": {}}},
+        component_status,
+        partial_blocks,
+    )
+
+    # --- Build per-block grouped output ---
+    diagnostics_data = {
+        'scope_type': scope_type,
+        'scope_value': scope_value,
+        'market_engine_summary': market.get('market_engine', {}).get('summary', {}),
+        'market_qma_summary': market.get('market_engine', {}).get('summary', {}),
+        'school_access_summary': access.get('school_access', {}).get('summary', {}),
+        'execution_quality_summary': execq.get('execution_quality', {}).get('summary', {}),
+        'funnel_engine_summary': funnel.get('funnel_engine', {}).get('summary', {}),
+        'targeting_engine_summary': targeting.get('targeting_engine', {}).get('summary', {}),
+        'school_plan_summary': school_plan.get('school_plan_engine', {}).get('summary', {}),
+        'school_plan_prioritized_schools': school_plan.get('school_plan_engine', {}).get('prioritized_schools', []),
+        'school_plan_actions': school_plan.get('school_plan_engine', {}).get('school_recruiting_plan', []),
+        'roi_summary': roi.get('roi_engine', {}).get('summary', {}),
+        'roi_prioritized_events': roi.get('roi_engine', {}).get('prioritized_events', []),
+        'roi_recommendations': roi.get('roi_engine', {}).get('roi_recommendations', []),
+        'roi_event_type_performance': roi.get('roi_engine', {}).get('event_type_performance', []),
+        'accountability': accountability,
+        'outcome_learning_summary': outcome_learning.get('outcome_learning_engine', {}).get('summary', {}),
+        'outcome_evaluations': outcome_learning.get('outcome_learning_engine', {}).get('outcome_evaluations', []),
+        'outcome_pattern_performance': outcome_learning.get('outcome_learning_engine', {}).get('pattern_performance', []),
+        'live_context_summary': live_context.get('live_context_engine', {}).get('summary', {}),
+        'context_signals': live_context.get('live_context_engine', {}).get('context_signals', []),
+        'adaptive_update_summary': adaptive_update.get('adaptive_update_engine', {}).get('summary', {}),
+        'adaptive_update_proposals': adaptive_update.get('adaptive_update_engine', {}).get('update_proposals', []),
+        'adaptive_update_versioning': adaptive_update.get('adaptive_update_engine', {}).get('versioning', {}),
+    }
+    twg_data = {
+        'twg_summary': twg.get('twg_engine', {}).get('summary', {}),
+        'twg_prioritized_items': twg.get('twg_engine', {}).get('prioritized_items', []),
+        'twg_due_outs': twg.get('twg_engine', {}).get('due_outs', []),
+        'twg_board_candidates': twg.get('twg_engine', {}).get('board_candidates', []),
+        'board_summary': board.get('targeting_board_engine', {}).get('summary', {}),
+        'board_prioritized_items': board.get('targeting_board_engine', {}).get('prioritized_board_items', []),
+        'board_decisions': board.get('targeting_board_engine', {}).get('board_decisions', []),
+        'board_directed_shifts': board.get('targeting_board_engine', {}).get('directed_shifts', []),
+        'board_downstream_tasks': board.get('targeting_board_engine', {}).get('downstream_twg_tasks', []),
+    }
+    execution_data = {
+        'asset_summary': assets.get('asset_engine', {}).get('summary', {}),
+        'asset_distribution': assets.get('asset_engine', {}).get('asset_distribution', []),
+        'asset_recommended_shifts': assets.get('asset_engine', {}).get('recommended_shifts', []),
+        'asset_execution_constraints': assets.get('asset_engine', {}).get('execution_constraints', []),
+        'processing_summary': processing.get('flash_to_bang_processing_engine', {}).get('summary', {}),
+        'processing_items': processing.get('flash_to_bang_processing_engine', {}).get('processing_items', []),
+        'processing_stalled_items': processing.get('flash_to_bang_processing_engine', {}).get('stalled_items', []),
+        'processing_overdue_items': processing.get('flash_to_bang_processing_engine', {}).get('overdue_items', []),
+        'processing_escalations': processing.get('flash_to_bang_processing_engine', {}).get('escalations', []),
+        'processing_scorecard': processing.get('flash_to_bang_processing_engine', {}).get('processing_scorecard', {}),
+        'execution_summary': execution_tracker.get('targeting_execution_tracker', {}).get('summary', {}),
+        'execution_items': execution_tracker.get('targeting_execution_tracker', {}).get('execution_items', []),
+        'blocked_items': execution_tracker.get('targeting_execution_tracker', {}).get('blocked_items', []),
+        'off_track_items': execution_tracker.get('targeting_execution_tracker', {}).get('off_track_items', []),
+        'escalations': execution_tracker.get('targeting_execution_tracker', {}).get('escalations', []),
+        'execution_scorecard': execution_tracker.get('targeting_execution_tracker', {}).get('execution_scorecard', {}),
+    }
+
+    _BLOCK_COMPONENTS = {
+        'diagnostics': ['market', 'school_access', 'execution_quality', 'funnel', 'targeting',
+                         'school_plan', 'roi', 'accountability', 'outcome_learning', 'live_context', 'adaptive_update'],
+        'twg': ['twg', 'targeting_board'],
+        'execution': ['assets', 'flash_to_bang_processing', 'targeting_execution_tracker'],
+    }
+
+    def _block_agg_status(block_name):
+        worst = 'ok'
+        msgs = []
+        for c in _BLOCK_COMPONENTS.get(block_name, []):
+            cs = component_status.get(c, {}).get('status', 'ok')
+            if cs == 'error':
+                worst = 'error'
+                msgs.append(f'{c} errored')
+            elif cs == 'timeout' and worst != 'error':
+                worst = 'timeout'
+                msgs.append(f'{c} timed out')
+        return worst, ('; '.join(msgs) if msgs else None)
+
+    diag_status, diag_msg = _block_agg_status('diagnostics')
+    twg_status, twg_msg = _block_agg_status('twg')
+    exec_status, exec_msg = _block_agg_status('execution')
+
+    block_data = {
+        'diagnostics': {'status': diag_status, 'data': diagnostics_data,
+                         **({'message': diag_msg} if diag_msg else {})},
+        'twg': {'status': twg_status, 'data': twg_data,
+                **({'message': twg_msg} if twg_msg else {})},
+        'execution': {'status': exec_status, 'data': execution_data,
+                      **({'message': exec_msg} if exec_msg else {})},
+    }
+
+    return block_data, component_status, partial_blocks
+
+
+def _refresh_operational_dataset_async(scope_type: str, scope_value: str):
+    key = _op_dataset_key(scope_type, scope_value)
+    with _OP_DATASET_LOCK:
+        if key in _OP_DATASET_INFLIGHT:
+            return
+        _OP_DATASET_INFLIGHT.add(key)
+
+    def _worker():
+        db = next(_dbmod.get_db())
+        try:
+            block_data, component_status, partial_blocks = _compute_operational_dataset(db, scope_type, scope_value)
+            _op_cache_put(scope_type, scope_value, block_data, component_status, partial_blocks)
+        finally:
+            try:
+                if _dbmod._shared_session is None:
+                    db.close()
+            except Exception:
+                pass
+            with _OP_DATASET_LOCK:
+                _OP_DATASET_INFLIGHT.discard(key)
+
+    threading.Thread(target=_worker, daemon=True).start()
+
+
+@router.post('/embedToken')
+def get_powerbi_embed_token(payload: Optional[dict] = Body(default=None)):
+    report_id = (payload or {}).get('reportId')
+    workspace_id = os.getenv('POWERBI_WORKSPACE_ID')
+    configured = bool(
+        os.getenv('POWERBI_CLIENT_ID')
+        and os.getenv('POWERBI_CLIENT_SECRET')
+        and os.getenv('POWERBI_TENANT_ID')
+        and workspace_id
+    )
+    if not configured:
+        return {
+            'status': 'not_configured',
+            'configured': False,
+            'reportId': report_id,
+            'workspaceId': workspace_id,
+            'message': 'Power BI embedding is not configured in this environment. Set Power BI tenant/client/workspace credentials to enable live embedding.',
+        }
+    return {
+        'status': 'not_configured',
+        'configured': False,
+        'reportId': report_id,
+        'workspaceId': workspace_id,
+        'message': 'Power BI credentials are present but live token brokerage is disabled in this runtime. Use configured feed endpoints until embed brokerage is enabled.',
+    }
 
 
 def _fetch_as_dicts(cur):
@@ -248,20 +652,25 @@ def get_coverage_summary(scope: Optional[str] = "USAREC", as_of: Optional[str] =
     conn = db.connect()
     try:
         cur = conn.cursor()
-        if as_of:
-            cur.execute("SELECT * FROM coverage_summary WHERE scope=? AND as_of=? ORDER BY category", (scope, as_of))
-        else:
-            cur.execute("SELECT as_of FROM coverage_summary WHERE scope=? ORDER BY as_of DESC LIMIT 1", (scope,))
-            row = cur.fetchone()
-            if not row:
+        try:
+            if as_of:
+                cur.execute("SELECT * FROM coverage_summary WHERE scope=? AND as_of=? ORDER BY category", (scope, as_of))
+                latest = as_of
+            else:
+                cur.execute("SELECT as_of FROM coverage_summary WHERE scope=? ORDER BY as_of DESC LIMIT 1", (scope,))
+                row = cur.fetchone()
+                if not row:
+                    return []
+                latest = row[0]
+                cur.execute("SELECT * FROM coverage_summary WHERE scope=? AND as_of=? ORDER BY category", (scope, latest))
+            rows = _fetch_as_dicts(cur)
+            if rows:
+                return rows
+            return []
+        except sqlite3.OperationalError as exc:
+            if "no such table" in str(exc).lower() and "coverage_summary" in str(exc).lower():
                 return []
-            latest = row[0]
-            cur.execute("SELECT * FROM coverage_summary WHERE scope=? AND as_of=? ORDER BY category", (scope, latest))
-        rows = _fetch_as_dicts(cur)
-        out = rows
-        if out:
-            return out
-        return {"rows": [], "schema": ["id","scope","as_of","category","count","source","notes"]}
+            raise
     finally:
         conn.close()
 
@@ -542,117 +951,76 @@ def export_fact_marketing_csv(org_unit_id: Optional[str] = None, start: Optional
 def operational_command_dataset(scope_type: str = 'USAREC', scope_value: str = 'USAREC'):
     st = (scope_type or 'USAREC').upper()
     sv = (scope_value or 'USAREC')
-    db = next(_dbmod.get_db())
-    try:
-        market = market_engine.summarize_market_engine(db, st, sv, st, sv)
-        access = school_access.summarize_school_access(db, st, sv, st, sv)
-        execq = execution_quality.summarize_execution_quality(db, st, sv, st, sv)
-        funnel = funnel_engine.summarize_funnel_engine(db, st, sv, st, sv)
-        targeting = targeting_engine.summarize_targeting_engine(db, st, sv, st, sv)
-        school_plan = school_plan_engine.summarize_school_plan_engine(db, st, sv, st, sv)
-        roi = _roi_engine_mod.summarize_roi_engine(db, st, sv, st, sv)
-        twg = _twg_engine_mod.summarize_twg_engine(db, st, sv, st, sv)
-        board = _targeting_board_engine_mod.summarize_targeting_board_engine(db, st, sv, st, sv)
-        accountability = accountability_engine.classify_scope(db, st, sv)
-        assets = _asset_engine_mod.summarize_asset_engine(
-            db,
-            st,
-            sv,
-            st,
-            sv,
-            board_signal=board,
-            twg_signal=twg,
-            funnel_signal=funnel,
-            school_signal=school_plan,
-            roi_signal=roi,
-        )
-        processing = _flash_to_bang_processing_engine_mod.summarize_flash_to_bang_processing_engine(
-            db,
-            st,
-            sv,
-            st,
-            sv,
-            execution_signal=execq,
-            funnel_signal=funnel,
-            accountability_signal=accountability,
-        )
-        execution_tracker = _targeting_execution_tracker_mod.summarize_targeting_execution_tracker(
-            db,
-            st,
-            sv,
-            st,
-            sv,
-            board_signal=board,
-            twg_signal=twg,
-            asset_signal=assets,
-            funnel_signal=funnel,
-            school_signal=school_plan,
-            roi_signal=roi,
-        )
-        outcome_learning = outcome_learning_engine.evaluate_outcomes(db, st, sv, limit=200)
-        live_context = live_context_engine.summarize_context_signals(db, st, sv, limit=200)
-        adaptive_update = adaptive_update_engine.generate_update_proposals(db, st, sv, persist=False, limit=200)
 
+    if os.getenv('PYTEST_CURRENT_TEST'):
+        db = next(_dbmod.get_db())
+        try:
+            block_data, component_status, partial_blocks = _compute_operational_dataset(db, st, sv)
+            return {
+                'status': 'ok',
+                'data': {
+                    **block_data,
+                    '_meta': {
+                        'mode': 'sync_compute',
+                        'partial': bool(partial_blocks),
+                        'partial_blocks': partial_blocks,
+                        'component_status': component_status,
+                        'generated_at': datetime.utcnow().isoformat() + 'Z',
+                    },
+                },
+            }
+        finally:
+            try:
+                if _dbmod._shared_session is None:
+                    db.close()
+            except Exception:
+                pass
+
+    cached, age = _op_cache_get(st, sv)
+    if cached and age is not None and age <= _OP_DATASET_CACHE_TTL_SECONDS:
         return {
             'status': 'ok',
             'data': {
-                'scope_type': st,
-                'scope_value': sv,
-                'market_engine_summary': market.get('market_engine', {}).get('summary', {}),
-                'market_qma_summary': market.get('market_engine', {}).get('summary', {}),
-                'school_access_summary': access.get('school_access', {}).get('summary', {}),
-                'execution_quality_summary': execq.get('execution_quality', {}).get('summary', {}),
-                'funnel_engine_summary': funnel.get('funnel_engine', {}).get('summary', {}),
-                'targeting_engine_summary': targeting.get('targeting_engine', {}).get('summary', {}),
-                'school_plan_summary': school_plan.get('school_plan_engine', {}).get('summary', {}),
-                'school_plan_prioritized_schools': school_plan.get('school_plan_engine', {}).get('prioritized_schools', []),
-                'school_plan_actions': school_plan.get('school_plan_engine', {}).get('school_recruiting_plan', []),
-                'roi_summary': roi.get('roi_engine', {}).get('summary', {}),
-                'roi_prioritized_events': roi.get('roi_engine', {}).get('prioritized_events', []),
-                'roi_recommendations': roi.get('roi_engine', {}).get('roi_recommendations', []),
-                'roi_event_type_performance': roi.get('roi_engine', {}).get('event_type_performance', []),
-                'twg_summary': twg.get('twg_engine', {}).get('summary', {}),
-                'twg_prioritized_items': twg.get('twg_engine', {}).get('prioritized_items', []),
-                'twg_due_outs': twg.get('twg_engine', {}).get('due_outs', []),
-                'twg_board_candidates': twg.get('twg_engine', {}).get('board_candidates', []),
-                'board_summary': board.get('targeting_board_engine', {}).get('summary', {}),
-                'board_prioritized_items': board.get('targeting_board_engine', {}).get('prioritized_board_items', []),
-                'board_decisions': board.get('targeting_board_engine', {}).get('board_decisions', []),
-                'board_directed_shifts': board.get('targeting_board_engine', {}).get('directed_shifts', []),
-                'board_downstream_tasks': board.get('targeting_board_engine', {}).get('downstream_twg_tasks', []),
-                'asset_summary': assets.get('asset_engine', {}).get('summary', {}),
-                'asset_distribution': assets.get('asset_engine', {}).get('asset_distribution', []),
-                'asset_recommended_shifts': assets.get('asset_engine', {}).get('recommended_shifts', []),
-                'asset_execution_constraints': assets.get('asset_engine', {}).get('execution_constraints', []),
-                'processing_summary': processing.get('flash_to_bang_processing_engine', {}).get('summary', {}),
-                'processing_items': processing.get('flash_to_bang_processing_engine', {}).get('processing_items', []),
-                'processing_stalled_items': processing.get('flash_to_bang_processing_engine', {}).get('stalled_items', []),
-                'processing_overdue_items': processing.get('flash_to_bang_processing_engine', {}).get('overdue_items', []),
-                'processing_escalations': processing.get('flash_to_bang_processing_engine', {}).get('escalations', []),
-                'processing_scorecard': processing.get('flash_to_bang_processing_engine', {}).get('processing_scorecard', {}),
-                'execution_summary': execution_tracker.get('targeting_execution_tracker', {}).get('summary', {}),
-                'execution_items': execution_tracker.get('targeting_execution_tracker', {}).get('execution_items', []),
-                'blocked_items': execution_tracker.get('targeting_execution_tracker', {}).get('blocked_items', []),
-                'off_track_items': execution_tracker.get('targeting_execution_tracker', {}).get('off_track_items', []),
-                'escalations': execution_tracker.get('targeting_execution_tracker', {}).get('escalations', []),
-                'execution_scorecard': execution_tracker.get('targeting_execution_tracker', {}).get('execution_scorecard', {}),
-                'accountability': accountability,
-                'outcome_learning_summary': outcome_learning.get('outcome_learning_engine', {}).get('summary', {}),
-                'outcome_evaluations': outcome_learning.get('outcome_learning_engine', {}).get('outcome_evaluations', []),
-                'outcome_pattern_performance': outcome_learning.get('outcome_learning_engine', {}).get('pattern_performance', []),
-                'live_context_summary': live_context.get('live_context_engine', {}).get('summary', {}),
-                'context_signals': live_context.get('live_context_engine', {}).get('context_signals', []),
-                'adaptive_update_summary': adaptive_update.get('adaptive_update_engine', {}).get('summary', {}),
-                'adaptive_update_proposals': adaptive_update.get('adaptive_update_engine', {}).get('update_proposals', []),
-                'adaptive_update_versioning': adaptive_update.get('adaptive_update_engine', {}).get('versioning', {}),
-            }
+                **cached.get('block_data', _empty_block_data(st, sv)),
+                '_meta': {
+                    'mode': 'snapshot',
+                    'age_seconds': round(age, 3),
+                    'partial': bool(cached.get('partial_blocks')),
+                    'partial_blocks': cached.get('partial_blocks', []),
+                    'component_status': cached.get('component_status', {}),
+                },
+            },
         }
-    finally:
-        try:
-            if _dbmod._shared_session is None:
-                db.close()
-        except Exception:
-            pass
+
+    if cached:
+        _refresh_operational_dataset_async(st, sv)
+        return {
+            'status': 'ok',
+            'data': {
+                **cached.get('block_data', _empty_block_data(st, sv)),
+                '_meta': {
+                    'mode': 'stale_snapshot',
+                    'age_seconds': round(float(age or 0.0), 3),
+                    'partial': bool(cached.get('partial_blocks')),
+                    'partial_blocks': cached.get('partial_blocks', []),
+                    'component_status': cached.get('component_status', {}),
+                },
+            },
+        }
+
+    _refresh_operational_dataset_async(st, sv)
+    return {
+        'status': 'ok',
+        'data': {
+            **_empty_block_data(st, sv),
+            '_meta': {
+                'mode': 'warming',
+                'partial': True,
+                'partial_blocks': ['warming'],
+                'component_status': {},
+            },
+        },
+    }
 
 
 @router.get('/fact_funnel')

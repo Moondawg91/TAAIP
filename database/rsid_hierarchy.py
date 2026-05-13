@@ -1,149 +1,265 @@
-"""
-USAREC Organizational Hierarchy - RSID Structure
-Enables filtering from USAREC down to station level
-"""
+"""Canonical USAREC RSID hierarchy loaded from the provided master sheet."""
 
-# USAREC RSID Hierarchy Mapping
-USAREC_HIERARCHY = {
-    "USAREC": {
-        "name": "U.S. Army Recruiting Command",
-        "level": "command",
-        "brigades": {
-            "1BDE": {
-                "name": "1st Recruiting Brigade",
-                "battalions": {
-                    "1BN": {"name": "1st Battalion", "stations": ["1-1", "1-2", "1-3"]},
-                    "2BN": {"name": "2nd Battalion", "stations": ["2-1", "2-2", "2-3"]},
-                    "3BN": {"name": "3rd Battalion", "stations": ["3-1", "3-2", "3-3"]},
-                }
-            },
-            "2BDE": {
-                "name": "2nd Recruiting Brigade",
-                "battalions": {
-                    "4BN": {"name": "4th Battalion", "stations": ["4-1", "4-2", "4-3"]},
-                    "5BN": {"name": "5th Battalion", "stations": ["5-1", "5-2", "5-3"]},
-                    "6BN": {"name": "6th Battalion", "stations": ["6-1", "6-2", "6-3"]},
-                }
-            },
-            "3BDE": {
-                "name": "3rd Recruiting Brigade",
-                "battalions": {
-                    "7BN": {"name": "7th Battalion", "stations": ["7-1", "7-2", "7-3"]},
-                    "8BN": {"name": "8th Battalion", "stations": ["8-1", "8-2", "8-3"]},
-                    "9BN": {"name": "9th Battalion", "stations": ["9-1", "9-2", "9-3"]},
-                }
-            },
-            "4BDE": {
-                "name": "4th Recruiting Brigade",
-                "battalions": {
-                    "10BN": {"name": "10th Battalion", "stations": ["10-1", "10-2", "10-3"]},
-                    "11BN": {"name": "11th Battalion", "stations": ["11-1", "11-2", "11-3"]},
-                    "12BN": {"name": "12th Battalion", "stations": ["12-1", "12-2", "12-3"]},
-                }
-            },
-            "5BDE": {
-                "name": "5th Recruiting Brigade",
-                "battalions": {
-                    "13BN": {"name": "13th Battalion", "stations": ["13-1", "13-2", "13-3"]},
-                    "14BN": {"name": "14th Battalion", "stations": ["14-1", "14-2", "14-3"]},
-                    "15BN": {"name": "15th Battalion", "stations": ["15-1", "15-2", "15-3"]},
-                }
-            },
-            "6BDE": {
-                "name": "6th Recruiting Brigade",
-                "battalions": {
-                    "16BN": {"name": "16th Battalion", "stations": ["16-1", "16-2", "16-3"]},
-                    "17BN": {"name": "17th Battalion", "stations": ["17-1", "17-2", "17-3"]},
-                    "18BN": {"name": "18th Battalion", "stations": ["18-1", "18-2", "18-3"]},
-                }
-            },
+import csv
+from functools import lru_cache
+from pathlib import Path
+from typing import Dict, List, Optional, Tuple
+
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
+CANONICAL_CSV_PATH = REPO_ROOT / "services" / "api" / ".data" / "usarec_master_units.csv"
+
+
+def _split_code_name(value: str) -> Tuple[str, str]:
+    text = (value or "").strip()
+    if not text:
+        return "", ""
+    if " - " in text:
+        code, name = text.split(" - ", 1)
+        return code.strip(), name.strip()
+    return text, text
+
+
+def _require_csv() -> Path:
+    if not CANONICAL_CSV_PATH.exists():
+        raise FileNotFoundError(f"Canonical RSID CSV not found: {CANONICAL_CSV_PATH}")
+    return CANONICAL_CSV_PATH
+
+
+@lru_cache(maxsize=1)
+def _load_rows() -> List[Dict[str, str]]:
+    csv_path = _require_csv()
+    with csv_path.open(newline="", encoding="utf-8-sig") as handle:
+        reader = csv.DictReader(handle)
+        required = {"CMD", "BDE", "BN", "CO", "STN"}
+        headers = set(reader.fieldnames or [])
+        missing = sorted(required - headers)
+        if missing:
+            raise ValueError(f"Canonical RSID CSV missing columns: {missing}")
+        rows = []
+        for raw in reader:
+            row = {key: (raw.get(key) or "").strip() for key in required}
+            if all(row.values()):
+                rows.append(row)
+        return rows
+
+
+@lru_cache(maxsize=1)
+def _build_hierarchy() -> Dict[str, Dict[str, object]]:
+    rows = _load_rows()
+    hierarchy: Dict[str, Dict[str, object]] = {
+        "USAREC": {
+            "name": "USAREC",
+            "level": "CMD",
+            "brigades": {},
         }
     }
-}
 
-def get_all_brigades():
-    """Get list of all brigades"""
+    brigades = hierarchy["USAREC"]["brigades"]
+    for row in rows:
+        command_code = row["CMD"]
+        if command_code != "USAREC":
+            raise ValueError(f"Unexpected command code in canonical RSID CSV: {command_code}")
+
+        brigade_rsid = row["BDE"]
+        battalion_rsid, battalion_name = _split_code_name(row["BN"])
+        company_rsid, company_name = _split_code_name(row["CO"])
+        station_rsid, station_name = _split_code_name(row["STN"])
+
+        brigade = brigades.setdefault(
+            brigade_rsid,
+            {
+                "name": brigade_rsid,
+                "battalions": {},
+            },
+        )
+        battalion = brigade["battalions"].setdefault(
+            battalion_rsid,
+            {
+                "name": battalion_name or battalion_rsid,
+                "companies": {},
+            },
+        )
+        company = battalion["companies"].setdefault(
+            company_rsid,
+            {
+                "name": company_name or company_rsid,
+                "stations": [],
+            },
+        )
+        if station_rsid not in company["stations"]:
+            company["stations"].append(station_rsid)
+        company.setdefault("station_names", {})[station_rsid] = station_name or station_rsid
+
+    return hierarchy
+
+
+def _seed_rows() -> List[Dict[str, Optional[str]]]:
+    hierarchy = _build_hierarchy()
+    rows: List[Dict[str, Optional[str]]] = [
+        {
+            "display_name": "USAREC",
+            "echelon": "CMD",
+            "rsid": "USAREC",
+            "parent_rsid": None,
+            "uic": None,
+        }
+    ]
+    for brigade_rsid, brigade in hierarchy["USAREC"]["brigades"].items():
+        rows.append(
+            {
+                "display_name": brigade["name"],
+                "echelon": "BDE",
+                "rsid": brigade_rsid,
+                "parent_rsid": "USAREC",
+                "uic": None,
+            }
+        )
+        battalions = brigade["battalions"]
+        for battalion_rsid, battalion in battalions.items():
+            rows.append(
+                {
+                    "display_name": battalion["name"],
+                    "echelon": "BN",
+                    "rsid": battalion_rsid,
+                    "parent_rsid": brigade_rsid,
+                    "uic": None,
+                }
+            )
+            companies = battalion["companies"]
+            for company_rsid, company in companies.items():
+                rows.append(
+                    {
+                        "display_name": company["name"],
+                        "echelon": "CO",
+                        "rsid": company_rsid,
+                        "parent_rsid": battalion_rsid,
+                        "uic": None,
+                    }
+                )
+                for station_rsid in company["stations"]:
+                    rows.append(
+                        {
+                            "display_name": company["station_names"][station_rsid],
+                            "echelon": "STN",
+                            "rsid": station_rsid,
+                            "parent_rsid": company_rsid,
+                            "uic": None,
+                        }
+                    )
+    return rows
+
+
+USAREC_HIERARCHY = _build_hierarchy()
+
+
+def get_all_brigades() -> List[str]:
     return list(USAREC_HIERARCHY["USAREC"]["brigades"].keys())
 
-def get_battalions_for_brigade(brigade_id):
-    """Get battalions under a specific brigade"""
-    try:
-        return list(USAREC_HIERARCHY["USAREC"]["brigades"][brigade_id]["battalions"].keys())
-    except KeyError:
-        return []
 
-def get_stations_for_battalion(brigade_id, battalion_id):
-    """Get stations under a specific battalion"""
-    try:
-        return USAREC_HIERARCHY["USAREC"]["brigades"][brigade_id]["battalions"][battalion_id]["stations"]
-    except KeyError:
+def get_battalions_for_brigade(brigade_rsid: str) -> List[str]:
+    brigade = USAREC_HIERARCHY["USAREC"]["brigades"].get(brigade_rsid)
+    if not brigade:
         return []
+    return list(brigade["battalions"].keys())
 
-def get_full_hierarchy_path(rsid):
-    """
-    Parse RSID and return full organizational path
-    RSID format: [Brigade]-[Battalion]-[Station]
-    Example: 1BDE-1BN-1-1 or 2BDE-5BN-5-2
-    """
-    parts = rsid.split("-")
-    if len(parts) < 2:
+
+def get_stations_for_battalion(brigade_rsid: str, battalion_rsid: str) -> List[str]:
+    brigade = USAREC_HIERARCHY["USAREC"]["brigades"].get(brigade_rsid)
+    if not brigade:
+        return []
+    battalion = brigade["battalions"].get(battalion_rsid)
+    if not battalion:
+        return []
+    stations: List[str] = []
+    for company in battalion["companies"].values():
+        stations.extend(company["stations"])
+    return stations
+
+
+def get_full_hierarchy_path(rsid: str) -> Optional[Dict[str, Optional[str]]]:
+    target = (rsid or "").strip()
+    if not target:
         return None
-    
-    brigade = parts[0]
-    battalion = parts[1]
-    station = "-".join(parts[2:]) if len(parts) > 2 else None
-    
-    try:
-        hierarchy = USAREC_HIERARCHY["USAREC"]["brigades"][brigade]
-        battalion_info = hierarchy["battalions"][battalion]
-        
+    if target == "USAREC":
         return {
             "command": "USAREC",
-            "brigade": brigade,
-            "brigade_name": hierarchy["name"],
-            "battalion": battalion,
-            "battalion_name": battalion_info["name"],
-            "station": station,
-            "full_path": f"USAREC > {hierarchy['name']} > {battalion_info['name']}" + (f" > Station {station}" if station else "")
+            "brigade": None,
+            "brigade_name": None,
+            "battalion": None,
+            "battalion_name": None,
+            "company": None,
+            "company_name": None,
+            "station": None,
+            "station_name": None,
+            "full_path": "USAREC",
         }
-    except KeyError:
-        return None
 
-def validate_rsid(rsid):
-    """Validate RSID format and existence in hierarchy"""
-    path = get_full_hierarchy_path(rsid)
-    return path is not None
+    for brigade_rsid, brigade in USAREC_HIERARCHY["USAREC"]["brigades"].items():
+        if target == brigade_rsid:
+            return {
+                "command": "USAREC",
+                "brigade": brigade_rsid,
+                "brigade_name": brigade["name"],
+                "battalion": None,
+                "battalion_name": None,
+                "company": None,
+                "company_name": None,
+                "station": None,
+                "station_name": None,
+                "full_path": f"USAREC > {brigade['name']}",
+            }
+        for battalion_rsid, battalion in brigade["battalions"].items():
+            if target == battalion_rsid:
+                return {
+                    "command": "USAREC",
+                    "brigade": brigade_rsid,
+                    "brigade_name": brigade["name"],
+                    "battalion": battalion_rsid,
+                    "battalion_name": battalion["name"],
+                    "company": None,
+                    "company_name": None,
+                    "station": None,
+                    "station_name": None,
+                    "full_path": f"USAREC > {brigade['name']} > {battalion['name']}",
+                }
+            for company_rsid, company in battalion["companies"].items():
+                if target == company_rsid:
+                    return {
+                        "command": "USAREC",
+                        "brigade": brigade_rsid,
+                        "brigade_name": brigade["name"],
+                        "battalion": battalion_rsid,
+                        "battalion_name": battalion["name"],
+                        "company": company_rsid,
+                        "company_name": company["name"],
+                        "station": None,
+                        "station_name": None,
+                        "full_path": f"USAREC > {brigade['name']} > {battalion['name']} > {company['name']}",
+                    }
+                station_names = company.get("station_names", {})
+                if target in station_names:
+                    return {
+                        "command": "USAREC",
+                        "brigade": brigade_rsid,
+                        "brigade_name": brigade["name"],
+                        "battalion": battalion_rsid,
+                        "battalion_name": battalion["name"],
+                        "company": company_rsid,
+                        "company_name": company["name"],
+                        "station": target,
+                        "station_name": station_names[target],
+                        "full_path": (
+                            f"USAREC > {brigade['name']} > {battalion['name']}"
+                            f" > {company['name']} > {station_names[target]}"
+                        ),
+                    }
+    return None
 
-def get_subordinate_rsids(rsid):
-    """
-    Get all subordinate RSIDs for a given level
-    - Brigade RSID returns all battalions and stations
-    - Battalion RSID returns all stations
-    - Station RSID returns itself
-    """
-    if not rsid:
-        return []
-    
-    parts = rsid.split("-")
-    subordinates = []
-    
-    if len(parts) == 1:  # Brigade level (e.g., "1BDE")
-        brigade = parts[0]
-        battalions = get_battalions_for_brigade(brigade)
-        for bn in battalions:
-            subordinates.append(f"{brigade}-{bn}")
-            stations = get_stations_for_battalion(brigade, bn)
-            for stn in stations:
-                subordinates.append(f"{brigade}-{bn}-{stn}")
-    
-    elif len(parts) == 2:  # Battalion level (e.g., "1BDE-1BN")
-        brigade = parts[0]
-        battalion = parts[1]
-        stations = get_stations_for_battalion(brigade, battalion)
-        for stn in stations:
-            subordinates.append(f"{brigade}-{battalion}-{stn}")
-    
-    else:  # Station level - return itself
-        subordinates.append(rsid)
-    
-    return subordinates
+
+def validate_rsid(rsid: str) -> bool:
+    return get_full_hierarchy_path(rsid) is not None
+
+
+def get_org_unit_seed_rows() -> List[Dict[str, Optional[str]]]:
+    return list(_seed_rows())

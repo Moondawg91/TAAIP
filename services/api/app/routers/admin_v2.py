@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 import json
 import os
+import re
 from ..routers import rbac
 from ..db import connect
 import sqlite3
@@ -9,6 +10,24 @@ from .. import database as _dbmod
 from ..services import adaptive_update_engine
 
 router = APIRouter(prefix="/v2/admin", tags=["admin"])
+
+
+def _is_safe_select_sql(sql: str) -> bool:
+    if not isinstance(sql, str):
+        return False
+    s = sql.strip().rstrip(';').strip()
+    if not s:
+        return False
+    if not s.lower().startswith('select'):
+        return False
+    # Block obvious mutation or multi-statement patterns.
+    banned = [
+        r"\b(insert|update|delete|drop|alter|create|replace|truncate|attach|detach|vacuum|pragma|reindex)\b",
+        r";",
+        r"--",
+        r"/\*",
+    ]
+    return not any(re.search(p, s, flags=re.IGNORECASE) for p in banned)
 
 
 def _is_admin_user(user: Dict[str, Any]) -> bool:
@@ -326,6 +345,236 @@ def set_user_roles(user_id: int, payload: Dict[str, Any], current_user: Dict = D
         except Exception:
             pass
         return {'ok': True}
+    finally:
+        conn.close()
+
+
+@router.get('/kpi-thresholds')
+def get_kpi_thresholds(current_user: Dict = Depends(require_admin_manage)):
+    """Get all KPI threshold settings from roi_thresholds table."""
+    conn = connect()
+    try:
+        cur = conn.cursor()
+        thresholds: Dict[str, Any] = {}
+        
+        # Check if roi_thresholds table exists
+        cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='roi_thresholds'")
+        if not cur.fetchone():
+            return {'status': 'ok', 'thresholds': {}}
+        
+        # Fetch all thresholds
+        cur.execute("SELECT metric_key, value FROM roi_thresholds ORDER BY metric_key ASC")
+        for row in cur.fetchall():
+            thresholds[str(row[0])] = {
+                'metric_key': str(row[0]),
+                'value': float(row[1] or 0),
+                'description': _threshold_description(str(row[0]))
+            }
+        
+        return {'status': 'ok', 'thresholds': thresholds}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        conn.close()
+
+
+@router.put('/kpi-thresholds/{metric_key}')
+def update_kpi_threshold(metric_key: str, payload: Dict[str, Any], current_user: Dict = Depends(require_admin_manage)):
+    """Update a KPI threshold value."""
+    new_value = payload.get('value')
+    if new_value is None:
+        raise HTTPException(status_code=400, detail='value required')
+    
+    try:
+        new_value = float(new_value)
+    except (ValueError, TypeError):
+        raise HTTPException(status_code=400, detail='value must be numeric')
+    
+    # Sanitize metric_key to prevent injection
+    metric_key = str(metric_key).strip()
+    if not metric_key or not all(c.isalnum() or c in '_-' for c in metric_key):
+        raise HTTPException(status_code=400, detail='invalid metric_key')
+    
+    conn = connect()
+    try:
+        cur = conn.cursor()
+        
+        # Check if roi_thresholds table exists
+        cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='roi_thresholds'")
+        if not cur.fetchone():
+            raise HTTPException(status_code=400, detail='roi_thresholds table not found')
+        
+        # Update or insert threshold
+        cur.execute(
+            "INSERT OR REPLACE INTO roi_thresholds(metric_key, value) VALUES (?, ?)",
+            (metric_key, new_value)
+        )
+        conn.commit()
+        
+        return {
+            'status': 'ok',
+            'metric_key': metric_key,
+            'value': new_value,
+            'updated_by': current_user.get('username', 'system'),
+            'updated_at': __import__('datetime').datetime.utcnow().isoformat()
+        }
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        conn.close()
+
+
+def _threshold_description(metric_key: str) -> str:
+    """Return user-friendly description for a metric key."""
+    descriptions = {
+        'cpl_target': 'Cost Per Lead (CPL) target threshold in dollars',
+        'cpc_target': 'Cost Per Contract (CPC) target threshold in dollars',
+        'ctr_minimum': 'Minimum Click-Through Rate (CTR) target as percentage',
+        'engagement_rate_minimum': 'Minimum Engagement Rate target as percentage',
+        'conversion_rate_minimum': 'Minimum Conversion Rate target as percentage',
+        'roi_minimum': 'Minimum ROI target as decimal (e.g., 0.2 = 20%)',
+        'flash_to_bang_days': 'Target days from lead to enlistment',
+    }
+    return descriptions.get(metric_key, f'Threshold for {metric_key}')
+
+
+@router.get('/audit-logs')
+def get_audit_logs(
+    start_at: Optional[str] = None,
+    end_at: Optional[str] = None,
+    user: Optional[str] = None,
+    action: Optional[str] = None,
+    limit: int = 100,
+    offset: int = 0,
+    current_user: Dict = Depends(require_admin_manage),
+):
+    """Retrieve audit logs for governance visibility with filtering."""
+    limit = max(1, min(limit, 1000))
+    offset = max(0, offset)
+
+    conn = connect()
+    try:
+        cur = conn.cursor()
+
+        # Detect which audit table is available and map field names.
+        cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='audit_log'")
+        has_audit_log = cur.fetchone() is not None
+        cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='audit_logs'")
+        has_audit_logs = cur.fetchone() is not None
+
+        if not has_audit_log and not has_audit_logs:
+            return {'status': 'ok', 'items': [], 'total': 0, 'source_table': None}
+
+        if has_audit_log:
+            table = 'audit_log'
+            cur.execute("PRAGMA table_info('audit_log')")
+            cols = {str(r[1]) for r in cur.fetchall()}
+
+            actor_col = 'who' if 'who' in cols else ('username' if 'username' in cols else "''")
+            action_col = 'action' if 'action' in cols else "''"
+            created_col = 'created_at' if 'created_at' in cols else "''"
+            entity_type_col = 'entity' if 'entity' in cols else ('resource' if 'resource' in cols else "''")
+            entity_id_col = 'entity_id' if 'entity_id' in cols else "''"
+            detail_col = 'meta_json' if 'meta_json' in cols else ('detail' if 'detail' in cols else "''")
+
+            select_sql = (
+                f"SELECT id, {actor_col} AS actor, {action_col} AS action, "
+                f"{entity_type_col} AS entity_type, CAST({entity_id_col} AS TEXT) AS entity_id, "
+                f"{detail_col} AS detail_json, {created_col} AS created_at"
+            )
+        else:
+            table = 'audit_logs'
+            actor_col = 'actor'
+            action_col = 'action'
+            created_col = 'created_at'
+            select_sql = "SELECT id, actor, action, entity_type, entity_id, COALESCE(after_json, before_json) AS detail_json, created_at"
+
+        where_parts = []
+        params = []
+
+        if start_at:
+            where_parts.append(f"{created_col} >= ?")
+            params.append(start_at)
+        if end_at:
+            where_parts.append(f"{created_col} <= ?")
+            params.append(end_at)
+        if user:
+            where_parts.append(f"lower(COALESCE({actor_col}, '')) LIKE lower(?)")
+            params.append(f"%{user}%")
+        if action:
+            where_parts.append(f"lower(COALESCE({action_col}, '')) LIKE lower(?)")
+            params.append(f"%{action}%")
+
+        where_sql = f" WHERE {' AND '.join(where_parts)}" if where_parts else ''
+
+        cur.execute(f"SELECT COUNT(1) FROM {table}{where_sql}", tuple(params))
+        total = int((cur.fetchone() or [0])[0] or 0)
+
+        query = (
+            f"{select_sql} FROM {table}{where_sql} "
+            f"ORDER BY COALESCE({created_col}, '') DESC LIMIT ? OFFSET ?"
+        )
+        query_params = params + [limit, offset]
+        cur.execute(query, tuple(query_params))
+
+        items = []
+        for r in cur.fetchall():
+            detail_obj = None
+            detail_json = r[5]
+            if detail_json:
+                try:
+                    detail_obj = json.loads(detail_json)
+                except Exception:
+                    detail_obj = {'raw': str(detail_json)}
+
+            items.append({
+                'id': r[0],
+                'actor': r[1],
+                'action': r[2],
+                'entity_type': r[3],
+                'entity_id': r[4],
+                'detail': detail_obj,
+                'created_at': r[6],
+            })
+
+        return {
+            'status': 'ok',
+            'items': items,
+            'total': total,
+            'limit': limit,
+            'offset': offset,
+            'source_table': table,
+        }
+    finally:
+        conn.close()
+
+
+@router.post('/query')
+def admin_query(payload: Dict[str, Any], current_user: Dict = Depends(require_admin_manage)):
+    sql = (payload.get('sql') or '').strip()
+    limit = payload.get('limit', 100)
+
+    try:
+        limit = int(limit)
+    except Exception:
+        limit = 100
+    limit = max(1, min(limit, 1000))
+
+    if not _is_safe_select_sql(sql):
+        raise HTTPException(status_code=400, detail='Only single SELECT statements are allowed')
+
+    conn = connect()
+    try:
+        cur = conn.cursor()
+        wrapped_sql = f"SELECT * FROM ({sql}) LIMIT ?"
+        cur.execute(wrapped_sql, (limit,))
+        rows = cur.fetchall()
+        cols = [d[0] for d in (cur.description or [])]
+        result_rows = [dict(r) if hasattr(r, 'keys') else {cols[i]: r[i] for i in range(len(cols))} for r in rows]
+        return {'status': 'ok', 'query': sql, 'columns': cols, 'rows': result_rows, 'count': len(result_rows)}
+    except sqlite3.Error as e:
+        raise HTTPException(status_code=400, detail=f'SQL error: {str(e)}')
     finally:
         conn.close()
 

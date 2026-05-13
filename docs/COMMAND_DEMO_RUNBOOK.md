@@ -17,6 +17,43 @@ Confirm:
 - role/admin safety regressions pass
 - frontend tests and build pass
 
+## Demo Readiness Stabilization Checks
+
+Run with secure demo posture enabled:
+
+```bash
+export TAAIP_DEMO_MODE=1
+export LOCAL_DEV_AUTH_BYPASS=0
+export TAAIP_MASTER_MODE=0
+```
+
+Focused backend regression checks:
+
+```bash
+./.venv/bin/python -m pytest -q \
+	services/api/tests/test_demo_security_posture.py \
+	services/api/tests/test_demo_runtime_stabilization.py \
+	services/api/tests/test_powerbi_coverage_safety.py \
+	services/api/tests/test_demo_readiness_preflight.py
+```
+
+Live readiness check against running API:
+
+```bash
+HOST=127.0.0.1 PORT=8000 LOCAL_DEV_AUTH_BYPASS=0 TAAIP_MASTER_MODE=0 \
+	./.venv/bin/python services/api/scripts/runtime_preflight.py --demo-readiness
+```
+
+Required outcomes:
+- unauthenticated `/api/me` returns `401`
+- unauthenticated `/api/refresh/sources` returns `401` or `403`
+- admin token on `/api/refresh/sources` returns `200`
+- commander/operator tokens on `/api/refresh/sources` return `403`
+- `/api/command-center/overview` returns `200` in `< 5s`
+- `/api/v2/decision-output/mission-decrease-justification` returns `200` in `< 5s`
+- `/api/powerbi/coverage/summary` never returns `500` when `coverage_summary` is missing
+- demo readiness script returns `status: ready`
+
 ## Startup Sequence
 
 ## Option A: Local process startup

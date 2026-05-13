@@ -6,7 +6,7 @@ LOG_DIR="$PROJECT_ROOT/logs"
 mkdir -p "$LOG_DIR"
 
 cd "$PROJECT_ROOT"
-zsh "$PROJECT_ROOT/scripts/taaip_preflight.sh"
+source "$PROJECT_ROOT/scripts/taaip_preflight.sh"
 
 echo "🚀 Starting TAAIP local services..."
 lsof -ti:8000 | xargs kill -9 2>/dev/null || true

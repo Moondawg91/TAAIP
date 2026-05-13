@@ -1,306 +1,220 @@
-import React from 'react';
-import { 
-  BarChart3, TrendingUp, Target, Briefcase, Activity, 
-  Globe, Award, FileCheck, Clipboard, Calendar, Map, Users,
-  Database, ChevronRight, Shield, BookOpen, AlertCircle, HelpCircle
-} from 'lucide-react';
-import { CompanyStandingsLeaderboard } from './CompanyStandingsLeaderboard';
-// QuickReference removed per request; single link added in Resources
-import { LiveUpdatesBanner } from './LiveUpdatesBanner';
+import React, { useState } from 'react';
+import { Card, Table, PageShell } from './shared/ui';
 
-interface HomeScreenProps {
-  onNavigate: (tab: string) => void;
+// ─── Static demo data ─────────────────────────────────────────────────────────
+
+interface FlashUpdate {
+  id: string;
+  priority: string;
+  update: string;
+  description: string;
+  datetime: string;
 }
 
-export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate }) => {
-  const [showMissionMenu, setShowMissionMenu] = React.useState(false);
-  const [showResources, setShowResources] = React.useState(false);
-  const [showHelpDesk, setShowHelpDesk] = React.useState(false);
-  const [showExpanded, setShowExpanded] = React.useState(false);
+interface WOPDUpdate {
+  id: string;
+  topic: string;
+  published: string;
+  status: string;
+}
 
-  // Close all dropdowns when switching between them
-  const handleToggleDropdown = (dropdown: 'mission' | 'resources' | 'helpdesk') => {
-    if (dropdown === 'mission') {
-      setShowMissionMenu(!showMissionMenu);
-      setShowResources(false);
-      setShowHelpDesk(false);
-    } else if (dropdown === 'resources') {
-      setShowResources(!showResources);
-      setShowMissionMenu(false);
-      setShowHelpDesk(false);
-    } else if (dropdown === 'helpdesk') {
-      setShowHelpDesk(!showHelpDesk);
-      setShowMissionMenu(false);
-      setShowResources(false);
-    }
-  };
+interface ProponentUpdate {
+  id: string;
+  title: string;
+  source: string;
+  date: string;
+  description: string;
+}
 
-  const menuItems = [
-    {
-      category: 'Core Analytics',
-      items: [
-        { 
-          id: 'funnel', 
-          icon: <TrendingUp className="w-8 h-8" />, 
-          title: 'Recruiting Funnel', 
-          description: 'Track lead progression and conversion rates',
-          color: 'from-yellow-600 to-yellow-700'
-        },
-        { 
-          id: 'analytics', 
-          icon: <BarChart3 className="w-8 h-8" />, 
-          title: 'Analytics Dashboard', 
-          description: 'CBSA, schools, segments, and contracts analysis',
-          color: 'from-gray-700 to-gray-800'
-        },
-        { 
-          id: 'market', 
-          icon: <Map className="w-8 h-8" />, 
-          title: 'Market Potential', 
-          description: 'Geographic market analysis and prioritization',
-          color: 'from-yellow-600 to-yellow-700'
-        },
-      ]
-    },
-    {
-      category: 'Mission Planning',
-      items: [
-        { 
-          id: 'mission', 
-          icon: <Target className="w-8 h-8" />, 
-          title: 'Mission Analysis', 
-          description: 'Strategic mission planning and M-IPOE framework',
-          color: 'from-gray-700 to-gray-800'
-        },
-        { 
-          id: 'twg', 
-          icon: <Users className="w-8 h-8" />, 
-          title: 'Targeting Decision Board', 
-          description: 'TWG decisions and strategic targeting',
-          color: 'from-yellow-600 to-yellow-700'
-        },
-        { 
-          id: 'projects', 
-          icon: <Briefcase className="w-8 h-8" />, 
-          title: 'Project Management', 
-          description: 'Event planning, tasks, and milestones',
-          color: 'from-gray-700 to-gray-800'
-        },
-      ]
-    },
-    {
-      category: 'Performance Tracking',
-      items: [
-        { 
-          id: 'leads', 
-          icon: <Activity className="w-8 h-8" />, 
-          title: 'Lead Status Report', 
-          description: 'Real-time lead tracking and status updates',
-          color: 'from-yellow-600 to-yellow-700'
-        },
-        { 
-          id: 'events', 
-          icon: <Award className="w-8 h-8" />, 
-          title: 'Event Performance', 
-          description: 'Event metrics, ROI, and effectiveness',
-          color: 'from-gray-700 to-gray-800'
-        },
-        { 
-          id: 'g2zones', 
-          icon: <Globe className="w-8 h-8" />, 
-          title: 'G2 Zone Performance', 
-          description: 'Zone-level recruiting performance analysis',
-          color: 'from-yellow-600 to-yellow-700'
-        },
-      ]
-    },
-    {
-      category: 'Operations',
-      items: [
-        { 
-          id: 'calendar', 
-          icon: <Calendar className="w-8 h-8" />, 
-          title: 'Calendar & Scheduler', 
-          description: 'Event scheduling and status reports (EMM)',
-          color: 'from-gray-700 to-gray-800'
-        },
-        { 
-          id: 'dod', 
-          icon: <FileCheck className="w-8 h-8" />, 
-          title: 'DOD Branch Comparison', 
-          description: 'Cross-service recruiting comparison',
-          color: 'from-yellow-600 to-yellow-700'
-        },
-        { 
-          id: 'dashboard', 
-          icon: <Clipboard className="w-8 h-8" />, 
-          title: 'Market Segments', 
-          description: 'Demographic and psychographic segmentation',
-          color: 'from-gray-700 to-gray-800'
-        },
-        { 
-          id: 'input', 
-          icon: <Database className="w-8 h-8" />, 
-          title: 'Data Input Forms', 
-          description: 'Manual data entry and survey collection',
-          color: 'from-yellow-600 to-yellow-700'
-        },
-      ]
-    }
-  ];
+const FLASH_UPDATES: FlashUpdate[] = [
+  { id: '1', priority: 'HIGH', update: 'FY26 Q3 Mission Adjustment', description: 'Brigade adjusted quarterly mission thresholds effective 01 Jun.', datetime: '08 May 2026 0600' },
+  { id: '2', priority: 'MEDIUM', update: 'New Lead Qualification SOP', description: 'Updated qualification criteria for RSID 3022 market segment.', datetime: '07 May 2026 1430' },
+  { id: '3', priority: 'LOW', update: 'System Maintenance Window', description: 'Scheduled maintenance 11 May 0200–0400. No data export during window.', datetime: '06 May 2026 0800' },
+];
+
+const WOPD_UPDATES: WOPDUpdate[] = [
+  { id: '1', topic: 'Follow-Up Conversion Techniques', published: '05 May 2026', status: 'Published' },
+  { id: '2', topic: 'Urban Market Penetration Strategy', published: '28 Apr 2026', status: 'Published' },
+  { id: '3', topic: 'Enlistment Incentive Overview FY26', published: '15 Apr 2026', status: 'Archived' },
+];
+
+const PROPONENT_UPDATES: ProponentUpdate[] = [
+  { id: '1', title: 'Revised Screening Standards', source: 'USAREC HQ', date: '04 May 2026', description: 'Updated MEPS screening guidance for FY26 applicants.' },
+  { id: '2', title: 'Digital Media Policy Change', source: 'HQDA G1', date: '30 Apr 2026', description: 'New restrictions on unapproved social media recruiting platforms.' },
+  { id: '3', title: 'Future Soldier Onboarding SOP', source: 'USAREC G3', date: '20 Apr 2026', description: 'Standardized onboarding checklist for FS management phase.' },
+];
+
+const priorityColor: Record<string, string> = {
+  HIGH:   'text-[#EF4444] font-semibold',
+  MEDIUM: 'text-[#F59E0B] font-semibold',
+  LOW:    'text-[#94A3B8]',
+};
+
+const statusColor: Record<string, string> = {
+  Published: 'text-[#10B981]',
+  Archived:  'text-[#64748B]',
+  Draft:     'text-[#F59E0B]',
+};
+
+// ─── Drawer ───────────────────────────────────────────────────────────────────
+
+interface DrawerProps {
+  title: string;
+  onClose: () => void;
+  children: React.ReactNode;
+}
+
+const Drawer: React.FC<DrawerProps> = ({ title, onClose, children }) => (
+  <div className="fixed inset-0 z-50 flex">
+    <div className="flex-1 bg-black/50" onClick={onClose} />
+    <div className="w-[480px] bg-[#0E2847] border-l border-[#1D3A5C] flex flex-col h-full overflow-y-auto">
+      <div className="flex items-center justify-between px-5 py-3 border-b border-[#1D3A5C]">
+        <span className="text-[14px] font-semibold text-[#F3F5F7]">{title}</span>
+        <button onClick={onClose} className="text-[#64748B] hover:text-[#F3F5F7] text-xl leading-none">&times;</button>
+      </div>
+      <div className="p-5 space-y-4">{children}</div>
+    </div>
+  </div>
+);
+
+// ─── Component ────────────────────────────────────────────────────────────────
+
+interface HomeScreenProps {
+  onNavigate?: (tab: string) => void;
+}
+
+export const HomeScreen: React.FC<HomeScreenProps> = () => {
+  const [selectedFlash, setSelectedFlash] = useState<FlashUpdate | null>(null);
+  const [selectedWOPD, setSelectedWOPD] = useState<WOPDUpdate | null>(null);
+  const [selectedProponent, setSelectedProponent] = useState<ProponentUpdate | null>(null);
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      {/* Main Content Area */}
-      <div className="max-w-[1600px] mx-auto py-8 px-8">
-        {/* Main Grid - Sidebar + Leaderboard */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
-          {/* Left Sidebar - Quick Access Panels */}
-          <div className="lg:col-span-1 space-y-4">
-            
-            {/* Resources Panel */}
-            <div className="bg-white rounded-lg shadow-md border-2 border-gray-200">
-              <button
-                onClick={() => handleToggleDropdown('resources')}
-                className="w-full px-4 py-3 bg-gray-800 text-yellow-500 rounded-t-lg font-bold text-sm uppercase tracking-wider hover:bg-gray-700 transition-colors flex items-center justify-between"
-              >
-                <div className="flex items-center gap-2">
-                  <BookOpen className="w-5 h-5" />
-                  Resources
-                </div>
-                <ChevronRight className={`w-4 h-4 transition-transform ${showResources ? 'rotate-90' : ''}`} />
-              </button>
-              {showResources && (
-                <div className="p-3 space-y-2 max-h-96 overflow-y-auto">
-                  <a href="/docs/420t-quick-start.pdf" className="flex items-center gap-2 p-2 bg-gray-50 rounded hover:bg-yellow-50 hover:border-yellow-500 border border-gray-200 transition-colors text-sm">
-                    <FileCheck className="w-4 h-4 text-gray-700 flex-shrink-0" />
-                    <span className="font-medium text-gray-800">420T Quick Start</span>
-                  </a>
-                  <a href="/docs/recruiting-ops-manual.pdf" className="flex items-center gap-2 p-2 bg-gray-50 rounded hover:bg-yellow-50 hover:border-yellow-500 border border-gray-200 transition-colors text-sm">
-                    <FileCheck className="w-4 h-4 text-gray-700 flex-shrink-0" />
-                    <span className="font-medium text-gray-800">Ops Manual</span>
-                  </a>
-                  <a href="https://training.taaip.army.mil/videos" className="flex items-center gap-2 p-2 bg-gray-50 rounded hover:bg-yellow-50 hover:border-yellow-500 border border-gray-200 transition-colors text-sm">
-                    <Activity className="w-4 h-4 text-gray-700 flex-shrink-0" />
-                    <span className="font-medium text-gray-800">Training Videos</span>
-                  </a>
-                  <a href="/docs/mission-analysis-guide.pdf" className="flex items-center gap-2 p-2 bg-gray-50 rounded hover:bg-yellow-50 hover:border-yellow-500 border border-gray-200 transition-colors text-sm">
-                    <Target className="w-4 h-4 text-gray-700 flex-shrink-0" />
-                    <span className="font-medium text-gray-800">Mission Analysis</span>
-                  </a>
-                  <a href="/templates/data-entry-templates.zip" className="flex items-center gap-2 p-2 bg-gray-50 rounded hover:bg-yellow-50 hover:border-yellow-500 border border-gray-200 transition-colors text-sm">
-                    <Database className="w-4 h-4 text-gray-700 flex-shrink-0" />
-                    <span className="font-medium text-gray-800">Data Templates</span>
-                  </a>
-                </div>
-              )}
-            </div>
+    <PageShell title="Home">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+        {/* LEFT COLUMN */}
+        <div className="flex flex-col gap-4">
+          {/* Flash Updates */}
+          <Card title="Flash Updates" noPad>
+            <Table<FlashUpdate & Record<string, unknown>>
+              columns={[
+                {
+                  key: 'priority', header: 'Priority',
+                  render: (r) => <span className={priorityColor[(r as unknown as FlashUpdate).priority] ?? ''}>{(r as unknown as FlashUpdate).priority}</span>,
+                  width: '80px',
+                },
+                { key: 'update', header: 'Update' },
+                { key: 'description', header: 'Description' },
+                { key: 'datetime', header: 'Date/Time', width: '160px' },
+              ]}
+              rows={FLASH_UPDATES as unknown as (FlashUpdate & Record<string, unknown>)[]}
+              onRowClick={(r) => setSelectedFlash(r as unknown as FlashUpdate)}
+              getRowId={(r) => (r as unknown as FlashUpdate).id}
+              emptyText="No flash updates"
+            />
+          </Card>
 
-            {/* Mission Dashboards Panel */}
-            <div className="bg-white rounded-lg shadow-md border-2 border-gray-200">
-              <button
-                onClick={() => handleToggleDropdown('mission')}
-                className="w-full px-4 py-3 bg-gray-800 text-yellow-500 rounded-t-lg font-bold text-sm uppercase tracking-wider hover:bg-gray-700 transition-colors flex items-center justify-between"
-              >
-                <div className="flex items-center gap-2">
-                  <Target className="w-5 h-5" />
-                  Dashboards
-                </div>
-                <ChevronRight className={`w-4 h-4 transition-transform ${showMissionMenu ? 'rotate-90' : ''}`} />
-              </button>
-              {showMissionMenu && (
-                <div className="p-3 space-y-2 max-h-96 overflow-y-auto">
-                  {[
-                    { id: 'funnel', icon: <TrendingUp className="w-4 h-4" />, title: 'Funnel' },
-                    { id: 'analytics', icon: <BarChart3 className="w-4 h-4" />, title: 'Analytics' },
-                    { id: 'market', icon: <Map className="w-4 h-4" />, title: 'Market' },
-                    { id: 'mission', icon: <Target className="w-4 h-4" />, title: 'Mission' },
-                    { id: 'twg', icon: <Users className="w-4 h-4" />, title: 'TWG' },
-                    { id: 'projects', icon: <Briefcase className="w-4 h-4" />, title: 'Projects' },
-                    { id: 'leads', icon: <Activity className="w-4 h-4" />, title: 'Leads' },
-                    { id: 'events', icon: <Award className="w-4 h-4" />, title: 'Events' },
-                  ].map((item) => (
-                    <button
-                      key={item.id}
-                      onClick={() => { onNavigate(item.id); handleToggleDropdown('mission'); }}
-                      className="w-full flex items-center gap-2 p-2 bg-gray-50 rounded hover:bg-yellow-50 hover:border-yellow-500 border border-gray-200 transition-colors text-left text-sm"
-                    >
-                      <div className="text-gray-700">{item.icon}</div>
-                      <span className="font-medium text-gray-800">{item.title}</span>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Help Desk Panel */}
-            <div className="bg-white rounded-lg shadow-md border-2 border-gray-200">
-              <button
-                onClick={() => handleToggleDropdown('helpdesk')}
-                className="w-full px-4 py-3 bg-gray-800 text-yellow-500 rounded-t-lg font-bold text-sm uppercase tracking-wider hover:bg-gray-700 transition-colors flex items-center justify-between"
-              >
-                <div className="flex items-center gap-2">
-                  <HelpCircle className="w-5 h-5" />
-                  Help Desk
-                </div>
-                <ChevronRight className={`w-4 h-4 transition-transform ${showHelpDesk ? 'rotate-90' : ''}`} />
-              </button>
-              {showHelpDesk && (
-                <div className="p-3 space-y-2 max-h-96 overflow-y-auto">
-                  {[
-                    { icon: <Shield className="w-4 h-4" />, title: 'Access Request' },
-                    { icon: <TrendingUp className="w-4 h-4" />, title: 'Feature Request' },
-                    { icon: <AlertCircle className="w-4 h-4" />, title: 'Bug Report' },
-                    { icon: <Users className="w-4 h-4" />, title: 'Training' },
-                    { icon: <HelpCircle className="w-4 h-4" />, title: 'Support' },
-                  ].map((item) => (
-                    <button
-                      key={item.title}
-                      onClick={() => { onNavigate('helpdesk'); handleToggleDropdown('helpdesk'); }}
-                      className="w-full flex items-center gap-2 p-2 bg-gray-50 rounded hover:bg-yellow-50 hover:border-yellow-500 border border-gray-200 transition-colors text-left text-sm"
-                    >
-                      <div className="text-gray-700">{item.icon}</div>
-                      <span className="font-medium text-gray-800">{item.title}</span>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Right Side - Leaderboard */}
-          <div className="lg:col-span-3">
-            <CompanyStandingsLeaderboard showExpanded={showExpanded} setShowExpanded={setShowExpanded} />
-          </div>
+          {/* WOPD Updates */}
+          <Card title="WOPD Updates" noPad>
+            <Table<WOPDUpdate & Record<string, unknown>>
+              columns={[
+                { key: 'topic', header: 'Topic' },
+                { key: 'published', header: 'Published', width: '120px' },
+                {
+                  key: 'status', header: 'Status', width: '100px',
+                  render: (r) => <span className={statusColor[(r as unknown as WOPDUpdate).status] ?? ''}>{(r as unknown as WOPDUpdate).status}</span>,
+                },
+              ]}
+              rows={WOPD_UPDATES as unknown as (WOPDUpdate & Record<string, unknown>)[]}
+              onRowClick={(r) => setSelectedWOPD(r as unknown as WOPDUpdate)}
+              getRowId={(r) => (r as unknown as WOPDUpdate).id}
+              emptyText="No WOPD updates"
+            />
+          </Card>
         </div>
 
-        {/* Live Updates Banner */}
-        <LiveUpdatesBanner />
-      </div>
+        {/* RIGHT COLUMN */}
+        <div className="flex flex-col gap-4">
+          {/* TAWO of the Month */}
+          <Card title="TAWO of the Month">
+            <div className="flex gap-5">
+              <div className="flex-1 space-y-2">
+                <div>
+                  <div className="text-[16px] font-semibold text-[#F3F5F7]">SSG Taylor Morgan</div>
+                  <div className="text-[13px] text-[#64748B]">A Co, 1-1 Recruiting BN</div>
+                </div>
+                <div className="space-y-2 text-[13px]">
+                  <div>
+                    <span className="text-[11px] uppercase tracking-[0.07em] text-[#64748B] block mb-0.5">Achievement</span>
+                    <span className="text-[#F3F5F7]">Exceeded monthly mission by 128%</span>
+                  </div>
+                  <div>
+                    <span className="text-[11px] uppercase tracking-[0.07em] text-[#64748B] block mb-0.5">Impact</span>
+                    <span className="text-[#F3F5F7]">Led two peer coaching sessions on follow-up conversion, contributing to company-wide improvement.</span>
+                  </div>
+                </div>
+              </div>
+              <div className="flex-shrink-0">
+                <div className="w-24 h-28 bg-[#142F52] border border-[#1D3A5C] rounded overflow-hidden">
+                  <img
+                    src="https://images.unsplash.com/photo-1542909168-82c3e7fdca5c?auto=format&fit=crop&w=200&q=80"
+                    alt="TAWO of the Month"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              </div>
+            </div>
+          </Card>
 
-      {/* Footer */}
-      <div className="bg-black text-white py-4 px-8 border-t-2 border-yellow-500">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex justify-between items-center text-xs">
-            <div>
-              <p className="text-gray-400">
-                TAAIP v2.0 | Talent Acquisition Analytics and Intelligence Platform
-              </p>
-              <p className="text-gray-500 mt-1">
-                Proprietary System • Strategic Decision Support
-              </p>
-            </div>
-            <div className="text-right">
-              <p className="text-yellow-500 font-bold uppercase tracking-wider">
-                UNCLASSIFIED
-              </p>
-              <p className="text-gray-500 mt-1">
-                FOR OFFICIAL USE ONLY
-              </p>
-            </div>
-          </div>
+          {/* Proponent Updates */}
+          <Card title="Proponent Updates" noPad>
+            <Table<ProponentUpdate & Record<string, unknown>>
+              columns={[
+                { key: 'title', header: 'Title' },
+                { key: 'source', header: 'Source', width: '110px' },
+                { key: 'date', header: 'Date', width: '110px' },
+                { key: 'description', header: 'Description' },
+              ]}
+              rows={PROPONENT_UPDATES as unknown as (ProponentUpdate & Record<string, unknown>)[]}
+              onRowClick={(r) => setSelectedProponent(r as unknown as ProponentUpdate)}
+              getRowId={(r) => (r as unknown as ProponentUpdate).id}
+              emptyText="No proponent updates"
+            />
+          </Card>
         </div>
       </div>
-    </div>
+
+      {/* Drawers */}
+      {selectedFlash && (
+        <Drawer title="Flash Update Detail" onClose={() => setSelectedFlash(null)}>
+          <div className="space-y-3 text-[13px]">
+            <div><span className="text-[#64748B]">Priority:</span> <span className={`${priorityColor[selectedFlash.priority]} ml-2`}>{selectedFlash.priority}</span></div>
+            <div><span className="text-[#64748B]">Update:</span> <span className="ml-2 text-[#F3F5F7]">{selectedFlash.update}</span></div>
+            <div><span className="text-[#64748B]">Date/Time:</span> <span className="ml-2 text-[#F3F5F7]">{selectedFlash.datetime}</span></div>
+            <div className="pt-2 border-t border-[#1D3A5C]"><p className="text-[#F3F5F7]">{selectedFlash.description}</p></div>
+          </div>
+        </Drawer>
+      )}
+      {selectedWOPD && (
+        <Drawer title="WOPD Detail" onClose={() => setSelectedWOPD(null)}>
+          <div className="space-y-3 text-[13px]">
+            <div><span className="text-[#64748B]">Topic:</span> <span className="ml-2 text-[#F3F5F7]">{selectedWOPD.topic}</span></div>
+            <div><span className="text-[#64748B]">Published:</span> <span className="ml-2 text-[#F3F5F7]">{selectedWOPD.published}</span></div>
+            <div><span className="text-[#64748B]">Status:</span> <span className={`ml-2 ${statusColor[selectedWOPD.status]}`}>{selectedWOPD.status}</span></div>
+          </div>
+        </Drawer>
+      )}
+      {selectedProponent && (
+        <Drawer title="Proponent Update Detail" onClose={() => setSelectedProponent(null)}>
+          <div className="space-y-3 text-[13px]">
+            <div><span className="text-[#64748B]">Title:</span> <span className="ml-2 text-[#F3F5F7]">{selectedProponent.title}</span></div>
+            <div><span className="text-[#64748B]">Source:</span> <span className="ml-2 text-[#F3F5F7]">{selectedProponent.source}</span></div>
+            <div><span className="text-[#64748B]">Date:</span> <span className="ml-2 text-[#F3F5F7]">{selectedProponent.date}</span></div>
+            <div className="pt-2 border-t border-[#1D3A5C]"><p className="text-[#F3F5F7]">{selectedProponent.description}</p></div>
+          </div>
+        </Drawer>
+      )}
+    </PageShell>
   );
 };
+
+export default HomeScreen;

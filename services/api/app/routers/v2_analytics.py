@@ -1,10 +1,25 @@
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Request
 from typing import Optional
+from datetime import date, datetime
 from .. import db
 from .. import scope as scope_mod
 from .. import org_utils
 
 router = APIRouter(prefix='/v2/analytics', tags=['analytics'])
+
+
+def _table_exists(conn, table_name: str) -> bool:
+    cur = conn.cursor()
+    cur.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?", (table_name,))
+    return cur.fetchone() is not None
+
+
+def _month_label(yyyymm: str) -> str:
+    try:
+        dt = datetime.strptime(yyyymm + '-01', '%Y-%m-%d')
+        return dt.strftime('%b %Y')
+    except Exception:
+        return yyyymm
 
 
 @router.get('/enlistments/bn')
@@ -193,5 +208,273 @@ def emm_events(request: Request, unit_rsid: Optional[str] = None, fy: Optional[i
         cur.execute(sql2, params2)
         events = [dict(r) for r in cur.fetchall()]
         return {'applied_scope': scope, 'groups': groups, 'events': events, 'total_events': len(events)}
+    finally:
+        conn.close()
+
+
+@router.get('/cbsa')
+def analytics_cbsa(limit: int = 10, cbsa: Optional[str] = None):
+    conn = db.connect()
+    try:
+        cur = conn.cursor()
+        rows = []
+
+        if _table_exists(conn, 'market_cbsa_metrics'):
+            sql = '''
+                SELECT
+                  cbsa_code,
+                  COALESCE(cbsa_name, cbsa_code) as cbsa_name,
+                  COALESCE(MAX(total_potential), 0) as lead_count,
+                  COALESCE(MAX(p2p_value), 0) as avg_score,
+                  COALESCE(MAX(contracts_total), 0) as high_quality_count,
+                  COALESCE(MAX(army_share_of_potential), 0) as market_share,
+                  COALESCE(MAX(potential_remaining), 0) as conversion_potential
+                FROM market_cbsa_metrics
+                WHERE (? IS NULL OR cbsa_code = ?)
+                GROUP BY cbsa_code, cbsa_name
+                ORDER BY lead_count DESC
+                LIMIT ?
+            '''
+            cur.execute(sql, (cbsa, cbsa, max(1, limit)))
+            rows = [dict(r) for r in cur.fetchall()]
+        elif _table_exists(conn, 'mi_cbsa_fact'):
+            sql = '''
+                SELECT
+                  cbsa_code,
+                  COALESCE(cbsa_name, cbsa_code) as cbsa_name,
+                  COALESCE(SUM(dod_potential), 0) as lead_count,
+                  COALESCE(AVG(p2p), 0) as avg_score,
+                  COALESCE(SUM(COALESCE(contracts_ga,0)+COALESCE(contracts_sa,0)+COALESCE(contracts_vol,0)), 0) as high_quality_count,
+                  COALESCE(AVG(army_share_of_potential), 0) as market_share,
+                  COALESCE(SUM(potential_remaining), 0) as conversion_potential
+                FROM mi_cbsa_fact
+                WHERE (? IS NULL OR cbsa_code = ?)
+                GROUP BY cbsa_code, cbsa_name
+                ORDER BY lead_count DESC
+                LIMIT ?
+            '''
+            cur.execute(sql, (cbsa, cbsa, max(1, limit)))
+            rows = [dict(r) for r in cur.fetchall()]
+
+        return {'status': 'ok', 'cbsas': rows}
+    finally:
+        conn.close()
+
+
+@router.get('/schools')
+def analytics_schools(limit: int = 15, rsid: Optional[str] = None):
+    conn = db.connect()
+    try:
+        cur = conn.cursor()
+
+        if _table_exists(conn, 'school_fact'):
+            sql = '''
+                SELECT
+                  sf.school_name as name,
+                  COALESCE(s.city, '') as city,
+                  COALESCE(sf.school_type, s.school_type, 'Unknown') as type,
+                  COALESCE(SUM(sf.leads_ytd), 0) as leads,
+                  COALESCE(SUM(sf.contracts_ytd), 0) as conversions,
+                  COALESCE(SUM(sf.visits_ytd), 0) as events,
+                  CASE
+                    WHEN COALESCE(SUM(sf.contracts_ytd),0) >= 10 THEN 'high'
+                    WHEN COALESCE(SUM(sf.contracts_ytd),0) >= 3 THEN 'medium'
+                    ELSE 'low'
+                  END as priority,
+                  CASE WHEN COALESCE(SUM(sf.leads_ytd),0) > 0
+                    THEN ROUND((SUM(sf.contracts_ytd) * 100.0) / SUM(sf.leads_ytd), 2)
+                    ELSE 0
+                  END as conversion_rate,
+                  0 as cost_per_lead
+                FROM school_fact sf
+                LEFT JOIN schools s ON s.id = sf.school_id
+                WHERE (? IS NULL OR sf.rsid_prefix = ?)
+                GROUP BY sf.school_name, COALESCE(s.city, ''), COALESCE(sf.school_type, s.school_type, 'Unknown')
+                ORDER BY leads DESC
+                LIMIT ?
+            '''
+            cur.execute(sql, (rsid, rsid, max(1, limit)))
+            return {'status': 'ok', 'schools': [dict(r) for r in cur.fetchall()]}
+
+        if _table_exists(conn, 'schools'):
+            sql = '''
+                SELECT
+                  school_name as name,
+                  COALESCE(city, '') as city,
+                  COALESCE(school_type, 'Unknown') as type,
+                  0 as leads,
+                  0 as conversions,
+                  0 as events,
+                  'low' as priority,
+                  0 as conversion_rate,
+                  0 as cost_per_lead
+                FROM schools
+                ORDER BY school_name ASC
+                LIMIT ?
+            '''
+            cur.execute(sql, (max(1, limit),))
+            return {'status': 'ok', 'schools': [dict(r) for r in cur.fetchall()]}
+
+        return {'status': 'ok', 'schools': []}
+    finally:
+        conn.close()
+
+
+@router.get('/segments')
+def analytics_segments(rsid: Optional[str] = None):
+    conn = db.connect()
+    try:
+        cur = conn.cursor()
+        rows = []
+
+        if _table_exists(conn, 'mi_cbsa_fact'):
+            sql = '''
+                SELECT
+                  COALESCE(market_category, 'unknown') as segment_name,
+                  COALESCE(SUM(dod_potential), 0) as size,
+                  COALESCE(SUM(army_potential), 0) as leads_generated,
+                  COALESCE(SUM(COALESCE(contracts_ga,0)+COALESCE(contracts_sa,0)+COALESCE(contracts_vol,0)), 0) as conversions,
+                  COALESCE(SUM(potential_remaining), 0) as remaining_potential,
+                  COALESCE(AVG(p2p), 0) as avg_propensity
+                FROM mi_cbsa_fact
+                WHERE (? IS NULL OR rsid_prefix = ?)
+                GROUP BY COALESCE(market_category, 'unknown')
+                ORDER BY remaining_potential DESC
+            '''
+            cur.execute(sql, (rsid, rsid))
+            rows = [dict(r) for r in cur.fetchall()]
+
+        segments = []
+        for r in rows:
+            name = str(r.get('segment_name') or 'unknown')
+            size = float(r.get('size') or 0)
+            leads = float(r.get('leads_generated') or 0)
+            conversions = float(r.get('conversions') or 0)
+            remaining = float(r.get('remaining_potential') or 0)
+            penetration = round((leads * 100.0 / size), 2) if size > 0 else 0
+            conversion_rate = round((conversions * 100.0 / leads), 2) if leads > 0 else 0
+            if remaining >= 1000:
+                priority = 'high'
+            elif remaining >= 250:
+                priority = 'medium'
+            else:
+                priority = 'low'
+
+            segments.append({
+                'segment_name': name.replace('_', ' ').title(),
+                'segment_code': name.upper().replace(' ', '_'),
+                'size': int(size),
+                'leads_generated': int(leads),
+                'penetration_rate': penetration,
+                'avg_propensity': float(r.get('avg_propensity') or 0),
+                'conversions': int(conversions),
+                'priority': priority,
+                'remaining_potential': int(remaining),
+                'conversion_rate': conversion_rate,
+            })
+
+        return {'status': 'ok', 'segments': segments}
+    finally:
+        conn.close()
+
+
+@router.get('/contracts')
+def analytics_contracts(fy: Optional[int] = None):
+    conn = db.connect()
+    try:
+        cur = conn.cursor()
+        today = date.today()
+        target_fy = fy or (today.year + (1 if today.month >= 10 else 0))
+
+        mission_goal = 0
+        if _table_exists(conn, 'mission_target'):
+            cur.execute('SELECT COALESCE(SUM(annual_contract_mission),0) as mission_goal FROM mission_target WHERE fy = ?', (target_fy,))
+            row = cur.fetchone()
+            mission_goal = int((row['mission_goal'] if row else 0) or 0)
+
+        contracts_achieved = 0
+        by_month = []
+        by_component = []
+        if _table_exists(conn, 'fact_production'):
+            cur.execute('''
+                SELECT COALESCE(SUM(metric_value),0) as total
+                FROM fact_production
+                WHERE fy = ? AND lower(metric_key) IN ('contracts','contract','net_contracts')
+            ''', (target_fy,))
+            row = cur.fetchone()
+            contracts_achieved = int((row['total'] if row else 0) or 0)
+
+            cur.execute('''
+                SELECT substr(date_key,1,7) as month_key,
+                       COALESCE(SUM(CASE WHEN lower(metric_key) IN ('contracts','contract','net_contracts') THEN metric_value ELSE 0 END),0) as achieved
+                FROM fact_production
+                WHERE fy = ?
+                GROUP BY substr(date_key,1,7)
+                ORDER BY month_key
+                LIMIT 12
+            ''', (target_fy,))
+            month_rows = [dict(r) for r in cur.fetchall()]
+
+            monthly_goal = int(round(mission_goal / 12.0)) if mission_goal else 0
+            by_month = [
+                {
+                    'month': _month_label(str(r.get('month_key') or '')),
+                    'goal': monthly_goal,
+                    'achieved': int(r.get('achieved') or 0),
+                    'variance': int((r.get('achieved') or 0) - monthly_goal),
+                }
+                for r in month_rows
+            ]
+
+            cur.execute('''
+                SELECT
+                  COALESCE(NULLIF(scope_value,''), NULLIF(scope_type,''), 'USAREC') as component,
+                  COALESCE(SUM(CASE WHEN lower(metric_key) IN ('contracts','contract','net_contracts') THEN metric_value ELSE 0 END),0) as achieved
+                FROM fact_production
+                WHERE fy = ?
+                GROUP BY COALESCE(NULLIF(scope_value,''), NULLIF(scope_type,''), 'USAREC')
+                ORDER BY achieved DESC
+                LIMIT 8
+            ''', (target_fy,))
+            comp_rows = [dict(r) for r in cur.fetchall()]
+            component_goal = int(round(mission_goal / len(comp_rows))) if mission_goal and comp_rows else 0
+            by_component = [
+                {
+                    'component': str(r.get('component') or 'USAREC'),
+                    'goal': component_goal,
+                    'achieved': int(r.get('achieved') or 0),
+                    'percent': round((int(r.get('achieved') or 0) * 100.0 / component_goal), 1) if component_goal > 0 else 0,
+                }
+                for r in comp_rows
+            ]
+
+        if mission_goal <= 0:
+            mission_goal = max(contracts_achieved, 1)
+
+        remaining = max(mission_goal - contracts_achieved, 0)
+        percent_complete = round((contracts_achieved * 100.0 / mission_goal), 1) if mission_goal > 0 else 0
+
+        fy_end = date(target_fy, 9, 30)
+        days_remaining = max((fy_end - today).days, 0)
+        elapsed_days = max(365 - days_remaining, 1)
+        daily_rate_needed = round((remaining / days_remaining), 2) if days_remaining > 0 else 0
+        current_daily_rate = round((contracts_achieved / elapsed_days), 2)
+
+        return {
+            'status': 'ok',
+            'metrics': {
+                'fiscal_year': target_fy,
+                'mission_goal': mission_goal,
+                'contracts_achieved': contracts_achieved,
+                'remaining': remaining,
+                'percent_complete': percent_complete,
+                'days_remaining': days_remaining,
+                'daily_rate_needed': daily_rate_needed,
+                'current_daily_rate': current_daily_rate,
+                'on_track': current_daily_rate >= daily_rate_needed if daily_rate_needed > 0 else True,
+                'by_month': by_month,
+                'by_component': by_component,
+            }
+        }
     finally:
         conn.close()

@@ -13,15 +13,28 @@ JWT_SECRET = os.getenv("JWT_SECRET", "devsecret")
 JWT_ALGO = "HS256"
 JWT_EXP_MINUTES = 60 * 24
 
-# Local dev auth bypass (default enabled to allow unlocked features unless explicitly disabled)
-LOCAL_DEV_AUTH_BYPASS = os.getenv("LOCAL_DEV_AUTH_BYPASS", "1") in ("1", "true", "True")
+
+def _is_demo_enforced_mode() -> bool:
+    return (
+        os.getenv("TAAIP_DEMO_MODE", "0") in ("1", "true", "True")
+        or os.getenv("TAAIP_OPERATIONAL_MODE", "0") in ("1", "true", "True")
+    )
+
+# Local dev auth bypass (default disabled; must be explicitly enabled)
+LOCAL_DEV_AUTH_BYPASS = os.getenv("LOCAL_DEV_AUTH_BYPASS", "0") in ("1", "true", "True")
 if LOCAL_DEV_AUTH_BYPASS:
     logging.warning("LOCAL_DEV_AUTH_BYPASS enabled: JWT validation will be bypassed for local development")
 
-# Master mode (single-user full permissions override for local/dev)
-TAAIP_MASTER_MODE = os.getenv('TAAIP_MASTER_MODE', '1') in ('1', 'true', 'True')
+# Master mode (single-user full permissions override for local/dev; default disabled)
+TAAIP_MASTER_MODE = os.getenv('TAAIP_MASTER_MODE', '0') in ('1', 'true', 'True')
 if TAAIP_MASTER_MODE:
     logging.warning("TAAIP_MASTER_MODE enabled: granting master permissions to local user")
+
+# In demo/operational mode, bypass and master-mode are always disabled.
+if _is_demo_enforced_mode():
+    LOCAL_DEV_AUTH_BYPASS = False
+    TAAIP_MASTER_MODE = False
+    logging.info("Demo/operational mode active: local bypass and master-mode disabled")
 
 def create_token_for_user(user: models.User):
     payload = {

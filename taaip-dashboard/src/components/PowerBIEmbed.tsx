@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
 import { PowerBIEmbed } from 'powerbi-client-react';
 import { models } from 'powerbi-client';
+import { API_BASE } from '../config/api';
+import { authFetch } from '../lib/authSession';
 
 interface PowerBIReportEmbedProps {
   reportId: string;
@@ -19,13 +20,31 @@ export const PowerBIReportEmbed: React.FC<PowerBIReportEmbedProps> = ({ reportId
     async function fetchToken() {
       try {
         setError(null);
-        const resp = await axios.post('/api/powerbi/embedToken', { reportId });
+        const response = await authFetch(`${API_BASE}/api/powerbi/embedToken`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ reportId }),
+        });
+        const body = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+          throw new Error(`Power BI embed token request failed with status ${response.status}`);
+        }
+
+        if (body?.configured === false || body?.status === 'not_configured') {
+          setError(body?.message || 'Power BI embedding is not configured for this environment.');
+          return;
+        }
+
+        if (!body?.embedToken || !body?.embedUrl) {
+          throw new Error('Power BI embed response did not include embed token and URL');
+        }
+
         if (!mounted) return;
-        setEmbedToken(resp.data.embedToken);
-        setEmbedUrl(resp.data.embedUrl);
+        setEmbedToken(body.embedToken);
+        setEmbedUrl(body.embedUrl);
       } catch (e: any) {
-        console.error('Power BI embed error', e?.response?.data || e.message);
-        // Show informational message instead of error - Power BI requires GCC credentials
+        console.error('Power BI embed error', e?.message || e);
         setError('Power BI integration requires Government Community Cloud (GCC) credentials. Contact your system administrator to configure Power BI access for live reports.');
       }
     }

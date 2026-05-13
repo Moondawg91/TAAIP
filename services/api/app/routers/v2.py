@@ -972,6 +972,31 @@ def planning_overview():
         return {'items': []}
 
 
+@router.get('/planning/summary')
+def planning_summary_v2():
+    """Compatibility endpoint for clients expecting /api/v2/planning/summary.
+
+    Returns the planning overview items and lightweight counts so consumers
+    can render an operational summary without hard-failing on missing route.
+    """
+    overview = planning_overview() or {}
+    items = overview.get('items') if isinstance(overview, dict) else []
+    if not isinstance(items, list):
+        items = []
+
+    projects = [i for i in items if isinstance(i, dict) and i.get('type') == 'project']
+    events = [i for i in items if isinstance(i, dict) and i.get('type') == 'event']
+    return {
+        'status': 'ok',
+        'summary': {
+            'total_items': len(items),
+            'projects': len(projects),
+            'events': len(events),
+        },
+        'items': items,
+    }
+
+
 @router.post('/school-targeting/run')
 def school_targeting_run(payload: Dict):
     """Run School Targeting scoring for provided schools.
@@ -1130,30 +1155,61 @@ def targeting_schools(unit_rsid: str = None, limit: int = 500):
 def v2_twg(org_unit_id: int = None, limit: int = 100):
     """Compatibility endpoint for /api/v2/twg returning working groups list."""
     try:
-        from services.api.app.routers.working_groups import list_wgs
-        raw = list_wgs(org_unit_id=org_unit_id, limit=limit)
+        conn = get_db_conn()
+        cur = conn.cursor()
         out = []
-        for w in (raw or []):
-            try:
-                members = None
-                try:
-                    members = int(w.get('members_count')) if w.get('members_count') is not None else None
-                except Exception:
-                    # try to infer from members list
-                    if isinstance(w.get('members'), (list, tuple)):
-                        members = len(w.get('members'))
+
+        # Preferred source: legacy working_group table.
+        try:
+            cur.execute('SELECT id, org_unit_id, name, wg_type, description, created_at FROM working_group ORDER BY id DESC LIMIT ?', (limit,))
+            for r in cur.fetchall() or []:
+                rec = dict(r)
                 out.append({
-                    'id': w.get('id') or w.get('wg_id') or None,
-                    'name': w.get('name') or w.get('wg_name') or '',
-                    'org_unit_id': w.get('org_unit_id') or w.get('org_unit') or None,
-                    'wg_type': w.get('wg_type') or w.get('type') or None,
-                    'description': w.get('description') or '',
-                    'lead': w.get('lead') or w.get('owner') or None,
-                    'members_count': members,
-                    'created_at': w.get('created_at') or w.get('created') or None
+                    'id': rec.get('id'),
+                    'name': rec.get('name') or '',
+                    'org_unit_id': rec.get('org_unit_id'),
+                    'wg_type': rec.get('wg_type'),
+                    'description': rec.get('description') or '',
+                    'lead': None,
+                    'members_count': None,
+                    'created_at': rec.get('created_at'),
                 })
+        except Exception:
+            pass
+
+        # Fallback source: targeting pipeline TWG-stage records.
+        if not out:
+            try:
+                cur.execute(
+                    '''
+                    SELECT current_stage, COUNT(*) AS record_count,
+                           COALESCE(MAX(updated_at), MAX(created_at), '') AS created_at
+                    FROM targeting_pipeline_records
+                    WHERE current_stage IN ('twg_nomination', 'board_ready', 'board_decision', 'follow_on_action')
+                    GROUP BY current_stage
+                    ORDER BY created_at DESC
+                    LIMIT ?
+                    ''',
+                    (limit,),
+                )
+                idx = 1
+                for r in cur.fetchall() or []:
+                    rec = dict(r)
+                    stage = rec.get('current_stage') or 'twg_nomination'
+                    out.append({
+                        'id': f'twg-{idx}',
+                        'name': f'TWG {stage}',
+                        'org_unit_id': None,
+                        'wg_type': 'targeting',
+                        'description': f"Pipeline records in stage: {stage}",
+                        'lead': '420T',
+                        'members_count': int(rec.get('record_count') or 0),
+                        'created_at': rec.get('created_at'),
+                    })
+                    idx += 1
             except Exception:
-                continue
+                pass
+
         return out
     except Exception:
         return []
@@ -1207,6 +1263,39 @@ def v2_fusion(limit: int = 50):
                 items.append(norm)
             except Exception:
                 continue
+
+        # Fallback source: targeting pipeline fusion-stage records.
+        if not items:
+            try:
+                cur.execute(
+                    '''
+                    SELECT chain_id, COALESCE(created_at, updated_at, '') AS session_date,
+                           COALESCE(created_by, owner_lead, '') AS participants,
+                           COALESCE(problem_statement, observed_pattern, '') AS insights,
+                           COALESCE(recommended_next_action, recommended_focus_90_day, '') AS actions,
+                           COALESCE(status, 'draft') AS status
+                    FROM targeting_pipeline_records
+                    WHERE current_stage='fusion_issue'
+                    ORDER BY COALESCE(updated_at, created_at) DESC
+                    LIMIT ?
+                    ''',
+                    (limit,),
+                )
+                for r in cur.fetchall() or []:
+                    rec = dict(r)
+                    participants = [str(rec.get('participants'))] if rec.get('participants') else []
+                    items.append({
+                        'id': rec.get('chain_id'),
+                        'session_date': rec.get('session_date'),
+                        'participants': participants,
+                        'participants_count': len(participants),
+                        'insights': rec.get('insights') or None,
+                        'actions': rec.get('actions') or None,
+                        'status': rec.get('status') or 'unknown',
+                    })
+            except Exception:
+                pass
+
         try:
             conn.close()
         except Exception:
@@ -1517,6 +1606,74 @@ def lms_progress(payload: dict):
     conn.commit()
     conn.close()
     return {"status": "ok"}
+
+
+@router.get("/lms/learning_paths")
+def lms_learning_paths():
+    """Return learning paths. Uses DB if table exists, falls back to deterministic defaults."""
+    conn = get_db_conn()
+    cur = conn.cursor()
+    try:
+        cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='lms_learning_paths'")
+        has_table = cur.fetchone() is not None
+        if has_table:
+            cur.execute("SELECT path_id, title, courses FROM lms_learning_paths")
+            rows = cur.fetchall()
+            if rows:
+                paths = []
+                for r in rows:
+                    import json as _json
+                    try:
+                        courses = _json.loads(r[2]) if r[2] else []
+                    except Exception:
+                        courses = [c.strip() for c in (r[2] or "").split(",") if c.strip()]
+                    paths.append({"path_id": r[0], "title": r[1], "courses": courses})
+                conn.close()
+                return {"learning_paths": paths, "status": "ok"}
+    except Exception:
+        pass
+    conn.close()
+    # Deterministic defaults
+    return {
+        "learning_paths": [
+            {"path_id": "LP001", "title": "420T Core Path", "courses": ["C001", "C002", "C003"]},
+            {"path_id": "LP002", "title": "Commander Decision Support Path", "courses": ["C004", "C005"]},
+        ],
+        "status": "ok",
+    }
+
+
+@router.get("/lms/user_progress")
+def lms_user_progress(user_id: str = "demo_user"):
+    """Return LMS progress for a user based on enrollments."""
+    conn = get_db_conn()
+    cur = conn.cursor()
+    try:
+        cur.execute(
+            "SELECT enrollment_id, course_id, progress_percent FROM lms_enrollments WHERE user_id=?",
+            (user_id,),
+        )
+        rows = cur.fetchall()
+    except Exception:
+        rows = []
+    conn.close()
+    completed = []
+    in_progress = {}
+    for r in rows:
+        enrollment_id, course_id, pct = r[0], r[1], r[2] or 0
+        if pct >= 100:
+            completed.append(course_id)
+        else:
+            in_progress[course_id] = {"percent": pct / 100.0}
+    return {
+        "progress": {
+            "user_role": "420T",
+            "completed_courses": completed,
+            "in_progress": in_progress,
+            "recommended_next": [],
+        },
+        "status": "ok",
+    }
 
 
 @router.get("/funnel/stages")

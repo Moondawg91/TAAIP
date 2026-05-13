@@ -178,6 +178,96 @@ def market_intel_demographics(fy: Optional[int] = Query(None), qtr: Optional[str
     return {'status':'ok','gaps':gaps,'missing_data':missing}
 
 
+@router.get("/v2/market-intel/segment-analysis")
+def market_intel_segment_analysis(segment_type: Optional[str] = Query(None), fy: Optional[int] = Query(None), rsid_prefix: Optional[str] = Query(None)):
+    conn = connect()
+    cur = conn.cursor()
+    segments = []
+    missing = []
+
+    source_table = None
+    if safe_table_exists(conn, 'mi_zip_fact') and _table_has_rows(conn, 'mi_zip_fact'):
+        source_table = 'mi_zip_fact'
+    elif safe_table_exists(conn, 'market_zip_fact') and _table_has_rows(conn, 'market_zip_fact'):
+        source_table = 'market_zip_fact'
+    elif safe_table_exists(conn, 'market_target_list') and _table_has_rows(conn, 'market_target_list'):
+        source_table = 'market_target_list'
+    elif safe_table_exists(conn, 'market_targets') and _table_has_rows(conn, 'market_targets'):
+        source_table = 'market_targets'
+
+    if not source_table:
+        return {'status': 'ok', 'segments': [], 'missing_data': ['market segmentation source']}
+
+    try:
+        where = ' WHERE 1=1'
+        if fy and _column_exists(conn, source_table, 'fy'):
+            where += f' AND fy={int(fy)}'
+        if rsid_prefix and _column_exists(conn, source_table, 'rsid_prefix'):
+            where += f" AND rsid_prefix='{rsid_prefix}'"
+
+        category_expr = 'market_category' if _column_exists(conn, source_table, 'market_category') else ('target_type' if _column_exists(conn, source_table, 'target_type') else "'unknown'")
+        potential_expr = 'potential_remaining' if _column_exists(conn, source_table, 'potential_remaining') else ('army_potential' if _column_exists(conn, source_table, 'army_potential') else ('potential' if _column_exists(conn, source_table, 'potential') else '0'))
+        contracts_expr = 'contracts_vol' if _column_exists(conn, source_table, 'contracts_vol') else ('contracts' if _column_exists(conn, source_table, 'contracts') else '0')
+        p2p_expr = 'p2p' if _column_exists(conn, source_table, 'p2p') else '0'
+        score_expr = 'opportunity_score' if _column_exists(conn, source_table, 'opportunity_score') else p2p_expr
+
+        cur.execute(
+            f"""
+            SELECT
+              COALESCE({category_expr}, 'unknown') as segment_name,
+              COUNT(*) as segment_count,
+              COALESCE(SUM(COALESCE({potential_expr}, 0)), 0) as potential_total,
+              COALESCE(SUM(COALESCE({contracts_expr}, 0)), 0) as contracts_total,
+              COALESCE(AVG(COALESCE({p2p_expr}, 0)), 0) as p2p_avg,
+              COALESCE(AVG(COALESCE({score_expr}, 0)), 0) as score_avg
+            FROM {source_table}
+            {where}
+            GROUP BY COALESCE({category_expr}, 'unknown')
+            ORDER BY potential_total DESC
+            LIMIT 50
+            """
+        )
+        rows = cur.fetchall()
+
+        for idx, row in enumerate(rows, start=1):
+            category = str(row[0] or 'unknown')
+            p2p = float(row[4] or 0)
+            inferred_type = 'supplemental'
+            if p2p >= 1.2:
+                inferred_type = 'high_payoff'
+            elif p2p >= 1.0:
+                inferred_type = 'high_value'
+            elif p2p >= 0.8:
+                inferred_type = 'opportunity'
+
+            if segment_type and segment_type != 'all' and inferred_type != segment_type:
+                continue
+
+            segments.append({
+                'segment_id': f'segment-{idx}',
+                'segment_name': category.replace('_', ' ').title(),
+                'name': category.replace('_', ' ').title(),
+                'socioeconomic_rank': idx,
+                'life_stage': 'Unknown',
+                'urbanicity': 'Mixed',
+                'population_pct': 0,
+                'propensity_score': float(row[5] or 0),
+                'p2p_ratio': p2p,
+                'enlistments': int(row[3] or 0),
+                'qualified_population': int(row[2] or 0),
+                'segment_type': inferred_type,
+                'motivators': [],
+                'barriers': [],
+                'recommended_messaging': '',
+                'conversion_rate': (float(row[3] or 0) / float(row[2] or 1)) * 100 if float(row[2] or 0) else 0,
+                'potential_value': float(row[2] or 0),
+            })
+    except sqlite3.Error:
+        missing.append(source_table)
+
+    return {'status': 'ok', 'segments': segments, 'missing_data': missing}
+
+
 @router.get("/market-intel/categories")
 def market_intel_categories(fy: Optional[int] = Query(None), qtr: Optional[str] = Query(None), rsid_prefix: Optional[str] = Query(None), limit: int = Query(10)):
     conn = connect()

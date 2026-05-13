@@ -3,6 +3,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from threading import Lock
+import os
+import threading
+import time
 from typing import Dict, List, Optional, Tuple
 from uuid import uuid4
 
@@ -43,6 +46,12 @@ REQUEST_CACHE_MAX = 200
 _REQUEST_CACHE: Dict[str, Dict] = {}
 _REQUEST_CACHE_ORDER: List[str] = []
 _REQUEST_CACHE_LOCK = Lock()
+_REQUEST_SIGNATURE_CACHE: Dict[str, Dict] = {}
+_SIGNAL_SNAPSHOT_CACHE: Dict[str, Dict] = {}
+_SIGNAL_SNAPSHOT_LOCK = Lock()
+_SIGNAL_REFRESH_INFLIGHT = set()
+_SIGNAL_SNAPSHOT_TTL_SECONDS = int(os.getenv("MISSION_SIGNAL_SNAPSHOT_TTL_SECONDS", "180"))
+_REQUEST_SIGNATURE_CACHE_TTL_SECONDS = int(os.getenv("MISSION_OUTPUT_CACHE_TTL_SECONDS", "300"))
 
 
 class DecisionOutputError(Exception):
@@ -1305,6 +1314,146 @@ def _cache_put(request_id: str, payload: Dict) -> None:
             _REQUEST_CACHE.pop(old, None)
 
 
+def _request_signature(
+    org_id: str,
+    period_start: date,
+    period_end: date,
+    baseline_start: Optional[date],
+    baseline_end: Optional[date],
+    include_evidence: bool,
+) -> str:
+    return "|".join(
+        [
+            str(org_id or ""),
+            period_start.isoformat(),
+            period_end.isoformat(),
+            baseline_start.isoformat() if baseline_start else "",
+            baseline_end.isoformat() if baseline_end else "",
+            "1" if include_evidence else "0",
+        ]
+    )
+
+
+def _cache_put_by_signature(signature: str, payload: Dict) -> None:
+    with _REQUEST_CACHE_LOCK:
+        _REQUEST_SIGNATURE_CACHE[signature] = {
+            "payload": payload,
+            "created_at_epoch": time.time(),
+        }
+
+
+def _cache_get_by_signature(signature: str) -> Optional[Dict]:
+    with _REQUEST_CACHE_LOCK:
+        item = _REQUEST_SIGNATURE_CACHE.get(signature)
+    if not item:
+        return None
+    age = max(0.0, time.time() - float(item.get("created_at_epoch") or 0.0))
+    if age > _REQUEST_SIGNATURE_CACHE_TTL_SECONDS:
+        return None
+    return item.get("payload")
+
+
+def _empty_signal_snapshot() -> Dict:
+    now = datetime.utcnow().isoformat() + "Z"
+
+    def _node(summary: Optional[Dict] = None, raw: Optional[Dict] = None) -> Dict:
+        return {
+            "raw": raw or {},
+            "summary": summary or {},
+            "data_as_of": now,
+            "source_dataset_name": None,
+            "rows_used": 0,
+        }
+
+    return {
+        "market": _node(),
+        "access": _node(),
+        "execution": _node(),
+        "funnel": _node(),
+        "accountability": _node({"classification": "insufficient_data", "confidence": "low"}),
+        "loe": _node({"rag": "amber", "status_counts": {}, "total_metrics": 0}),
+        "targeting": _node(),
+        "school_plan": _node(),
+        "roi": _node(),
+        "twg": _node(),
+        "board": _node(),
+        "assets": _node(),
+        "flash_to_bang_processing": _node(),
+        "execution_tracker": _node(),
+    }
+
+
+def _signal_cache_key(scope_type: str, scope_value: str) -> str:
+    return f"{(scope_type or 'USAREC').upper()}::{(scope_value or 'USAREC')}"
+
+
+def _signal_cache_get(scope_type: str, scope_value: str) -> Tuple[Optional[Dict], Optional[float]]:
+    key = _signal_cache_key(scope_type, scope_value)
+    with _SIGNAL_SNAPSHOT_LOCK:
+        item = _SIGNAL_SNAPSHOT_CACHE.get(key)
+    if not item:
+        return None, None
+    age = max(0.0, time.time() - float(item.get("created_at_epoch") or 0.0))
+    return item.get("payload"), age
+
+
+def _signal_cache_put(scope_type: str, scope_value: str, payload: Dict) -> None:
+    key = _signal_cache_key(scope_type, scope_value)
+    with _SIGNAL_SNAPSHOT_LOCK:
+        _SIGNAL_SNAPSHOT_CACHE[key] = {
+            "payload": payload,
+            "created_at_epoch": time.time(),
+        }
+
+
+def _refresh_signal_snapshot_async(scope_type: str, scope_value: str) -> None:
+    key = _signal_cache_key(scope_type, scope_value)
+    with _SIGNAL_SNAPSHOT_LOCK:
+        if key in _SIGNAL_REFRESH_INFLIGHT:
+            return
+        _SIGNAL_REFRESH_INFLIGHT.add(key)
+
+    def _worker():
+        try:
+            from services.api.app import database as _dbmod
+
+            db = next(_dbmod.get_db())
+            try:
+                payload = _collect_signal_summaries(db, scope_type, scope_value)
+                _signal_cache_put(scope_type, scope_value, payload)
+            finally:
+                try:
+                    if _dbmod._shared_session is None:
+                        db.close()
+                except Exception:
+                    pass
+        except Exception:
+            # Keep stale cache on refresh errors.
+            pass
+        finally:
+            with _SIGNAL_SNAPSHOT_LOCK:
+                _SIGNAL_REFRESH_INFLIGHT.discard(key)
+
+    threading.Thread(target=_worker, daemon=True).start()
+
+
+def _get_signals_demo_safe(db, scope_type: str, scope_value: str, force_refresh: bool) -> Dict:
+    if force_refresh or os.getenv("PYTEST_CURRENT_TEST"):
+        payload = _collect_signal_summaries(db, scope_type, scope_value)
+        _signal_cache_put(scope_type, scope_value, payload)
+        return payload
+
+    cached, age = _signal_cache_get(scope_type, scope_value)
+    if cached and age is not None and age <= _SIGNAL_SNAPSHOT_TTL_SECONDS:
+        return cached
+    if cached:
+        _refresh_signal_snapshot_async(scope_type, scope_value)
+        return cached
+
+    _refresh_signal_snapshot_async(scope_type, scope_value)
+    return _empty_signal_snapshot()
+
+
 def get_cached_justification(request_id: str) -> Optional[Dict]:
     with _REQUEST_CACHE_LOCK:
         return _REQUEST_CACHE.get(request_id)
@@ -1330,6 +1479,19 @@ def generate_mission_decrease_justification(
     if baseline_start > baseline_end:
         raise DecisionOutputError("invalid_request", "baseline_start must be <= baseline_end")
 
+    signature = _request_signature(
+        org_id=org_id,
+        period_start=period_start,
+        period_end=period_end,
+        baseline_start=baseline_start,
+        baseline_end=baseline_end,
+        include_evidence=include_evidence,
+    )
+    if not force_refresh:
+        cached_output = _cache_get_by_signature(signature)
+        if cached_output:
+            return cached_output
+
     request_id = f"mdj-{uuid4().hex[:16]}"
 
     mission_current = _compute_mission_total(db, scope_type, scope_value, period_start, period_end)
@@ -1342,7 +1504,7 @@ def generate_mission_decrease_justification(
     else:
         mission_delta_pct = (current_total - baseline_total) / baseline_total
 
-    signals = _collect_signal_summaries(db, scope_type, scope_value)
+    signals = _get_signals_demo_safe(db, scope_type, scope_value, force_refresh=bool(force_refresh))
 
     candidates = _compute_factor_candidates(mission_delta_pct, signals)
     ranked_factors = rank_causal_factors(candidates)
@@ -1555,6 +1717,7 @@ def generate_mission_decrease_justification(
     }
 
     _cache_put(request_id, output)
+    _cache_put_by_signature(signature, output)
     return output
 
 

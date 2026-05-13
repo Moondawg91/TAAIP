@@ -106,12 +106,21 @@ interface Platform {
   is_active: number;
 }
 
+interface MacRoiSummary {
+  days: number;
+  spend: number;
+  conversions: number;
+  engagements: number;
+  roi: number | null;
+}
+
 export const MarketingEngagementDashboard: React.FC = () => {
   const [overview, setOverview] = useState<MarketingOverview | null>(null);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [metrics, setMetrics] = useState<EngagementMetric[]>([]);
   const [socialPosts, setSocialPosts] = useState<SocialPost[]>([]);
   const [platforms, setPlatforms] = useState<Platform[]>([]);
+  const [macRoi, setMacRoi] = useState<MacRoiSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState(30);
   const [selectedPlatform, setSelectedPlatform] = useState<string>('all');
@@ -124,12 +133,13 @@ export const MarketingEngagementDashboard: React.FC = () => {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [overviewRes, campaignsRes, metricsRes, socialRes, platformsRes] = await Promise.all([
+      const [overviewRes, campaignsRes, metricsRes, socialRes, platformsRes, macRoiRes] = await Promise.all([
         fetch(`${API_BASE}/api/v2/marketing/overview?days=${timeRange}`),
         fetch(`${API_BASE}/api/v2/marketing/campaigns${selectedPlatform !== 'all' ? `?platform=${selectedPlatform}` : ''}`),
         fetch(`${API_BASE}/api/v2/marketing/engagement-metrics?limit=100${selectedPlatform !== 'all' ? `&platform=${selectedPlatform}` : ''}`),
         fetch(`${API_BASE}/api/v2/marketing/social-media-posts?limit=50${selectedPlatform !== 'all' ? `&platform=${selectedPlatform}` : ''}`),
-        fetch(`${API_BASE}/api/v2/marketing/platforms`)
+        fetch(`${API_BASE}/api/v2/marketing/platforms`),
+        fetch(`${API_BASE}/api/v2/marketing/mac-roi?days=${timeRange}`)
       ]);
 
       const overviewData = await overviewRes.json();
@@ -137,12 +147,14 @@ export const MarketingEngagementDashboard: React.FC = () => {
       const metricsData = await metricsRes.json();
       const socialData = await socialRes.json();
       const platformsData = await platformsRes.json();
+      const macRoiData = await macRoiRes.json();
 
       if (overviewData.status === 'ok') setOverview(overviewData.overview);
       if (campaignsData.status === 'ok') setCampaigns(campaignsData.campaigns);
       if (metricsData.status === 'ok') setMetrics(metricsData.metrics);
       if (socialData.status === 'ok') setSocialPosts(socialData.posts);
       if (platformsData.status === 'ok') setPlatforms(platformsData.platforms);
+      if (macRoiData?.status === 'ok') setMacRoi(macRoiData.mac_roi);
     } catch (error) {
       console.error('Error loading marketing data:', error);
     } finally {
@@ -322,6 +334,19 @@ export const MarketingEngagementDashboard: React.FC = () => {
               </div>
               <div className="text-4xl font-bold text-pink-900">{overview.period_days} Days</div>
               <p className="text-sm text-gray-600 mt-2">Data reporting period</p>
+            </div>
+
+            <div className="bg-white rounded-xl p-6 border border-gray-200">
+              <div className="flex items-center gap-3 mb-4">
+                <DollarSign className="w-6 h-6 text-emerald-600" />
+                <h3 className="text-lg font-semibold text-gray-900">MAC ROI</h3>
+              </div>
+              <div className="text-4xl font-bold text-emerald-900">
+                {macRoi?.roi !== null && macRoi?.roi !== undefined ? macRoi.roi.toFixed(2) : 'N/A'}
+              </div>
+              <p className="text-sm text-gray-600 mt-2">
+                {macRoi ? `${formatNumber(macRoi.conversions)} conversions · $${formatNumber(macRoi.spend)}` : 'No MAC ROI data available'}
+              </p>
             </div>
           </div>
 

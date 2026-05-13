@@ -3,6 +3,8 @@ Domain API router implementing Phase 2 endpoints under /api/v2.
 All responses are structured as {"status":"ok","data":...}.
 """
 
+from importlib import import_module
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from typing import List, Optional
 import os
@@ -14,21 +16,35 @@ from . import schemas_decision_output as decision_schemas
 from . import models
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from services.api.app.services import (
-    accountability_engine,
-    ai_recommendation_engine,
-    decision_writeback,
-    execution_quality,
-    forecasting,
-    ingest_contracts,
-    lms_performance_bridge,
-    loe_engine,
-    mission_decrease_justification,
-    market_qma,
-    school_access,
-    targeting_expansion,
-    what_if,
-)
+
+
+class _LazyModule:
+    def __init__(self, module_name: str):
+        self._module_name = module_name
+        self._module = None
+
+    def _load(self):
+        if self._module is None:
+            self._module = import_module(self._module_name)
+        return self._module
+
+    def __getattr__(self, item):
+        return getattr(self._load(), item)
+
+
+accountability_engine = _LazyModule("services.api.app.services.accountability_engine")
+ai_recommendation_engine = _LazyModule("services.api.app.services.ai_recommendation_engine")
+decision_writeback = _LazyModule("services.api.app.services.decision_writeback")
+execution_quality = _LazyModule("services.api.app.services.execution_quality")
+forecasting = _LazyModule("services.api.app.services.forecasting")
+ingest_contracts = _LazyModule("services.api.app.services.ingest_contracts")
+lms_performance_bridge = _LazyModule("services.api.app.services.lms_performance_bridge")
+loe_engine = _LazyModule("services.api.app.services.loe_engine")
+mission_decrease_justification = _LazyModule("services.api.app.services.mission_decrease_justification")
+market_qma = _LazyModule("services.api.app.services.market_qma")
+school_access = _LazyModule("services.api.app.services.school_access")
+targeting_expansion = _LazyModule("services.api.app.services.targeting_expansion")
+what_if = _LazyModule("services.api.app.services.what_if")
 
 router = APIRouter(prefix="/v2", tags=["domain"])
 

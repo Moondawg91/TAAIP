@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { 
   Folder, Calendar, CheckCircle, AlertCircle, Clock, DollarSign, Users, 
@@ -109,17 +109,87 @@ interface ProjectDetail {
   };
 }
 
+interface PlanningCalendarEvent {
+  event_id: string;
+  title: string;
+  start_datetime: string;
+  end_datetime?: string;
+  status: string;
+  priority?: string;
+  location?: string;
+  rsid?: string;
+  brigade?: string;
+}
+
+interface ROIEvent {
+  event_id: string;
+  name: string;
+  status: string;
+  predicted: {
+    roi: number;
+  };
+  actual: {
+    roi: number;
+  };
+}
+
+interface PlanningRow {
+  id: string;
+  kind: 'project' | 'calendar';
+  title: string;
+  owner: string;
+  dueDate: string;
+  status: string;
+  risk: 'low' | 'medium' | 'high';
+  quarter: string;
+  alignment: 'aligned' | 'misaligned';
+}
+
+const getFiscalQuarterLabel = (dateValue: string | Date): string => {
+  const d = typeof dateValue === 'string' ? new Date(dateValue) : dateValue;
+  const m = d.getMonth() + 1;
+  const y = d.getFullYear();
+
+  if (m >= 10) return `FY${y + 1} Q1`;
+  if (m >= 1 && m <= 3) return `FY${y} Q2`;
+  if (m >= 4 && m <= 6) return `FY${y} Q3`;
+  return `FY${y} Q4`;
+};
+
+const getCurrentAndNextFiscalQuarter = (): { current: string; next: string } => {
+  const now = new Date();
+  const current = getFiscalQuarterLabel(now);
+  const nextDate = new Date(now);
+  nextDate.setMonth(now.getMonth() + 3);
+  const next = getFiscalQuarterLabel(nextDate);
+  return { current, next };
+};
+
+const isProjectCompleteLikeStatus = (status: string): boolean => {
+  return ['completed', 'canceled'].includes(status);
+};
+
 export const ProjectManagement: React.FC = () => {
   const [loading, setLoading] = useState(true);
-  const [view, setView] = useState<'dashboard' | 'list' | 'detail'>('dashboard');
+  const [view, setView] = useState<'cards' | 'table' | 'summary' | 'detail'>('cards');
   const [selectedProject, setSelectedProject] = useState<string | null>(null);
   const [editingProject, setEditingProject] = useState<string | null>(null);
   const [creatingProject, setCreatingProject] = useState(false);
   const [filterRSID, setFilterRSID] = useState<string | null>(null);
+  const [timeHorizonDays, setTimeHorizonDays] = useState<number>(30);
+  const [planningStatusFilter, setPlanningStatusFilter] = useState<'all' | 'active' | 'upcoming' | 'overdue'>('all');
+  const [quarterFilter, setQuarterFilter] = useState<'current' | 'next' | 'all'>('current');
   
   const [dashboardData, setDashboardData] = useState<DashboardSummary | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
   const [projectDetail, setProjectDetail] = useState<ProjectDetail | null>(null);
+  const [calendarEvents, setCalendarEvents] = useState<PlanningCalendarEvent[]>([]);
+  const [roiEvents, setRoiEvents] = useState<ROIEvent[]>([]);
+  const [budgetTotal, setBudgetTotal] = useState<number | null>(null);
+  const [budgetSpent, setBudgetSpent] = useState<number | null>(null);
+  const [calendarFeedUnavailable, setCalendarFeedUnavailable] = useState(false);
+  const [roiFeedUnavailable, setRoiFeedUnavailable] = useState(false);
+  const [budgetFeedUnavailable, setBudgetFeedUnavailable] = useState(false);
 
   const fetchDashboard = async () => {
     setLoading(true);
@@ -202,9 +272,8 @@ export const ProjectManagement: React.FC = () => {
 
   const fetchProjects = async () => {
     try {
-      // Prefer the projects_pm router for project CRUD; fall back to legacy /api/v2/projects if unavailable
-      let res = await fetch(`${API_BASE}/api/v2/projects_pm/projects`);
-      if (!res.ok) res = await fetch(`${API_BASE}/api/v2/projects`);
+      // Use the projects_pm router for project CRUD
+      const res = await fetch(`${API_BASE}/api/v2/projects_pm/projects`);
       const text = await res.text();
       let data: any = null;
       try {
@@ -228,6 +297,80 @@ export const ProjectManagement: React.FC = () => {
       }
     } catch (error) {
       console.error('Error fetching projects:', error);
+    }
+  };
+
+  const fetchPlanningConnections = async () => {
+    const [calendarRes, roiRes, budgetRes] = await Promise.allSettled([
+      fetch(`${API_BASE}/api/v2/calendar/events`),
+      fetch(`${API_BASE}/api/v2/events/performance`),
+      fetch(`${API_BASE}/api/v2/budget/allocations?fiscal_year=${new Date().getFullYear()}`),
+    ]);
+
+    if (calendarRes.status === 'fulfilled') {
+      try {
+        const data = await calendarRes.value.json();
+        if (data?.status === 'ok' && Array.isArray(data.events)) {
+          setCalendarEvents(data.events as PlanningCalendarEvent[]);
+          setCalendarFeedUnavailable(false);
+        } else {
+          setCalendarEvents([]);
+          setCalendarFeedUnavailable(true);
+        }
+      } catch (err) {
+        console.error('Calendar feed parse error:', err);
+        setCalendarEvents([]);
+        setCalendarFeedUnavailable(true);
+      }
+    } else {
+      setCalendarEvents([]);
+      setCalendarFeedUnavailable(true);
+    }
+
+    if (roiRes.status === 'fulfilled') {
+      try {
+        const data = await roiRes.value.json();
+        if (data?.status === 'ok' && Array.isArray(data.data)) {
+          setRoiEvents(data.data as ROIEvent[]);
+          setRoiFeedUnavailable(false);
+        } else {
+          setRoiEvents([]);
+          setRoiFeedUnavailable(true);
+        }
+      } catch (err) {
+        console.error('ROI feed parse error:', err);
+        setRoiEvents([]);
+        setRoiFeedUnavailable(true);
+      }
+    } else {
+      setRoiEvents([]);
+      setRoiFeedUnavailable(true);
+    }
+
+    if (budgetRes.status === 'fulfilled') {
+      try {
+        const data = await budgetRes.value.json();
+        if (data?.status === 'ok' && Array.isArray(data.budgets)) {
+          const total = data.budgets.reduce((sum: number, b: any) => sum + (Number(b.total_budget) || 0), 0);
+          const spent = data.budgets.reduce((sum: number, b: any) => sum + (Number(b.spent) || 0), 0);
+          setBudgetTotal(total);
+          setBudgetSpent(spent);
+          setBudgetFeedUnavailable(false);
+        } else {
+          setBudgetTotal(null);
+          setBudgetSpent(null);
+          setBudgetFeedUnavailable(true);
+        }
+      } catch (err) {
+        console.error('Budget feed parse error:', err);
+        setBudgetTotal(null);
+        setBudgetSpent(null);
+        setBudgetFeedUnavailable(true);
+      }
+    } else {
+      setBudgetTotal(null);
+      setBudgetSpent(null);
+      setBudgetFeedUnavailable(true);
     }
   };
 
@@ -285,6 +428,7 @@ export const ProjectManagement: React.FC = () => {
   useEffect(() => {
     fetchDashboard();
     fetchProjects();
+    fetchPlanningConnections();
   }, []);
 
   useEffect(() => {
@@ -299,46 +443,127 @@ export const ProjectManagement: React.FC = () => {
   };
 
   const handleBackToDashboard = () => {
-    setView('dashboard');
+    setView('cards');
     setSelectedProject(null);
     setProjectDetail(null);
   };
 
   const handleBackToList = () => {
-    setView('list');
+    setView('table');
     setSelectedProject(null);
     setProjectDetail(null);
   };
 
+  const { current: currentQuarter, next: nextQuarter } = useMemo(() => getCurrentAndNextFiscalQuarter(), []);
+
+  const planningRows = useMemo(() => {
+    const today = new Date();
+    const horizonDate = new Date(today);
+    horizonDate.setDate(today.getDate() + timeHorizonDays);
+
+    const projectRows: PlanningRow[] = projects.map((p) => {
+      const due = new Date(p.target_date);
+      const overdue = due.getTime() < today.getTime() && !isProjectCompleteLikeStatus(p.status);
+      const isRiskStatus = ['at_risk', 'blocked'].includes(p.status);
+      return {
+        id: p.project_id,
+        kind: 'project',
+        title: p.name,
+        owner: p.owner_id || 'Unassigned',
+        dueDate: p.target_date,
+        status: p.status,
+        risk: isRiskStatus || overdue ? 'high' : p.status === 'planning' ? 'medium' : 'low',
+        quarter: getFiscalQuarterLabel(p.target_date),
+        alignment: isRiskStatus || overdue ? 'misaligned' : 'aligned',
+      };
+    });
+
+    const eventRows: PlanningRow[] = calendarEvents.map((e) => {
+      const due = new Date(e.start_datetime);
+      const overdue = due.getTime() < today.getTime() && !['completed', 'cancelled'].includes((e.status || '').toLowerCase());
+      const status = (e.status || 'scheduled').toLowerCase();
+      return {
+        id: e.event_id,
+        kind: 'calendar',
+        title: e.title,
+        owner: e.rsid || e.brigade || 'Planning Cell',
+        dueDate: e.start_datetime,
+        status,
+        risk: overdue ? 'high' : status === 'in_progress' ? 'medium' : 'low',
+        quarter: getFiscalQuarterLabel(e.start_datetime),
+        alignment: overdue ? 'misaligned' : 'aligned',
+      };
+    });
+
+    return [...projectRows, ...eventRows]
+      .filter((row) => {
+        const due = new Date(row.dueDate);
+        const isUpcoming = due.getTime() >= today.getTime() && due.getTime() <= horizonDate.getTime();
+        const isOverdue = due.getTime() < today.getTime() && !isProjectCompleteLikeStatus(row.status);
+        const isActive = !isProjectCompleteLikeStatus(row.status);
+
+        const statusPass =
+          planningStatusFilter === 'all' ||
+          (planningStatusFilter === 'active' && isActive) ||
+          (planningStatusFilter === 'upcoming' && isUpcoming) ||
+          (planningStatusFilter === 'overdue' && isOverdue);
+
+        const quarterPass =
+          quarterFilter === 'all' ||
+          (quarterFilter === 'current' && row.quarter === currentQuarter) ||
+          (quarterFilter === 'next' && row.quarter === nextQuarter);
+
+        return statusPass && quarterPass;
+      })
+      .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+  }, [projects, calendarEvents, timeHorizonDays, planningStatusFilter, quarterFilter, currentQuarter, nextQuarter]);
+
+  const planningSummary = useMemo(() => {
+    const now = new Date();
+    const overdue = planningRows.filter((r) => new Date(r.dueDate).getTime() < now.getTime() && !isProjectCompleteLikeStatus(r.status)).length;
+    const upcoming = planningRows.filter((r) => {
+      const due = new Date(r.dueDate).getTime();
+      return due >= now.getTime();
+    }).length;
+    const misaligned = planningRows.filter((r) => r.alignment === 'misaligned').length;
+    const highRisk = planningRows.filter((r) => r.risk === 'high').length;
+    const health = overdue > 0 || highRisk > 0 ? 'Watch' : upcoming > 0 ? 'On Plan' : 'No Near-Term Items';
+
+    return {
+      total: planningRows.length,
+      overdue,
+      upcoming,
+      misaligned,
+      highRisk,
+      health,
+    };
+  }, [planningRows]);
+
+  const budgetContext = useMemo(() => {
+    if (budgetFeedUnavailable) return null;
+    const total = budgetTotal ?? dashboardData?.summary?.total_budget ?? null;
+    const spent = budgetSpent ?? dashboardData?.summary?.total_spent ?? null;
+    if (total === null || spent === null || total <= 0) return null;
+    return {
+      total,
+      spent,
+      remaining: Math.max(total - spent, 0),
+      utilization: (spent / total) * 100,
+    };
+  }, [budgetFeedUnavailable, budgetTotal, budgetSpent, dashboardData]);
+
+  const roiContext = useMemo(() => {
+    if (roiFeedUnavailable) return null;
+    const completed = roiEvents.filter((e) => (e.status || '').toLowerCase() === 'completed');
+    const series = completed.length > 0 ? completed : roiEvents;
+    if (series.length === 0) return { count: 0, avgActualRoi: null, avgPredictedRoi: null };
+    const avgActualRoi = series.reduce((sum, e) => sum + (Number(e.actual?.roi) || 0), 0) / series.length;
+    const avgPredictedRoi = series.reduce((sum, e) => sum + (Number(e.predicted?.roi) || 0), 0) / series.length;
+    return { count: series.length, avgActualRoi, avgPredictedRoi };
+  }, [roiEvents, roiFeedUnavailable]);
+
   // Debug: Always show something
   console.log('ProjectManagement render:', { loading, dashboardData: !!dashboardData, view });
-
-  if (loading && !dashboardData) {
-    return (
-      <div className="flex items-center justify-center h-96 bg-white rounded-lg shadow p-8">
-        <RefreshCw className="w-8 h-8 animate-spin text-blue-600" />
-        <span className="ml-3 text-lg text-gray-600">Loading project data...</span>
-      </div>
-    );
-  }
-
-  if (!dashboardData) {
-    return (
-      <div className="flex items-center justify-center h-96 bg-white rounded-lg shadow p-8">
-        <div className="text-center">
-          <AlertCircle className="w-16 h-16 text-yellow-500 mx-auto mb-4" />
-          <h2 className="text-xl font-bold text-gray-800 mb-2">No Data Available</h2>
-          <p className="text-gray-600 mb-4">Unable to load project dashboard data.</p>
-          <button
-            onClick={fetchDashboard}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-          >
-            Retry
-          </button>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6 pb-8 p-6">
@@ -347,10 +572,10 @@ export const ProjectManagement: React.FC = () => {
         <div>
           <h1 className="text-3xl font-bold text-gray-800 flex items-center gap-3">
             <Briefcase className="w-8 h-8 text-blue-600" />
-            Project Management
+            Planning
           </h1>
           <p className="text-gray-600 mt-1">
-            Track events, marketing campaigns, and initiatives from start to finish
+            Planning, scheduling, alignment, forecasting, and management of upcoming effort
           </p>
         </div>
         <div className="flex gap-3">
@@ -360,29 +585,15 @@ export const ProjectManagement: React.FC = () => {
               // Refresh data with filter
               fetchDashboard();
               fetchProjects();
+              fetchPlanningConnections();
             }}
             currentRSID={filterRSID}
           />
-          {view !== 'dashboard' && (
-            <button
-              onClick={handleBackToDashboard}
-              className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
-            >
-              Dashboard
-            </button>
-          )}
-          {view !== 'list' && (
-            <button
-              onClick={() => setView('list')}
-              className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
-            >
-              All Projects
-            </button>
-          )}
           <button
             onClick={() => {
               fetchDashboard();
               fetchProjects();
+              fetchPlanningConnections();
               if (selectedProject) fetchProjectDetail(selectedProject);
             }}
             className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -407,13 +618,252 @@ export const ProjectManagement: React.FC = () => {
         </div>
       </div>
 
+      {loading && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-800 flex items-center gap-2">
+          <RefreshCw className="w-4 h-4 animate-spin" />
+          Refreshing planning feeds...
+        </div>
+      )}
+
+      {/* Planning Controls */}
+      <div className="bg-white rounded-xl shadow-md p-4 flex flex-wrap gap-3 items-center justify-between">
+        <div className="flex gap-2">
+          <button
+            onClick={() => setView('cards')}
+            className={`px-4 py-2 rounded-lg font-medium ${view === 'cards' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'}`}
+          >
+            Cards
+          </button>
+          <button
+            onClick={() => setView('table')}
+            className={`px-4 py-2 rounded-lg font-medium ${view === 'table' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'}`}
+          >
+            Table
+          </button>
+          <button
+            onClick={() => setView('summary')}
+            className={`px-4 py-2 rounded-lg font-medium ${view === 'summary' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'}`}
+          >
+            Summary
+          </button>
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          <select
+            value={timeHorizonDays}
+            onChange={(e) => setTimeHorizonDays(Number(e.target.value))}
+            className="px-3 py-2 border border-gray-300 rounded-lg"
+          >
+            <option value={7}>Next 7 Days</option>
+            <option value={30}>Next 30 Days</option>
+            <option value={90}>Next 90 Days</option>
+          </select>
+          <select
+            value={quarterFilter}
+            onChange={(e) => setQuarterFilter(e.target.value as 'current' | 'next' | 'all')}
+            className="px-3 py-2 border border-gray-300 rounded-lg"
+          >
+            <option value="current">Current Quarter ({currentQuarter})</option>
+            <option value="next">Next Quarter ({nextQuarter})</option>
+            <option value="all">All Quarters</option>
+          </select>
+          <select
+            value={planningStatusFilter}
+            onChange={(e) => setPlanningStatusFilter(e.target.value as 'all' | 'active' | 'upcoming' | 'overdue')}
+            className="px-3 py-2 border border-gray-300 rounded-lg"
+          >
+            <option value="all">All Status</option>
+            <option value="active">Active</option>
+            <option value="upcoming">Upcoming</option>
+            <option value="overdue">Overdue</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Planning Summary Strip */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
+        <div className="bg-white rounded-xl shadow-md p-4">
+          <p className="text-xs text-gray-500 uppercase">Current Quarter</p>
+          <p className="text-lg font-bold text-gray-900 mt-1">{currentQuarter}</p>
+        </div>
+        <div className="bg-white rounded-xl shadow-md p-4">
+          <p className="text-xs text-gray-500 uppercase">Planning Posture</p>
+          <p className="text-lg font-bold text-gray-900 mt-1">{planningSummary.health}</p>
+        </div>
+        <div className="bg-white rounded-xl shadow-md p-4">
+          <p className="text-xs text-gray-500 uppercase">Total Planned</p>
+          <p className="text-lg font-bold text-blue-700 mt-1">{planningSummary.total}</p>
+        </div>
+        <div className="bg-white rounded-xl shadow-md p-4">
+          <p className="text-xs text-gray-500 uppercase">Upcoming</p>
+          <p className="text-lg font-bold text-green-700 mt-1">{planningSummary.upcoming}</p>
+        </div>
+        <div className="bg-white rounded-xl shadow-md p-4">
+          <p className="text-xs text-gray-500 uppercase">Due / Overdue</p>
+          <p className="text-lg font-bold text-orange-700 mt-1">{planningSummary.overdue}</p>
+        </div>
+        <div className="bg-white rounded-xl shadow-md p-4">
+          <p className="text-xs text-gray-500 uppercase">Misaligned</p>
+          <p className="text-lg font-bold text-red-700 mt-1">{planningSummary.misaligned}</p>
+        </div>
+      </div>
+
+      {/* Feed Health / Degraded State Notices */}
+      {(calendarFeedUnavailable || budgetFeedUnavailable || roiFeedUnavailable || !dashboardData) && (
+        <div className="bg-yellow-50 border border-yellow-300 rounded-lg p-4 text-sm text-yellow-900">
+          <p className="font-semibold mb-2">Planning feed availability</p>
+          <ul className="list-disc ml-5 space-y-1">
+            {!dashboardData && <li>Planning summary feed unavailable or returned no planning data.</li>}
+            {calendarFeedUnavailable && <li>Calendar feed unavailable or no planning schedule data returned.</li>}
+            {budgetFeedUnavailable && <li>Budget feed unavailable or no planning budget data returned.</li>}
+            {roiFeedUnavailable && <li>ROI feed unavailable or no planning ROI data returned.</li>}
+          </ul>
+        </div>
+      )}
+
       {/* Views */}
-      {view === 'dashboard' && dashboardData && (
-        <DashboardView data={dashboardData} onProjectClick={handleProjectClick} />
+      {view === 'cards' && dashboardData && (
+        <div className="space-y-6">
+          <DashboardView data={dashboardData} onProjectClick={handleProjectClick} />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="bg-white rounded-xl shadow-md p-6">
+              <h3 className="text-lg font-semibold text-gray-800 mb-3">Calendar / Time-Based Planning</h3>
+              {calendarEvents.length === 0 ? (
+                <p className="text-sm text-gray-600">No planning calendar data returned for the selected filters.</p>
+              ) : (
+                <div className="space-y-2">
+                  {calendarEvents
+                    .slice()
+                    .sort((a, b) => new Date(a.start_datetime).getTime() - new Date(b.start_datetime).getTime())
+                    .slice(0, 8)
+                    .map((e) => (
+                      <div key={e.event_id} className="flex items-center justify-between border border-gray-200 rounded p-2">
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">{e.title}</p>
+                          <p className="text-xs text-gray-600">{getFiscalQuarterLabel(e.start_datetime)} • {new Date(e.start_datetime).toLocaleDateString()}</p>
+                        </div>
+                        <span className="text-xs px-2 py-1 rounded bg-gray-100 text-gray-700">{e.status || 'scheduled'}</span>
+                      </div>
+                    ))}
+                </div>
+              )}
+            </div>
+
+            <div className="bg-white rounded-xl shadow-md p-6">
+              <h3 className="text-lg font-semibold text-gray-800 mb-3">Budget and ROI Relationship</h3>
+              <div className="space-y-3">
+                <div className="border border-gray-200 rounded p-3">
+                  <p className="text-xs text-gray-500 uppercase">Budget Context</p>
+                  {budgetContext ? (
+                    <p className="text-sm text-gray-800 mt-1">
+                      Total ${budgetContext.total.toLocaleString()} • Spent ${budgetContext.spent.toLocaleString()} • Remaining ${budgetContext.remaining.toLocaleString()} • Utilization {budgetContext.utilization.toFixed(1)}%
+                    </p>
+                  ) : (
+                    <p className="text-sm text-gray-600 mt-1">Planning budget relationship unavailable.</p>
+                  )}
+                </div>
+                <div className="border border-gray-200 rounded p-3">
+                  <p className="text-xs text-gray-500 uppercase">ROI Context</p>
+                  {roiContext && roiContext.avgActualRoi !== null && roiContext.avgPredictedRoi !== null ? (
+                    <p className="text-sm text-gray-800 mt-1">
+                      ROI records {roiContext.count} • Avg actual ROI {roiContext.avgActualRoi.toFixed(2)}x • Avg predicted ROI {roiContext.avgPredictedRoi.toFixed(2)}x
+                    </p>
+                  ) : (
+                    <p className="text-sm text-gray-600 mt-1">Planning ROI relationship unavailable.</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
-      {view === 'list' && (
-        <ProjectListView projects={projects} onProjectClick={handleProjectClick} />
+
+      {view === 'table' && (
+        <div className="bg-white rounded-xl shadow-md overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h3 className="text-lg font-semibold text-gray-800">Planning Table View</h3>
+            <p className="text-sm text-gray-600 mt-1">Planned efforts, due dates, owners, status, quarter, and alignment</p>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Planned Item</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Owner</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Quarter</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Due</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Risk</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Alignment</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {planningRows.length === 0 ? (
+                  <tr>
+                    <td className="px-4 py-8 text-sm text-gray-600" colSpan={8}>
+                      No planning rows returned for current filters.
+                    </td>
+                  </tr>
+                ) : (
+                  planningRows.map((row) => (
+                    <tr
+                      key={`${row.kind}-${row.id}`}
+                      className="hover:bg-gray-50 cursor-pointer"
+                      onClick={() => row.kind === 'project' && handleProjectClick(row.id)}
+                    >
+                      <td className="px-4 py-3 text-sm text-gray-700 uppercase">{row.kind}</td>
+                      <td className="px-4 py-3 text-sm font-medium text-gray-900">{row.title}</td>
+                      <td className="px-4 py-3 text-sm text-gray-700">{row.owner}</td>
+                      <td className="px-4 py-3 text-sm text-gray-700">{row.quarter}</td>
+                      <td className="px-4 py-3 text-sm text-gray-700">{new Date(row.dueDate).toLocaleDateString()}</td>
+                      <td className="px-4 py-3 text-sm text-gray-700">{row.status}</td>
+                      <td className="px-4 py-3 text-sm">
+                        <span className={`px-2 py-1 rounded text-xs ${row.risk === 'high' ? 'bg-red-100 text-red-700' : row.risk === 'medium' ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700'}`}>
+                          {row.risk}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-sm">
+                        <span className={`px-2 py-1 rounded text-xs ${row.alignment === 'misaligned' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
+                          {row.alignment}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
       )}
+
+      {view === 'summary' && (
+        <div className="bg-white rounded-xl shadow-md p-6 space-y-4">
+          <h3 className="text-xl font-semibold text-gray-800">Planning Briefing Summary</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="border border-gray-200 rounded p-4">
+              <h4 className="text-sm font-semibold text-gray-700 uppercase mb-2">Current Quarter and Posture</h4>
+              <p className="text-sm text-gray-700">Quarter: {currentQuarter}. Planning status: {planningSummary.health}. Total planned items: {planningSummary.total}.</p>
+            </div>
+            <div className="border border-gray-200 rounded p-4">
+              <h4 className="text-sm font-semibold text-gray-700 uppercase mb-2">Upcoming and Due</h4>
+              <p className="text-sm text-gray-700">Upcoming: {planningSummary.upcoming}. Overdue/behind: {planningSummary.overdue}. High risk: {planningSummary.highRisk}.</p>
+            </div>
+            <div className="border border-gray-200 rounded p-4">
+              <h4 className="text-sm font-semibold text-gray-700 uppercase mb-2">Alignment and Risk</h4>
+              <p className="text-sm text-gray-700">Misaligned items: {planningSummary.misaligned}. Action needed now focuses on overdue and high-risk planning items.</p>
+            </div>
+            <div className="border border-gray-200 rounded p-4">
+              <h4 className="text-sm font-semibold text-gray-700 uppercase mb-2">Budget and ROI Linkage</h4>
+              <p className="text-sm text-gray-700">
+                Budget: {budgetContext ? `${budgetContext.utilization.toFixed(1)}% utilized` : 'unavailable'}.
+                ROI: {roiContext && roiContext.avgActualRoi !== null ? `${roiContext.avgActualRoi.toFixed(2)}x average actual` : 'unavailable'}.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {view === 'detail' && projectDetail && (
         <ProjectDetailView 
           data={projectDetail} 
@@ -451,6 +901,18 @@ export const ProjectManagement: React.FC = () => {
 // Dashboard View
 const DashboardView: React.FC<{ data: DashboardSummary; onProjectClick: (id: string) => void }> = ({ data, onProjectClick }) => {
   const { summary, recent_projects, status_distribution } = data;
+
+  // Recharts throws when numeric series contain NaN/Infinity; coerce to safe finite values.
+  const safeStatusDistribution = (Array.isArray(status_distribution) ? status_distribution : []).map((entry: any) => ({
+    status: String(entry?.status || 'unknown'),
+    count: Number.isFinite(Number(entry?.count)) ? Number(entry.count) : 0,
+  }));
+
+  const safeRecentProjects = (Array.isArray(recent_projects) ? recent_projects : []).map((project: any) => ({
+    ...project,
+    name: String(project?.name || 'Untitled'),
+    percent_complete: Number.isFinite(Number(project?.percent_complete)) ? Number(project.percent_complete) : 0,
+  }));
 
   return (
     <div className="space-y-6">
@@ -577,39 +1039,47 @@ const DashboardView: React.FC<{ data: DashboardSummary; onProjectClick: (id: str
         {/* Projects by Status */}
         <div className="bg-white rounded-xl shadow-md p-6">
           <h3 className="text-lg font-semibold text-gray-800 mb-4">Projects by Status</h3>
-          <ResponsiveContainer width="100%" height={250}>
-            <PieChart>
-              <Pie
-                data={status_distribution}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                label={({ status, count }) => `${status}: ${count}`}
-                outerRadius={80}
-                fill="#8884d8"
-                dataKey="count"
-              >
-                {status_distribution.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[entry.status as keyof typeof COLORS] || '#94a3b8'} />
-                ))}
-              </Pie>
-              <Tooltip />
-            </PieChart>
-          </ResponsiveContainer>
+          {safeStatusDistribution.length > 0 ? (
+            <ResponsiveContainer width="100%" height={250}>
+              <PieChart>
+                <Pie
+                  data={safeStatusDistribution}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({ status, count }) => `${status}: ${count}`}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="count"
+                >
+                  {safeStatusDistribution.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[entry.status as keyof typeof COLORS] || '#94a3b8'} />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="h-[250px] flex items-center justify-center text-sm text-gray-500">No status distribution data available.</div>
+          )}
         </div>
 
         {/* Project Progress */}
         <div className="bg-white rounded-xl shadow-md p-6">
           <h3 className="text-lg font-semibold text-gray-800 mb-4">Recent Projects Progress</h3>
-          <ResponsiveContainer width="100%" height={250}>
-            <BarChart data={recent_projects.slice(0, 5)} layout="horizontal">
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis type="number" domain={[0, 100]} unit="%" />
-              <YAxis dataKey="name" type="category" width={120} fontSize={11} />
-              <Tooltip />
-              <Bar dataKey="percent_complete" fill="#3b82f6" name="Progress %" />
-            </BarChart>
-          </ResponsiveContainer>
+          {safeRecentProjects.length > 0 ? (
+            <ResponsiveContainer width="100%" height={250}>
+              <BarChart data={safeRecentProjects.slice(0, 5)} layout="horizontal">
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis type="number" domain={[0, 100]} unit="%" />
+                <YAxis dataKey="name" type="category" width={120} fontSize={11} />
+                <Tooltip />
+                <Bar dataKey="percent_complete" fill="#3b82f6" name="Progress %" />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="h-[250px] flex items-center justify-center text-sm text-gray-500">No recent project progress data available.</div>
+          )}
         </div>
       </div>
 
@@ -638,7 +1108,7 @@ const DashboardView: React.FC<{ data: DashboardSummary; onProjectClick: (id: str
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {recent_projects.map((project) => (
+              {safeRecentProjects.map((project) => (
                 <tr key={project.project_id} className="hover:bg-gray-50 cursor-pointer" onClick={() => onProjectClick(project.project_id)}>
                   <td className="px-6 py-4 text-sm font-medium text-gray-900">{project.name}</td>
                   <td className="px-6 py-4 text-center">

@@ -138,6 +138,74 @@ def upcoming(window: int = 30, limit: int = 50):
         conn.close()
 
 
+@router.get("/wopd", summary="Weekly operations and planning discussions")
+def wopd(limit: int = 20):
+    conn = connect()
+    try:
+        cur = conn.cursor()
+        try:
+            cur.execute(
+                "SELECT id, COALESCE(title, 'WOPD Session') as title, COALESCE(meeting_type, 'wopd') as meeting_type, "
+                "COALESCE(start_dt, date_time, '') as scheduled_at, COALESCE(location, '') as location, COALESCE(notes, purpose, '') as notes "
+                "FROM meeting ORDER BY COALESCE(start_dt, date_time, created_at) DESC LIMIT ?",
+                (limit,),
+            )
+            rows = cur.fetchall()
+            items = [dict(r) for r in rows]
+            return {"status": "ok", "count": len(items), "items": items}
+        except Exception:
+            return {"status": "ok", "count": 0, "items": []}
+    finally:
+        conn.close()
+
+
+@router.get("/proponent-updates", summary="Recent proponent or authority updates")
+def proponent_updates(limit: int = 20):
+    conn = connect()
+    try:
+        cur = conn.cursor()
+        try:
+            items = []
+            if True:
+                cur.execute(
+                    "SELECT id, COALESCE(decision_text, '') as body, COALESCE(authority, 'Proponent') as source, COALESCE(decision_date, created_at, '') as created_at "
+                    "FROM decision ORDER BY COALESCE(decision_date, created_at) DESC LIMIT ?",
+                    (limit,),
+                )
+                items.extend([
+                    {
+                        'id': f"decision-{r['id']}",
+                        'title': 'Decision Update',
+                        'body': r['body'],
+                        'source': r['source'],
+                        'created_at': r['created_at'],
+                    }
+                    for r in cur.fetchall()
+                ])
+            if len(items) < limit:
+                cur.execute(
+                    "SELECT id, COALESCE(owner, 'Proponent') as source, COALESCE(notes, '') as body, COALESCE(created_at, '') as created_at "
+                    "FROM action_item ORDER BY COALESCE(created_at, '') DESC LIMIT ?",
+                    (limit,),
+                )
+                items.extend([
+                    {
+                        'id': f"action-{r['id']}",
+                        'title': 'Action Item Update',
+                        'body': r['body'],
+                        'source': r['source'],
+                        'created_at': r['created_at'],
+                    }
+                    for r in cur.fetchall()
+                ])
+            items = sorted(items, key=lambda x: x.get('created_at') or '', reverse=True)[:limit]
+            return {"status": "ok", "count": len(items), "items": items}
+        except Exception:
+            return {"status": "ok", "count": 0, "items": []}
+    finally:
+        conn.close()
+
+
 @router.get("/recognition", summary="Recognition / Featured")
 def recognition():
     conn = connect()

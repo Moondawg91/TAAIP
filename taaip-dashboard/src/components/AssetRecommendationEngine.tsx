@@ -3,6 +3,7 @@ import {
   Target, Users, Calendar, MapPin, TrendingUp, Award, CheckCircle,
   AlertTriangle, Lightbulb, Settings, Filter, Download
 } from 'lucide-react';
+import { API_BASE } from '../config/api';
 
 interface AssetTier {
   tier: 1 | 2 | 3;
@@ -46,6 +47,26 @@ interface AssetRecommendation {
   warnings: string[];
 }
 
+interface DecisionSupportRisk {
+  risk: string;
+  count: number;
+}
+
+interface DecisionSupportItem {
+  asset_id: string;
+  asset: string;
+  score: number;
+}
+
+interface AssetReadiness {
+  total_assets: number;
+  eligible_assets: number;
+  blocked_assets: number;
+  assets_missing_rule_validation: number;
+  assets_requiring_emm: number;
+  assets_requiring_emm_portal: number;
+}
+
 const ASSET_TIERS: AssetTier[] = [
   {
     tier: 1,
@@ -69,6 +90,7 @@ const ASSET_TIERS: AssetTier[] = [
 
 const AssetRecommendationEngine: React.FC = () => {
   const [loading, setLoading] = useState(false);
+  const [statusMessage, setStatusMessage] = useState('');
   const [conopInput, setConopInput] = useState<ConOPInput>({
     conop_id: '',
     title: '',
@@ -85,193 +107,143 @@ const AssetRecommendationEngine: React.FC = () => {
   const [availableAssets, setAvailableAssets] = useState<Asset[]>([]);
   const [historicalConops, setHistoricalConops] = useState<ConOPInput[]>([]);
   const [showHistory, setShowHistory] = useState(false);
+  const [topRisks, setTopRisks] = useState<DecisionSupportRisk[]>([]);
+  const [recommendedNow, setRecommendedNow] = useState<DecisionSupportItem[]>([]);
+  const [readiness, setReadiness] = useState<AssetReadiness | null>(null);
 
   useEffect(() => {
     loadAssets();
     loadHistoricalConops();
+    loadReadiness();
   }, []);
 
+  const fetchWithTimeout = async (url: string, timeoutMs = 10000) => {
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      return await fetch(url, { signal: controller.signal });
+    } finally {
+      window.clearTimeout(timeoutId);
+    }
+  };
+
   const loadAssets = async () => {
-    // Mock asset data - replace with actual API
-    const mockAssets: Asset[] = [
-      {
-        asset_id: 'asset_001',
-        name: 'Army Experience Center',
-        tier: 1,
-        type: 'Physical Asset',
-        availability: 'available',
-        effectiveness_score: 9.2,
-        cost: 15000,
-        lead_generation_avg: 45,
-        best_for: ['career_fair', 'college_event', 'community_event']
-      },
-      {
-        asset_id: 'asset_002',
-        name: 'Mobile Esports Trailer',
-        tier: 1,
-        type: 'Physical Asset',
-        availability: 'scheduled',
-        effectiveness_score: 8.8,
-        cost: 12000,
-        lead_generation_avg: 38,
-        best_for: ['gaming_event', 'college_event', 'high_school']
-      },
-      {
-        asset_id: 'asset_003',
-        name: 'Black Daggers Parachute Team',
-        tier: 1,
-        type: 'Demonstration Team',
-        availability: 'available',
-        effectiveness_score: 9.5,
-        cost: 25000,
-        lead_generation_avg: 60,
-        best_for: ['community_event', 'sporting_event', 'large_scale']
-      },
-      {
-        asset_id: 'asset_004',
-        name: 'Regional Digital Campaign',
-        tier: 2,
-        type: 'Marketing Campaign',
-        availability: 'available',
-        effectiveness_score: 7.5,
-        cost: 8000,
-        lead_generation_avg: 25,
-        best_for: ['career_fair', 'college_event', 'virtual_event']
-      },
-      {
-        asset_id: 'asset_005',
-        name: 'VR Combat Simulator',
-        tier: 2,
-        type: 'Technology',
-        availability: 'available',
-        effectiveness_score: 8.1,
-        cost: 5000,
-        lead_generation_avg: 28,
-        best_for: ['career_fair', 'gaming_event', 'college_event']
-      },
-      {
-        asset_id: 'asset_006',
-        name: 'Recruiter Team (5-person)',
-        tier: 3,
-        type: 'Personnel',
-        availability: 'available',
-        effectiveness_score: 6.8,
-        cost: 2000,
-        lead_generation_avg: 15,
-        best_for: ['career_fair', 'high_school', 'community_event']
-      },
-      {
-        asset_id: 'asset_007',
-        name: 'HMMWV Display Vehicle',
-        tier: 3,
-        type: 'Static Display',
-        availability: 'available',
-        effectiveness_score: 5.5,
-        cost: 1500,
-        lead_generation_avg: 10,
-        best_for: ['community_event', 'parade', 'career_fair']
-      },
-      {
-        asset_id: 'asset_008',
-        name: 'Army Band',
-        tier: 1,
-        type: 'Performance',
-        availability: 'unavailable',
-        effectiveness_score: 8.9,
-        cost: 18000,
-        lead_generation_avg: 42,
-        best_for: ['community_event', 'ceremony', 'large_scale']
-      }
-    ];
-    setAvailableAssets(mockAssets);
+    try {
+      const response = await fetchWithTimeout(`${API_BASE}/api/asset_recommendations`);
+      const payload = await response.json();
+      const recommendations = Array.isArray(payload?.recommendations) ? payload.recommendations : [];
+      const mapped: Asset[] = recommendations.map((r: any, idx: number) => ({
+        asset_id: String(r?.asset_id ?? `asset_${idx + 1}`),
+        name: String(r?.asset ?? 'Unnamed Asset'),
+        tier: (r?.priority === 'HIGH' ? 1 : r?.priority === 'MEDIUM' ? 2 : 3) as 1 | 2 | 3,
+        type: String(r?.category ?? 'General'),
+        availability: r?.execution === 'not_executable_in_timeline' ? 'unavailable' : (r?.execution === 'executable_with_risk' ? 'scheduled' : 'available'),
+        effectiveness_score: Number(r?.score ?? 0) || 0,
+        cost: Number(r?.estimated_cost ?? 0) || 0,
+        lead_generation_avg: Number(r?.estimated_leads ?? 0) || 0,
+        best_for: Array.isArray(r?.supports) ? r.supports : [],
+      }));
+      setAvailableAssets(mapped);
+      setStatusMessage('');
+    } catch (error) {
+      console.error('Error loading asset recommendations:', error);
+      setAvailableAssets([]);
+      setStatusMessage('Asset availability data is temporarily unavailable.');
+    }
   };
 
   const loadHistoricalConops = async () => {
-    // Mock historical data
-    const mockHistory: ConOPInput[] = [
-      {
-        conop_id: 'conop_001',
-        title: 'Houston Tech Career Fair',
+    try {
+      const response = await fetchWithTimeout(`${API_BASE}/api/asset_recommendations/decision_support`);
+      const payload = await response.json();
+      const recommended = Array.isArray(payload?.recommended_now) ? payload.recommended_now : [];
+      setRecommendedNow(recommended);
+      setTopRisks(Array.isArray(payload?.top_risks) ? payload.top_risks : []);
+      const mapped: ConOPInput[] = recommended.map((r: any, idx: number) => ({
+        conop_id: `conop_${idx + 1}`,
+        title: String(r?.asset ?? ''),
         event_type: 'career_fair',
-        target_audience: 'college',
-        location: 'Houston, TX',
-        zipcode: '77001',
-        expected_attendance: 500,
-        budget: 20000,
-        date: '2025-09-15',
-        priority: 'must_win'
-      },
-      {
-        conop_id: 'conop_002',
-        title: 'Dallas Gaming Expo',
-        event_type: 'gaming_event',
         target_audience: 'high_school',
-        location: 'Dallas, TX',
-        zipcode: '75201',
-        expected_attendance: 800,
-        budget: 25000,
-        date: '2025-10-20',
-        priority: 'must_keep'
-      }
-    ];
-    setHistoricalConops(mockHistory);
+        location: '',
+        zipcode: '',
+        expected_attendance: Number(r?.score ?? 0) * 10,
+        budget: 0,
+        date: new Date().toISOString().split('T')[0],
+        priority: 'standard'
+      }));
+      setHistoricalConops(mapped);
+    } catch (error) {
+      console.error('Error loading decision support history:', error);
+      setHistoricalConops([]);
+      setRecommendedNow([]);
+      setTopRisks([]);
+      setStatusMessage('Decision support history is temporarily unavailable.');
+    }
   };
 
-  const generateRecommendations = () => {
+  const loadReadiness = async () => {
+    try {
+      const response = await fetchWithTimeout(`${API_BASE}/api/asset_recommendations/readiness`);
+      const payload = await response.json();
+      setReadiness(payload);
+    } catch (error) {
+      console.error('Error loading asset readiness:', error);
+      setReadiness(null);
+      setStatusMessage('Readiness checks are temporarily unavailable.');
+    }
+  };
+
+  const generateRecommendations = async () => {
     setLoading(true);
-    
-    // AI-driven recommendation algorithm
-    setTimeout(() => {
-      const suitableAssets = availableAssets.filter(asset => 
-        asset.availability !== 'unavailable' &&
-        asset.best_for.some(category => 
-          conopInput.event_type.includes(category) || 
-          conopInput.target_audience.includes(category)
-        )
-      );
+    try {
+      const params = new URLSearchParams();
+      if (conopInput.date) params.append('event_date', conopInput.date);
+      if (conopInput.event_type) params.append('event_type', conopInput.event_type);
+      if (conopInput.priority) params.append('command_scope', conopInput.priority === 'must_win' ? 'BDE' : 'BN');
+      if (conopInput.location) params.append('geography_scope', conopInput.location);
+      params.append('funding_available', 'baseline');
 
-      // Sort by effectiveness and budget fit
-      const sortedAssets = suitableAssets.sort((a, b) => 
-        (b.effectiveness_score * (a.cost <= conopInput.budget ? 1 : 0.5)) - 
-        (a.effectiveness_score * (b.cost <= conopInput.budget ? 1 : 0.5))
-      );
+      const response = await fetchWithTimeout(`${API_BASE}/api/asset_recommendations?${params.toString()}`);
+      const payload = await response.json();
+      const liveRecommendations = Array.isArray(payload?.recommendations) ? payload.recommendations : [];
+      const actionable = liveRecommendations.filter((item: any) => item.execution !== 'not_executable_in_timeline');
+      const primaryIds = actionable.slice(0, 3).map((item: any) => String(item.asset_id));
+      const alternateIds = actionable.slice(3, 6).map((item: any) => String(item.asset_id));
 
-      const primary = sortedAssets.slice(0, 3);
-      const alternate = sortedAssets.slice(3, 6);
-
-      // Calculate estimated outcomes
-      const estimatedLeads = primary.reduce((sum, asset) => 
-        sum + (asset.lead_generation_avg * (conopInput.expected_attendance / 500)), 0
-      );
+      const primary = availableAssets.filter((asset) => primaryIds.includes(asset.asset_id));
+      const alternate = availableAssets.filter((asset) => alternateIds.includes(asset.asset_id));
+      const estimatedLeads = primary.reduce((sum, asset) => sum + asset.lead_generation_avg, 0);
       const totalCost = primary.reduce((sum, asset) => sum + asset.cost, 0);
-      const estimatedROI = estimatedLeads / (totalCost / 1000);
 
-      // Generate warnings
-      const warnings: string[] = [];
-      if (totalCost > conopInput.budget) {
-        warnings.push(`Recommended assets exceed budget by $${(totalCost - conopInput.budget).toLocaleString()}`);
-      }
-      if (primary.some(a => a.availability === 'scheduled')) {
-        warnings.push('Some primary assets are currently scheduled - confirm availability');
-      }
-      if (conopInput.priority === 'must_win' && primary.length < 2) {
-        warnings.push('Must-Win event should have at least 2 Tier 1/2 assets');
-      }
+      const warnings = actionable
+        .slice(0, 3)
+        .flatMap((item: any) => Array.isArray(item.warning_reasons) ? item.warning_reasons : [])
+        .map((reason: string) => reason.replace(/_/g, ' '));
 
-      const recommendation: AssetRecommendation = {
+      const readinessSummary = payload?.context
+        ? `Scope ${String(payload.context.command_scope || 'connected')} with ${String(payload.context.days_until_event ?? 'unknown')} days until event.`
+        : 'Live rules and operational context applied.';
+
+      setRecommendations({
         primary_assets: primary,
         alternate_assets: alternate,
-        reasoning: `Based on ${conopInput.event_type} targeting ${conopInput.target_audience} with ${conopInput.expected_attendance} expected attendees. 
-                    Prioritized high-effectiveness assets within budget constraints. ${conopInput.priority === 'must_win' ? 'Must-Win priority increases Tier 1 asset allocation.' : ''}`,
-        confidence_score: 85,
-        estimated_leads: Math.round(estimatedLeads),
-        estimated_roi: parseFloat(estimatedROI.toFixed(2)),
-        warnings
-      };
+        reasoning: `Live backend ranking applied for ${conopInput.event_type} targeting ${conopInput.target_audience}. ${readinessSummary}`,
+        confidence_score: actionable.length > 0 ? 90 : 40,
+        estimated_leads: estimatedLeads,
+        estimated_roi: totalCost > 0 ? parseFloat((estimatedLeads / (totalCost / 1000)).toFixed(2)) : 0,
+        warnings,
+      });
 
-      setRecommendations(recommendation);
+      await loadHistoricalConops();
+      await loadReadiness();
+      setStatusMessage('');
+    } catch (error) {
+      console.error('Error generating asset recommendations:', error);
+      setRecommendations(null);
+      setStatusMessage('Unable to generate recommendations right now. Check connectivity and try again.');
+    } finally {
       setLoading(false);
-    }, 1000);
+    }
   };
 
   const loadHistoricalConop = (conop: ConOPInput) => {
@@ -291,6 +263,12 @@ const AssetRecommendationEngine: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {statusMessage && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-900">
+          {statusMessage}
+        </div>
+      )}
 
       {/* Asset Tier Reference */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -467,6 +445,18 @@ const AssetRecommendationEngine: React.FC = () => {
             <Users className="w-5 h-5 text-purple-600" />
             Asset Inventory
           </h3>
+          {readiness && (
+            <div className="mb-4 grid grid-cols-2 gap-2 text-xs">
+              <div className="rounded border border-green-200 bg-green-50 p-2">
+                <p className="text-gray-600">Eligible Now</p>
+                <p className="font-bold text-green-700">{readiness.eligible_assets}</p>
+              </div>
+              <div className="rounded border border-red-200 bg-red-50 p-2">
+                <p className="text-gray-600">Blocked</p>
+                <p className="font-bold text-red-700">{readiness.blocked_assets}</p>
+              </div>
+            </div>
+          )}
           <div className="space-y-3">
             {[1, 2, 3].map((tier) => {
               const tierAssets = availableAssets.filter(a => a.tier === tier);
@@ -494,6 +484,19 @@ const AssetRecommendationEngine: React.FC = () => {
               );
             })}
           </div>
+          {topRisks.length > 0 && (
+            <div className="mt-4 border-t border-gray-200 pt-4">
+              <p className="text-xs font-bold uppercase tracking-wide text-gray-700 mb-2">Top Execution Risks</p>
+              <div className="space-y-1">
+                {topRisks.slice(0, 4).map((risk) => (
+                  <div key={risk.risk} className="flex items-center justify-between text-xs text-gray-600">
+                    <span>{risk.risk.replace(/_/g, ' ')}</span>
+                    <span className="font-bold text-gray-800">{risk.count}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -557,6 +560,19 @@ const AssetRecommendationEngine: React.FC = () => {
           <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
             <p className="text-sm font-semibold text-gray-800 mb-2">AI Reasoning:</p>
             <p className="text-sm text-gray-700">{recommendations.reasoning}</p>
+            {recommendedNow.length > 0 && (
+              <div className="mt-3 border-t border-blue-200 pt-3">
+                <p className="text-xs font-bold uppercase tracking-wide text-gray-700 mb-2">Current Backend Recommendations</p>
+                <div className="space-y-1">
+                  {recommendedNow.slice(0, 3).map((item) => (
+                    <div key={item.asset_id} className="flex items-center justify-between text-xs text-gray-700">
+                      <span>{item.asset}</span>
+                      <span className="font-bold">{item.score}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Primary Assets */}

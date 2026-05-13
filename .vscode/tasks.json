@@ -1,0 +1,17 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "restart-backend-for-contract-repair",
+			"type": "shell",
+			"command": "cd \"/Users/ambermooney/Library/Mobile Documents/com~apple~CloudDocs/TAAIP\" && (lsof -ti:8000 | xargs kill -9 2>/dev/null || true) && .venv/bin/python -m uvicorn services.api.app.main:app --host 127.0.0.1 --port 8000 > logs/backend.log 2>&1 & echo restarted",
+			"isBackground": false
+		},
+		{
+			"label": "restart-backend-after-actions-fix",
+			"type": "shell",
+			"command": "cd \"/Users/ambermooney/Library/Mobile Documents/com~apple~CloudDocs/TAAIP\" && (lsof -ti:8000 | xargs kill -9 2>/dev/null || true) && .venv/bin/python -m uvicorn services.api.app.main:app --host 127.0.0.1 --port 8000 > logs/backend.log 2>&1 & echo restarted",
+			"isBackground": false
+		}
+	]
+}

@@ -79,9 +79,13 @@ interface ContractMetrics {
   }>;
 }
 
+interface FlashToBangMetrics {
+  flash_to_bang_avg_days: number;
+}
+
 export const AnalyticsDashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
-  const [activeSection, setActiveSection] = useState<'cbsa' | 'schools' | 'segments' | 'contracts'>('cbsa');
+  const [activeSection, setActiveSection] = useState<'cbsa' | 'segments' | 'contracts' | 'flash'>('cbsa');
   const [filters, setFilters] = useState<FilterState>({ rsid: '', zipcode: '', cbsa: '' });
   const [visualizationType, setVisualizationType] = useState<VisualizationType>('chart');
   
@@ -90,6 +94,7 @@ export const AnalyticsDashboard: React.FC = () => {
   const [schoolData, setSchoolData] = useState<SchoolData[]>([]);
   const [segmentData, setSegmentData] = useState<SegmentData[]>([]);
   const [contractData, setContractData] = useState<ContractMetrics | null>(null);
+  const [flashMetrics, setFlashMetrics] = useState<FlashToBangMetrics | null>(null);
 
   const handleFilterChange = (newFilters: FilterState) => {
     setFilters(newFilters);
@@ -105,21 +110,21 @@ export const AnalyticsDashboard: React.FC = () => {
       if (filters.cbsa) params.append('cbsa', filters.cbsa);
       
       const queryString = params.toString();
-      const [cbsaRes, schoolRes, segmentRes, contractRes] = await Promise.all([
+      const [cbsaRes, segmentRes, contractRes, flashRes] = await Promise.all([
         fetch(`${API_BASE}/api/v2/analytics/cbsa?limit=10${queryString ? '&' + queryString : ''}`),
-        fetch(`${API_BASE}/api/v2/analytics/schools?limit=15${queryString ? '&' + queryString : ''}`),
         fetch(`${API_BASE}/api/v2/analytics/segments${queryString ? '?' + queryString : ''}`),
         fetch(`${API_BASE}/api/v2/analytics/contracts${queryString ? '?' + queryString : ''}`),
+        fetch(`${API_BASE}/api/v2/420t/kpi-metrics${queryString ? '?' + queryString : ''}`),
       ]);
 
       const cbsa = await cbsaRes.json();
-      const schools = await schoolRes.json();
       const segments = await segmentRes.json();
       const contracts = await contractRes.json();
+      const flash = await flashRes.json();
 
       if (cbsa.status === 'ok') setCbsaData(cbsa.cbsas);
-      if (schools.status === 'ok') setSchoolData(schools.schools);
       if (segments.status === 'ok') setSegmentData(segments.segments);
+      if (flash.status === 'ok') setFlashMetrics({ flash_to_bang_avg_days: Number(flash.metrics?.flash_to_bang_avg_days || 0) });
       if (contracts.status === 'ok') {
         const m = contracts.metrics as ContractMetrics;
         const filtered = {
@@ -182,7 +187,6 @@ export const AnalyticsDashboard: React.FC = () => {
           />
           <ExportButton 
             data={activeSection === 'cbsa' ? cbsaData : 
-                  activeSection === 'schools' ? schoolData : 
                   activeSection === 'segments' ? segmentData : 
                   contractData ? [contractData] : []}
             filename={`analytics-${activeSection}-data`}
@@ -202,9 +206,9 @@ export const AnalyticsDashboard: React.FC = () => {
       {/* Navigation Tabs */}
       <div className="flex gap-3 flex-wrap">
         <NavButton section="cbsa" icon={<MapPin className="w-5 h-5" />} label="Top CBSAs" />
-        <NavButton section="schools" icon={<School className="w-5 h-5" />} label="Targeted Schools" />
         <NavButton section="segments" icon={<Users className="w-5 h-5" />} label="Segments" />
         <NavButton section="contracts" icon={<Target className="w-5 h-5" />} label="Contract Progress" />
+        <NavButton section="flash" icon={<TrendingUp className="w-5 h-5" />} label="Flash to Bang" />
       </div>
 
       {/* Visualization Controller */}
@@ -218,9 +222,30 @@ export const AnalyticsDashboard: React.FC = () => {
 
       {/* Content Sections */}
       {activeSection === 'cbsa' && <CBSASection data={cbsaData} visualizationType={visualizationType} />}
-      {activeSection === 'schools' && <SchoolsSection data={schoolData} visualizationType={visualizationType} />}
       {activeSection === 'segments' && <SegmentsSection data={segmentData} visualizationType={visualizationType} />}
       {activeSection === 'contracts' && contractData && <ContractsSection data={contractData} visualizationType={visualizationType} />}
+      {activeSection === 'flash' && <FlashToBangSection metrics={flashMetrics} />}
+    </div>
+  );
+};
+
+const FlashToBangSection: React.FC<{ metrics: FlashToBangMetrics | null }> = ({ metrics }) => {
+  return (
+    <div className="bg-white border-2 border-gray-300 p-6">
+      <div className="bg-gray-100 -m-6 mb-4 p-4 border-b-2 border-gray-300">
+        <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wide">Flash to Bang</h3>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="border border-gray-200 rounded-lg p-4">
+          <p className="text-xs uppercase tracking-wide text-gray-600">Average Days</p>
+          <p className="mt-2 text-3xl font-bold text-gray-900">{metrics ? metrics.flash_to_bang_avg_days.toFixed(1) : '0.0'}</p>
+        </div>
+        <div className="border border-gray-200 rounded-lg p-4 md:col-span-2">
+          <p className="text-sm text-gray-700">
+            Flash to Bang tracking is owned under Analytics as part of conversion velocity and processing performance.
+          </p>
+        </div>
+      </div>
     </div>
   );
 };
@@ -282,7 +307,7 @@ const CBSASection: React.FC<{ data: CBSAData[]; visualizationType: Visualization
             <div>
               <p className="text-gray-300 text-xs uppercase tracking-wide">Avg Lead Score</p>
               <p className="text-3xl font-bold mt-1 text-yellow-500">
-                {(data.reduce((sum, cbsa) => sum + cbsa.avg_score, 0) / data.length).toFixed(1)}
+                {data.length > 0 ? (data.reduce((sum, cbsa) => sum + cbsa.avg_score, 0) / data.length).toFixed(1) : '0'}
               </p>
             </div>
             <Target className="w-12 h-12 text-purple-200 opacity-50" />

@@ -127,7 +127,10 @@ else:
     allow_origins = [
         'http://localhost:3000', 'http://127.0.0.1:3000',
         'http://localhost:3001', 'http://127.0.0.1:3001',
-        'http://127.0.0.1:5000'
+        'http://127.0.0.1:5000',
+        'http://localhost:5173', 'http://127.0.0.1:5173',
+        'http://localhost:5174', 'http://127.0.0.1:5174',
+        'http://localhost:5175', 'http://127.0.0.1:5175',
     ]
 
 app.add_middleware(
@@ -163,6 +166,8 @@ from .routers import rbac as rbac_router
 api_router.include_router(rbac_router.router)
 from .routers import admin_v2 as admin_v2_router
 api_router.include_router(admin_v2_router.router)
+from .routers import governance as governance_router
+api_router.include_router(governance_router.router)
 from .routers import me as me_router
 api_router.include_router(me_router.router)
 from .routers import funnel as funnel_router
@@ -197,6 +202,8 @@ from .routers import twg_workspace as twg_workspace_router
 api_router.include_router(twg_workspace_router.router)
 from .routers import board_workspace as board_workspace_router
 api_router.include_router(board_workspace_router.router)
+from .routers import targeting_pipeline as targeting_pipeline_router
+api_router.include_router(targeting_pipeline_router.router)
 from .routers import helpdesk as helpdesk_router
 api_router.include_router(helpdesk_router.router)
 from .routers import docs as docs_router
@@ -215,6 +222,8 @@ from .routers import debug_org as debug_org_router
 api_router.include_router(debug_org_router.router)
 from .routers import v2_org as v2_org_router
 api_router.include_router(v2_org_router.router)
+from .routers import v2_unit_scope as v2_unit_scope_router
+api_router.include_router(v2_unit_scope_router.router)
 from .routers import v2_mission_feasibility as v2_mf_router
 api_router.include_router(v2_mf_router.router)
 from .routers import v2_analytics as v2_analytics_router
@@ -345,6 +354,10 @@ api_router.include_router(metrics_router.router)
 from .routers import tactical_dashboards as tactical_dashboards_router
 api_router.include_router(tactical_dashboards_router.router)
 
+# Data Intelligence Layer: ingestion, analytics, recommendations
+from .routers import intelligence as intelligence_router
+api_router.include_router(intelligence_router.router)
+
 # New lightweight dashboards router for empty-safe dashboard endpoints
 from .routers import dashboards as dashboards_router
 api_router.include_router(dashboards_router.router)
@@ -356,6 +369,8 @@ api_router.include_router(exports_dashboards_router.router)
 # Command center router (mission-assessment + priorities)
 from .routers import command_center as command_center_router
 api_router.include_router(command_center_router.router)
+from .routers import compat_shell as compat_shell_router
+api_router.include_router(compat_shell_router.router)
 
 from .routers import maintenance as maintenance_router
 api_router.include_router(maintenance_router.router)
@@ -498,6 +513,16 @@ def _on_startup():
             _log.exception('RBAC seeding failed')
     except Exception:
         _log.exception('Failed to import seed_rbac')
+    
+    # Initialize Data Intelligence Layer tables
+    try:
+        from . import migration_intelligence
+        migration_intelligence.migration_create_intelligence_tables()
+        migration_intelligence.verify_intelligence_schema()
+        _log.info('Data Intelligence Layer tables initialized')
+    except Exception:
+        _log.exception('Failed to initialize Data Intelligence Layer')
+    
     # Ensure export storage directory exists
     try:
         export_dir = os.getenv('EXPORT_STORAGE_DIR', './data/exports')

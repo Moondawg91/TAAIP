@@ -3,6 +3,7 @@ import {
   Target, TrendingUp, Users, Award, MapPin, BarChart3,
   AlertCircle, CheckCircle, Info, DollarSign, Percent
 } from 'lucide-react';
+import { API_BASE } from '../config/api';
 import {
   BarChart, Bar, PieChart, Pie, Cell, LineChart, Line,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, RadarChart, PolarGrid,
@@ -47,18 +48,18 @@ interface RaceEthnicityP2P {
   pacing_battalions: string[];
 }
 
-const SEGMENT_TYPE_COLORS = {
-  high_value: '#10b981',
-  high_payoff: '#f59e0b',
-  opportunity: '#3b82f6',
-  supplemental: '#6b7280'
+const SEGMENT_TYPE_COLORS: Record<PRIZMSegment['segment_type'], string> = {
+  high_value: '#16a34a',
+  high_payoff: '#ca8a04',
+  opportunity: '#2563eb',
+  supplemental: '#6b7280',
 };
 
-const PRIORITY_COLORS = {
+const PRIORITY_COLORS: Record<CBSAMetrics['priority_tier'], string> = {
   must_win: '#dc2626',
-  must_keep: '#f59e0b',
-  opportunity: '#3b82f6',
-  supplemental: '#6b7280'
+  must_keep: '#ca8a04',
+  opportunity: '#2563eb',
+  supplemental: '#6b7280',
 };
 
 const P2P_BAND = { min: 0.9, max: 1.1 };
@@ -78,179 +79,91 @@ export const MarketSegmentationDashboard: React.FC = () => {
   const fetchSegmentationData = async () => {
     setLoading(true);
     try {
-      // Mock data - replace with actual API calls
-      setPrizmSegments([
-        {
-          segment_id: 'S01',
-          segment_name: 'Young Strivers',
-          socioeconomic_rank: 28,
-          life_stage: 'Young Adult',
-          urbanicity: 'Urban',
-          population_pct: 3.2,
-          propensity_score: 18.5,
-          p2p_ratio: 1.45,
-          enlistments: 2850,
-          qualified_population: 15420,
-          segment_type: 'high_payoff',
-          motivators: ['Career Training', 'Education Benefits', 'Travel', 'Leadership Development'],
-          barriers: ['Length of Commitment', 'Deployment Concerns'],
-          recommended_messaging: 'Focus on technical skill development and college benefits'
-        },
-        {
-          segment_id: 'S02',
-          segment_name: 'Small Town Pride',
-          socioeconomic_rank: 45,
-          life_stage: 'Young Adult',
-          urbanicity: 'Rural',
-          population_pct: 5.8,
-          propensity_score: 22.3,
-          p2p_ratio: 1.62,
-          enlistments: 5640,
-          qualified_population: 28900,
-          segment_type: 'high_payoff',
-          motivators: ['Service to Country', 'Family Tradition', 'Stable Career', 'Local Heroes'],
-          barriers: ['Fear of Unknown', 'Leaving Home'],
-          recommended_messaging: 'Emphasize patriotism, family legacy, and hometown hero stories'
-        },
-        {
-          segment_id: 'S03',
-          segment_name: 'Urban Achievers',
-          socioeconomic_rank: 12,
-          life_stage: 'Young Adult',
-          urbanicity: 'Urban',
-          population_pct: 4.5,
-          propensity_score: 8.2,
-          p2p_ratio: 0.75,
-          enlistments: 1820,
-          qualified_population: 22400,
-          segment_type: 'opportunity',
-          motivators: ['Leadership', 'Global Experience', 'Network Building'],
-          barriers: ['Private Sector Options', 'Lifestyle Concerns'],
-          recommended_messaging: 'Highlight leadership training and unique career paths'
-        },
-        {
-          segment_id: 'S04',
-          segment_name: 'Suburban Families',
-          socioeconomic_rank: 22,
-          life_stage: 'Middle Age',
-          urbanicity: 'Suburban',
-          population_pct: 6.1,
-          propensity_score: 4.8,
-          p2p_ratio: 0.62,
-          enlistments: 950,
-          qualified_population: 30400,
-          segment_type: 'supplemental',
-          motivators: ['Education Benefits', 'Healthcare', 'Job Security'],
-          barriers: ['Age', 'Family Obligations', 'Comfort Zone'],
-          recommended_messaging: 'Target influencers - parents and educators'
-        },
-        {
-          segment_id: 'S05',
-          segment_name: 'Tech Savvy Youth',
-          socioeconomic_rank: 18,
-          life_stage: 'Young Adult',
-          urbanicity: 'Suburban',
-          population_pct: 7.2,
-          propensity_score: 15.7,
-          p2p_ratio: 1.28,
-          enlistments: 4520,
-          qualified_population: 35800,
-          segment_type: 'high_value',
-          motivators: ['Technology Training', 'Cybersecurity', 'Innovation', 'Problem Solving'],
-          barriers: ['Tech Industry Competition', 'Deployment'],
-          recommended_messaging: 'Showcase Army cyber and technical career fields'
-        }
+      const [segmentResp, zoneResp, demographicsResp] = await Promise.all([
+        fetch(`${API_BASE}/api/v2/market-intel/segment-analysis?segment_type=all`),
+        fetch(`${API_BASE}/api/v2/g2-zones`),
+        fetch(`${API_BASE}/api/market-intel/demographics`),
       ]);
 
-      setCbsaMetrics([
-        {
-          cbsa_code: '41860',
-          cbsa_name: 'San Francisco-Oakland-Berkeley, CA',
-          cbsa_type: 'metro',
-          population: 4729484,
-          qma: 312450,
-          enlistments: 2850,
-          market_penetration: 9.12,
-          p2p_ratio: 0.68,
-          priority_tier: 'opportunity'
-        },
-        {
-          cbsa_code: '41884',
-          cbsa_name: 'San Antonio-New Braunfels, TX',
-          cbsa_type: 'metro',
-          population: 2558143,
-          qma: 185600,
-          enlistments: 4920,
-          market_penetration: 26.50,
-          p2p_ratio: 1.85,
-          priority_tier: 'must_win'
-        },
-        {
-          cbsa_code: '26420',
-          cbsa_name: 'Houston-The Woodlands-Sugar Land, TX',
-          cbsa_type: 'metro',
-          population: 7122240,
-          qma: 498700,
-          enlistments: 6840,
-          market_penetration: 13.72,
-          p2p_ratio: 1.12,
-          priority_tier: 'must_keep'
-        },
-        {
-          cbsa_code: '19124',
-          cbsa_name: 'Columbus, GA-AL',
-          cbsa_type: 'metro',
-          population: 328883,
-          qma: 24200,
-          enlistments: 1680,
-          market_penetration: 69.42,
-          p2p_ratio: 2.45,
-          priority_tier: 'must_win'
-        }
-      ]);
+      const segmentPayload = segmentResp.ok ? await segmentResp.json() : { segments: [] };
+      const zonePayload = zoneResp.ok ? await zoneResp.json() : { data: [] };
+      const demographicsPayload = demographicsResp.ok ? await demographicsResp.json() : { gaps: [] };
 
-      setRaceEthnicityData([
-        {
-          group: 'White',
-          population_pct: 60.2,
-          contract_pct: 58.5,
-          p2p_ratio: 0.97,
-          band_status: 'excellent',
-          pacing_battalions: ['1-1 BN', '2-4 BN', '3-7 BN']
-        },
-        {
-          group: 'Hispanic/Latino',
-          population_pct: 18.8,
-          contract_pct: 16.2,
-          p2p_ratio: 0.86,
-          band_status: 'underrepresented',
-          pacing_battalions: ['4-2 BN', '1-8 BN', '5-3 BN']
-        },
-        {
-          group: 'Black/African American',
-          population_pct: 13.6,
-          contract_pct: 15.8,
-          p2p_ratio: 1.16,
-          band_status: 'overrepresented',
-          pacing_battalions: ['2-6 BN', '3-2 BN', '1-5 BN']
-        },
-        {
-          group: 'Asian',
-          population_pct: 6.1,
-          contract_pct: 4.2,
-          p2p_ratio: 0.69,
-          band_status: 'underrepresented',
-          pacing_battalions: ['1-3 BN', '4-5 BN', '2-9 BN']
-        },
-        {
-          group: 'Other',
-          population_pct: 1.3,
-          contract_pct: 5.3,
-          p2p_ratio: 4.08,
-          band_status: 'overrepresented',
-          pacing_battalions: ['3-1 BN', '2-2 BN']
-        }
-      ]);
+      const segmentRows = Array.isArray(segmentPayload?.segments) ? segmentPayload.segments : [];
+      const zoneRows = Array.isArray(zonePayload?.data) ? zonePayload.data : [];
+      const demoRows = Array.isArray(demographicsPayload?.gaps) ? demographicsPayload.gaps : [];
+
+      const mappedSegments: PRIZMSegment[] = segmentRows.map((row: any, idx: number) => {
+        const p2p = Number(row?.p2p_ratio ?? row?.p2p ?? 0);
+        let segmentType: PRIZMSegment['segment_type'] = 'supplemental';
+        if (p2p >= 1.2) segmentType = 'high_payoff';
+        else if (p2p >= 1.0) segmentType = 'high_value';
+        else if (p2p >= 0.8) segmentType = 'opportunity';
+
+        return {
+          segment_id: String(row?.segment_id ?? row?.id ?? `seg_${idx + 1}`),
+          segment_name: String(row?.segment_name ?? row?.name ?? `Segment ${idx + 1}`),
+          socioeconomic_rank: Number(row?.socioeconomic_rank ?? row?.rank ?? 0),
+          life_stage: String(row?.life_stage ?? 'Unknown'),
+          urbanicity: String(row?.urbanicity ?? 'Unknown'),
+          population_pct: Number(row?.population_pct ?? row?.population_percent ?? 0),
+          propensity_score: Number(row?.propensity_score ?? row?.opportunity_score ?? 0),
+          p2p_ratio: p2p,
+          enlistments: Number(row?.enlistments ?? row?.contracts ?? 0),
+          qualified_population: Number(row?.qualified_population ?? row?.potential ?? 0),
+          segment_type: segmentType,
+          motivators: Array.isArray(row?.motivators) ? row.motivators : [],
+          barriers: Array.isArray(row?.barriers) ? row.barriers : [],
+          recommended_messaging: String(row?.recommended_messaging ?? ''),
+        };
+      });
+
+      const mappedCbsa: CBSAMetrics[] = zoneRows.map((row: any, idx: number) => {
+        const p2p = Number(row?.competitive_index ?? row?.p2p_ratio ?? 0);
+        const penetration = Number(row?.market_penetration_rate ?? 0);
+        let tier: CBSAMetrics['priority_tier'] = 'supplemental';
+        if (penetration >= 1.2 || p2p >= 1.2) tier = 'must_win';
+        else if (penetration >= 1.0 || p2p >= 1.0) tier = 'must_keep';
+        else if (penetration >= 0.8) tier = 'opportunity';
+        return {
+          cbsa_code: String(row?.zone_id ?? row?.cbsa_code ?? `CBSA-${idx + 1}`),
+          cbsa_name: String(row?.zone_name ?? row?.geographic_area ?? `Market ${idx + 1}`),
+          cbsa_type: 'metro',
+          population: Number(row?.population ?? row?.military_age_population ?? 0),
+          qma: Number(row?.military_age_population ?? row?.population ?? 0),
+          enlistments: Number(row?.enlistment_count ?? row?.conversion_count ?? 0),
+          market_penetration: penetration,
+          p2p_ratio: p2p,
+          priority_tier: tier,
+        };
+      });
+
+      const raceRows = demoRows
+        .filter((row: any) => String(row?.dimension || '').toLowerCase().includes('race'))
+        .map((row: any) => ({
+          group: String(row?.group ?? 'Unknown'),
+          population: Number(row?.population ?? 0),
+          contracts: Number(row?.contracts ?? 0),
+        }));
+      const totalPopulation = raceRows.reduce((sum: number, r: any) => sum + r.population, 0);
+      const totalContracts = raceRows.reduce((sum: number, r: any) => sum + r.contracts, 0);
+      const mappedRace: RaceEthnicityP2P[] = raceRows.map((row: any) => {
+        const populationPct = totalPopulation > 0 ? (row.population / totalPopulation) * 100 : 0;
+        const contractPct = totalContracts > 0 ? (row.contracts / totalContracts) * 100 : 0;
+        const p2p = populationPct > 0 ? contractPct / populationPct : 0;
+        return {
+          group: row.group,
+          population_pct: populationPct,
+          contract_pct: contractPct,
+          p2p_ratio: p2p,
+          band_status: getP2PBandStatus(p2p),
+          pacing_battalions: [],
+        };
+      });
+
+      setPrizmSegments(mappedSegments);
+      setCbsaMetrics(mappedCbsa);
+      setRaceEthnicityData(mappedRace);
 
     } catch (error) {
       console.error('Error fetching segmentation data:', error);

@@ -7,6 +7,7 @@ import {
   BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid,
   Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
+import { API_BASE } from '../config/api';
 
 interface HistoricalEvent {
   event_id: string;
@@ -60,109 +61,49 @@ const HistoricalDataArchive: React.FC = () => {
   const loadHistoricalData = async () => {
     setLoading(true);
     try {
-      // Mock historical data - replace with actual API
-      const mockEvents: HistoricalEvent[] = [
-        {
-          event_id: 'evt_hist_001',
-          name: 'Houston Tech Career Fair 2024',
-          date: '2024-09-15',
-          location: 'Houston, TX',
-          zipcode: '77001',
-          event_type: 'career_fair',
-          target_audience: 'college',
-          attendance: 520,
-          leads_generated: 47,
-          contracts: 6,
-          budget: 22000,
-          roi: 2.73,
-          assets_used: ['Army Experience Center', 'VR Simulator', 'Recruiter Team'],
-          effectiveness_score: 8.5,
-          lessons_learned: 'VR simulator had highest engagement. Need more technical MOS brochures.',
-          recommendations: 'Repeat next year with increased cyber/signal MOS focus'
-        },
-        {
-          event_id: 'evt_hist_002',
-          name: 'Dallas Gaming Expo 2024',
-          date: '2024-10-20',
-          location: 'Dallas, TX',
-          zipcode: '75201',
-          event_type: 'gaming_event',
-          target_audience: 'high_school',
-          attendance: 850,
-          leads_generated: 38,
-          contracts: 5,
-          budget: 28000,
-          roi: 1.79,
-          assets_used: ['Mobile Esports Trailer', 'Digital Campaign'],
-          effectiveness_score: 7.2,
-          lessons_learned: 'High attendance but lower conversion. Need better lead qualification process.',
-          recommendations: 'Add pre-event social media targeting to improve lead quality'
-        },
-        {
-          event_id: 'evt_hist_003',
-          name: 'San Antonio Military Appreciation Day',
-          date: '2024-11-11',
-          location: 'San Antonio, TX',
-          zipcode: '78201',
-          event_type: 'community_event',
-          target_audience: 'general_public',
-          attendance: 1200,
-          leads_generated: 65,
-          contracts: 9,
-          budget: 35000,
-          roi: 2.57,
-          assets_used: ['Black Daggers Parachute Team', 'HMMWV Display', 'Army Band'],
-          effectiveness_score: 9.1,
-          lessons_learned: 'Parachute demo was major draw. Strong family engagement.',
-          recommendations: 'Must-keep event. Request parachute team annually.'
-        },
-        {
-          event_id: 'evt_hist_004',
-          name: 'Austin College Virtual Session',
-          date: '2024-08-25',
-          location: 'Austin, TX (Virtual)',
-          zipcode: '78701',
-          event_type: 'virtual_event',
-          target_audience: 'college',
-          attendance: 180,
-          leads_generated: 22,
-          contracts: 3,
-          budget: 5000,
-          roi: 6.0,
-          assets_used: ['Digital Campaign', 'Virtual Briefing'],
-          effectiveness_score: 8.8,
-          lessons_learned: 'Very cost-effective. High-quality leads from targeted college audience.',
-          recommendations: 'Expand virtual events for college demographic'
-        },
-        {
-          event_id: 'evt_hist_005',
-          name: 'Fort Worth High School Career Day',
-          date: '2024-05-10',
-          location: 'Fort Worth, TX',
-          zipcode: '76101',
-          event_type: 'career_fair',
-          target_audience: 'high_school',
-          attendance: 320,
-          leads_generated: 28,
-          contracts: 4,
-          budget: 8000,
-          roi: 3.5,
-          assets_used: ['Recruiter Team', 'Static Display'],
-          effectiveness_score: 7.5,
-          lessons_learned: 'Strong recruiter engagement. Limited by lack of interactive assets.',
-          recommendations: 'Add VR simulator or vehicle display for next iteration'
-        }
-      ];
+      const response = await fetch(`${API_BASE}/api/events/?limit=200`);
+      const payload = await response.json().catch(() => ({}));
+      const rows = Array.isArray(payload?.items) ? payload.items : (Array.isArray(payload) ? payload : []);
 
-      setHistoricalEvents(mockEvents);
+      const liveEvents: HistoricalEvent[] = rows.map((row: any) => {
+        const budget = Number(row?.planned_cost ?? row?.budget ?? 0) || 0;
+        const expectedRevenue = Number(row?.expected_revenue ?? 0) || 0;
+        const roi = budget > 0 ? (expectedRevenue - budget) / budget : Number(row?.roi ?? 0) || 0;
+        const leads = Number(row?.leads_generated ?? row?.leads ?? 0) || 0;
+        const contracts = Number(row?.contracts ?? row?.enlistments ?? 0) || 0;
+        const attendance = Number(row?.attendance ?? row?.expected_attendance ?? 0) || 0;
+
+        return {
+          event_id: String(row?.id ?? row?.event_id ?? ''),
+          name: String(row?.name ?? row?.title ?? 'Unnamed Event'),
+          date: String(row?.start_dt ?? row?.date ?? row?.created_at ?? ''),
+          location: String(row?.location_name ?? row?.location ?? ''),
+          zipcode: String(row?.zip_code ?? row?.zipcode ?? ''),
+          event_type: String(row?.event_type ?? 'event'),
+          target_audience: String(row?.target_audience ?? 'general_public'),
+          attendance,
+          leads_generated: leads,
+          contracts,
+          budget,
+          roi,
+          assets_used: Array.isArray(row?.assets_used) ? row.assets_used : [],
+          effectiveness_score: Number(row?.effectiveness_score ?? 0) || 0,
+          lessons_learned: String(row?.lessons_learned ?? ''),
+          recommendations: String(row?.recommendations ?? '')
+        };
+      });
+
+      setHistoricalEvents(liveEvents);
 
       // Calculate metrics
-      const totalLeads = mockEvents.reduce((sum, e) => sum + e.leads_generated, 0);
-      const totalContracts = mockEvents.reduce((sum, e) => sum + e.contracts, 0);
-      const avgROI = mockEvents.reduce((sum, e) => sum + e.roi, 0) / mockEvents.length;
+      const totalLeads = liveEvents.reduce((sum, e) => sum + e.leads_generated, 0);
+      const totalContracts = liveEvents.reduce((sum, e) => sum + e.contracts, 0);
+      const avgROI = liveEvents.length > 0
+        ? liveEvents.reduce((sum, e) => sum + e.roi, 0) / liveEvents.length
+        : 0;
 
       // Find best performing
-      const eventTypePerformance = mockEvents.reduce((acc, e) => {
+      const eventTypePerformance = liveEvents.reduce((acc, e) => {
         if (!acc[e.event_type]) acc[e.event_type] = { leads: 0, count: 0 };
         acc[e.event_type].leads += e.leads_generated;
         acc[e.event_type].count += 1;
@@ -175,12 +116,12 @@ const HistoricalDataArchive: React.FC = () => {
       ).type;
 
       setMetrics({
-        total_events: mockEvents.length,
+        total_events: liveEvents.length,
         total_leads: totalLeads,
         total_contracts: totalContracts,
         avg_roi: parseFloat(avgROI.toFixed(2)),
         best_performing_type: bestType,
-        best_performing_location: 'San Antonio, TX'
+        best_performing_location: liveEvents[0]?.location || 'N/A'
       });
 
     } catch (error) {

@@ -1,4 +1,5 @@
 import React, {useEffect, useState} from 'react';
+import { API_BASE } from '../config/api';
 
 export default function DataUploadManager(){
   const [datasets, setDatasets] = useState<any>({});
@@ -12,21 +13,38 @@ export default function DataUploadManager(){
   async function fetchList(){
     setLoading(true);
     try{
-      const r = await fetch('/api/v2/data/list');
-      const j = await r.json();
+      const controller = new AbortController();
+      const timeoutId = window.setTimeout(() => controller.abort(), 10000);
+      const r = await fetch(`${API_BASE}/api/v2/data/list`, { signal: controller.signal });
+      window.clearTimeout(timeoutId);
+
+      if (!r.ok) {
+        setMessage(`Failed to load datasets (HTTP ${r.status})`);
+        setDatasets({});
+        return;
+      }
+
+      const text = await r.text();
+      const j = text ? JSON.parse(text) : {};
       setDatasets(j.datasets || {});
-    }catch(e){ console.error(e); setMessage('Failed to load datasets'); }
-    setLoading(false);
+      setMessage('');
+    }catch(e){
+      console.error(e);
+      setDatasets({});
+      setMessage('Failed to load datasets');
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function ingest(name:string){
     setMessage('Ingesting...');
     try{
       // Try direct ingest route first
-      let r = await fetch(`/api/v2/data/ingest/${name}`, {method: 'POST'});
+      let r = await fetch(`${API_BASE}/api/v2/data/ingest/${name}`, {method: 'POST'});
       if(r.status === 404){
         // Fallback: call server-side ingest action to create uploaded_{dataset} table
-        const actionResp = await fetch('/api/v2/upload/actions/ingest_dataset', {method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({dataset_name: name})});
+        const actionResp = await fetch(`${API_BASE}/api/v2/upload/actions/ingest_dataset`, {method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({dataset_name: name})});
         const aj = await actionResp.json().catch(()=>({detail: 'No JSON response'}));
         if(actionResp.ok){ setMessage(`Ingested via server action: ${aj.result.table} (${aj.result.rows} rows)`); fetchList(); }
         else setMessage(aj.detail || 'Server-side ingest failed');
@@ -41,7 +59,7 @@ export default function DataUploadManager(){
   async function editMapping(name:string){
     setMessage('Loading mapping...');
     try{
-      const r = await fetch(`/api/v2/data/${name}`);
+      const r = await fetch(`${API_BASE}/api/v2/data/${name}`);
       const j = await r.json();
       if(r.ok && j.dataset){
         const mapping = j.dataset.mapping || {};
@@ -58,13 +76,13 @@ export default function DataUploadManager(){
     setMessage('Saving mapping...');
     try{
       // Try JSON API first
-      let r = await fetch(`/api/v2/data/save_mapping/${name}`, {method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({mapping: mappingEdits})});
+      let r = await fetch(`${API_BASE}/api/v2/data/save_mapping/${name}`, {method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({mapping: mappingEdits})});
       if(r.status === 404){
         // Fallback to legacy upload save_mapping (expects form fields: data_type, mapping)
         const form = new FormData();
         form.append('data_type', name);
         form.append('mapping', JSON.stringify(mappingEdits));
-        r = await fetch('/api/v2/upload/save_mapping', {method: 'POST', body: form});
+        r = await fetch(`${API_BASE}/api/v2/upload/save_mapping`, {method: 'POST', body: form});
       }
       const j = await r.json().catch(()=>({detail: 'No JSON response'}));
       if(r.ok){ setMessage('Mapping saved'); setEditingDataset(null); fetchList(); }
@@ -78,16 +96,24 @@ export default function DataUploadManager(){
 
   return (
     <div style={{padding:20}}>
-      <h2>Data Upload Manager</h2>
+      <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:8}}>
+        <h2 style={{margin:0}}>Data Upload Manager</h2>
+        <button onClick={fetchList} disabled={loading}>Refresh List</button>
+      </div>
       {message && <div style={{marginBottom:10}}>{message}</div>}
-      {loading ? <div>Loading...</div> : (
+      {loading ? <div style={{ padding: 20, color: '#6b7280' }}>Loading...</div> : (
         <table style={{width:'100%', borderCollapse:'collapse'}}>
           <thead><tr><th>Dataset</th><th>Rows</th><th>Actions</th></tr></thead>
           <tbody>
+            {Object.keys(datasets).length === 0 && (
+              <tr>
+                <td colSpan={3} style={{padding:16, color:'#6b7280'}}>No datasets loaded. Verify upload service connectivity, then refresh.</td>
+              </tr>
+            )}
             {Object.entries(datasets).map(([k,v]:any)=> (
               <tr key={k}>
-                <td style={{padding:8}}>{k} — {v.filename}</td>
-                <td style={{padding:8}}>{v.rows}</td>
+                <td style={{padding:8}}>{v.display_name || k}</td>
+                <td style={{padding:8}}>{v.row_count || 0}</td>
                 <td style={{padding:8}}>
                   <button onClick={()=>ingest(k)}>Ingest</button>
                   <button style={{marginLeft:8}} onClick={()=>editMapping(k)}>Edit Mapping</button>

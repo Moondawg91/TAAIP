@@ -23,10 +23,9 @@ export const CommanderDiagnosticsDashboard: React.FC<CommanderDiagnosticsDashboa
       <div className="rounded-2xl bg-gradient-to-r from-blue-900 via-blue-800 to-blue-900 p-6 text-white shadow-xl">
         <div className="flex items-center justify-between gap-4">
           <div>
-            <p className="text-xs uppercase tracking-[0.25em] text-blue-200">Step 3 of 6</p>
-            <h1 className="mt-2 text-3xl font-bold">Diagnostics</h1>
+            <h1 className="mt-2 text-3xl font-bold">Market, Funnel, ROI &amp; Targeting Diagnostics</h1>
             <p className="mt-2 max-w-3xl text-sm text-blue-100">
-              Market, funnel, school, and ROI diagnostics are consolidated here so commanders can review the real upstream signals in one place before moving to TWG and board actions.
+              Market potential, funnel conversion, school access, ROI scoring, and targeting diagnostic signals from the live backend.
             </p>
           </div>
           <button
@@ -107,17 +106,17 @@ export const CommanderDiagnosticsDashboard: React.FC<CommanderDiagnosticsDashboa
 
       <div className="flex items-center justify-between">
         <button
-          onClick={() => onNavigate('mission-adjustment')}
+          onClick={() => onNavigate('mission')}
           className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
         >
           <ArrowLeft className="h-4 w-4" />
-          Back to Mission Adjustment
+          Back to Mission Analysis
         </button>
         <button
-          onClick={() => onNavigate('decision-sync')}
+          onClick={() => onNavigate('twg')}
           className="inline-flex items-center gap-2 rounded-lg bg-blue-700 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-600"
         >
-          Continue to TWG and Board
+          Continue to TWG
           <ArrowRight className="h-4 w-4" />
         </button>
       </div>
